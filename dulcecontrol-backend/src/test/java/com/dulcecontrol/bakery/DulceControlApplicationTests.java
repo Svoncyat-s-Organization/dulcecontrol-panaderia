@@ -1,4 +1,4 @@
-package com.dulcecontrol.ecommerce;
+package com.dulcecontrol.bakery;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

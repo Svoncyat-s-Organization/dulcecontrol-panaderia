@@ -22,7 +22,7 @@ El proyecto implementa una arquitectura moderna y desacoplada, utilizando tecnol
 
 | Área | Tecnología | Propósito |
 | :--- | :--- | :--- |
-| **Frontend** | React (con Vite) + JavaScript | Interfaz de usuario moderna para la gestión de panaderías. |
+| **Frontend** | React (con Vite) + Tailwind CSS + JavaScript | Interfaz de usuario moderna para la gestión de panaderías. |
 | **Backend** | Java 17 + Spring Boot + Spring Security | API REST robusta para operaciones de panadería y autenticación. |
 | **Base de Datos** | PostgreSQL | Almacenamiento de datos de productos, clientes, ventas e inventario. |
 | **Versionado de BD** | Flyway | Gestión del historial y evolución del esquema de la base de datos. |
