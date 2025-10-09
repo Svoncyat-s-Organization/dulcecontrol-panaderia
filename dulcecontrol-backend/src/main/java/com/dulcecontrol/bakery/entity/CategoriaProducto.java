@@ -13,11 +13,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Entity
-@Table(name = "categoria_producto")
+@Table(name = "categoria_producto", schema = "dulce_control")
 // Cuando se llame al método delete, se ejecutará este SQL en su lugar.
-@SQLDelete(sql = "UPDATE categoria_producto SET activo = false, actualizado_en = NOW() WHERE id = ?")
+@SQLDelete(sql = "UPDATE dulce_control.categoria_producto SET activo = false, actualizado_en = NOW() WHERE id = ?")
 // Todas las consultas a esta entidad incluirán automáticamente esta condición.
 @SQLRestriction("activo = true")
 public class CategoriaProducto {
@@ -26,9 +28,12 @@ public class CategoriaProducto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "El nombre de la categoría es obligatorio")
+    @Size(max = 120, message = "El nombre no puede exceder 120 caracteres")
     @Column(length = 120, nullable = false, unique = true)
     private String nombre;
 
+    @Size(max = 250, message = "La descripción no puede exceder 250 caracteres")
     @Column(length = 250)
     private String descripcion;
 

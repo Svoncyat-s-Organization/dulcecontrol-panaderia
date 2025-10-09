@@ -9,13 +9,17 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
-@Table(name = "receta")
+@Table(name = "receta", schema = "dulce_control")
 // Cuando se llame al método delete, se ejecutará este SQL en su lugar.
 @SQLDelete(sql = "UPDATE receta SET activo = false, actualizado_en = NOW() WHERE id = ?")
 // Todas las consultas a esta entidad incluirán automáticamente esta condición.
@@ -26,8 +30,10 @@ public class Receta {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "producto_id", nullable = false)
-    private Long productoId;
+    @NotNull
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "producto_id", nullable = false)
+    private Producto producto;
 
     @Column(columnDefinition = "TEXT")
     private String descripcion;
@@ -53,12 +59,26 @@ public class Receta {
         this.id = id;
     }
 
+    public Producto getProducto() {
+        return producto;
+    }
+
+    public void setProducto(Producto producto) {
+        this.producto = producto;
+    }
+
+    // Compatibility method
     public Long getProductoId() {
-        return productoId;
+        return producto != null ? producto.getId() : null;
     }
 
     public void setProductoId(Long productoId) {
-        this.productoId = productoId;
+        if (productoId != null) {
+            this.producto = new Producto();
+            this.producto.setId(productoId);
+        } else {
+            this.producto = null;
+        }
     }
 
     public String getDescripcion() {
@@ -95,7 +115,7 @@ public class Receta {
 
     @Override
     public String toString() {
-        return "Receta [id=" + id + ", productoId=" + productoId + ", descripcion=" + descripcion + ", activo=" + activo
+        return "Receta [id=" + id + ", productoId=" + getProductoId() + ", descripcion=" + descripcion + ", activo=" + activo
                 + ", creadoEn=" + creadoEn + ", actualizadoEn=" + actualizadoEn + "]";
     }
 }

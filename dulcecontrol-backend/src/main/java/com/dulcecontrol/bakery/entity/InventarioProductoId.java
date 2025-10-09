@@ -4,31 +4,43 @@ import java.io.Serializable;
 import java.util.Objects;
 
 public class InventarioProductoId implements Serializable {
-    private Long sedeId;
-    private Long productoId;
+    private Sede sede;
+    private Producto producto;
 
     public InventarioProductoId() {
     }
 
+    public InventarioProductoId(Sede sede, Producto producto) {
+        this.sede = sede;
+        this.producto = producto;
+    }
+
+    // Constructor de compatibilidad para controllers
     public InventarioProductoId(Long sedeId, Long productoId) {
-        this.sedeId = sedeId;
-        this.productoId = productoId;
+        if (sedeId != null) {
+            this.sede = new Sede();
+            this.sede.setId(sedeId);
+        }
+        if (productoId != null) {
+            this.producto = new Producto();
+            this.producto.setId(productoId);
+        }
     }
 
-    public Long getSedeId() {
-        return sedeId;
+    public Sede getSede() {
+        return sede;
     }
 
-    public void setSedeId(Long sedeId) {
-        this.sedeId = sedeId;
+    public void setSede(Sede sede) {
+        this.sede = sede;
     }
 
-    public Long getProductoId() {
-        return productoId;
+    public Producto getProducto() {
+        return producto;
     }
 
-    public void setProductoId(Long productoId) {
-        this.productoId = productoId;
+    public void setProducto(Producto producto) {
+        this.producto = producto;
     }
 
     @Override
@@ -38,11 +50,11 @@ public class InventarioProductoId implements Serializable {
         if (o == null || getClass() != o.getClass())
             return false;
         InventarioProductoId that = (InventarioProductoId) o;
-        return Objects.equals(sedeId, that.sedeId) && Objects.equals(productoId, that.productoId);
+        return Objects.equals(sede, that.sede) && Objects.equals(producto, that.producto);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(sedeId, productoId);
+        return Objects.hash(sede, producto);
     }
 }

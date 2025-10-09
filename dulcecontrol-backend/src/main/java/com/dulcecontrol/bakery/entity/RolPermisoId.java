@@ -4,31 +4,31 @@ import java.io.Serializable;
 import java.util.Objects;
 
 public class RolPermisoId implements Serializable {
-    private Long rolId;
-    private Long permisoId;
+    private Long rol; // Debe coincidir con el nombre del campo en RolPermiso
+    private Long permiso; // Debe coincidir con el nombre del campo en RolPermiso
 
     public RolPermisoId() {
     }
 
-    public RolPermisoId(Long rolId, Long permisoId) {
-        this.rolId = rolId;
-        this.permisoId = permisoId;
+    public RolPermisoId(Long rol, Long permiso) {
+        this.rol = rol;
+        this.permiso = permiso;
     }
 
-    public Long getRolId() {
-        return rolId;
+    public Long getRol() {
+        return rol;
     }
 
-    public void setRolId(Long rolId) {
-        this.rolId = rolId;
+    public void setRol(Long rol) {
+        this.rol = rol;
     }
 
-    public Long getPermisoId() {
-        return permisoId;
+    public Long getPermiso() {
+        return permiso;
     }
 
-    public void setPermisoId(Long permisoId) {
-        this.permisoId = permisoId;
+    public void setPermiso(Long permiso) {
+        this.permiso = permiso;
     }
 
     @Override
@@ -38,11 +38,11 @@ public class RolPermisoId implements Serializable {
         if (o == null || getClass() != o.getClass())
             return false;
         RolPermisoId that = (RolPermisoId) o;
-        return Objects.equals(rolId, that.rolId) && Objects.equals(permisoId, that.permisoId);
+        return Objects.equals(rol, that.rol) && Objects.equals(permiso, that.permiso);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(rolId, permisoId);
+        return Objects.hash(rol, permiso);
     }
 }

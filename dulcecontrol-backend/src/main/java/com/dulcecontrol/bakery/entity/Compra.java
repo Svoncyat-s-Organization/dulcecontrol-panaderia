@@ -9,38 +9,54 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 @Entity
-@Table(name = "compra")
+@Table(name = "compra", schema = "dulce_control")
 public class Compra {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "sede_id", nullable = false)
-    private Long sedeId;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sede_id", nullable = false)
+    private Sede sede;
 
-    @Column(name = "proveedor_id")
-    private Long proveedorId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "proveedor_id")
+    private Proveedor proveedor;
 
+    @NotNull
     @Column(nullable = false)
     private LocalDate fecha;
 
+    @NotBlank
+    @Size(max = 20)
     @Column(length = 20, nullable = false)
     private String estado = "registrada";
 
-    @Column(precision = 12, scale = 2, nullable = false)
+    @DecimalMin(value = "0.0")
+    @Column(precision = 12, scale = 2, nullable = false, insertable = false, updatable = false)
     private BigDecimal subtotal = BigDecimal.ZERO;
 
-    @Column(precision = 12, scale = 2, nullable = false)
+    @DecimalMin(value = "0.0")
+    @Column(precision = 12, scale = 2, nullable = false, insertable = false, updatable = false)
     private BigDecimal impuesto = BigDecimal.ZERO;
 
-    @Column(precision = 12, scale = 2, nullable = false)
+    @DecimalMin(value = "0.0")
+    @Column(precision = 12, scale = 2, nullable = false, insertable = false, updatable = false)
     private BigDecimal total = BigDecimal.ZERO;
 
     @CreationTimestamp
@@ -61,20 +77,48 @@ public class Compra {
         this.id = id;
     }
 
+    public Sede getSede() {
+        return sede;
+    }
+
+    public void setSede(Sede sede) {
+        this.sede = sede;
+    }
+
+    // Compatibility method
     public Long getSedeId() {
-        return sedeId;
+        return sede != null ? sede.getId() : null;
     }
 
     public void setSedeId(Long sedeId) {
-        this.sedeId = sedeId;
+        if (sedeId != null) {
+            this.sede = new Sede();
+            this.sede.setId(sedeId);
+        } else {
+            this.sede = null;
+        }
     }
 
+    public Proveedor getProveedor() {
+        return proveedor;
+    }
+
+    public void setProveedor(Proveedor proveedor) {
+        this.proveedor = proveedor;
+    }
+
+    // Compatibility method
     public Long getProveedorId() {
-        return proveedorId;
+        return proveedor != null ? proveedor.getId() : null;
     }
 
     public void setProveedorId(Long proveedorId) {
-        this.proveedorId = proveedorId;
+        if (proveedorId != null) {
+            this.proveedor = new Proveedor();
+            this.proveedor.setId(proveedorId);
+        } else {
+            this.proveedor = null;
+        }
     }
 
     public LocalDate getFecha() {
@@ -135,7 +179,7 @@ public class Compra {
 
     @Override
     public String toString() {
-        return "Compra [id=" + id + ", sedeId=" + sedeId + ", proveedorId=" + proveedorId + ", fecha=" + fecha
+        return "Compra [id=" + id + ", sedeId=" + getSedeId() + ", proveedorId=" + getProveedorId() + ", fecha=" + fecha
                 + ", estado=" + estado + ", subtotal=" + subtotal + ", impuesto=" + impuesto + ", total=" + total
                 + ", creadoEn=" + creadoEn + ", actualizadoEn=" + actualizadoEn + "]";
     }

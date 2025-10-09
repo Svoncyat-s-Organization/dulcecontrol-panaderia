@@ -4,31 +4,45 @@ import java.time.OffsetDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 @Entity
-@Table(name = "pedido_adjunto")
+@Table(name = "pedido_adjunto", schema = "dulce_control")
 public class PedidoAdjunto {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "pedido_id", nullable = false)
-    private Long pedidoId;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pedido_id", nullable = false)
+    private Pedido pedido;
 
+    @NotBlank
+    @Size(max = 400)
     @Column(name = "ruta_archivo", length = 400, nullable = false)
     private String rutaArchivo;
 
+    @Size(max = 80)
     @Column(name = "tipo_mime", length = 80)
     private String tipoMime;
 
+    @Min(0)
     @Column(name = "tamano_bytes")
     private Long tamanoBytes;
 
+    @NotNull
     @Column(name = "subido_at", nullable = false)
     private OffsetDateTime subidoAt;
 
@@ -42,12 +56,26 @@ public class PedidoAdjunto {
         this.id = id;
     }
 
+    public Pedido getPedido() {
+        return pedido;
+    }
+
+    public void setPedido(Pedido pedido) {
+        this.pedido = pedido;
+    }
+
+    // Compatibility method
     public Long getPedidoId() {
-        return pedidoId;
+        return pedido != null ? pedido.getId() : null;
     }
 
     public void setPedidoId(Long pedidoId) {
-        this.pedidoId = pedidoId;
+        if (pedidoId != null) {
+            this.pedido = new Pedido();
+            this.pedido.setId(pedidoId);
+        } else {
+            this.pedido = null;
+        }
     }
 
     public String getRutaArchivo() {
@@ -84,7 +112,7 @@ public class PedidoAdjunto {
 
     @Override
     public String toString() {
-        return "PedidoAdjunto [id=" + id + ", pedidoId=" + pedidoId + ", rutaArchivo=" + rutaArchivo + ", tipoMime="
+        return "PedidoAdjunto [id=" + id + ", pedidoId=" + getPedidoId() + ", rutaArchivo=" + rutaArchivo + ", tipoMime="
                 + tipoMime + ", tamanoBytes=" + tamanoBytes + ", subidoAt=" + subidoAt + "]";
     }
 }

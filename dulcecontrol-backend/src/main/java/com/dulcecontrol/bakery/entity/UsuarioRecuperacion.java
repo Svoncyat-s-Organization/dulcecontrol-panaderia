@@ -6,25 +6,36 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 @Entity
-@Table(name = "usuario_recuperacion")
+@Table(name = "usuario_recuperacion", schema = "dulce_control")
 public class UsuarioRecuperacion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "usuario_id", nullable = false)
-    private Long usuarioId;
+    @NotNull(message = "El usuario es obligatorio")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
 
+    @NotBlank(message = "El token es obligatorio")
+    @Size(max = 120, message = "El token no puede exceder 120 caracteres")
     @Column(length = 120, nullable = false, unique = true)
     private String token;
 
+    @NotNull(message = "La fecha de expiración es obligatoria")
     @Column(name = "expira_en", nullable = false)
     private OffsetDateTime expiraEn;
 
@@ -45,12 +56,26 @@ public class UsuarioRecuperacion {
         this.id = id;
     }
 
+    public Usuario getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
+    }
+
+    // Método de compatibilidad
     public Long getUsuarioId() {
-        return usuarioId;
+        return usuario != null ? usuario.getId() : null;
     }
 
     public void setUsuarioId(Long usuarioId) {
-        this.usuarioId = usuarioId;
+        if (usuarioId != null) {
+            this.usuario = new Usuario();
+            this.usuario.setId(usuarioId);
+        } else {
+            this.usuario = null;
+        }
     }
 
     public String getToken() {
@@ -87,7 +112,8 @@ public class UsuarioRecuperacion {
 
     @Override
     public String toString() {
-        return "UsuarioRecuperacion [id=" + id + ", usuarioId=" + usuarioId + ", token=" + token + ", expiraEn=" + expiraEn
+        return "UsuarioRecuperacion [id=" + id + ", usuarioId=" + getUsuarioId() + ", token=" + token + ", expiraEn="
+                + expiraEn
                 + ", usado=" + usado + ", creadoEn=" + creadoEn + "]";
     }
 }

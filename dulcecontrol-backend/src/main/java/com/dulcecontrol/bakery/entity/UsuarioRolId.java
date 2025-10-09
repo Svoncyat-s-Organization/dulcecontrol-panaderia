@@ -4,42 +4,45 @@ import java.io.Serializable;
 import java.util.Objects;
 
 public class UsuarioRolId implements Serializable {
-    private Long usuarioId;
-    private Long rolId;
+    private Long usuario; // Debe coincidir con el nombre del campo en UsuarioRol
+    private Long rol; // Debe coincidir con el nombre del campo en UsuarioRol
 
-    public UsuarioRolId() {}
-
-    public UsuarioRolId(Long usuarioId, Long rolId) {
-        this.usuarioId = usuarioId;
-        this.rolId = rolId;
+    public UsuarioRolId() {
     }
 
-    public Long getUsuarioId() {
-        return usuarioId;
+    public UsuarioRolId(Long usuario, Long rol) {
+        this.usuario = usuario;
+        this.rol = rol;
     }
 
-    public void setUsuarioId(Long usuarioId) {
-        this.usuarioId = usuarioId;
+    public Long getUsuario() {
+        return usuario;
     }
 
-    public Long getRolId() {
-        return rolId;
+    public void setUsuario(Long usuario) {
+        this.usuario = usuario;
     }
 
-    public void setRolId(Long rolId) {
-        this.rolId = rolId;
+    public Long getRol() {
+        return rol;
+    }
+
+    public void setRol(Long rol) {
+        this.rol = rol;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         UsuarioRolId that = (UsuarioRolId) o;
-        return Objects.equals(usuarioId, that.usuarioId) && Objects.equals(rolId, that.rolId);
+        return Objects.equals(usuario, that.usuario) && Objects.equals(rol, that.rol);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(usuarioId, rolId);
+        return Objects.hash(usuario, rol);
     }
 }

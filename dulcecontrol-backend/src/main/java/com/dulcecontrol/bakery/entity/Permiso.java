@@ -3,6 +3,8 @@ package com.dulcecontrol.bakery.entity;
 import java.time.OffsetDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
@@ -11,20 +13,30 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Entity
-@Table(name = "permiso")
+@Table(name = "permiso", schema = "dulce_control")
+@SQLDelete(sql = "UPDATE dulce_control.permiso SET activo = false, actualizado_en = NOW() WHERE id = ?")
+@SQLRestriction("activo = true")
 public class Permiso {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "El código del permiso es obligatorio")
+    @Size(max = 80, message = "El código no puede exceder 80 caracteres")
     @Column(length = 80, nullable = false, unique = true)
     private String codigo;
 
+    @Size(max = 250, message = "La descripción no puede exceder 250 caracteres")
     @Column(length = 250)
     private String descripcion;
+
+    @Column(nullable = false)
+    private Boolean activo = true;
 
     @CreationTimestamp
     @Column(name = "creado_en", nullable = false, updatable = false)
@@ -60,6 +72,14 @@ public class Permiso {
         this.descripcion = descripcion;
     }
 
+    public Boolean getActivo() {
+        return activo;
+    }
+
+    public void setActivo(Boolean activo) {
+        this.activo = activo;
+    }
+
     public OffsetDateTime getCreadoEn() {
         return creadoEn;
     }
@@ -79,6 +99,6 @@ public class Permiso {
     @Override
     public String toString() {
         return "Permiso [id=" + id + ", codigo=" + codigo + ", descripcion=" + descripcion
-                + ", creadoEn=" + creadoEn + ", actualizadoEn=" + actualizadoEn + "]";
+                + ", activo=" + activo + ", creadoEn=" + creadoEn + ", actualizadoEn=" + actualizadoEn + "]";
     }
 }

@@ -8,37 +8,51 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
-@Table(name = "caja_sesion")
+@Table(name = "caja_sesion", schema = "dulce_control")
 public class CajaSesion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "sede_id", nullable = false)
-    private Long sedeId;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sede_id", nullable = false)
+    private Sede sede;
 
-    @Column(name = "usuario_apertura_id", nullable = false)
-    private Long usuarioAperturaId;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_apertura_id", nullable = false)
+    private Usuario usuarioApertura;
 
+    @NotNull
     @Column(name = "apertura_at", nullable = false)
     private OffsetDateTime aperturaAt;
 
+    @NotNull
+    @DecimalMin(value = "0.0")
     @Column(name = "monto_apertura", precision = 12, scale = 2, nullable = false)
     private BigDecimal montoApertura;
 
-    @Column(name = "usuario_cierre_id")
-    private Long usuarioCierreId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_cierre_id")
+    private Usuario usuarioCierre;
 
     @Column(name = "cierre_at")
     private OffsetDateTime cierreAt;
 
+    @DecimalMin(value = "0.0")
     @Column(name = "monto_cierre", precision = 12, scale = 2)
     private BigDecimal montoCierre;
 
@@ -63,20 +77,48 @@ public class CajaSesion {
         this.id = id;
     }
 
+    public Sede getSede() {
+        return sede;
+    }
+
+    public void setSede(Sede sede) {
+        this.sede = sede;
+    }
+
+    // Compatibility method
     public Long getSedeId() {
-        return sedeId;
+        return sede != null ? sede.getId() : null;
     }
 
     public void setSedeId(Long sedeId) {
-        this.sedeId = sedeId;
+        if (sedeId != null) {
+            this.sede = new Sede();
+            this.sede.setId(sedeId);
+        } else {
+            this.sede = null;
+        }
     }
 
+    public Usuario getUsuarioApertura() {
+        return usuarioApertura;
+    }
+
+    public void setUsuarioApertura(Usuario usuarioApertura) {
+        this.usuarioApertura = usuarioApertura;
+    }
+
+    // Compatibility method
     public Long getUsuarioAperturaId() {
-        return usuarioAperturaId;
+        return usuarioApertura != null ? usuarioApertura.getId() : null;
     }
 
     public void setUsuarioAperturaId(Long usuarioAperturaId) {
-        this.usuarioAperturaId = usuarioAperturaId;
+        if (usuarioAperturaId != null) {
+            this.usuarioApertura = new Usuario();
+            this.usuarioApertura.setId(usuarioAperturaId);
+        } else {
+            this.usuarioApertura = null;
+        }
     }
 
     public OffsetDateTime getAperturaAt() {
@@ -95,12 +137,26 @@ public class CajaSesion {
         this.montoApertura = montoApertura;
     }
 
+    public Usuario getUsuarioCierre() {
+        return usuarioCierre;
+    }
+
+    public void setUsuarioCierre(Usuario usuarioCierre) {
+        this.usuarioCierre = usuarioCierre;
+    }
+
+    // Compatibility method
     public Long getUsuarioCierreId() {
-        return usuarioCierreId;
+        return usuarioCierre != null ? usuarioCierre.getId() : null;
     }
 
     public void setUsuarioCierreId(Long usuarioCierreId) {
-        this.usuarioCierreId = usuarioCierreId;
+        if (usuarioCierreId != null) {
+            this.usuarioCierre = new Usuario();
+            this.usuarioCierre.setId(usuarioCierreId);
+        } else {
+            this.usuarioCierre = null;
+        }
     }
 
     public OffsetDateTime getCierreAt() {
@@ -145,9 +201,9 @@ public class CajaSesion {
 
     @Override
     public String toString() {
-        return "CajaSesion [id=" + id + ", sedeId=" + sedeId + ", usuarioAperturaId=" + usuarioAperturaId
+        return "CajaSesion [id=" + id + ", sedeId=" + getSedeId() + ", usuarioAperturaId=" + getUsuarioAperturaId()
                 + ", aperturaAt=" + aperturaAt + ", montoApertura=" + montoApertura + ", usuarioCierreId="
-                + usuarioCierreId + ", cierreAt=" + cierreAt + ", montoCierre=" + montoCierre + ", observaciones="
+                + getUsuarioCierreId() + ", cierreAt=" + cierreAt + ", montoCierre=" + montoCierre + ", observaciones="
                 + observaciones + ", creadoEn=" + creadoEn + ", actualizadoEn=" + actualizadoEn + "]";
     }
 }

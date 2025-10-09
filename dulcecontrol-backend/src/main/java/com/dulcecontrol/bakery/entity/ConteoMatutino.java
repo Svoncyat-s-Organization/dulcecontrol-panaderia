@@ -7,25 +7,34 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
-@Table(name = "conteo_matutino")
+@Table(name = "conteo_matutino", schema = "dulce_control")
 public class ConteoMatutino {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "sede_id", nullable = false)
-    private Long sedeId;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sede_id", nullable = false)
+    private Sede sede;
 
-    @Column(name = "usuario_id", nullable = false)
-    private Long usuarioId;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
 
+    @NotNull
     @Column(nullable = false)
     private LocalDate fecha;
 
@@ -43,20 +52,48 @@ public class ConteoMatutino {
         this.id = id;
     }
 
+    public Sede getSede() {
+        return sede;
+    }
+
+    public void setSede(Sede sede) {
+        this.sede = sede;
+    }
+
+    // Compatibility method
     public Long getSedeId() {
-        return sedeId;
+        return sede != null ? sede.getId() : null;
     }
 
     public void setSedeId(Long sedeId) {
-        this.sedeId = sedeId;
+        if (sedeId != null) {
+            this.sede = new Sede();
+            this.sede.setId(sedeId);
+        } else {
+            this.sede = null;
+        }
     }
 
+    public Usuario getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
+    }
+
+    // Compatibility method
     public Long getUsuarioId() {
-        return usuarioId;
+        return usuario != null ? usuario.getId() : null;
     }
 
     public void setUsuarioId(Long usuarioId) {
-        this.usuarioId = usuarioId;
+        if (usuarioId != null) {
+            this.usuario = new Usuario();
+            this.usuario.setId(usuarioId);
+        } else {
+            this.usuario = null;
+        }
     }
 
     public LocalDate getFecha() {
@@ -77,7 +114,7 @@ public class ConteoMatutino {
 
     @Override
     public String toString() {
-        return "ConteoMatutino [id=" + id + ", sedeId=" + sedeId + ", usuarioId=" + usuarioId + ", fecha=" + fecha
+        return "ConteoMatutino [id=" + id + ", sedeId=" + getSedeId() + ", usuarioId=" + getUsuarioId() + ", fecha=" + fecha
                 + ", creadoEn=" + creadoEn + "]";
     }
 }

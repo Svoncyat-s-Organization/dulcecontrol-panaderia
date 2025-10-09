@@ -40,12 +40,12 @@ public class SedeController {
     }
 
     @GetMapping("/Sede/{id}")
-    public Optional<Sede> buscarId(@PathVariable("id") Integer id) {
+    public Optional<Sede> buscarId(@PathVariable("id") Long id) {
         return serviceSede.buscarId(id);
     }
 
     @DeleteMapping("/Sede/{id}")
-    public String eliminar(@PathVariable Integer id) {
+    public String eliminar(@PathVariable Long id) {
         serviceSede.eliminar(id);
         return "Cliente eliminado";
     }

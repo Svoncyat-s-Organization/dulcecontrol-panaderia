@@ -17,9 +17,9 @@ public interface ISedeService {
     void modificar(Sede cliente);
     // Método para modificar Sede
 
-    Optional<Sede> buscarId(Integer id);
+    Optional<Sede> buscarId(Long id);
     // Método para listar un cliente
 
-    void eliminar(Integer id);
+    void eliminar(Long id);
     // Método para eliminar un cliente
 }

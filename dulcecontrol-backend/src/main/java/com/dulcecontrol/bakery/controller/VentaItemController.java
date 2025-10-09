@@ -44,8 +44,8 @@ public class VentaItemController {
         return serviceVentaItem.buscarId(id);
     }
 
-
-public String eliminar(@PathVariable Long id) {
+    @DeleteMapping("/ventaItem/{id}")
+    public String eliminar(@PathVariable Long id) {
         serviceVentaItem.eliminar(id);
         return "VentaItem eliminado";
     }

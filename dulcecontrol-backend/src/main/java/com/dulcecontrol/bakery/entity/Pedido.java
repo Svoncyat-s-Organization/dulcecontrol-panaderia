@@ -7,27 +7,42 @@ import java.time.OffsetDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.dulcecontrol.bakery.enums.EstadoPedido;
+import com.dulcecontrol.bakery.enums.EstadoPagoOnline;
+import com.dulcecontrol.bakery.enums.OrigenPedido;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 @Entity
-@Table(name = "pedido")
+@Table(name = "pedido", schema = "dulce_control")
 public class Pedido {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "sede_id", nullable = false)
-    private Long sedeId;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sede_id", nullable = false)
+    private Sede sede;
 
-    @Column(name = "cliente_id")
-    private Long clienteId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cliente_id")
+    private Cliente cliente;
 
+    @NotNull
     @Column(name = "fecha_creacion", nullable = false)
     private OffsetDateTime fechaCreacion;
 
@@ -37,15 +52,21 @@ public class Pedido {
     @Column(name = "hora_entrega")
     private LocalTime horaEntrega;
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
-    private String estado = "pendiente";
+    private EstadoPedido estado = EstadoPedido.PENDIENTE;
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
-    private String origen = "local";
+    private OrigenPedido origen = OrigenPedido.LOCAL;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "pago_online_estado", length = 20)
-    private String pagoOnlineEstado;
+    private EstadoPagoOnline pagoOnlineEstado;
 
+    @Size(max = 120)
     @Column(name = "pago_online_referencia", length = 120)
     private String pagoOnlineReferencia;
 
@@ -70,20 +91,48 @@ public class Pedido {
         this.id = id;
     }
 
+    public Sede getSede() {
+        return sede;
+    }
+
+    public void setSede(Sede sede) {
+        this.sede = sede;
+    }
+
+    // Compatibility method
     public Long getSedeId() {
-        return sedeId;
+        return sede != null ? sede.getId() : null;
     }
 
     public void setSedeId(Long sedeId) {
-        this.sedeId = sedeId;
+        if (sedeId != null) {
+            this.sede = new Sede();
+            this.sede.setId(sedeId);
+        } else {
+            this.sede = null;
+        }
     }
 
+    public Cliente getCliente() {
+        return cliente;
+    }
+
+    public void setCliente(Cliente cliente) {
+        this.cliente = cliente;
+    }
+
+    // Compatibility method
     public Long getClienteId() {
-        return clienteId;
+        return cliente != null ? cliente.getId() : null;
     }
 
     public void setClienteId(Long clienteId) {
-        this.clienteId = clienteId;
+        if (clienteId != null) {
+            this.cliente = new Cliente();
+            this.cliente.setId(clienteId);
+        } else {
+            this.cliente = null;
+        }
     }
 
     public OffsetDateTime getFechaCreacion() {
@@ -110,28 +159,43 @@ public class Pedido {
         this.horaEntrega = horaEntrega;
     }
 
-    public String getEstado() {
+    public EstadoPedido getEstado() {
         return estado;
     }
 
-    public void setEstado(String estado) {
+    public void setEstado(EstadoPedido estado) {
         this.estado = estado;
     }
 
-    public String getOrigen() {
+    // Compatibility method for String estado
+    public void setEstado(String estado) {
+        this.estado = estado != null ? EstadoPedido.fromValor(estado) : null;
+    }
+
+    public OrigenPedido getOrigen() {
         return origen;
     }
 
-    public void setOrigen(String origen) {
+    public void setOrigen(OrigenPedido origen) {
         this.origen = origen;
     }
 
-    public String getPagoOnlineEstado() {
+    // Compatibility method for String origen
+    public void setOrigen(String origen) {
+        this.origen = origen != null ? OrigenPedido.fromValor(origen) : null;
+    }
+
+    public EstadoPagoOnline getPagoOnlineEstado() {
         return pagoOnlineEstado;
     }
 
-    public void setPagoOnlineEstado(String pagoOnlineEstado) {
+    public void setPagoOnlineEstado(EstadoPagoOnline pagoOnlineEstado) {
         this.pagoOnlineEstado = pagoOnlineEstado;
+    }
+
+    // Compatibility method for String pagoOnlineEstado
+    public void setPagoOnlineEstado(String pagoOnlineEstado) {
+        this.pagoOnlineEstado = pagoOnlineEstado != null ? EstadoPagoOnline.fromValor(pagoOnlineEstado) : null;
     }
 
     public String getPagoOnlineReferencia() {
@@ -168,7 +232,7 @@ public class Pedido {
 
     @Override
     public String toString() {
-        return "Pedido [id=" + id + ", sedeId=" + sedeId + ", clienteId=" + clienteId + ", fechaCreacion="
+        return "Pedido [id=" + id + ", sedeId=" + getSedeId() + ", clienteId=" + getClienteId() + ", fechaCreacion="
                 + fechaCreacion + ", fechaEntrega=" + fechaEntrega + ", horaEntrega=" + horaEntrega + ", estado="
                 + estado + ", origen=" + origen + ", pagoOnlineEstado=" + pagoOnlineEstado + ", pagoOnlineReferencia="
                 + pagoOnlineReferencia + ", observaciones=" + observaciones + ", creadoEn=" + creadoEn

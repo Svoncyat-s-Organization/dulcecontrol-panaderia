@@ -9,15 +9,22 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 @Entity
-@Table(name = "usuario")
+@Table(name = "usuario", schema = "dulce_control")
 // Cuando se llame al método delete, se ejecutará este SQL en su lugar.
-@SQLDelete(sql = "UPDATE usuario SET activo = false, actualizado_en = NOW() WHERE id = ?")
+@SQLDelete(sql = "UPDATE dulce_control.usuario SET activo = false, actualizado_en = NOW() WHERE id = ?")
 // Todas las consultas a esta entidad incluirán automáticamente esta condición.
 @SQLRestriction("activo = true")
 public class Usuario {
@@ -26,23 +33,32 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Los nombres son obligatorios")
+    @Size(max = 120, message = "Los nombres no pueden exceder 120 caracteres")
     @Column(length = 120, nullable = false)
     private String nombres;
 
+    @Size(max = 120, message = "Los apellidos no pueden exceder 120 caracteres")
     @Column(length = 120)
     private String apellidos;
 
-    @Column(nullable = false, unique = true)
+    @NotBlank(message = "El email es obligatorio")
+    @Email(message = "Debe ser un email válido")
+    @Column(nullable = false, unique = true, columnDefinition = "citext")
     private String email;
 
+    @Pattern(regexp = "^[0-9 +()-]{6,20}$", message = "Teléfono debe contener entre 6 y 20 caracteres")
     @Column(length = 20)
     private String telefono;
 
+    @NotBlank(message = "La contraseña es obligatoria")
+    @Size(min = 60, max = 200, message = "El hash de contraseña debe tener entre 60 y 200 caracteres")
     @Column(name = "contrasena_hash", length = 200, nullable = false)
     private String contrasenaHash;
 
-    @Column(name = "sede_preferida_id")
-    private Long sedePreferidaId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sede_preferida_id")
+    private Sede sedePreferida;
 
     // Se inicializa en true por defecto.
     private Boolean activo = true;
@@ -105,12 +121,26 @@ public class Usuario {
         this.contrasenaHash = contrasenaHash;
     }
 
+    public Sede getSedePreferida() {
+        return sedePreferida;
+    }
+
+    public void setSedePreferida(Sede sedePreferida) {
+        this.sedePreferida = sedePreferida;
+    }
+
+    // Método de compatibilidad para mantener API existente
     public Long getSedePreferidaId() {
-        return sedePreferidaId;
+        return sedePreferida != null ? sedePreferida.getId() : null;
     }
 
     public void setSedePreferidaId(Long sedePreferidaId) {
-        this.sedePreferidaId = sedePreferidaId;
+        if (sedePreferidaId != null) {
+            this.sedePreferida = new Sede();
+            this.sedePreferida.setId(sedePreferidaId);
+        } else {
+            this.sedePreferida = null;
+        }
     }
 
     public Boolean getActivo() {
@@ -141,7 +171,7 @@ public class Usuario {
     public String toString() {
         return "Usuario [id=" + id + ", nombres=" + nombres + ", apellidos=" + apellidos + ", email=" + email
                 + ", telefono=" + telefono + ", contrasenaHash=" + contrasenaHash + ", sedePreferidaId="
-                + sedePreferidaId
+                + getSedePreferidaId()
                 + ", activo=" + activo + ", creadoEn=" + creadoEn + ", actualizadoEn=" + actualizadoEn + "]";
     }
 }

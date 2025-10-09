@@ -27,11 +27,11 @@ public class SedeService implements ISedeService {
         repoSede.save(cliente);
     }
 
-    public Optional<Sede> buscarId(Integer id) {
+    public Optional<Sede> buscarId(Long id) {
         return repoSede.findById(id);
     }
 
-    public void eliminar(Integer id) {
+    public void eliminar(Long id) {
         repoSede.deleteById(id);
     }
 }

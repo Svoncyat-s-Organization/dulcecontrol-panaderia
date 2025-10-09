@@ -4,32 +4,46 @@ import java.math.BigDecimal;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
-@Table(name = "compra_insumo_item")
+@Table(name = "compra_insumo_item", schema = "dulce_control")
 public class CompraInsumoItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "compra_id", nullable = false)
-    private Long compraId;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "compra_id", nullable = false)
+    private Compra compra;
 
-    @Column(name = "insumo_id", nullable = false)
-    private Long insumoId;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "insumo_id", nullable = false)
+    private Insumo insumo;
 
+    @NotNull
+    @DecimalMin(value = "0.0")
     @Column(precision = 12, scale = 4, nullable = false)
     private BigDecimal cantidad;
 
+    @NotNull
+    @DecimalMin(value = "0.0")
     @Column(name = "costo_unitario", precision = 12, scale = 4, nullable = false)
     private BigDecimal costoUnitario;
 
-    @Column(precision = 12, scale = 2, nullable = false)
+    @DecimalMin(value = "0.0")
+    @Column(precision = 12, scale = 2, nullable = false, insertable = false, updatable = false)
     private BigDecimal subtotal;
 
     // --- Getters y Setters ---
@@ -42,20 +56,48 @@ public class CompraInsumoItem {
         this.id = id;
     }
 
+    public Compra getCompra() {
+        return compra;
+    }
+
+    public void setCompra(Compra compra) {
+        this.compra = compra;
+    }
+
+    // Compatibility method
     public Long getCompraId() {
-        return compraId;
+        return compra != null ? compra.getId() : null;
     }
 
     public void setCompraId(Long compraId) {
-        this.compraId = compraId;
+        if (compraId != null) {
+            this.compra = new Compra();
+            this.compra.setId(compraId);
+        } else {
+            this.compra = null;
+        }
     }
 
+    public Insumo getInsumo() {
+        return insumo;
+    }
+
+    public void setInsumo(Insumo insumo) {
+        this.insumo = insumo;
+    }
+
+    // Compatibility method
     public Long getInsumoId() {
-        return insumoId;
+        return insumo != null ? insumo.getId() : null;
     }
 
     public void setInsumoId(Long insumoId) {
-        this.insumoId = insumoId;
+        if (insumoId != null) {
+            this.insumo = new Insumo();
+            this.insumo.setId(insumoId);
+        } else {
+            this.insumo = null;
+        }
     }
 
     public BigDecimal getCantidad() {
@@ -84,7 +126,7 @@ public class CompraInsumoItem {
 
     @Override
     public String toString() {
-        return "CompraInsumoItem [id=" + id + ", compraId=" + compraId + ", insumoId=" + insumoId + ", cantidad="
+        return "CompraInsumoItem [id=" + id + ", compraId=" + getCompraId() + ", insumoId=" + getInsumoId() + ", cantidad="
                 + cantidad + ", costoUnitario=" + costoUnitario + ", subtotal=" + subtotal + "]";
     }
 }

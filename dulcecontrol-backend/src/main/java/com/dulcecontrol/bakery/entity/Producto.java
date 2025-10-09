@@ -10,15 +10,22 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 @Entity
-@Table(name = "producto")
+@Table(name = "producto", schema = "dulce_control")
 // Cuando se llame al método delete, se ejecutará este SQL en su lugar.
-@SQLDelete(sql = "UPDATE producto SET activo = false, actualizado_en = NOW() WHERE id = ?")
+@SQLDelete(sql = "UPDATE dulce_control.producto SET activo = false, actualizado_en = NOW() WHERE id = ?")
 // Todas las consultas a esta entidad incluirán automáticamente esta condición.
 @SQLRestriction("activo = true")
 public class Producto {
@@ -27,27 +34,37 @@ public class Producto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "El código del producto es obligatorio")
+    @Size(max = 50, message = "El código no puede exceder 50 caracteres")
     @Column(length = 50, nullable = false, unique = true)
     private String codigo;
 
+    @NotBlank(message = "El nombre del producto es obligatorio")
+    @Size(max = 200, message = "El nombre no puede exceder 200 caracteres")
     @Column(length = 200, nullable = false)
     private String nombre;
 
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
-    @Column(name = "categoria_id")
-    private Long categoriaId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "categoria_id")
+    private CategoriaProducto categoria;
 
+    @NotBlank(message = "La unidad de medida es obligatoria")
+    @Size(max = 30, message = "La unidad de medida no puede exceder 30 caracteres")
     @Column(name = "unidad_medida", length = 30, nullable = false)
     private String unidadMedida = "unidad";
 
+    @NotNull(message = "El precio de venta es obligatorio")
+    @DecimalMin(value = "0.0", inclusive = true, message = "El precio debe ser mayor o igual a 0")
     @Column(name = "precio_venta", precision = 12, scale = 2, nullable = false)
     private BigDecimal precioVenta;
 
     @Column(name = "visible_storefront", nullable = false)
     private Boolean visibleStorefront = true;
 
+    @Size(max = 160, message = "El slug no puede exceder 160 caracteres")
     @Column(length = 160, unique = true)
     private String slug;
 
@@ -96,12 +113,26 @@ public class Producto {
         this.descripcion = descripcion;
     }
 
+    public CategoriaProducto getCategoria() {
+        return categoria;
+    }
+
+    public void setCategoria(CategoriaProducto categoria) {
+        this.categoria = categoria;
+    }
+
+    // Método de compatibilidad
     public Long getCategoriaId() {
-        return categoriaId;
+        return categoria != null ? categoria.getId() : null;
     }
 
     public void setCategoriaId(Long categoriaId) {
-        this.categoriaId = categoriaId;
+        if (categoriaId != null) {
+            this.categoria = new CategoriaProducto();
+            this.categoria.setId(categoriaId);
+        } else {
+            this.categoria = null;
+        }
     }
 
     public String getUnidadMedida() {
@@ -163,7 +194,7 @@ public class Producto {
     @Override
     public String toString() {
         return "Producto [id=" + id + ", codigo=" + codigo + ", nombre=" + nombre + ", descripcion=" + descripcion
-                + ", categoriaId=" + categoriaId + ", unidadMedida=" + unidadMedida + ", precioVenta=" + precioVenta
+                + ", categoriaId=" + getCategoriaId() + ", unidadMedida=" + unidadMedida + ", precioVenta=" + precioVenta
                 + ", visibleStorefront=" + visibleStorefront + ", slug=" + slug + ", activo=" + activo + ", creadoEn="
                 + creadoEn + ", actualizadoEn=" + actualizadoEn + "]";
     }

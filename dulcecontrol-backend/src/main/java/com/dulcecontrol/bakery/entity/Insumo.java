@@ -14,9 +14,12 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Entity
-@Table(name = "insumo")
+@Table(name = "insumo", schema = "dulce_control")
 // Cuando se llame al método delete, se ejecutará este SQL en su lugar.
 @SQLDelete(sql = "UPDATE insumo SET activo = false, actualizado_en = NOW() WHERE id = ?")
 // Todas las consultas a esta entidad incluirán automáticamente esta condición.
@@ -27,18 +30,25 @@ public class Insumo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank
+    @Size(max = 50)
     @Column(length = 50, nullable = false, unique = true)
     private String codigo;
 
+    @NotBlank
+    @Size(max = 200)
     @Column(length = 200, nullable = false)
     private String nombre;
 
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
+    @NotBlank
+    @Size(max = 30)
     @Column(name = "unidad_medida", length = 30, nullable = false)
     private String unidadMedida = "unidad";
 
+    @DecimalMin(value = "0.0")
     @Column(name = "costo_referencia", precision = 12, scale = 4)
     private BigDecimal costoReferencia;
 

@@ -8,30 +8,39 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
-@Table(name = "plan_produccion")
+@Table(name = "plan_produccion", schema = "dulce_control")
 public class PlanProduccion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "sede_id", nullable = false)
-    private Long sedeId;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sede_id", nullable = false)
+    private Sede sede;
 
+    @NotNull
     @Column(nullable = false)
     private LocalDate fecha;
 
+    @NotNull
     @Column(nullable = false)
     private Boolean confirmado = false;
 
-    @Column(name = "generado_por_id")
-    private Long generadoPorId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "generado_por_id")
+    private Usuario generadoPor;
 
     @CreationTimestamp
     @Column(name = "creado_en", nullable = false, updatable = false)
@@ -51,12 +60,26 @@ public class PlanProduccion {
         this.id = id;
     }
 
+    public Sede getSede() {
+        return sede;
+    }
+
+    public void setSede(Sede sede) {
+        this.sede = sede;
+    }
+
+    // Compatibility method
     public Long getSedeId() {
-        return sedeId;
+        return sede != null ? sede.getId() : null;
     }
 
     public void setSedeId(Long sedeId) {
-        this.sedeId = sedeId;
+        if (sedeId != null) {
+            this.sede = new Sede();
+            this.sede.setId(sedeId);
+        } else {
+            this.sede = null;
+        }
     }
 
     public LocalDate getFecha() {
@@ -75,12 +98,26 @@ public class PlanProduccion {
         this.confirmado = confirmado;
     }
 
+    public Usuario getGeneradoPor() {
+        return generadoPor;
+    }
+
+    public void setGeneradoPor(Usuario generadoPor) {
+        this.generadoPor = generadoPor;
+    }
+
+    // Compatibility method
     public Long getGeneradoPorId() {
-        return generadoPorId;
+        return generadoPor != null ? generadoPor.getId() : null;
     }
 
     public void setGeneradoPorId(Long generadoPorId) {
-        this.generadoPorId = generadoPorId;
+        if (generadoPorId != null) {
+            this.generadoPor = new Usuario();
+            this.generadoPor.setId(generadoPorId);
+        } else {
+            this.generadoPor = null;
+        }
     }
 
     public OffsetDateTime getCreadoEn() {
@@ -101,8 +138,14 @@ public class PlanProduccion {
 
     @Override
     public String toString() {
-        return "PlanProduccion [id=" + id + ", sedeId=" + sedeId + ", fecha=" + fecha + ", confirmado=" + confirmado
-                + ", generadoPorId=" + generadoPorId + ", creadoEn=" + creadoEn + ", actualizadoEn=" + actualizadoEn
-                + "]";
+        return "PlanProduccion{" +
+                "id=" + id +
+                ", sedeId=" + getSedeId() +
+                ", fecha=" + fecha +
+                ", confirmado=" + confirmado +
+                ", generadoPorId=" + getGeneradoPorId() +
+                ", creadoEn=" + creadoEn +
+                ", actualizadoEn=" + actualizadoEn +
+                '}';
     }
 }

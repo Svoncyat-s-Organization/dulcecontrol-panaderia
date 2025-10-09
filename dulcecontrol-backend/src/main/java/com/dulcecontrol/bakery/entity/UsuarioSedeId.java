@@ -4,31 +4,31 @@ import java.io.Serializable;
 import java.util.Objects;
 
 public class UsuarioSedeId implements Serializable {
-    private Long usuarioId;
-    private Long sedeId;
+    private Long usuario; // Debe coincidir con el nombre del campo en UsuarioSede
+    private Long sede; // Debe coincidir con el nombre del campo en UsuarioSede
 
     public UsuarioSedeId() {
     }
 
-    public UsuarioSedeId(Long usuarioId, Long sedeId) {
-        this.usuarioId = usuarioId;
-        this.sedeId = sedeId;
+    public UsuarioSedeId(Long usuario, Long sede) {
+        this.usuario = usuario;
+        this.sede = sede;
     }
 
-    public Long getUsuarioId() {
-        return usuarioId;
+    public Long getUsuario() {
+        return usuario;
     }
 
-    public void setUsuarioId(Long usuarioId) {
-        this.usuarioId = usuarioId;
+    public void setUsuario(Long usuario) {
+        this.usuario = usuario;
     }
 
-    public Long getSedeId() {
-        return sedeId;
+    public Long getSede() {
+        return sede;
     }
 
-    public void setSedeId(Long sedeId) {
-        this.sedeId = sedeId;
+    public void setSede(Long sede) {
+        this.sede = sede;
     }
 
     @Override
@@ -38,11 +38,11 @@ public class UsuarioSedeId implements Serializable {
         if (o == null || getClass() != o.getClass())
             return false;
         UsuarioSedeId that = (UsuarioSedeId) o;
-        return Objects.equals(usuarioId, that.usuarioId) && Objects.equals(sedeId, that.sedeId);
+        return Objects.equals(usuario, that.usuario) && Objects.equals(sede, that.sede);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(usuarioId, sedeId);
+        return Objects.hash(usuario, sede);
     }
 }
