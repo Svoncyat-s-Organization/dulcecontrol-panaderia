@@ -43,7 +43,7 @@ public class Gasto {
 
     @NotNull(message = "El tipo de gasto es obligatorio")
     @Enumerated(EnumType.STRING)
-    @Column(length = 60, nullable = false)
+    @Column(name = "categoria", length = 60, nullable = false)
     private TipoGasto tipo;
 
     @Size(max = 250, message = "La descripción no puede exceder 250 caracteres")

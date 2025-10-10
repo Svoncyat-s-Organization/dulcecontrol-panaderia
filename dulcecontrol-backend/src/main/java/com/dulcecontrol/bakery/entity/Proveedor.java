@@ -3,8 +3,6 @@ package com.dulcecontrol.bakery.entity;
 import java.time.OffsetDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
@@ -20,8 +18,6 @@ import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "proveedor", schema = "dulce_control")
-@SQLDelete(sql = "UPDATE dulce_control.proveedor SET activo = false, actualizado_en = NOW() WHERE id = ?")
-@SQLRestriction("activo = true")
 public class Proveedor {
 
     @Id
@@ -48,9 +44,6 @@ public class Proveedor {
     @Size(max = 250, message = "La dirección no puede exceder 250 caracteres")
     @Column(length = 250)
     private String direccion;
-
-    @Column(nullable = false)
-    private Boolean activo = true;
 
     @CreationTimestamp
     @Column(name = "creado_en", nullable = false, updatable = false)
@@ -108,14 +101,6 @@ public class Proveedor {
 
     public void setDireccion(String direccion) {
         this.direccion = direccion;
-    }
-
-    public Boolean getActivo() {
-        return activo;
-    }
-
-    public void setActivo(Boolean activo) {
-        this.activo = activo;
     }
 
     public OffsetDateTime getCreadoEn() {
