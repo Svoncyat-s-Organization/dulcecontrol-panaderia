@@ -1,47 +1,45 @@
 # Módulos Sidebar Admin
 
-1. Tablero / Dashboard (ventas del día, caja, pedidos de hoy, alertas)
+1. Tablero / Dashboard
 
-2. Producción
+2. Clientes
 
-- Conteo matutino
-- Generar/confirmar plan del día
-- Checklist del panadero (progreso)
-- Recetas (consulta/edición)
+3. Ventas & Pedidos (Unificamos para simplificar el primer nivel)
 
-3. Ventas
+- POS (Caja rápida)
+- Pedidos (Lista de órdenes futuras/online)
+- Historial de Ventas
+- Apertura/Cierre de Caja
 
-- Apertura/Cierre de caja
-- POS / Nueva venta (Ventas presenciales)
-- Historial de ventas
+4. Producción
 
-3. Clientes (CRM básico)
+- Plan del día
+- Recetas
+  (El conteo matutino podría moverse a Inventario, pero está bien aquí si es solo para panaderos)
 
-4. Pedidos (Ventas online)
+5. Inventario
 
-- Directorio de pedidos (pedido manuales, busqueda de pedidos, detalles de cada uno, filtros por estado, etc.)
-- Pedidos personalizados (pedidos especificos con los gustos del cliente)
+- Existencias Insumos (Harina, Huevos)
+- Existencias Productos (Tortas en vitrina)
+  Futuro: Kardex/Movimientos
 
-5. Facturación
+6. Compras
 
-6. Catálogo (EAV)
+- Proveedores
+- Órdenes de Compra (Al recibirlas, aumentan el Inventario de Insumos)
 
-- Productos
+7. Catálogo (Tu vitrina comercial)
+
+- Productos (Precios, fotos, descripción)
 - Categorías
-- Configuración de stock ideal (para plan)
 
-7. Compras
+8. Reportes
 
-- Directorio de Proveedores
-- Ordenes de compra
-- Recepcion de insumos
+9. Configuración & Seguridad
 
-7. Reportes
-
-8. Seguridad
-
-- Usuarios
-- Roles y permisos
+- Usuarios y Roles
+- Datos de Empresa (SUNAT)
+- Sedes
 
 # Elementos Navbar Admin
 
