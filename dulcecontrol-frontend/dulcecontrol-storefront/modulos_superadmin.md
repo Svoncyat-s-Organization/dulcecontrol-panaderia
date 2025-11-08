@@ -16,8 +16,8 @@
 - Estado de cuenta por tienda
 - Cobros (Stripe) y facturación SaaS
 
-4. Soporte
+5. Soporte
 
 - Tickets / Prioridades / SLA
 
-5. Seguridad
+6. Seguridad

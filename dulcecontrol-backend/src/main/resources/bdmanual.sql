@@ -9,26 +9,27 @@ SET search_path_to dulce_control, public;
 -- =================================
 
 -- GLOBALES
-CREATE TYPE tipo_documento AS ENUM ('DNI', 'RUC', 'CE', 'PASAPORTE');
-CREATE TYPE tipo_comprobante AS ENUM ('factura', 'boleta', 'nota_credito', 'nota_debito');
-CREATE TYPE estado_sunat AS ENUM ('pendiente', 'enviado', 'aceptado', 'observado', 'rechazado', 'anulado');
-CREATE TYPE tipo_serie_sunat AS ENUM ('F', 'B', 'FN', 'BN');
+CREATE TYPE tipos_documento AS ENUM ('DNI', 'RUC', 'CE', 'PASAPORTE');
+CREATE TYPE tipos_comprobante AS ENUM ('factura', 'boleta', 'nota_credito', 'nota_debito');
+CREATE TYPE estados_sunat AS ENUM ('pendiente', 'enviado', 'aceptado', 'observado', 'rechazado', 'anulado');
+CREATE TYPE tipos_serie_sunat AS ENUM ('F', 'B', 'FN', 'BN');
 
 -- Superadministrador 
 
-CREATE TYPE tipo_dominio AS ENUM ('administrativo', 'tienda_virtual');
-CREATE TYPE ciclo_plan AS ENUM ('mensual', 'anual');
-CREATE TYPE estado_tienda AS ENUM ('en_prueba', 'activa', 'suspendida', 'cancelada');
-CREATE TYPE estado_suscripcion AS ENUM ('en_prueba', 'activa', 'vencida', 'cancelada');
-CREATE TYPE tipo_movimiento_suscripcion AS ENUM ('alta', 'renovacion', 'upgrade', 'downgrade', 'cancelacion', 'reactivacion');
-CREATE TYPE estado_pago_comprobante AS ENUM ('borrador', 'pendiente', 'pagado', 'anulado', 'reembolsado');
-CREATE TYPE prioridad_ticket AS ENUM ('baja', 'media', 'alta', 'critica');
-CREATE TYPE estado_ticket AS ENUM ('abierto', 'pendiente_cliente', 'resuelto', 'cerrado');
-CREATE TYPE remitente_mensaje AS ENUM ('superadmin', 'tienda', 'sistema');
+CREATE TYPE tipos_dominio AS ENUM ('administrativo', 'tienda_virtual');
+CREATE TYPE ciclos_plan AS ENUM ('mensual', 'anual');
+CREATE TYPE estados_tienda AS ENUM ('en_prueba', 'activa', 'suspendida', 'cancelada');
+CREATE TYPE estados_suscripcion AS ENUM ('en_prueba', 'activa', 'vencida', 'cancelada');
+CREATE TYPE tipos_movimiento_suscripcion AS ENUM ('alta', 'renovacion', 'upgrade', 'downgrade', 'cancelacion', 'reactivacion');
+CREATE TYPE estados_pago_comprobante AS ENUM ('borrador', 'pendiente', 'pagado', 'anulado', 'reembolsado');
+CREATE TYPE estados_transaccion AS ENUM ('pendiente', 'exitoso', 'fallido', 'reembolsado');
+CREATE TYPE prioridades_ticket AS ENUM ('baja', 'media', 'alta', 'critica');
+CREATE TYPE estados_ticket AS ENUM ('abierto', 'pendiente_cliente', 'resuelto', 'cerrado');
+CREATE TYPE remitentes_mensaje AS ENUM ('superadmin', 'tienda', 'sistema');
 
 -- Administrador
 
-CREATE TYPE rol_admin AS ENUM ('administrador', 'soporte', 'contador', 'vendedor', 'comprador');
+CREATE TYPE roles_admin AS ENUM ('administrador', 'soporte', 'contador', 'vendedor', 'comprador');
 
 -- =================================
 --    TABLAS GEOGRÁFICAS (UBIGEO)
@@ -61,9 +62,9 @@ CREATE TABLE IF NOT EXISTS ubigeo_distritos (
 -- Seguridad
 CREATE TABLE IF NOT EXISTS usuarios_superadmin (
     id                  BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    correo              TEXT NOT NULL UNIQUE,
+    correo              CITEXT NOT NULL UNIQUE,
     hash_contrasena     TEXT NOT NULL,
-    tipo_doc            tipo_documento NOT NULL,
+    tipo_doc            tipos_documento NOT NULL,
     numero_doc          TEXT NULL,
     nombres_doc         TEXT NULL,
     telefono            TEXT NULL,
@@ -73,19 +74,28 @@ CREATE TABLE IF NOT EXISTS usuarios_superadmin (
     eliminado_en        TIMESTAMPTZ NULL
 );
 
+CREATE TABLE IF NOT EXISTS actividad_superadmin (
+    id                  BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    admin_id            BIGINT NULL REFERENCES usuarios_superadmin(id) ON DELETE SET NULL,
+    tipo_evento         TEXT NOT NULL, -- Ej: 'tienda_suspendida', 'plan_creado', 'reembolso_emitido'
+    ip_origen           INET NULL,
+    detalles            JSONB NULL, -- Guardar ID de entidad afectada, valores anteriores/nuevos
+    creado_en           TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Tiendas
 
 CREATE TABLE IF NOT EXISTS tiendas (
     id                  BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     slug                TEXT NOT NULL,
-    tipo_doc            tipo_documento NOT NULL,
+    tipo_doc            tipos_documento NOT NULL,
     numero_doc          TEXT NOT NULL UNIQUE,
     nombre_doc          TEXT NOT NULL, -- Nombre legal para facturación (Razón social o Nombre completo)
     nombre_comercial    TEXT NULL,     -- Nombre "marketing" de la panadería
-    correo_contacto     TEXT NOT NULL,
+    correo_contacto     CITEXT NOT NULL,
     telefono_contacto   TEXT NULL,
     hash_contrasena     TEXT NOT NULL,
-    estado              estado_tienda NOT NULL DEFAULT 'en_prueba',
+    estado              estados_tienda NOT NULL DEFAULT 'en_prueba',
     creado_en           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     actualizado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     eliminado_en        TIMESTAMPTZ NULL
@@ -109,7 +119,7 @@ CREATE TABLE IF NOT EXISTS sedes (
 CREATE TABLE IF NOT EXISTS dominios_tienda (
     id                  BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     tienda_id           BIGINT NOT NULL REFERENCES tiendas(id) ON DELETE CASCADE,
-    tipo                tipo_dominio NOT NULL DEFAULT 'tienda_virtual',
+    tipo                tipos_dominio NOT NULL DEFAULT 'tienda_virtual',
     url_dominio         TEXT NOT NULL UNIQUE,
     url_logo            TEXT NULL, 
     url_favicon         TEXT NULL, 
@@ -140,23 +150,23 @@ CREATE TABLE IF NOT EXISTS suscripciones (
     id                      BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     tienda_id               BIGINT NOT NULL REFERENCES tiendas(id) ON DELETE RESTRICT,
     plan_id                 BIGINT NOT NULL REFERENCES planes(id) ON DELETE RESTRICT,
-    ciclo                   ciclo_plan NOT NULL DEFAULT 'mensual',
+    ciclo                   ciclos_plan NOT NULL DEFAULT 'mensual',
     precio_pactado_centimos BIGINT NOT NULL, -- El precio al que firmaron (por si luego subes el plan)
     fecha_inicio            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     fecha_fin               TIMESTAMPTZ NOT NULL, -- Cuándo vence el pago actual
-    estado                  estado_suscripcion NOT NULL DEFAULT 'en_prueba',
+    estado                  estados_suscripcion NOT NULL DEFAULT 'en_prueba',
     autorenovar             BOOLEAN NOT NULL DEFAULT TRUE,
     cancelado_en            TIMESTAMPTZ NULL,
     creado_en               TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     actualizado_en          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE historial_suscripciones (
+CREATE TABLE IF NOT EXISTS historial_suscripciones (
     id                      BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     suscripcion_id          BIGINT NOT NULL REFERENCES suscripciones(id) ON DELETE CASCADE,
     plan_anterior_id        BIGINT NULL REFERENCES planes(id), -- NULL si es un alta nueva
     plan_nuevo_id           BIGINT NOT NULL REFERENCES planes(id),
-    tipo_movimiento         tipo_movimiento_suscripcion NOT NULL,
+    tipo_movimiento         tipos_movimiento_suscripcion NOT NULL,
     precio_anterior_centimos BIGINT NULL,
     precio_nuevo_centimos   BIGINT NOT NULL,
     fecha_movimiento        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -165,9 +175,9 @@ CREATE TABLE historial_suscripciones (
 
 -- Facturación
 
-CREATE TABLE series (
+CREATE TABLE IF NOT EXISTS series (
     id                  SERIAL PRIMARY KEY,
-    tipo_comprobante    tipo_comprobante NOT NULL,
+    tipos_comprobante    tipos_comprobante NOT NULL,
     serie               CHAR(4) NOT NULL UNIQUE,
     ultimo_correlativo  INTEGER NOT NULL DEFAULT 0,
     activo              BOOLEAN NOT NULL DEFAULT TRUE,
@@ -176,22 +186,23 @@ CREATE TABLE series (
     actualizado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE comprobantes (
+CREATE TABLE IF NOT EXISTS comprobantes (
     id                  BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    referencia_id       BIGINT REFERENCES comprobantes(id) ON DELETE SET NULL, -- Para notas de crédito/débito
     tienda_id           BIGINT NOT NULL REFERENCES tiendas(id) ON DELETE RESTRICT,
     suscripcion_id      BIGINT NULL REFERENCES suscripciones(id) ON DELETE SET NULL,    
     
     -- Estado del cobro interno
-    estado_pago         estado_pago_comprobante NOT NULL DEFAULT 'pendiente',    
+    estado_pago         estados_pago_comprobante NOT NULL DEFAULT 'pendiente',    
 
     -- Datos Fiscales SUNAT
-    tipo_comprobante    tipo_comprobante NOT NULL,
+    tipos_comprobante    tipos_comprobante NOT NULL,
     serie               CHAR(4) NOT NULL,
     correlativo         INTEGER NOT NULL,
     fecha_emision       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     -- Snapshot del cliente (Requisito SUNAT: guardar a quién se emitió en ese momento)
-    cliente_tipo_doc    tipo_documento NOT NULL, 
+    cliente_tipo_doc    tipos_documento NOT NULL, 
     cliente_num_doc     TEXT NOT NULL,
     cliente_nombre_doc  TEXT NOT NULL, -- Razón social o nombres
     cliente_direccion   TEXT NULL,
@@ -203,7 +214,7 @@ CREATE TABLE comprobantes (
     total_importe_centimos BIGINT NOT NULL,
 
     -- Control SUNAT
-    estado_sunat        estado_sunat NOT NULL DEFAULT 'pendiente',
+    estados_sunat        estados_sunat NOT NULL DEFAULT 'pendiente',
     codigo_error_sunat  TEXT,
     respuesta_sunat     TEXT,
     url_xml             TEXT,
@@ -213,10 +224,10 @@ CREATE TABLE comprobantes (
     creado_en           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     actualizado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-    UNIQUE (tipo_comprobante, serie, correlativo)
+    UNIQUE (tipos_comprobante, serie, correlativo)
 );
 
-CREATE TABLE detalles_comprobante (
+CREATE TABLE IF NOT EXISTS detalles_comprobante (
     id                          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     comprobante_id              BIGINT NOT NULL REFERENCES comprobantes(id) ON DELETE CASCADE,
     descripcion                 TEXT NOT NULL,
@@ -227,15 +238,30 @@ CREATE TABLE detalles_comprobante (
     total_item_centimos         BIGINT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS transacciones_pago (
+    id                          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    tienda_id                   BIGINT NOT NULL REFERENCES tiendas(id),
+    comprobante_id              BIGINT NOT NULL REFERENCES comprobantes(id), -- La factura que intenta pagar
+    pasarela                    TEXT NOT NULL, -- Stripe
+    id_transaccion_pasarela     TEXT,
+    monto_centimos              BIGINT NOT NULL,
+    moneda                      CHAR(3) NOT NULL DEFAULT 'PEN',
+    estado                      estados_transaccion NOT NULL DEFAULT 'pendiente',
+    codigo_error                TEXT,
+    mensaje_error               TEXT,
+    metadata_pasarela           JSONB,
+    creado_en                   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Soporte
 
-CREATE TABLE tickets_soporte (
+CREATE TABLE IF NOT EXISTS tickets_soporte (
     id                  BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     tienda_id           BIGINT NOT NULL REFERENCES tiendas(id) ON DELETE RESTRICT,
     asignado_a_id       BIGINT NULL REFERENCES usuarios_superadmin(id) ON DELETE SET NULL,
     asunto              TEXT NOT NULL,
-    prioridad           prioridad_ticket NOT NULL DEFAULT 'media',
-    estado              estado_ticket NOT NULL DEFAULT 'abierto',
+    prioridad           prioridades_ticket NOT NULL DEFAULT 'media',
+    estado              estados_ticket NOT NULL DEFAULT 'abierto',
     vencimiento_sla_en  TIMESTAMPTZ NULL,
     primera_respuesta_en TIMESTAMPTZ NULL,
     resuelto_en         TIMESTAMPTZ NULL,
@@ -243,10 +269,10 @@ CREATE TABLE tickets_soporte (
     actualizado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE mensajes_ticket (
+CREATE TABLE IF NOT EXISTS mensajes_ticket (
     id                  BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     ticket_id           BIGINT NOT NULL REFERENCES tickets_soporte(id) ON DELETE CASCADE,
-    tipo_remitente      remitente_mensaje NOT NULL,
+    tipo_remitente      remitentes_mensaje NOT NULL,
     -- ID del autor: Puede ser NULL si es un mensaje automático del sistema
     autor_admin_id      BIGINT NULL REFERENCES usuarios_superadmin(id) ON DELETE SET NULL,
     -- NOTA: En un sistema real, aquí también iría un `autor_usuario_tienda_id`
@@ -262,3 +288,17 @@ CREATE TABLE mensajes_ticket (
 -- =================================
 
 -- Seguridad
+CREATE TABLE IF NOT EXISTS usuarios_admin (
+    id                  BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    tienda_id           BIGINT NOT NULL REFERENCES tiendas(id) ON DELETE CASCADE,
+    correo              CITEXT NOT NULL,
+    hash_contrasena     TEXT NOT NULL,
+    tipo_doc            tipos_documento NOT NULL,
+    numero_doc          TEXT NOT NULL,
+    nombres_doc         TEXT NOT NULL,
+    telefono            TEXT NULL,
+    activo              BOOLEAN NOT NULL DEFAULT TRUE,
+    creado_en           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    actualizado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    eliminado_en        TIMESTAMPTZ NULL,
+);
