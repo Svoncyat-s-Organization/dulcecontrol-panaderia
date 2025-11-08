@@ -43,7 +43,7 @@
 - Usuarios
 - Roles y permisos
 
-# Elementos navbar
+# Elementos Navbar Admin
 
 1. Logo (link al dashboard)
 
