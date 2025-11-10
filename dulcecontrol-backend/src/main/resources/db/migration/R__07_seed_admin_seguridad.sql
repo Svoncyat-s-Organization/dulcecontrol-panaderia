@@ -393,7 +393,7 @@ VALUES
     (SELECT id FROM tiendas WHERE numero_doc = '20601234567'),
     (SELECT id FROM roles WHERE tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567') AND nombre = 'Administrador'),
     'admin@dulcemanjar.pe',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- contraseña: demo123
+  '$2a$10$.VTbUPug.CwBqEurWC/1GuCBAaZAK4ZBsbqwXFcWKpev31J/JvGQK', -- contraseña: demo123
     'DNI',
     '12345678',
     'María Elena Rodríguez García',
@@ -404,7 +404,7 @@ VALUES
     (SELECT id FROM tiendas WHERE numero_doc = '20601234567'),
     (SELECT id FROM roles WHERE tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567') AND nombre = 'Gerente'),
     'gerente@dulcemanjar.pe',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- contraseña: demo123
+  '$2a$10$.VTbUPug.CwBqEurWC/1GuCBAaZAK4ZBsbqwXFcWKpev31J/JvGQK', -- contraseña: demo123
     'DNI',
     '23456789',
     'Carlos Alberto Mendoza Silva',
@@ -415,7 +415,7 @@ VALUES
     (SELECT id FROM tiendas WHERE numero_doc = '20601234567'),
     (SELECT id FROM roles WHERE tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567') AND nombre = 'Vendedor'),
     'vendedor1@dulcemanjar.pe',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- contraseña: demo123
+  '$2a$10$.VTbUPug.CwBqEurWC/1GuCBAaZAK4ZBsbqwXFcWKpev31J/JvGQK', -- contraseña: demo123
     'DNI',
     '34567890',
     'Ana Patricia Torres López',
@@ -426,7 +426,7 @@ VALUES
     (SELECT id FROM tiendas WHERE numero_doc = '20601234567'),
     (SELECT id FROM roles WHERE tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567') AND nombre = 'Maestro Panadero'),
     'panadero@dulcemanjar.pe',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- contraseña: demo123
+  '$2a$10$.VTbUPug.CwBqEurWC/1GuCBAaZAK4ZBsbqwXFcWKpev31J/JvGQK', -- contraseña: demo123
     'DNI',
     '45678901',
     'José Luis Ramírez Castro',
@@ -437,7 +437,7 @@ VALUES
     (SELECT id FROM tiendas WHERE numero_doc = '20601234567'),
     (SELECT id FROM roles WHERE tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567') AND nombre = 'Almacenero'),
     'almacen@dulcemanjar.pe',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- contraseña: demo123
+  '$2a$10$.VTbUPug.CwBqEurWC/1GuCBAaZAK4ZBsbqwXFcWKpev31J/JvGQK', -- contraseña: demo123
     'DNI',
     '56789012',
     'Pedro Antonio Vásquez Ruiz',
@@ -449,7 +449,7 @@ VALUES
     (SELECT id FROM tiendas WHERE numero_doc = '20601234568'),
     (SELECT id FROM roles WHERE tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234568') AND nombre = 'Administrador'),
     'admin@panaderiasol.pe',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- contraseña: demo123
+  '$2a$10$.VTbUPug.CwBqEurWC/1GuCBAaZAK4ZBsbqwXFcWKpev31J/JvGQK', -- contraseña: demo123
     'DNI',
     '67890123',
     'Roberto Carlos Flores Díaz',
@@ -460,7 +460,7 @@ VALUES
     (SELECT id FROM tiendas WHERE numero_doc = '20601234568'),
     (SELECT id FROM roles WHERE tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234568') AND nombre = 'Vendedor'),
     'vendedor@panaderiasol.pe',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- contraseña: demo123
+  '$2a$10$.VTbUPug.CwBqEurWC/1GuCBAaZAK4ZBsbqwXFcWKpev31J/JvGQK', -- contraseña: demo123
     'DNI',
     '78901234',
     'Lucía Fernanda Sánchez Pérez',
@@ -471,7 +471,7 @@ VALUES
     (SELECT id FROM tiendas WHERE numero_doc = '20601234568'),
     (SELECT id FROM roles WHERE tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234568') AND nombre = 'Panadero'),
     'panadero@panaderiasol.pe',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- contraseña: demo123
+  '$2a$10$.VTbUPug.CwBqEurWC/1GuCBAaZAK4ZBsbqwXFcWKpev31J/JvGQK', -- contraseña: demo123
     'DNI',
     '89012345',
     'Miguel Ángel Gutiérrez Vargas',
@@ -483,7 +483,7 @@ VALUES
     (SELECT id FROM tiendas WHERE numero_doc = '20601234569'),
     (SELECT id FROM roles WHERE tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234569') AND nombre = 'Administrador'),
     'admin@tortasdelicias.pe',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- contraseña: demo123
+  '$2a$10$.VTbUPug.CwBqEurWC/1GuCBAaZAK4ZBsbqwXFcWKpev31J/JvGQK', -- contraseña: demo123
     'DNI',
     '90123456',
     'Carmen Rosa Morales Castillo',
@@ -494,7 +494,7 @@ VALUES
     (SELECT id FROM tiendas WHERE numero_doc = '20601234569'),
     (SELECT id FROM roles WHERE tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234569') AND nombre = 'Vendedor'),
     'vendedor@tortasdelicias.pe',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- contraseña: demo123
+  '$2a$10$.VTbUPug.CwBqEurWC/1GuCBAaZAK4ZBsbqwXFcWKpev31J/JvGQK', -- contraseña: demo123
     'DNI',
     '01234567',
     'Sandra Milena Herrera Quispe',
