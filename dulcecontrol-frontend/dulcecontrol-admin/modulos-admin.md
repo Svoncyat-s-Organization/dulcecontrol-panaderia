@@ -21,7 +21,7 @@
 
 - Existencias Insumos (Harina, Huevos)
 - Existencias Productos (Tortas en vitrina)
-  Futuro: Kardex/Movimientos
+- Movimientos de Inventario (Entradas/Salidas)
 
 6. Compras
 
