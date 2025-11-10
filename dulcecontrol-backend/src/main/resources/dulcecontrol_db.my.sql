@@ -8,9 +8,6 @@ COLLATE utf8mb4_unicode_ci;
 
 USE dulcecontrol_db;
 
--- Desactivar verificaciones de claves foráneas temporalmente para facilitar la creación
--- SET FOREIGN_KEY_CHECKS = 0;
-
 -- =================================
 --    TABLAS GEOGRÁFICAS (UBIGEO)
 -- =================================
@@ -19,7 +16,7 @@ CREATE TABLE IF NOT EXISTS ubigeo_departamentos (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     codigo_ubigeo CHAR(2) NOT NULL UNIQUE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS ubigeo_provincias (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -27,7 +24,7 @@ CREATE TABLE IF NOT EXISTS ubigeo_provincias (
     nombre VARCHAR(100) NOT NULL,
     codigo_ubigeo CHAR(4) NOT NULL UNIQUE,
     FOREIGN KEY (departamento_id) REFERENCES ubigeo_departamentos(id) ON DELETE RESTRICT
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS ubigeo_distritos (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -35,7 +32,7 @@ CREATE TABLE IF NOT EXISTS ubigeo_distritos (
     nombre VARCHAR(100) NOT NULL,
     codigo_ubigeo CHAR(6) NOT NULL UNIQUE,
     FOREIGN KEY (provincia_id) REFERENCES ubigeo_provincias(id) ON DELETE RESTRICT
-) ENGINE=InnoDB;
+);
 
 -- =================================
 -- TABLAS PARA EL SUPERADMINISTRADOR
@@ -54,7 +51,7 @@ CREATE TABLE IF NOT EXISTS usuarios_superadmin (
     creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     actualizado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     eliminado_en DATETIME
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS actividad_superadmin (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -64,7 +61,7 @@ CREATE TABLE IF NOT EXISTS actividad_superadmin (
     detalles JSON,
     creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (admin_id) REFERENCES usuarios_superadmin(id) ON DELETE SET NULL
-) ENGINE=InnoDB;
+);
 
 -- Tiendas
 
@@ -82,7 +79,7 @@ CREATE TABLE IF NOT EXISTS tiendas (
     creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     actualizado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     eliminado_en DATETIME
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS sedes (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -99,7 +96,7 @@ CREATE TABLE IF NOT EXISTS sedes (
     eliminado_en DATETIME,
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE CASCADE,
     FOREIGN KEY (distrito_id) REFERENCES ubigeo_distritos(id) ON DELETE SET NULL
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS dominios_tienda (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -113,7 +110,7 @@ CREATE TABLE IF NOT EXISTS dominios_tienda (
     creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     actualizado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 -- Planes y suscripciones
 
@@ -129,7 +126,7 @@ CREATE TABLE IF NOT EXISTS planes (
     activo BOOLEAN NOT NULL DEFAULT TRUE,
     creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     actualizado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS suscripciones (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -146,7 +143,7 @@ CREATE TABLE IF NOT EXISTS suscripciones (
     actualizado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE RESTRICT,
     FOREIGN KEY (plan_id) REFERENCES planes(id) ON DELETE RESTRICT
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS historial_suscripciones (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -161,7 +158,7 @@ CREATE TABLE IF NOT EXISTS historial_suscripciones (
     FOREIGN KEY (suscripcion_id) REFERENCES suscripciones(id) ON DELETE CASCADE,
     FOREIGN KEY (plan_anterior_id) REFERENCES planes(id),
     FOREIGN KEY (plan_nuevo_id) REFERENCES planes(id)
-) ENGINE=InnoDB;
+);
 
 -- Facturación (SaaS)
 
@@ -174,7 +171,7 @@ CREATE TABLE IF NOT EXISTS series (
     es_predeterminada BOOLEAN NOT NULL DEFAULT FALSE,
     creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     actualizado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS comprobantes (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -207,7 +204,7 @@ CREATE TABLE IF NOT EXISTS comprobantes (
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE RESTRICT,
     FOREIGN KEY (suscripcion_id) REFERENCES suscripciones(id) ON DELETE SET NULL,
     FOREIGN KEY (serie_id) REFERENCES series(id) ON DELETE RESTRICT
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS detalles_comprobante (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -219,7 +216,7 @@ CREATE TABLE IF NOT EXISTS detalles_comprobante (
     igv_item_centimos BIGINT NOT NULL,
     total_item_centimos BIGINT NOT NULL,
     FOREIGN KEY (comprobante_id) REFERENCES comprobantes(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS transacciones_pago (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -236,7 +233,7 @@ CREATE TABLE IF NOT EXISTS transacciones_pago (
     creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id),
     FOREIGN KEY (comprobante_id) REFERENCES comprobantes(id)
-) ENGINE=InnoDB;
+);
 
 -- Soporte
 
@@ -254,7 +251,7 @@ CREATE TABLE IF NOT EXISTS tickets_soporte (
     actualizado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE RESTRICT,
     FOREIGN KEY (asignado_a_id) REFERENCES usuarios_superadmin(id) ON DELETE SET NULL
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS mensajes_ticket (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -267,7 +264,7 @@ CREATE TABLE IF NOT EXISTS mensajes_ticket (
     creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (ticket_id) REFERENCES tickets_soporte(id) ON DELETE CASCADE,
     FOREIGN KEY (autor_admin_id) REFERENCES usuarios_superadmin(id) ON DELETE SET NULL
-) ENGINE=InnoDB;
+);
 
 -- =================================
 --   TABLAS PARA EL ADMINISTRADOR
@@ -284,14 +281,14 @@ CREATE TABLE IF NOT EXISTS roles (
     creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (tienda_id, nombre),
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS permisos (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     slug VARCHAR(100) NOT NULL UNIQUE,
     nombre_visible VARCHAR(100) NOT NULL,
     modulo VARCHAR(100) NOT NULL
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS roles_permisos (
     rol_id BIGINT NOT NULL,
@@ -299,7 +296,7 @@ CREATE TABLE IF NOT EXISTS roles_permisos (
     PRIMARY KEY (rol_id, permiso_id),
     FOREIGN KEY (rol_id) REFERENCES roles(id) ON DELETE CASCADE,
     FOREIGN KEY (permiso_id) REFERENCES permisos(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS usuarios_tienda (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -320,7 +317,7 @@ CREATE TABLE IF NOT EXISTS usuarios_tienda (
     UNIQUE (tienda_id, numero_doc),
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE CASCADE,
     FOREIGN KEY (rol_id) REFERENCES roles(id) ON DELETE RESTRICT
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS usuarios_tienda_tokens (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -333,7 +330,7 @@ CREATE TABLE IF NOT EXISTS usuarios_tienda_tokens (
     creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (token_hash),
     FOREIGN KEY (usuario_id) REFERENCES usuarios_tienda(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS usuario_sedes (
     usuario_id BIGINT NOT NULL,
@@ -342,7 +339,7 @@ CREATE TABLE IF NOT EXISTS usuario_sedes (
     PRIMARY KEY (usuario_id, sede_id),
     FOREIGN KEY (usuario_id) REFERENCES usuarios_tienda(id) ON DELETE CASCADE,
     FOREIGN KEY (sede_id) REFERENCES sedes(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS auditoria_usuarios (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -358,7 +355,7 @@ CREATE TABLE IF NOT EXISTS auditoria_usuarios (
     creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id),
     FOREIGN KEY (usuario_id) REFERENCES usuarios_tienda(id)
-) ENGINE=InnoDB;
+);
 
 -- Catálogo
 
@@ -376,7 +373,7 @@ CREATE TABLE IF NOT EXISTS categorias (
     UNIQUE (tienda_id, nombre),
     UNIQUE (tienda_id, slug),
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS productos (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -403,7 +400,7 @@ CREATE TABLE IF NOT EXISTS productos (
     UNIQUE (tienda_id, slug),
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE CASCADE,
     FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE SET NULL
-) ENGINE=InnoDB;
+);
 
 -- Compras e Insumos
 
@@ -423,7 +420,7 @@ CREATE TABLE IF NOT EXISTS insumos (
     creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (tienda_id, nombre),
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS proveedores (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -439,7 +436,7 @@ CREATE TABLE IF NOT EXISTS proveedores (
     activo BOOLEAN DEFAULT TRUE,
     creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS ordenes_compra (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -466,7 +463,7 @@ CREATE TABLE IF NOT EXISTS ordenes_compra (
     FOREIGN KEY (sede_destino_id) REFERENCES sedes(id),
     FOREIGN KEY (proveedor_id) REFERENCES proveedores(id),
     FOREIGN KEY (registrado_por) REFERENCES usuarios_tienda(id)
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS detalles_orden_compra (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -480,7 +477,7 @@ CREATE TABLE IF NOT EXISTS detalles_orden_compra (
     recibido_completo BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (orden_compra_id) REFERENCES ordenes_compra(id) ON DELETE CASCADE,
     FOREIGN KEY (insumo_id) REFERENCES insumos(id)
-) ENGINE=InnoDB;
+);
 
 -- Clientes
 
@@ -501,7 +498,7 @@ CREATE TABLE IF NOT EXISTS clientes (
     UNIQUE (tienda_id, tipo_doc, numero_doc),
     UNIQUE (tienda_id, email),
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS direcciones_cliente (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -516,7 +513,7 @@ CREATE TABLE IF NOT EXISTS direcciones_cliente (
     creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE CASCADE,
     FOREIGN KEY (distrito_id) REFERENCES ubigeo_distritos(id) ON DELETE SET NULL
-) ENGINE=InnoDB;
+);
 
 -- Ventas (POS y Storefront)
 
@@ -529,7 +526,7 @@ CREATE TABLE IF NOT EXISTS cajas (
     creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE CASCADE,
     FOREIGN KEY (sede_id) REFERENCES sedes(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS sesiones_caja (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -548,7 +545,7 @@ CREATE TABLE IF NOT EXISTS sesiones_caja (
     FOREIGN KEY (caja_id) REFERENCES cajas(id),
     FOREIGN KEY (usuario_apertura_id) REFERENCES usuarios_tienda(id),
     FOREIGN KEY (usuario_cierre_id) REFERENCES usuarios_tienda(id)
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS pedidos (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -585,7 +582,7 @@ CREATE TABLE IF NOT EXISTS pedidos (
     FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE SET NULL,
     FOREIGN KEY (sesion_caja_id) REFERENCES sesiones_caja(id),
     FOREIGN KEY (vendedor_id) REFERENCES usuarios_tienda(id)
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS direcciones_pedido (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -605,7 +602,7 @@ CREATE TABLE IF NOT EXISTS direcciones_pedido (
     codigo_postal VARCHAR(20),
     creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS detalles_pedido (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -617,7 +614,7 @@ CREATE TABLE IF NOT EXISTS detalles_pedido (
     notas_item TEXT,
     FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE,
     FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE RESTRICT
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS pagos_pedido (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -631,7 +628,7 @@ CREATE TABLE IF NOT EXISTS pagos_pedido (
     FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE,
     FOREIGN KEY (sesion_caja_id) REFERENCES sesiones_caja(id),
     FOREIGN KEY (registrado_por) REFERENCES usuarios_tienda(id)
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS personalizaciones_item_pedido (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -645,7 +642,7 @@ CREATE TABLE IF NOT EXISTS personalizaciones_item_pedido (
     fecha_limite_produccion DATETIME,
     costo_extra_personalizacion_centimos BIGINT DEFAULT 0,
     FOREIGN KEY (detalle_pedido_id) REFERENCES detalles_pedido(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS movimientos_caja (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -660,7 +657,7 @@ CREATE TABLE IF NOT EXISTS movimientos_caja (
     actualizado_en DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (sesion_caja_id) REFERENCES sesiones_caja(id),
     FOREIGN KEY (pedido_id) REFERENCES pedidos(id)
-) ENGINE=InnoDB;
+);
 
 -- Producción
 
@@ -677,7 +674,7 @@ CREATE TABLE IF NOT EXISTS recetas (
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE CASCADE,
     FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE,
     FOREIGN KEY (insumo_id) REFERENCES insumos(id) ON DELETE RESTRICT
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS stock_ideal (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -691,7 +688,7 @@ CREATE TABLE IF NOT EXISTS stock_ideal (
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE CASCADE,
     FOREIGN KEY (sede_id) REFERENCES sedes(id) ON DELETE CASCADE,
     FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS conteos_diarios (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -705,7 +702,7 @@ CREATE TABLE IF NOT EXISTS conteos_diarios (
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE CASCADE,
     FOREIGN KEY (sede_id) REFERENCES sedes(id) ON DELETE CASCADE,
     FOREIGN KEY (responsable_id) REFERENCES usuarios_tienda(id)
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS detalle_conteo_diario (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -716,7 +713,7 @@ CREATE TABLE IF NOT EXISTS detalle_conteo_diario (
     diferencia INTEGER GENERATED ALWAYS AS (cantidad_fisica - COALESCE(cantidad_sistema, cantidad_fisica)) STORED,
     FOREIGN KEY (conteo_id) REFERENCES conteos_diarios(id) ON DELETE CASCADE,
     FOREIGN KEY (producto_id) REFERENCES productos(id)
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS planes_produccion (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -736,7 +733,7 @@ CREATE TABLE IF NOT EXISTS planes_produccion (
     FOREIGN KEY (sede_id) REFERENCES sedes(id) ON DELETE CASCADE,
     FOREIGN KEY (generado_por) REFERENCES usuarios_tienda(id),
     FOREIGN KEY (confirmado_por) REFERENCES usuarios_tienda(id)
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS detalles_plan_produccion (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -744,6 +741,7 @@ CREATE TABLE IF NOT EXISTS detalles_plan_produccion (
     producto_id BIGINT NOT NULL,
     origen ENUM('stock_diario', 'pedido_cliente') NOT NULL DEFAULT 'stock_diario',
     pedido_cliente_id BIGINT,
+    detalle_pedido_id BIGINT,
     es_personalizado BOOLEAN NOT NULL DEFAULT FALSE,
     personalizacion_id BIGINT,
     cantidad_sugerida INTEGER NOT NULL,
@@ -756,8 +754,9 @@ CREATE TABLE IF NOT EXISTS detalles_plan_produccion (
     FOREIGN KEY (plan_id) REFERENCES planes_produccion(id) ON DELETE CASCADE,
     FOREIGN KEY (producto_id) REFERENCES productos(id),
     FOREIGN KEY (pedido_cliente_id) REFERENCES pedidos(id) ON DELETE SET NULL,
+    FOREIGN KEY (detalle_pedido_id) REFERENCES detalles_pedido(id) ON DELETE SET NULL,
     FOREIGN KEY (personalizacion_id) REFERENCES personalizaciones_item_pedido(id) ON DELETE SET NULL
-) ENGINE=InnoDB;
+);
 
 -- Inventario
 
@@ -773,7 +772,7 @@ CREATE TABLE IF NOT EXISTS inventario_insumos_sedes (
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE CASCADE,
     FOREIGN KEY (sede_id) REFERENCES sedes(id) ON DELETE CASCADE,
     FOREIGN KEY (insumo_id) REFERENCES insumos(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS inventario_productos (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -787,7 +786,7 @@ CREATE TABLE IF NOT EXISTS inventario_productos (
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE CASCADE,
     FOREIGN KEY (sede_id) REFERENCES sedes(id) ON DELETE CASCADE,
     FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS transferencias_inventario (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -808,7 +807,7 @@ CREATE TABLE IF NOT EXISTS transferencias_inventario (
     FOREIGN KEY (solicitado_por) REFERENCES usuarios_tienda(id),
     FOREIGN KEY (autorizado_por) REFERENCES usuarios_tienda(id),
     FOREIGN KEY (recibido_por) REFERENCES usuarios_tienda(id)
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS items_transferencia (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -821,7 +820,7 @@ CREATE TABLE IF NOT EXISTS items_transferencia (
     FOREIGN KEY (transferencia_id) REFERENCES transferencias_inventario(id),
     FOREIGN KEY (insumo_id) REFERENCES insumos(id),
     FOREIGN KEY (producto_id) REFERENCES productos(id)
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS movimientos_inventario_insumos (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -845,7 +844,7 @@ CREATE TABLE IF NOT EXISTS movimientos_inventario_insumos (
     FOREIGN KEY (plan_produccion_id) REFERENCES planes_produccion(id),
     FOREIGN KEY (transferencia_id) REFERENCES transferencias_inventario(id),
     FOREIGN KEY (responsable_id) REFERENCES usuarios_tienda(id)
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS movimientos_inventario_productos (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -867,7 +866,7 @@ CREATE TABLE IF NOT EXISTS movimientos_inventario_productos (
     FOREIGN KEY (pedido_id) REFERENCES pedidos(id),
     FOREIGN KEY (plan_produccion_id) REFERENCES planes_produccion(id),
     FOREIGN KEY (responsable_id) REFERENCES usuarios_tienda(id)
-) ENGINE=InnoDB;
+);
 
 -- Facturación Tienda
 
@@ -884,7 +883,7 @@ CREATE TABLE IF NOT EXISTS tienda_series (
     UNIQUE (tienda_id, serie),
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE CASCADE,
     FOREIGN KEY (sede_id) REFERENCES sedes(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS tienda_comprobantes (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -920,7 +919,7 @@ CREATE TABLE IF NOT EXISTS tienda_comprobantes (
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE CASCADE,
     FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE RESTRICT,
     FOREIGN KEY (serie_id) REFERENCES tienda_series(id) ON DELETE RESTRICT
-) ENGINE=InnoDB;
+);
 
 -- Configuración
 
@@ -950,7 +949,7 @@ CREATE TABLE IF NOT EXISTS configuracion_tienda (
     actualizado_en DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE CASCADE,
     FOREIGN KEY (ubigeo_fiscal) REFERENCES ubigeo_distritos(codigo_ubigeo)
-) ENGINE=InnoDB;
+);
 
 -- CMS
 
@@ -968,7 +967,4 @@ CREATE TABLE IF NOT EXISTS paginas_storefront (
     actualizado_en DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE (tienda_id, slug),
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- Reactivar verificación de claves foráneas
--- SET FOREIGN_KEY_CHECKS = 1;
+);

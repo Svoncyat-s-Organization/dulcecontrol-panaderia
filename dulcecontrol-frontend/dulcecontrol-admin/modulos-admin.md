@@ -19,7 +19,6 @@
 
 5. Inventario
 
-- Existencias Insumos (Harina, Huevos)
 - Existencias Productos (Tortas en vitrina)
 - Movimientos de Inventario (Entradas/Salidas)
 
@@ -27,6 +26,7 @@
 
 - Proveedores
 - Órdenes de Compra (Al recibirlas, aumentan el Inventario de Insumos)
+- Insumos (Materias primas)
 
 7. Facturación
 

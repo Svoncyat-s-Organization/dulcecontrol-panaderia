@@ -1,6 +1,6 @@
 # Blueprint MVC con principios SOLID para backend REST
 
-_Fecha: 2025-11-03_
+_Fecha: 2025-11-10 (Actualizado)_
 
 Este documento describe cómo estructuraría un backend Spring Boot siguiendo estrictamente el patrón **Modelo–Vista–Controlador (MVC)**, reforzado con principios **SOLID**. La capa de vista puede residir en otra aplicación (por ejemplo PHP); aquí nos centramos en el backend que expone la lógica y los datos.
 
@@ -10,112 +10,92 @@ Este documento describe cómo estructuraría un backend Spring Boot siguiendo es
 
 - **Respetar MVC puro**: separar claramente Controlador, Modelo y Vista.
 - **Aplicar SOLID**: lograr componentes mantenibles, extensibles y testeables.
-- **Fomentar cohesión por dominio**: organizar código por contexto funcional sin romper MVC.
-- **Cuidar seguridad y consistencia**: centralizar autenticación, validaciones, errores y configuraciones sensibles.
+- **Fomentar cohesión por dominio**: organizar código por contexto funcional (**Package-by-Feature**) sin romper las capas MVC internas.
+- **Cuidar seguridad y consistencia**: centralizar autenticación, validaciones, errores y configuraciones sensibles, **mejorando el manejo de sesiones**.
 
 ---
 
-## 2. Visión arquitectónica MVC
+## 2. Visión arquitectónica MVC (Híbrida)
+
+Hemos adaptado el MVC clásico para que viva dentro de cada módulo funcional, manteniendo las nomenclaturas estándar académicas.
 
 ```
-Vista externa (PHP, SPA, Thymeleaf)
+Vista externa (React, PHP, SPA)
           ▲
           │  JSON/HTML
           │
 ┌──────────────────────┐
-│ Controladores Spring │   ← C
+│ Capa Controladores   │   ← C (Recibe HTTP, valida DTOs)
 └──────────┬───────────┘
-           │ invoca al modelo
+           │ invoca
            ▼
 ┌──────────────────────┐
-│ Modelo (Dominio)     │   ← M
-│  ├─ Servicios        │
-│  ├─ Casos de uso     │
-│  ├─ Entidades/VOs    │
-│  └─ Reglas de negocio│
-└──────────┬───────────┘
-           │ usa infraestructura
-           ▼
-┌──────────────────────┐
-│ Persistencia & Auth  │
-│  ├─ Repositorios JPA │
-│  ├─ Mappers          │
-│  └─ Integraciones    │
+│ Capa Modelo (Interna)│   ← M (Núcleo del módulo)
+│  ├─ Servicios        │      (Lógica de negocio @Service)
+│  ├─ Entidades JPA    │      (Datos y reglas simples @Entity)
+│  └─ Repositorios     │      (Acceso a datos @Repository)
 └──────────────────────┘
 ```
 
-- **Controladores** traducen peticiones HTTP en llamadas al modelo y devuelven respuestas (JSON, vistas).
-- **Modelo** encapsula reglas de negocio, entidades, value objects y servicios.
-- **Vista** (externalizada) consume los endpoints expuestos por los controladores.
-- **Persistencia/Infraestructura** es un detalle interno del modelo; se accede mediante interfaces.
+- **Controladores** traducen peticiones HTTP en llamadas al servicio y devuelven DTOs.
+- **Modelo** (ahora compuesto por Service + Entity + Repository) encapsula toda la lógica y datos del módulo.
+- **Vista** (externalizada) consume los endpoints expuestos.
 
 ---
 
 ## 3. Estructura recomendada del proyecto
 
 ```
-src/main/java/fisi/unsm/api/
+src/main/java/com/dulcecontrol/bakery/
 ├── ApiApplication.java
-├── config/
-│   ├── CorsConfig.java
-│   ├── JacksonConfig.java
-│   ├── SecurityConfig.java
-│   └── SwaggerConfig.java
+├── config/                         # Configuraciones globales
+│   └── SecurityConfig.java
 ├── shared/
 │   ├── annotation/
 │   ├── exception/
-│   │   ├── ApiExceptionHandler.java
-│   │   └── BusinessException.java
+│   │   └── ApiExceptionHandler.java
 │   ├── enum/
 │   │   ├── TipoDocumento.java
 │   │   └── TipoComprobante.java
 │   └── util/
 │       └── DateProvider.java
 ├── feature/admin/
-│   ├── cliente/
+│   ├── clientes/                   # Módulo encapsulado
 │   │   ├── controller/
-│   │   │   └── ClienteController.java
-│   │   │   ├── dto/
-│   │   │   │   ├── ClienteRequest.java
-│   │   │   │   └── ClienteResponse.java
+│   │   │   ├── ClienteController.java
+│   │   │   └── dto/                # DTOs para contratos externos
+│   │   │       ├── ClienteRequest.java
+│   │   │       └── ClienteResponse.java
 │   │   ├── service/
-│   │   │   └── IClienteService.java
-│   │   │       └── impl/
-│   │   │           └── ClienteService.java
-│   │   ├── entity/
+│   │   │   ├── IClienteService.java
+│   │   │   └── impl/
+│   │   │       └── ClienteService.java
+│   │   ├── entity/                 # Nomenclatura estándar académica (@Entity)
 │   │   │   ├── Cliente.java
-│   │   │   └── DireccionCliente.java
-│   │   │   ├── enum/
-│   │   │   │   └── EstadoCliente.java
-│   │   └── persistence/
-│   │       ├── ClienteEntity.java
-│   │       ├── ClienteJpaRepository.java
-│   │       └── ClienteRepositoryAdapter.java
+│   │   │   ├── DireccionCliente.java
+│   │   │   └── enum/
+│   │   │      └── EstadoCliente.java
+│   │   └── repository/             # Interfaces directas (@Repository)
+│   │       └── ClienteRepository.java
 │   ├── ventas/
 │   │   └── ... (misma organización MVC)
-│   └── seguridad/
+│   └── seguridad/                  # Módulo de gestión de usuarios
 │       ├── controller/
-│       │   └── AuthController.java
-│       ├── model/
-│       │   ├── AuthService.java
-│       │   ├── JwtTokenService.java
-│       │   └── UsuarioSistema.java
-│       └── persistence/
-│           ├── UsuarioEntity.java
-│           └── UsuarioRepositoryAdapter.java
-└── security/
+│       │   ├── UsuarioController.java
+│       │   ├── AuthController.java
+│       │   └── dto/ ...
+│       ├── service/
+│       │   └── ...
+│       ├── entity/                 # MEJORA: Separación de identidad y sesión
+│       │   ├── UsuarioTienda.java  # Datos del empleado
+│       │   └── UsuarioToken.java   # Sesiones activas (múltiples por usuario)
+│       └── repository/
+│           ├── UsuarioTiendaRepository.java
+│           └── UsuarioTokenRepository.java
+└── security/                       # Infraestructura técnica (Filtros)
     ├── JwtFilter.java
-    ├── JwtProvider.java
-    └── UserDetailsServiceImpl.java
+    └── JwtProvider.java
 ```
-
-**Convenciones clave**
-
-- `feature/<contexto>` agrupa el código por dominio (cliente, ventas, seguridad) manteniendo carpetas MVC (`controller`, `model`, `dto`, `persistence`, `service`, `enum`, `service/impl`).
-- `model` representa la M: servicios, entidades de dominio, value objects y reglas.
-- `controller` es la C. La V se resuelve externamente.
-- `persistence` contiene adaptadores que implementan interfaces del modelo y usan Spring Data u otras tecnologías.
-- `shared` almacena utilidades transversales (validaciones, excepciones, helpers) sin romper MVC.
 
 ---
 
@@ -123,105 +103,65 @@ src/main/java/fisi/unsm/api/
 
 ### 4.1 Single Responsibility (SRP)
 
-- **Controladores**: reciben peticiones, validan DTOs, invocan servicios del modelo y formatean respuestas.
-- **Servicios del modelo**: encapsulan reglas de negocio (crear usuario, actualizar usuario, emitir token).
-- **Entidades/Value Objects**: protegen invariantes (ej. `UsuarioId`, `CorreoUsuario`).
-- **Adaptadores de persistencia**: convierten entre el dominio y la base de datos, sin lógica extra.
+- **Controladores**: reciben peticiones, validan DTOs, invocan servicios y formatean respuestas. No tocan Entidades JPA directamente si es posible evitarlo.
+- **Servicios**: encapsulan reglas de negocio (crear usuario, actualizar cliente, emitir venta).
+- **Entidades (@Entity)**: representan la estructura de datos y reglas de validación básicas.
 
 ### 4.2 Open/Closed (OCP)
 
-- Interfaces del modelo (`ClienteRepository`, `TokenProvider`) permiten nuevas implementaciones sin modificar consumidores.
-- Estrategias configurables (ej. `PoliticaCliente`) facilitan cambiar reglas mediante inyección de dependencias.
+- El uso de interfaces en servicios (`IClienteService`) y repositorios (`JpaRepository`) permite extender comportamiento sin modificar el código cliente (controladores).
 
 ### 4.3 Liskov Substitution (LSP)
 
-- Evitar herencia compleja entre controladores/servicios. Utilizar composición o interfaces para comportamientos reutilizables.
-- Si hay clases base (`AbstractController`), no deben alterar expectativas de las subclases.
+- Las implementaciones de servicios (`ClienteServiceImpl`) deben cumplir exactamente el contrato definido en sus interfaces (`IClienteService`).
 
 ### 4.4 Interface Segregation (ISP)
 
-- Separar contratos de lectura y escritura (`ClienteCommandRepository`, `ClienteQueryRepository`) cuando sea necesario.
-- Controladores dependen de servicios específicos (`ClienteCommandService`, `ClienteQueryService`) sin métodos innecesarios.
+- Cada módulo (_feature_) define sus propias interfaces de servicio y repositorio, evitando interfaces monolíticas gigantes.
 
 ### 4.5 Dependency Inversion (DIP)
 
-- Inyección por constructor para todas las dependencias.
-- Servicios del modelo dependen de interfaces; adaptadores de infraestructura las implementan.
-- Componentes de seguridad (JWT, hashing) se abstraen en interfaces configurables.
+- Los controladores dependen de **abstracciones** (`IClienteService`), no de implementaciones concretas (`ClienteServiceImpl`). Spring maneja esta inyección.
 
 ---
 
-## 5. Detalle por capa
+## 5. Detalle por capa (Ajustado a Requisitos Académicos)
 
 ### 5.1 Controlador (C)
 
 - Endpoints versionados (`/api/admin/v1/clientes`).
-- Validaciones con `@Valid` y restricciones (`@NotBlank`, `@Email`).
-- Manejo de excepciones delegando a `ApiExceptionHandler` para respuestas consistentes.
-- Respuestas en DTOs o `ModelAndView` si se usa una vista server-side directa.
+- Validaciones con `@Valid` en los DTOs de entrada.
+- Manejo de excepciones delegando a `ApiExceptionHandler`.
 
-### 5.2 Modelo (M)
+### 5.2 Modelo (M) - Híbrido
 
-- Servicios anotados con `@Service`, que implementan lógica atómica y transaccional (`@Transactional`).
-- Entidades de dominio libres de anotaciones JPA; la persistencia se maneja en adaptadores.
-- Value Objects garantizan formatos válidos (IDs, emails, teléfonos) y se reutilizan en todo el dominio.
-- Eventos de dominio (`ClienteCreadoEvent`) publicados mediante `ApplicationEventPublisher` para notificaciones internas.
+- **Servicios**: Anotados con `@Service` y `@Transactional`. Orquestan la lógica entre entidades y repositorios.
+- **Entidades**: Clases anotadas con `@Entity` que reflejan las tablas de la BD. Para este enfoque académico, pueden contener lógica de dominio ligera.
+- **Repositorios**: Interfaces que extienden `JpaRepository`. Se usan directamente en los servicios para cumplir con el estándar esperado.
 
-### 5.3 Persistencia/Infraestructura
+### 5.3 Vista (V)
 
-- Entidades JPA (`ClienteEntity`) con `@Entity`, relaciones y soft delete si aplica.
-- Repositorios Spring Data (`ClienteJpaRepository`) expuestos solo a la infraestructura.
-- Adaptadores (`ClienteRepositoryAdapter`) implementan interfaces del modelo, delegando en `ClienteJpaRepository` y mapeando entidades ↔ dominio (MapStruct recomendado).
-- Otros adaptadores (mensajería, terceros) siguen el mismo patrón.
-
-### 5.4 Vista (V)
-
-- Puede ser un front independiente (PHP, React, Angular). Consume JSON del backend.
-- Si se necesita SSR, ubicar plantillas en `src/main/resources/templates`; los controladores retornan `ModelAndView` reutilizando la misma lógica del modelo.
+- (Sin cambios: es externa).
 
 ---
 
-## 6. Seguridad integrada en MVC
+## 6. Seguridad integrada y mejorada
 
-- `AuthController` (C) recibe credenciales y delega en `AuthService` (M).
-- `AuthService` valida clientes, compara contraseñas vía `PasswordHasher` y genera tokens mediante `JwtTokenService` (interfaces del modelo).
-- Implementaciones concretas (`BCryptPasswordHasher`, `JwtProvider`) viven en infraestructura.
-- `JwtFilter` toma tokens y construye autenticaciones apoyándose en servicios del modelo, sin acceder directamente a repositorios.
+- `AuthController` (C) recibe credenciales.
+- `AuthService` (M) valida al usuario contra `UsuarioTiendaRepository`.
+- Si es válido, genera un token usando `JwtProvider` y **lo guarda en `UsuarioTokenRepository`**. Esto permite tener múltiples sesiones (móvil, web) y revocarlas individualmente, superando el modelo de token único en la tabla de usuario.
+- `JwtFilter` valida cada petición contra la tabla de tokens activos.
 
 ---
 
 ## 7. Estrategia de pruebas
 
 - **Controladores**: `@WebMvcTest` con mocks de servicios.
-- **Modelo**: pruebas unitarias (JUnit + Mockito) sobre servicios, entidades y políticas.
-- **Persistencia**: `@DataJpaTest` para validar mappings y queries.
-- **Integración**: `@SpringBootTest` con `MockMvc` o `TestRestTemplate` para flujos completos.
+- **Servicios**: Pruebas unitarias con JUnit + Mockito (mockeando repositorios).
+- **Repositorios**: `@DataJpaTest` para validar consultas personalizadas.
 
 ---
 
-## 8. Herramientas complementarias
+## 8. Conclusión
 
-- **MapStruct**: mapeos automáticos entre dominio, DTOs y entidades JPA.
-- **Bean Validation**: reglas declarativas en DTOs y validaciones personalizadas en el modelo.
-- **OpenAPI/Swagger**: documentación de endpoints consumidos por la vista.
-- **Flyway/Liquibase**: control de versiones de base de datos.
-
----
-
-## 9. Checklist MVC + SOLID
-
-- [ ] Controladores sin acceso directo a repositorios.
-- [ ] Servicios del modelo encapsulan reglas y dependen de interfaces.
-- [ ] Entidades del modelo sin anotaciones de infraestructura.
-- [ ] Adaptadores implementan interfaces del modelo y manejan persistencia.
-- [ ] DTOs diferenciados de entidades y value objects.
-- [ ] Seguridad centralizada (hashing, tokens) mediante interfaces inyectables.
-- [ ] Validaciones declarativas complementadas con reglas de negocio en el modelo.
-- [ ] Manejo de excepciones uniforme (`ApiExceptionHandler`).
-- [ ] Pruebas que cubren capas C, M e infraestructura.
-
----
-
-## 10. Conclusión
-
-Este blueprint mantiene la simplicidad exigida por el patrón MVC, pero distribuye responsabilidades según SOLID: controladores ligeros, modelo robusto, infraestructura separable. Con esta base, el backend se integra fácilmente con la vista externa y ofrece una guía profesional para escalar el proyecto académico.
+Este blueprint ajustado mantiene la simplicidad exigida académicamente (usando capas estándar directamente), pero organiza el código de forma profesional por _features_ y mejora significativamente la seguridad de las sesiones, ofreciendo un backend robusto y escalable para el SaaS.

@@ -701,6 +701,7 @@ CREATE TABLE IF NOT EXISTS detalles_plan_produccion (
     producto_id BIGINT NOT NULL REFERENCES productos(id),
     origen origenes_produccion NOT NULL DEFAULT 'stock_diario',
     pedido_cliente_id BIGINT REFERENCES pedidos(id) ON DELETE SET NULL,
+    detalle_pedido_id BIGINT REFERENCES detalles_pedido(id) ON DELETE SET NULL,
     es_personalizado BOOLEAN NOT NULL DEFAULT FALSE,
     personalizacion_id BIGINT REFERENCES personalizaciones_item_pedido(id) ON DELETE SET NULL,
     cantidad_sugerida INTEGER NOT NULL,
