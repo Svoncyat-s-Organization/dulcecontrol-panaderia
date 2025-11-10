@@ -28,14 +28,16 @@
 - Proveedores
 - Órdenes de Compra (Al recibirlas, aumentan el Inventario de Insumos)
 
-7. Catálogo (Tu vitrina comercial)
+7. Facturación
+
+8. Catálogo (Tu vitrina comercial)
 
 - Productos (Precios, fotos, descripción)
 - Categorías
 
-8. Reportes
+9. Reportes
 
-9. Configuración & Seguridad
+10. Configuración & Seguridad
 
 - Usuarios y Roles
 - Datos de Empresa (SUNAT)
