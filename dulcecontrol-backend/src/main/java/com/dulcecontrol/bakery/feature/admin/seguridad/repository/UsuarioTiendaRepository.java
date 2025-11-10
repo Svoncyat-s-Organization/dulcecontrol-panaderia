@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -21,4 +22,12 @@ public interface UsuarioTiendaRepository extends JpaRepository<UsuarioTienda, Lo
     boolean existsByTiendaIdAndCorreo(Long tiendaId, String correo);
 
     boolean existsByTiendaIdAndNumeroDoc(Long tiendaId, String numeroDoc);
+
+    boolean existsByTiendaIdAndCorreoAndIdNot(Long tiendaId, String correo, Long id);
+
+    boolean existsByTiendaIdAndNumeroDocAndIdNot(Long tiendaId, String numeroDoc, Long id);
+
+    List<UsuarioTienda> findByTiendaId(Long tiendaId);
+
+    Optional<UsuarioTienda> findByIdAndTiendaId(Long id, Long tiendaId);
 }
