@@ -1,0 +1,21 @@
+package com.dulcecontrol.bakery.feature.superadmin.seguridad.repository;
+
+import com.dulcecontrol.bakery.feature.superadmin.seguridad.entity.UsuarioSuperadmin;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+@Repository
+public interface UsuarioSuperadminRepository extends JpaRepository<UsuarioSuperadmin, Long> {
+
+    Optional<UsuarioSuperadmin> findByCorreo(String correo);
+
+    boolean existsByCorreo(String correo);
+
+    boolean existsByNumeroDoc(String numeroDoc);
+
+    boolean existsByCorreoAndIdNot(String correo, Long id);
+
+    boolean existsByNumeroDocAndIdNot(String numeroDoc, Long id);
+}
