@@ -37,7 +37,7 @@ VALUES
     '20601234567',
     'Dulce Manjar Sociedad Anónima Cerrada',
     'Av. Larco 789, Miraflores, Lima',
-    (SELECT codigo_ubigeo FROM ubigeo_distritos d 
+    (SELECT d.codigo_ubigeo FROM ubigeo_distritos d 
      INNER JOIN ubigeo_provincias p ON p.id = d.provincia_id 
      INNER JOIN ubigeo_departamentos dep ON dep.id = p.departamento_id 
      WHERE d.nombre = 'MIRAFLORES' AND p.nombre = 'LIMA' AND dep.nombre = 'LIMA'),
@@ -78,7 +78,7 @@ VALUES
     '20601234568',
     'Panadería El Sol Empresa Individual de Responsabilidad Limitada',
     'Av. Universitaria 456, Los Olivos, Lima',
-    (SELECT codigo_ubigeo FROM ubigeo_distritos d 
+    (SELECT d.codigo_ubigeo FROM ubigeo_distritos d 
      INNER JOIN ubigeo_provincias p ON p.id = d.provincia_id 
      INNER JOIN ubigeo_departamentos dep ON dep.id = p.departamento_id 
      WHERE d.nombre = 'LOS OLIVOS' AND p.nombre = 'LIMA' AND dep.nombre = 'LIMA'),
@@ -118,7 +118,7 @@ VALUES
     '20601234569',
     'Tortas & Delicias Sociedad Anónima Cerrada',
     'Av. Benavides 321, Santiago de Surco, Lima',
-    (SELECT codigo_ubigeo FROM ubigeo_distritos d 
+    (SELECT d.codigo_ubigeo FROM ubigeo_distritos d 
      INNER JOIN ubigeo_provincias p ON p.id = d.provincia_id 
      INNER JOIN ubigeo_departamentos dep ON dep.id = p.departamento_id 
      WHERE d.nombre = 'SANTIAGO DE SURCO' AND p.nombre = 'LIMA' AND dep.nombre = 'LIMA'),
