@@ -1,280 +1,234 @@
 # Módulo de Inventario - DulceControl
 
-## Descripción
-Módulo completo para la gestión de inventario de insumos y productos terminados, incluyendo transferencias entre sedes y trazabilidad de movimientos.
+## Descripción General
 
-## Estructura del Módulo
+El módulo de inventario gestiona el control de existencias tanto de insumos (materias primas) como de productos terminados en un sistema **multi-tenant** y **multi-sede**. Permite realizar seguimiento en tiempo real de las cantidades disponibles, registrar movimientos de inventario, y gestionar transferencias entre sedes.
+
+## Arquitectura
+
+El módulo sigue una arquitectura en capas:
 
 ```
-inventario/
-├── entity/
-│   ├── enums/
-│   │   ├── TipoMovimientoInsumo.java
-│   │   ├── MotivoMovimientoProducto.java
-│   │   └── EstadoTransferencia.java
+feature/admin/inventario/
+├── controller/           # Controladores REST (API endpoints)
+│   ├── dto/             # DTOs para request/response
+│   ├── InventarioInsumoSedeController.java
+│   ├── InventarioProductoController.java
+│   ├── TransferenciaInventarioController.java
+│   ├── MovimientoInventarioInsumoController.java
+│   └── MovimientoInventarioProductoController.java
+├── entity/              # Entidades JPA (modelo de datos)
+│   ├── enums/           # Enumeraciones
 │   ├── InventarioInsumoSede.java
 │   ├── InventarioProducto.java
 │   ├── TransferenciaInventario.java
 │   ├── ItemTransferencia.java
 │   ├── MovimientoInventarioInsumo.java
 │   └── MovimientoInventarioProducto.java
-├── repository/
-│   ├── InventarioInsumoSedeRepository.java
-│   ├── InventarioProductoRepository.java
-│   ├── TransferenciaInventarioRepository.java
-│   ├── ItemTransferenciaRepository.java
-│   ├── MovimientoInventarioInsumoRepository.java
-│   └── MovimientoInventarioProductoRepository.java
-├── service/
-│   ├── IInventarioInsumoSedeService.java
-│   ├── IInventarioProductoService.java
-│   ├── ITransferenciaInventarioService.java
-│   ├── IMovimientoInventarioInsumoService.java
-│   ├── IMovimientoInventarioProductoService.java
-│   └── impl/
-│       ├── InventarioInsumoSedeService.java
-│       ├── InventarioProductoService.java
-│       ├── TransferenciaInventarioService.java
-│       ├── MovimientoInventarioInsumoService.java
-│       └── MovimientoInventarioProductoService.java
-└── controller/
-    ├── dto/
-    │   ├── InventarioInsumoSedeDTO.java
-    │   ├── InventarioProductoDTO.java
-    │   ├── TransferenciaInventarioDTO.java
-    │   ├── ItemTransferenciaDTO.java
-    │   ├── MovimientoInventarioInsumoDTO.java
-    │   └── MovimientoInventarioProductoDTO.java
-    ├── InventarioInsumoSedeController.java
-    ├── InventarioProductoController.java
-    ├── TransferenciaInventarioController.java
-    ├── MovimientoInventarioInsumoController.java
-    └── MovimientoInventarioProductoController.java
+├── repository/          # Repositorios JPA (acceso a datos)
+├── service/             # Interfaces de servicios
+│   └── impl/           # Implementaciones de servicios
+└── README.md
 ```
 
-## Entidades
+## Entidades Principales
 
 ### 1. InventarioInsumoSede
-Almacena las existencias actuales de insumos (materias primas) por sede.
-- Cantidad con precisión decimal (12,4)
-- Ubicación física en almacén
-- Unique constraint por (sede_id, insumo_id)
+Representa el inventario de insumos (materias primas) por sede.
+
+**Campos principales:**
+- `tiendaId`: ID de la tienda (multi-tenant)
+- `sedeId`: ID de la sede (multi-sede)
+- `insumoId`: ID del insumo
+- `cantidadActual`: Cantidad disponible (BigDecimal)
+- `ubicacionFisica`: Ubicación física del insumo
 
 ### 2. InventarioProducto
-Almacena las existencias actuales de productos terminados por sede.
-- Cantidad entera
-- Ubicación física (vitrina, refrigerador, etc.)
-- Unique constraint por (sede_id, producto_id)
+Representa el inventario de productos terminados por sede.
+
+**Campos principales:**
+- `tiendaId`: ID de la tienda
+- `sedeId`: ID de la sede
+- `productoId`: ID del producto
+- `cantidadActual`: Cantidad disponible (Integer)
+- `ubicacionFisica`: Ubicación física del producto
 
 ### 3. TransferenciaInventario
 Gestiona las transferencias de inventario entre sedes.
-- Estados: pendiente, en_transito, recibido, cancelado
-- Soft delete (cancelado)
-- Trazabilidad completa con usuarios y fechas
 
-### 4. ItemTransferencia
-Detalle de los items transferidos (insumos o productos).
-- Validación: debe tener insumo_id O producto_id, no ambos
-- Cantidades enviadas y recibidas
+**Estados:**
+- `PENDIENTE`: Transferencia solicitada
+- `EN_TRANSITO`: Transferencia enviada
+- `RECIBIDO`: Transferencia recibida
+- `CANCELADO`: Transferencia cancelada (soft delete)
 
-### 5. MovimientoInventarioInsumo
-Historial de todos los movimientos de insumos.
-- Tipos: ENTRADA_COMPRA, SALIDA_PRODUCCION, TRANSFERENCIA, AJUSTE, MERMA, etc.
-- Cantidades anterior, movimiento y posterior
-- Referencias a orden de compra, plan de producción, transferencia
+**Campos principales:**
+- `sedeOrigenId`: Sede de origen
+- `sedeDestinoId`: Sede de destino
+- `estado`: Estado actual de la transferencia
+- `items`: Lista de items a transferir
 
-### 6. MovimientoInventarioProducto
-Historial de todos los movimientos de productos.
-- Motivos: produccion, venta, merma, ajuste, transferencia, devolucion
-- Cantidades anterior, movimiento y posterior
-- Referencias a pedido, plan de producción
+### 4. MovimientoInventarioInsumo / MovimientoInventarioProducto
+Registra todos los movimientos de inventario para auditoría y trazabilidad.
+
+**Tipos de Movimiento:**
+- `ENTRADA`: Ingreso de stock
+- `SALIDA`: Salida de stock
+- `AJUSTE`: Ajuste de inventario
+- `TRANSFERENCIA`: Transferencia entre sedes
 
 ## Endpoints API
 
 ### Inventario de Insumos
-**Base URL:** `/api/admin/inventario/insumos`
 
-- `GET /` - Obtener todos los inventarios de insumos
-- `GET /{id}` - Obtener por ID
-- `GET /tienda/{tiendaId}` - Obtener por tienda
-- `GET /sede/{sedeId}` - Obtener por sede
-- `GET /sede/{sedeId}/insumo/{insumoId}` - Obtener inventario específico
-- `GET /sede/{sedeId}/bajo?cantidadMinima=10.0` - Obtener insumos con stock bajo
-- `POST /` - Crear nuevo inventario
+**Base URL:** `/api/admin/tiendas/{tiendaId}/inventario/insumos`
+
+- `GET /` - Listar todo el inventario de insumos de la tienda
+- `GET /sede/{sedeId}` - Listar inventario de una sede específica
+- `GET /sede/{sedeId}/bajo-stock?cantidadMinima=10` - Listar insumos con bajo stock
+- `GET /{id}` - Obtener un inventario específico
+- `POST /` - Crear nuevo registro de inventario
 - `PUT /{id}` - Actualizar inventario
 - `DELETE /{id}` - Eliminar inventario
 
 ### Inventario de Productos
-**Base URL:** `/api/admin/inventario/productos`
 
-- `GET /` - Obtener todos los inventarios de productos
-- `GET /{id}` - Obtener por ID
-- `GET /tienda/{tiendaId}` - Obtener por tienda
-- `GET /sede/{sedeId}` - Obtener por sede
-- `GET /sede/{sedeId}/producto/{productoId}` - Obtener inventario específico
-- `GET /sede/{sedeId}/bajo?cantidadMinima=5` - Obtener productos con stock bajo
-- `GET /sede/{sedeId}/agotados` - Obtener productos agotados
-- `POST /` - Crear nuevo inventario
+**Base URL:** `/api/admin/tiendas/{tiendaId}/inventario/productos`
+
+- `GET /` - Listar todo el inventario de productos de la tienda
+- `GET /sede/{sedeId}` - Listar inventario de una sede específica
+- `GET /sede/{sedeId}/bajo-stock?cantidadMinima=5` - Listar productos con bajo stock
+- `GET /{id}` - Obtener un inventario específico
+- `POST /` - Crear nuevo registro de inventario
 - `PUT /{id}` - Actualizar inventario
 - `DELETE /{id}` - Eliminar inventario
 
 ### Transferencias
-**Base URL:** `/api/admin/inventario/transferencias`
 
-- `GET /` - Obtener todas las transferencias
-- `GET /{id}` - Obtener por ID (incluye items)
-- `GET /tienda/{tiendaId}` - Obtener por tienda
-- `GET /sede/{sedeId}` - Obtener por sede (origen o destino)
-- `GET /estado/{estado}` - Obtener por estado (pendiente, en_transito, recibido)
-- `GET /rango-fechas?fechaInicio=...&fechaFin=...` - Obtener por rango de fechas
-- `POST /` - Crear nueva transferencia (incluir items)
-- `PUT /{id}` - Actualizar transferencia
-- `PATCH /{id}/estado?nuevoEstado=...` - Cambiar estado
-- `PATCH /{id}/autorizar?autorizadoPor=...` - Autorizar y enviar transferencia
-- `PATCH /{id}/recibir?recibidoPor=...` - Confirmar recepción
+**Base URL:** `/api/admin/tiendas/{tiendaId}/inventario/transferencias`
+
+- `GET /` - Listar todas las transferencias
+- `GET /estado/{estado}` - Listar transferencias por estado
+- `GET /{id}` - Obtener una transferencia específica
+- `POST /` - Crear nueva transferencia
+- `PUT /{id}` - Actualizar transferencia (solo si está PENDIENTE)
+- `PATCH /{id}/estado?nuevoEstado=EN_TRANSITO` - Cambiar estado de transferencia
 - `DELETE /{id}` - Cancelar transferencia (soft delete)
 
-### Movimientos de Insumos
-**Base URL:** `/api/admin/inventario/movimientos/insumos`
+### Movimientos de Inventario (Insumos)
 
-- `GET /` - Obtener todos los movimientos
-- `GET /{id}` - Obtener por ID
-- `GET /tienda/{tiendaId}` - Obtener por tienda
-- `GET /sede/{sedeId}` - Obtener por sede
-- `GET /insumo/{insumoId}` - Obtener por insumo
-- `GET /sede/{sedeId}/insumo/{insumoId}` - Obtener historial específico
-- `GET /tienda/{tiendaId}/tipo/{tipoMovimiento}` - Filtrar por tipo
-- `GET /rango-fechas?fechaInicio=...&fechaFin=...` - Obtener por rango de fechas
-- `POST /` - Registrar nuevo movimiento
+**Base URL:** `/api/admin/tiendas/{tiendaId}/inventario/movimientos/insumos`
 
-### Movimientos de Productos
-**Base URL:** `/api/admin/inventario/movimientos/productos`
+- `GET /` - Listar todos los movimientos
+- `GET /sede/{sedeId}` - Listar movimientos de una sede
+- `GET /sede/{sedeId}/paginado` - Listar movimientos paginados
+- `GET /sede/{sedeId}/insumo/{insumoId}` - Listar movimientos de un insumo específico
+- `GET /rango-fechas?inicio=2024-01-01T00:00:00&fin=2024-12-31T23:59:59` - Listar por rango de fechas
+- `POST /` - Crear nuevo movimiento (actualiza inventario automáticamente)
 
-- `GET /` - Obtener todos los movimientos
-- `GET /{id}` - Obtener por ID
-- `GET /tienda/{tiendaId}` - Obtener por tienda
-- `GET /sede/{sedeId}` - Obtener por sede
-- `GET /producto/{productoId}` - Obtener por producto
-- `GET /sede/{sedeId}/producto/{productoId}` - Obtener historial específico
-- `GET /tienda/{tiendaId}/motivo/{motivo}` - Filtrar por motivo
-- `GET /rango-fechas?fechaInicio=...&fechaFin=...` - Obtener por rango de fechas
-- `POST /` - Registrar nuevo movimiento
+### Movimientos de Inventario (Productos)
 
-## Características Implementadas
+**Base URL:** `/api/admin/tiendas/{tiendaId}/inventario/movimientos/productos`
 
-### ✅ CRUD Completo
-- Todos los endpoints con métodos GET, POST, PUT, DELETE
-- Validaciones a nivel de entidad
-
-### ✅ Soft Delete
-- TransferenciaInventario usa soft delete (estado = 'cancelado')
-- Anotaciones @SQLDelete y @SQLRestriction
-
-### ✅ Consultas Avanzadas
-- Filtros por tienda, sede, estado
-- Búsqueda por rangos de fechas
-- Detección de inventario bajo/agotado
-- Queries personalizadas con @Query
-
-### ✅ Trazabilidad
-- Registro de cantidades anterior/posterior en movimientos
-- Seguimiento de usuarios responsables
-- Timestamps automáticos
-- Referencias cruzadas (orden_compra_id, plan_produccion_id, etc.)
-
-### ✅ Gestión de Transferencias
-- Workflow completo: pendiente → en_transito → recibido
-- Endpoints específicos para autorizar y recibir
-- Validación de items (insumo XOR producto)
-- Inclusión automática de items al consultar transferencia
-
-## DTOs
-
-Todos los DTOs están en el paquete `controller.dto`:
-- **InventarioInsumoSedeDTO** - Mapea entidad InventarioInsumoSede
-- **InventarioProductoDTO** - Mapea entidad InventarioProducto
-- **TransferenciaInventarioDTO** - Incluye lista de ItemTransferenciaDTO
-- **ItemTransferenciaDTO** - Items individuales de transferencia
-- **MovimientoInventarioInsumoDTO** - Historial de movimientos de insumos
-- **MovimientoInventarioProductoDTO** - Historial de movimientos de productos
-
-## Enums
-
-### TipoMovimientoInsumo
-```java
-ENTRADA_COMPRA, SALIDA_PRODUCCION, ENTRADA_TRANSFERENCIA, 
-SALIDA_TRANSFERENCIA, AJUSTE_POSITIVO, AJUSTE_NEGATIVO, 
-MERMA, DEVOLUCION
-```
-
-### MotivoMovimientoProducto
-```java
-produccion, venta, merma, ajuste, transferencia, devolucion
-```
-
-### EstadoTransferencia
-```java
-pendiente, en_transito, recibido, cancelado
-```
+Mismos endpoints que movimientos de insumos, pero para productos.
 
 ## Ejemplo de Uso
 
-### Crear Transferencia con Items
+### Crear un movimiento de entrada de insumos
+
 ```json
-POST /api/admin/inventario/transferencias
+POST /api/admin/tiendas/1/inventario/movimientos/insumos
 {
-  "tiendaId": 1,
+  "sedeId": 1,
+  "insumoId": 5,
+  "tipoMovimiento": "ENTRADA",
+  "cantidad": 50.5,
+  "motivo": "Compra de harina - Orden #123",
+  "ordenCompraId": 123,
+  "responsableId": 10
+}
+```
+
+**Resultado:** 
+- Se crea el movimiento en la tabla `movimientos_inventario_insumos`
+- Se actualiza automáticamente el `cantidadActual` en `inventario_insumos_sedes`
+- Se registra la cantidad anterior y posterior para auditoría
+
+### Crear una transferencia entre sedes
+
+```json
+POST /api/admin/tiendas/1/inventario/transferencias
+{
   "sedeOrigenId": 1,
   "sedeDestinoId": 2,
-  "solicitadoPor": 5,
-  "observaciones": "Transferencia de harina por stock bajo",
+  "solicitadoPor": 10,
+  "observaciones": "Transferencia de urgencia",
   "items": [
     {
-      "insumoId": 1,
-      "cantidadEnviada": 50.0
+      "insumoId": 5,
+      "cantidadEnviada": 20.0
     },
     {
-      "insumoId": 2,
-      "cantidadEnviada": 30.0
+      "productoId": 3,
+      "cantidadEnviada": 15.0
     }
   ]
 }
 ```
 
-### Autorizar Transferencia
-```http
-PATCH /api/admin/inventario/transferencias/1/autorizar?autorizadoPor=3
-```
+## Características Importantes
 
-### Recibir Transferencia
-```http
-PATCH /api/admin/inventario/transferencias/1/recibir?recibidoPor=7
-```
+### 1. Multi-Tenant y Multi-Sede
+- Todos los endpoints requieren `tiendaId` en la URL
+- Filtrado automático por `tiendaId` en todas las consultas
+- Soporte para múltiples sedes por tienda
 
-### Consultar Inventario Bajo
-```http
-GET /api/admin/inventario/insumos/sede/1/bajo?cantidadMinima=10.0
-```
+### 2. Validaciones
+- No se permite stock negativo en salidas
+- Validación de transferencias entre sedes diferentes
+- Validación de transiciones de estado en transferencias
+- Unicidad: un insumo/producto solo puede tener un registro de inventario por sede
 
-### Consultar Productos Agotados
-```http
-GET /api/admin/inventario/productos/sede/1/agotados
-```
+### 3. Auditoría y Trazabilidad
+- Todos los movimientos se registran con fecha/hora
+- Se guarda la cantidad anterior y posterior a cada movimiento
+- Referencia a orden de compra, plan de producción o pedido relacionado
+- Identificación del usuario responsable
 
-## Notas Técnicas
+### 4. Soft Delete
+- Las transferencias usan soft delete (estado CANCELADO)
+- No se eliminan físicamente los registros para mantener la trazabilidad
 
-1. **Transaccionalidad**: Todos los métodos de servicio usan `@Transactional`
-2. **Validación**: Las entidades validan constraints en @PrePersist/@PreUpdate
-3. **Conversión DTO**: Métodos privados en servicios para mapeo entidad ↔ DTO
-4. **Lombok**: Uso de @Data, @RequiredArgsConstructor para reducir boilerplate
-5. **Spring Data JPA**: Queries derivadas y personalizadas con @Query
+### 5. Actualización Automática de Inventario
+- Al crear un movimiento, el inventario se actualiza automáticamente
+- Si no existe un registro de inventario, se crea automáticamente con cantidad 0
 
-## Próximos Pasos Sugeridos
+## Flujo de Trabajo - Transferencias
 
-1. Agregar validaciones con `@Valid` y Bean Validation
-2. Implementar manejo de excepciones personalizado
-3. Agregar paginación con `Pageable` en endpoints GET
-4. Implementar endpoints de reportes/estadísticas
-5. Agregar auditoría con Spring Data JPA Auditing
-6. Considerar DTOs separados para Request/Response
-7. Implementar eventos de dominio para movimientos automáticos
+1. **PENDIENTE**: Usuario solicita transferencia
+2. **EN_TRANSITO**: Autorizado, mercancía enviada (se registra fecha de envío)
+3. **RECIBIDO**: Mercancía recibida en destino (se registra fecha de recepción)
+
+En cualquier momento antes de RECIBIDO se puede **CANCELAR** la transferencia.
+
+## Consideraciones de Rendimiento
+
+- Índices en: `tienda_id`, `sede_id`, `insumo_id`, `producto_id`, `fecha_creacion`
+- Paginación disponible para listados de movimientos
+- Consultas optimizadas con JPA Specifications
+
+## Tecnologías Utilizadas
+
+- Spring Boot 3.5.5
+- Spring Data JPA
+- Jakarta Validation
+- Lombok
+- PostgreSQL / MySQL
+
+## Próximas Mejoras
+
+- [ ] Notificaciones automáticas por bajo stock
+- [ ] Alertas de vencimiento de insumos
+- [ ] Reportes de rotación de inventario
+- [ ] Integración con módulo de compras
+- [ ] Dashboard de inventario en tiempo real

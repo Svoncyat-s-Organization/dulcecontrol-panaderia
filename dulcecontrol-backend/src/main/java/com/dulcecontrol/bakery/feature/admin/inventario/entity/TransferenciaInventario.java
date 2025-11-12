@@ -29,7 +29,7 @@ public class TransferenciaInventario {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
-    private EstadoTransferencia estado = EstadoTransferencia.pendiente;
+    private EstadoTransferencia estado = EstadoTransferencia.PENDIENTE;
 
     @Column(name = "solicitado_por")
     private Long solicitadoPor;
@@ -58,7 +58,7 @@ public class TransferenciaInventario {
             fechaSolicitud = LocalDateTime.now();
         }
         if (estado == null) {
-            estado = EstadoTransferencia.pendiente;
+            estado = EstadoTransferencia.PENDIENTE;
         }
     }
 }

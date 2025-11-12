@@ -3,89 +3,73 @@ package com.dulcecontrol.bakery.feature.admin.inventario.controller;
 import com.dulcecontrol.bakery.feature.admin.inventario.controller.dto.TransferenciaInventarioDTO;
 import com.dulcecontrol.bakery.feature.admin.inventario.entity.enums.EstadoTransferencia;
 import com.dulcecontrol.bakery.feature.admin.inventario.service.ITransferenciaInventarioService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import java.time.LocalDateTime;
+
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/admin/inventario/transferencias")
+@RequestMapping("/api/admin/tiendas/{tiendaId}/inventario/transferencias")
 @RequiredArgsConstructor
+@Validated
 public class TransferenciaInventarioController {
 
     private final ITransferenciaInventarioService service;
 
     @GetMapping
-    public ResponseEntity<List<TransferenciaInventarioDTO>> obtenerTodas() {
-        return ResponseEntity.ok(service.obtenerTodas());
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<TransferenciaInventarioDTO> obtenerPorId(@PathVariable Long id) {
-        return ResponseEntity.ok(service.obtenerPorId(id));
-    }
-
-    @GetMapping("/tienda/{tiendaId}")
-    public ResponseEntity<List<TransferenciaInventarioDTO>> obtenerPorTienda(@PathVariable Long tiendaId) {
-        return ResponseEntity.ok(service.obtenerPorTienda(tiendaId));
-    }
-
-    @GetMapping("/sede/{sedeId}")
-    public ResponseEntity<List<TransferenciaInventarioDTO>> obtenerPorSede(@PathVariable Long sedeId) {
-        return ResponseEntity.ok(service.obtenerPorSede(sedeId));
+    public ResponseEntity<List<TransferenciaInventarioDTO>> listar(@PathVariable Long tiendaId) {
+        return ResponseEntity.ok(service.listarPorTienda(tiendaId));
     }
 
     @GetMapping("/estado/{estado}")
-    public ResponseEntity<List<TransferenciaInventarioDTO>> obtenerPorEstado(@PathVariable EstadoTransferencia estado) {
-        return ResponseEntity.ok(service.obtenerPorEstado(estado));
+    public ResponseEntity<List<TransferenciaInventarioDTO>> listarPorEstado(
+            @PathVariable Long tiendaId,
+            @PathVariable EstadoTransferencia estado) {
+        return ResponseEntity.ok(service.listarPorEstado(tiendaId, estado));
     }
 
-    @GetMapping("/rango-fechas")
-    public ResponseEntity<List<TransferenciaInventarioDTO>> obtenerPorRangoFechas(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaInicio,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaFin) {
-        return ResponseEntity.ok(service.obtenerPorRangoFechas(fechaInicio, fechaFin));
+    @GetMapping("/{id}")
+    public ResponseEntity<TransferenciaInventarioDTO> obtener(
+            @PathVariable Long tiendaId,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(service.obtenerPorId(tiendaId, id));
     }
 
     @PostMapping
-    public ResponseEntity<TransferenciaInventarioDTO> crear(@RequestBody TransferenciaInventarioDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.crear(dto));
+    public ResponseEntity<TransferenciaInventarioDTO> crear(
+            @PathVariable Long tiendaId,
+            @Valid @RequestBody TransferenciaInventarioDTO dto) {
+        TransferenciaInventarioDTO creado = service.crear(tiendaId, dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<TransferenciaInventarioDTO> actualizar(
+            @PathVariable Long tiendaId,
             @PathVariable Long id,
-            @RequestBody TransferenciaInventarioDTO dto) {
-        return ResponseEntity.ok(service.actualizar(id, dto));
+            @Valid @RequestBody TransferenciaInventarioDTO dto) {
+        TransferenciaInventarioDTO actualizado = service.actualizar(tiendaId, id, dto);
+        return ResponseEntity.ok(actualizado);
     }
 
     @PatchMapping("/{id}/estado")
     public ResponseEntity<TransferenciaInventarioDTO> cambiarEstado(
+            @PathVariable Long tiendaId,
             @PathVariable Long id,
             @RequestParam EstadoTransferencia nuevoEstado) {
-        return ResponseEntity.ok(service.cambiarEstado(id, nuevoEstado));
-    }
-
-    @PatchMapping("/{id}/autorizar")
-    public ResponseEntity<TransferenciaInventarioDTO> autorizarTransferencia(
-            @PathVariable Long id,
-            @RequestParam Long autorizadoPor) {
-        return ResponseEntity.ok(service.autorizarTransferencia(id, autorizadoPor));
-    }
-
-    @PatchMapping("/{id}/recibir")
-    public ResponseEntity<TransferenciaInventarioDTO> recibirTransferencia(
-            @PathVariable Long id,
-            @RequestParam Long recibidoPor) {
-        return ResponseEntity.ok(service.recibirTransferencia(id, recibidoPor));
+        TransferenciaInventarioDTO actualizado = service.cambiarEstado(tiendaId, id, nuevoEstado);
+        return ResponseEntity.ok(actualizado);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        service.eliminar(id);
+    public ResponseEntity<Void> eliminar(
+            @PathVariable Long tiendaId,
+            @PathVariable Long id) {
+        service.eliminar(tiendaId, id);
         return ResponseEntity.noContent().build();
     }
 }

@@ -1,131 +1,166 @@
 package com.dulcecontrol.bakery.feature.admin.inventario.service.impl;
 
 import com.dulcecontrol.bakery.feature.admin.inventario.controller.dto.MovimientoInventarioInsumoDTO;
+import com.dulcecontrol.bakery.feature.admin.inventario.entity.InventarioInsumoSede;
 import com.dulcecontrol.bakery.feature.admin.inventario.entity.MovimientoInventarioInsumo;
-import com.dulcecontrol.bakery.feature.admin.inventario.entity.enums.TipoMovimientoInsumo;
+import com.dulcecontrol.bakery.feature.admin.inventario.repository.InventarioInsumoSedeRepository;
 import com.dulcecontrol.bakery.feature.admin.inventario.repository.MovimientoInventarioInsumoRepository;
 import com.dulcecontrol.bakery.feature.admin.inventario.service.IMovimientoInventarioInsumoService;
+import com.dulcecontrol.bakery.shared.exception.BadRequestException;
+import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class MovimientoInventarioInsumoService implements IMovimientoInventarioInsumoService {
 
     private final MovimientoInventarioInsumoRepository repository;
+    private final InventarioInsumoSedeRepository inventarioRepository;
 
     @Override
     @Transactional(readOnly = true)
-    public List<MovimientoInventarioInsumoDTO> obtenerTodos() {
-        return repository.findAll().stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public MovimientoInventarioInsumoDTO obtenerPorId(Long id) {
-        return repository.findById(id)
-                .map(this::convertirADTO)
-                .orElseThrow(() -> new RuntimeException("Movimiento no encontrado con ID: " + id));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<MovimientoInventarioInsumoDTO> obtenerPorTienda(Long tiendaId) {
+    public List<MovimientoInventarioInsumoDTO> listarPorTienda(Long tiendaId) {
         return repository.findByTiendaId(tiendaId).stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
+                .map(this::toDTO)
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<MovimientoInventarioInsumoDTO> obtenerPorSede(Long sedeId) {
-        return repository.findBySedeId(sedeId).stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
+    public List<MovimientoInventarioInsumoDTO> listarPorTiendaYSede(Long tiendaId, Long sedeId) {
+        return repository.findByTiendaIdAndSedeId(tiendaId, sedeId).stream()
+                .map(this::toDTO)
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<MovimientoInventarioInsumoDTO> obtenerPorInsumo(Long insumoId) {
-        return repository.findByInsumoId(insumoId).stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
+    public Page<MovimientoInventarioInsumoDTO> listarPorTiendaYSedePaginado(Long tiendaId, Long sedeId,
+            Pageable pageable) {
+        return repository.findByTiendaIdAndSedeIdOrderByCreadoEnDesc(tiendaId, sedeId, pageable)
+                .map(this::toDTO);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<MovimientoInventarioInsumoDTO> obtenerPorSedeEInsumo(Long sedeId, Long insumoId) {
-        return repository.findBySedeIdAndInsumoIdOrderByCreadoEnDesc(sedeId, insumoId).stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<MovimientoInventarioInsumoDTO> obtenerPorTipoMovimiento(Long tiendaId,
-            TipoMovimientoInsumo tipoMovimiento) {
-        return repository.findByTiendaIdAndTipoMovimiento(tiendaId, tipoMovimiento).stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
+    public MovimientoInventarioInsumoDTO obtenerPorId(Long tiendaId, Long id) {
+        MovimientoInventarioInsumo movimiento = repository.findByIdAndTiendaId(id, tiendaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Movimiento de inventario no encontrado"));
+        return toDTO(movimiento);
     }
 
     @Override
     @Transactional
-    public MovimientoInventarioInsumoDTO crear(MovimientoInventarioInsumoDTO dto) {
-        MovimientoInventarioInsumo entidad = convertirAEntidad(dto);
-        MovimientoInventarioInsumo guardado = repository.save(entidad);
-        return convertirADTO(guardado);
+    public MovimientoInventarioInsumoDTO crear(Long tiendaId, MovimientoInventarioInsumoDTO dto) {
+        // Buscar o crear inventario
+        InventarioInsumoSede inventario = inventarioRepository
+                .findBySedeIdAndInsumoId(dto.getSedeId(), dto.getInsumoId())
+                .orElseGet(() -> {
+                    InventarioInsumoSede nuevo = new InventarioInsumoSede();
+                    nuevo.setTiendaId(tiendaId);
+                    nuevo.setSedeId(dto.getSedeId());
+                    nuevo.setInsumoId(dto.getInsumoId());
+                    nuevo.setCantidadActual(BigDecimal.ZERO);
+                    return inventarioRepository.save(nuevo);
+                });
+
+        BigDecimal cantidadAnterior = inventario.getCantidadActual();
+        BigDecimal nuevaCantidad;
+
+        // Calcular nueva cantidad según tipo de movimiento
+        switch (dto.getTipoMovimiento()) {
+            case ENTRADA:
+                nuevaCantidad = cantidadAnterior.add(dto.getCantidad());
+                break;
+            case SALIDA:
+                nuevaCantidad = cantidadAnterior.subtract(dto.getCantidad());
+                if (nuevaCantidad.compareTo(BigDecimal.ZERO) < 0) {
+                    throw new BadRequestException("No hay suficiente stock. Stock actual: " + cantidadAnterior);
+                }
+                break;
+            case AJUSTE:
+                nuevaCantidad = dto.getCantidad(); // Ajuste establece la cantidad directamente
+                break;
+            case TRANSFERENCIA:
+                // Para transferencias, el tipo de movimiento (entrada/salida) determina el
+                // signo
+                if (dto.getCantidad().compareTo(BigDecimal.ZERO) > 0) {
+                    nuevaCantidad = cantidadAnterior.add(dto.getCantidad()); // Entrada
+                } else {
+                    nuevaCantidad = cantidadAnterior.add(dto.getCantidad()); // Salida (cantidad negativa)
+                    if (nuevaCantidad.compareTo(BigDecimal.ZERO) < 0) {
+                        throw new BadRequestException(
+                                "No hay suficiente stock para la transferencia. Stock actual: " + cantidadAnterior);
+                    }
+                }
+                break;
+            default:
+                throw new BadRequestException("Tipo de movimiento no válido");
+        }
+
+        // Actualizar inventario
+        inventario.setCantidadActual(nuevaCantidad);
+        inventarioRepository.save(inventario);
+
+        // Crear movimiento
+        MovimientoInventarioInsumo movimiento = new MovimientoInventarioInsumo();
+        movimiento.setTiendaId(tiendaId);
+        movimiento.setSedeId(dto.getSedeId());
+        movimiento.setInsumoId(dto.getInsumoId());
+        movimiento.setTipoMovimiento(dto.getTipoMovimiento());
+        movimiento.setCantidad(dto.getCantidad());
+        movimiento.setCantidadAnterior(cantidadAnterior);
+        movimiento.setCantidadPosterior(nuevaCantidad);
+        movimiento.setOrdenCompraId(dto.getOrdenCompraId());
+        movimiento.setPlanProduccionId(dto.getPlanProduccionId());
+        movimiento.setTransferenciaId(dto.getTransferenciaId());
+        movimiento.setMotivo(dto.getMotivo());
+        movimiento.setResponsableId(dto.getResponsableId());
+
+        MovimientoInventarioInsumo guardado = repository.save(movimiento);
+        return toDTO(guardado);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<MovimientoInventarioInsumoDTO> obtenerPorRangoFechas(LocalDateTime fechaInicio,
-            LocalDateTime fechaFin) {
-        return repository.findByFechaRango(fechaInicio, fechaFin).stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
+    public List<MovimientoInventarioInsumoDTO> listarPorInsumo(Long tiendaId, Long sedeId, Long insumoId) {
+        return repository.findByTiendaIdAndSedeIdAndInsumoId(tiendaId, sedeId, insumoId).stream()
+                .map(this::toDTO)
+                .toList();
     }
 
-    private MovimientoInventarioInsumoDTO convertirADTO(MovimientoInventarioInsumo entidad) {
-        MovimientoInventarioInsumoDTO dto = new MovimientoInventarioInsumoDTO();
-        dto.setId(entidad.getId());
-        dto.setTiendaId(entidad.getTiendaId());
-        dto.setSedeId(entidad.getSedeId());
-        dto.setInsumoId(entidad.getInsumoId());
-        dto.setTipoMovimiento(entidad.getTipoMovimiento());
-        dto.setCantidad(entidad.getCantidad());
-        dto.setCantidadAnterior(entidad.getCantidadAnterior());
-        dto.setCantidadPosterior(entidad.getCantidadPosterior());
-        dto.setOrdenCompraId(entidad.getOrdenCompraId());
-        dto.setPlanProduccionId(entidad.getPlanProduccionId());
-        dto.setTransferenciaId(entidad.getTransferenciaId());
-        dto.setMotivo(entidad.getMotivo());
-        dto.setResponsableId(entidad.getResponsableId());
-        dto.setCreadoEn(entidad.getCreadoEn());
-        return dto;
+    @Override
+    @Transactional(readOnly = true)
+    public List<MovimientoInventarioInsumoDTO> listarPorRangoFechas(Long tiendaId, LocalDateTime inicio,
+            LocalDateTime fin) {
+        return repository.findByTiendaIdAndCreadoEnBetween(tiendaId, inicio, fin).stream()
+                .map(this::toDTO)
+                .toList();
     }
 
-    private MovimientoInventarioInsumo convertirAEntidad(MovimientoInventarioInsumoDTO dto) {
-        MovimientoInventarioInsumo entidad = new MovimientoInventarioInsumo();
-        entidad.setId(dto.getId());
-        entidad.setTiendaId(dto.getTiendaId());
-        entidad.setSedeId(dto.getSedeId());
-        entidad.setInsumoId(dto.getInsumoId());
-        entidad.setTipoMovimiento(dto.getTipoMovimiento());
-        entidad.setCantidad(dto.getCantidad());
-        entidad.setCantidadAnterior(dto.getCantidadAnterior());
-        entidad.setCantidadPosterior(dto.getCantidadPosterior());
-        entidad.setOrdenCompraId(dto.getOrdenCompraId());
-        entidad.setPlanProduccionId(dto.getPlanProduccionId());
-        entidad.setTransferenciaId(dto.getTransferenciaId());
-        entidad.setMotivo(dto.getMotivo());
-        entidad.setResponsableId(dto.getResponsableId());
-        return entidad;
+    private MovimientoInventarioInsumoDTO toDTO(MovimientoInventarioInsumo entity) {
+        return MovimientoInventarioInsumoDTO.builder()
+                .id(entity.getId())
+                .sedeId(entity.getSedeId())
+                .insumoId(entity.getInsumoId())
+                .tipoMovimiento(entity.getTipoMovimiento())
+                .cantidad(entity.getCantidad())
+                .cantidadAnterior(entity.getCantidadAnterior())
+                .cantidadPosterior(entity.getCantidadPosterior())
+                .ordenCompraId(entity.getOrdenCompraId())
+                .planProduccionId(entity.getPlanProduccionId())
+                .transferenciaId(entity.getTransferenciaId())
+                .motivo(entity.getMotivo())
+                .responsableId(entity.getResponsableId())
+                .creadoEn(entity.getCreadoEn())
+                .build();
     }
 }

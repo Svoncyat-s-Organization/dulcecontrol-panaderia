@@ -8,12 +8,14 @@ import com.dulcecontrol.bakery.feature.admin.inventario.entity.enums.EstadoTrans
 import com.dulcecontrol.bakery.feature.admin.inventario.repository.ItemTransferenciaRepository;
 import com.dulcecontrol.bakery.feature.admin.inventario.repository.TransferenciaInventarioRepository;
 import com.dulcecontrol.bakery.feature.admin.inventario.service.ITransferenciaInventarioService;
+import com.dulcecontrol.bakery.shared.exception.BadRequestException;
+import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,202 +26,187 @@ public class TransferenciaInventarioService implements ITransferenciaInventarioS
 
     @Override
     @Transactional(readOnly = true)
-    public List<TransferenciaInventarioDTO> obtenerTodas() {
-        return repository.findAll().stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public TransferenciaInventarioDTO obtenerPorId(Long id) {
-        return repository.findById(id)
-                .map(this::convertirADTO)
-                .orElseThrow(() -> new RuntimeException("Transferencia no encontrada con ID: " + id));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<TransferenciaInventarioDTO> obtenerPorTienda(Long tiendaId) {
+    public List<TransferenciaInventarioDTO> listarPorTienda(Long tiendaId) {
         return repository.findByTiendaId(tiendaId).stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
+                .map(this::toDTO)
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<TransferenciaInventarioDTO> obtenerPorSede(Long sedeId) {
-        return repository.findBySedeOrigenIdOrSedeDestinoId(sedeId).stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
+    public List<TransferenciaInventarioDTO> listarPorEstado(Long tiendaId, EstadoTransferencia estado) {
+        return repository.findByTiendaIdAndEstado(tiendaId, estado).stream()
+                .map(this::toDTO)
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<TransferenciaInventarioDTO> obtenerPorEstado(EstadoTransferencia estado) {
-        return repository.findByEstado(estado).stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
+    public TransferenciaInventarioDTO obtenerPorId(Long tiendaId, Long id) {
+        TransferenciaInventario transferencia = repository.findByIdAndTiendaId(id, tiendaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Transferencia no encontrada"));
+        return toDTO(transferencia);
     }
 
     @Override
     @Transactional
-    public TransferenciaInventarioDTO crear(TransferenciaInventarioDTO dto) {
-        TransferenciaInventario entidad = convertirAEntidad(dto);
-        TransferenciaInventario guardada = repository.save(entidad);
+    public TransferenciaInventarioDTO crear(Long tiendaId, TransferenciaInventarioDTO dto) {
+        // Validar que las sedes sean diferentes
+        if (dto.getSedeOrigenId().equals(dto.getSedeDestinoId())) {
+            throw new BadRequestException("La sede de origen y destino deben ser diferentes");
+        }
 
-        // Guardar items si existen
+        TransferenciaInventario transferencia = new TransferenciaInventario();
+        transferencia.setTiendaId(tiendaId);
+        transferencia.setSedeOrigenId(dto.getSedeOrigenId());
+        transferencia.setSedeDestinoId(dto.getSedeDestinoId());
+        transferencia.setEstado(EstadoTransferencia.PENDIENTE);
+        transferencia.setSolicitadoPor(dto.getSolicitadoPor());
+        transferencia.setObservaciones(dto.getObservaciones());
+
+        TransferenciaInventario guardado = repository.save(transferencia);
+
+        // Guardar items
         if (dto.getItems() != null && !dto.getItems().isEmpty()) {
             for (ItemTransferenciaDTO itemDTO : dto.getItems()) {
-                ItemTransferencia item = convertirItemAEntidad(itemDTO);
-                item.setTransferenciaId(guardada.getId());
+                ItemTransferencia item = new ItemTransferencia();
+                item.setTransferenciaId(guardado.getId());
+                item.setInsumoId(itemDTO.getInsumoId());
+                item.setProductoId(itemDTO.getProductoId());
+                item.setCantidadEnviada(itemDTO.getCantidadEnviada());
                 itemRepository.save(item);
             }
         }
 
-        return convertirADTO(guardada);
+        return toDTO(guardado);
     }
 
     @Override
     @Transactional
-    public TransferenciaInventarioDTO actualizar(Long id, TransferenciaInventarioDTO dto) {
-        TransferenciaInventario entidad = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Transferencia no encontrada con ID: " + id));
+    public TransferenciaInventarioDTO actualizar(Long tiendaId, Long id, TransferenciaInventarioDTO dto) {
+        TransferenciaInventario transferencia = repository.findByIdAndTiendaId(id, tiendaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Transferencia no encontrada"));
 
-        if (dto.getObservaciones() != null) {
-            entidad.setObservaciones(dto.getObservaciones());
-        }
-        if (dto.getEstado() != null) {
-            entidad.setEstado(dto.getEstado());
+        // Solo se puede actualizar si está en estado PENDIENTE
+        if (transferencia.getEstado() != EstadoTransferencia.PENDIENTE) {
+            throw new BadRequestException("Solo se pueden actualizar transferencias en estado PENDIENTE");
         }
 
-        TransferenciaInventario actualizada = repository.save(entidad);
-        return convertirADTO(actualizada);
+        transferencia.setSedeOrigenId(dto.getSedeOrigenId());
+        transferencia.setSedeDestinoId(dto.getSedeDestinoId());
+        transferencia.setObservaciones(dto.getObservaciones());
+
+        TransferenciaInventario actualizado = repository.save(transferencia);
+
+        // Actualizar items
+        if (dto.getItems() != null) {
+            itemRepository.deleteByTransferenciaId(id);
+            for (ItemTransferenciaDTO itemDTO : dto.getItems()) {
+                ItemTransferencia item = new ItemTransferencia();
+                item.setTransferenciaId(actualizado.getId());
+                item.setInsumoId(itemDTO.getInsumoId());
+                item.setProductoId(itemDTO.getProductoId());
+                item.setCantidadEnviada(itemDTO.getCantidadEnviada());
+                itemRepository.save(item);
+            }
+        }
+
+        return toDTO(actualizado);
     }
 
     @Override
     @Transactional
-    public void eliminar(Long id) {
-        if (!repository.existsById(id)) {
-            throw new RuntimeException("Transferencia no encontrada con ID: " + id);
-        }
-        repository.deleteById(id); // Esto ejecutará el soft delete
-    }
+    public TransferenciaInventarioDTO cambiarEstado(Long tiendaId, Long id, EstadoTransferencia nuevoEstado) {
+        TransferenciaInventario transferencia = repository.findByIdAndTiendaId(id, tiendaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Transferencia no encontrada"));
 
-    @Override
-    @Transactional
-    public TransferenciaInventarioDTO cambiarEstado(Long id, EstadoTransferencia nuevoEstado) {
-        TransferenciaInventario transferencia = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Transferencia no encontrada con ID: " + id));
+        // Validar transiciones de estado
+        validarTransicionEstado(transferencia.getEstado(), nuevoEstado);
 
         transferencia.setEstado(nuevoEstado);
 
-        if (nuevoEstado == EstadoTransferencia.en_transito && transferencia.getFechaEnvio() == null) {
-            transferencia.setFechaEnvio(LocalDateTime.now());
-        } else if (nuevoEstado == EstadoTransferencia.recibido && transferencia.getFechaRecepcion() == null) {
-            transferencia.setFechaRecepcion(LocalDateTime.now());
+        switch (nuevoEstado) {
+            case PENDIENTE:
+                // No se actualiza ninguna fecha adicional
+                break;
+            case EN_TRANSITO:
+                transferencia.setFechaEnvio(LocalDateTime.now());
+                break;
+            case RECIBIDO:
+                transferencia.setFechaRecepcion(LocalDateTime.now());
+                break;
+            case CANCELADO:
+                // No se actualiza ninguna fecha adicional
+                break;
         }
 
-        TransferenciaInventario actualizada = repository.save(transferencia);
-        return convertirADTO(actualizada);
+        TransferenciaInventario actualizado = repository.save(transferencia);
+        return toDTO(actualizado);
     }
 
     @Override
     @Transactional
-    public TransferenciaInventarioDTO autorizarTransferencia(Long id, Long autorizadoPor) {
-        TransferenciaInventario transferencia = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Transferencia no encontrada con ID: " + id));
+    public void eliminar(Long tiendaId, Long id) {
+        TransferenciaInventario transferencia = repository.findByIdAndTiendaId(id, tiendaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Transferencia no encontrada"));
 
-        transferencia.setAutorizadoPor(autorizadoPor);
-        transferencia.setEstado(EstadoTransferencia.en_transito);
-        transferencia.setFechaEnvio(LocalDateTime.now());
-
-        TransferenciaInventario actualizada = repository.save(transferencia);
-        return convertirADTO(actualizada);
+        // Soft delete - cambia estado a CANCELADO
+        repository.delete(transferencia);
     }
 
-    @Override
-    @Transactional
-    public TransferenciaInventarioDTO recibirTransferencia(Long id, Long recibidoPor) {
-        TransferenciaInventario transferencia = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Transferencia no encontrada con ID: " + id));
+    private void validarTransicionEstado(EstadoTransferencia estadoActual, EstadoTransferencia nuevoEstado) {
+        boolean transicionValida = false;
 
-        transferencia.setRecibidoPor(recibidoPor);
-        transferencia.setEstado(EstadoTransferencia.recibido);
-        transferencia.setFechaRecepcion(LocalDateTime.now());
+        switch (estadoActual) {
+            case PENDIENTE:
+                transicionValida = nuevoEstado == EstadoTransferencia.EN_TRANSITO ||
+                        nuevoEstado == EstadoTransferencia.CANCELADO;
+                break;
+            case EN_TRANSITO:
+                transicionValida = nuevoEstado == EstadoTransferencia.RECIBIDO ||
+                        nuevoEstado == EstadoTransferencia.CANCELADO;
+                break;
+            case RECIBIDO:
+            case CANCELADO:
+                transicionValida = false; // Estados finales
+                break;
+        }
 
-        TransferenciaInventario actualizada = repository.save(transferencia);
-        return convertirADTO(actualizada);
+        if (!transicionValida) {
+            throw new BadRequestException(
+                    String.format("No se puede cambiar de estado %s a %s", estadoActual, nuevoEstado));
+        }
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<TransferenciaInventarioDTO> obtenerPorRangoFechas(LocalDateTime fechaInicio, LocalDateTime fechaFin) {
-        return repository.findByFechaSolicitudBetween(fechaInicio, fechaFin).stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
+    private TransferenciaInventarioDTO toDTO(TransferenciaInventario entity) {
+        List<ItemTransferenciaDTO> items = itemRepository.findByTransferenciaId(entity.getId()).stream()
+                .map(this::itemToDTO)
+                .toList();
+
+        return TransferenciaInventarioDTO.builder()
+                .id(entity.getId())
+                .sedeOrigenId(entity.getSedeOrigenId())
+                .sedeDestinoId(entity.getSedeDestinoId())
+                .estado(entity.getEstado())
+                .solicitadoPor(entity.getSolicitadoPor())
+                .autorizadoPor(entity.getAutorizadoPor())
+                .recibidoPor(entity.getRecibidoPor())
+                .fechaSolicitud(entity.getFechaSolicitud())
+                .fechaEnvio(entity.getFechaEnvio())
+                .fechaRecepcion(entity.getFechaRecepcion())
+                .observaciones(entity.getObservaciones())
+                .items(items)
+                .build();
     }
 
-    private TransferenciaInventarioDTO convertirADTO(TransferenciaInventario entidad) {
-        TransferenciaInventarioDTO dto = new TransferenciaInventarioDTO();
-        dto.setId(entidad.getId());
-        dto.setTiendaId(entidad.getTiendaId());
-        dto.setSedeOrigenId(entidad.getSedeOrigenId());
-        dto.setSedeDestinoId(entidad.getSedeDestinoId());
-        dto.setEstado(entidad.getEstado());
-        dto.setSolicitadoPor(entidad.getSolicitadoPor());
-        dto.setAutorizadoPor(entidad.getAutorizadoPor());
-        dto.setRecibidoPor(entidad.getRecibidoPor());
-        dto.setFechaSolicitud(entidad.getFechaSolicitud());
-        dto.setFechaEnvio(entidad.getFechaEnvio());
-        dto.setFechaRecepcion(entidad.getFechaRecepcion());
-        dto.setObservaciones(entidad.getObservaciones());
-
-        // Cargar items
-        List<ItemTransferenciaDTO> items = itemRepository.findByTransferenciaId(entidad.getId()).stream()
-                .map(this::convertirItemADTO)
-                .collect(Collectors.toList());
-        dto.setItems(items);
-
-        return dto;
-    }
-
-    private TransferenciaInventario convertirAEntidad(TransferenciaInventarioDTO dto) {
-        TransferenciaInventario entidad = new TransferenciaInventario();
-        entidad.setId(dto.getId());
-        entidad.setTiendaId(dto.getTiendaId());
-        entidad.setSedeOrigenId(dto.getSedeOrigenId());
-        entidad.setSedeDestinoId(dto.getSedeDestinoId());
-        entidad.setEstado(dto.getEstado());
-        entidad.setSolicitadoPor(dto.getSolicitadoPor());
-        entidad.setAutorizadoPor(dto.getAutorizadoPor());
-        entidad.setRecibidoPor(dto.getRecibidoPor());
-        entidad.setFechaSolicitud(dto.getFechaSolicitud());
-        entidad.setFechaEnvio(dto.getFechaEnvio());
-        entidad.setFechaRecepcion(dto.getFechaRecepcion());
-        entidad.setObservaciones(dto.getObservaciones());
-        return entidad;
-    }
-
-    private ItemTransferenciaDTO convertirItemADTO(ItemTransferencia entidad) {
-        ItemTransferenciaDTO dto = new ItemTransferenciaDTO();
-        dto.setId(entidad.getId());
-        dto.setTransferenciaId(entidad.getTransferenciaId());
-        dto.setInsumoId(entidad.getInsumoId());
-        dto.setProductoId(entidad.getProductoId());
-        dto.setCantidadEnviada(entidad.getCantidadEnviada());
-        dto.setCantidadRecibida(entidad.getCantidadRecibida());
-        return dto;
-    }
-
-    private ItemTransferencia convertirItemAEntidad(ItemTransferenciaDTO dto) {
-        ItemTransferencia entidad = new ItemTransferencia();
-        entidad.setId(dto.getId());
-        entidad.setTransferenciaId(dto.getTransferenciaId());
-        entidad.setInsumoId(dto.getInsumoId());
-        entidad.setProductoId(dto.getProductoId());
-        entidad.setCantidadEnviada(dto.getCantidadEnviada());
-        entidad.setCantidadRecibida(dto.getCantidadRecibida());
-        return entidad;
+    private ItemTransferenciaDTO itemToDTO(ItemTransferencia entity) {
+        return ItemTransferenciaDTO.builder()
+                .id(entity.getId())
+                .transferenciaId(entity.getTransferenciaId())
+                .insumoId(entity.getInsumoId())
+                .productoId(entity.getProductoId())
+                .cantidadEnviada(entity.getCantidadEnviada())
+                .cantidadRecibida(entity.getCantidadRecibida())
+                .build();
     }
 }

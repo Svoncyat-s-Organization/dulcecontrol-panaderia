@@ -4,12 +4,14 @@ import com.dulcecontrol.bakery.feature.admin.inventario.controller.dto.Inventari
 import com.dulcecontrol.bakery.feature.admin.inventario.entity.InventarioInsumoSede;
 import com.dulcecontrol.bakery.feature.admin.inventario.repository.InventarioInsumoSedeRepository;
 import com.dulcecontrol.bakery.feature.admin.inventario.service.IInventarioInsumoSedeService;
+import com.dulcecontrol.bakery.shared.exception.BadRequestException;
+import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -19,106 +21,84 @@ public class InventarioInsumoSedeService implements IInventarioInsumoSedeService
 
     @Override
     @Transactional(readOnly = true)
-    public List<InventarioInsumoSedeDTO> obtenerTodos() {
-        return repository.findAll().stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public InventarioInsumoSedeDTO obtenerPorId(Long id) {
-        return repository.findById(id)
-                .map(this::convertirADTO)
-                .orElseThrow(() -> new RuntimeException("Inventario de insumo no encontrado con ID: " + id));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<InventarioInsumoSedeDTO> obtenerPorTienda(Long tiendaId) {
+    public List<InventarioInsumoSedeDTO> listarPorTienda(Long tiendaId) {
         return repository.findByTiendaId(tiendaId).stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
+                .map(this::toDTO)
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<InventarioInsumoSedeDTO> obtenerPorSede(Long sedeId) {
-        return repository.findBySedeId(sedeId).stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
+    public List<InventarioInsumoSedeDTO> listarPorTiendaYSede(Long tiendaId, Long sedeId) {
+        return repository.findByTiendaIdAndSedeId(tiendaId, sedeId).stream()
+                .map(this::toDTO)
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public InventarioInsumoSedeDTO obtenerPorSedeEInsumo(Long sedeId, Long insumoId) {
-        return repository.findBySedeIdAndInsumoId(sedeId, insumoId)
-                .map(this::convertirADTO)
-                .orElseThrow(() -> new RuntimeException(
-                        "Inventario no encontrado para sede: " + sedeId + " e insumo: " + insumoId));
+    public InventarioInsumoSedeDTO obtenerPorId(Long tiendaId, Long id) {
+        InventarioInsumoSede inventario = repository.findByIdAndTiendaId(id, tiendaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Inventario de insumo no encontrado"));
+        return toDTO(inventario);
     }
 
     @Override
     @Transactional
-    public InventarioInsumoSedeDTO crear(InventarioInsumoSedeDTO dto) {
-        InventarioInsumoSede entidad = convertirAEntidad(dto);
-        InventarioInsumoSede guardado = repository.save(entidad);
-        return convertirADTO(guardado);
+    public InventarioInsumoSedeDTO crear(Long tiendaId, InventarioInsumoSedeDTO dto) {
+        // Validar que no exista duplicado
+        if (repository.existsBySedeIdAndInsumoId(dto.getSedeId(), dto.getInsumoId())) {
+            throw new BadRequestException("Ya existe un inventario para este insumo en la sede");
+        }
+
+        InventarioInsumoSede inventario = new InventarioInsumoSede();
+        inventario.setTiendaId(tiendaId);
+        inventario.setSedeId(dto.getSedeId());
+        inventario.setInsumoId(dto.getInsumoId());
+        inventario.setCantidadActual(dto.getCantidadActual() != null ? dto.getCantidadActual() : BigDecimal.ZERO);
+        inventario.setUbicacionFisica(dto.getUbicacionFisica());
+
+        InventarioInsumoSede guardado = repository.save(inventario);
+        return toDTO(guardado);
     }
 
     @Override
     @Transactional
-    public InventarioInsumoSedeDTO actualizar(Long id, InventarioInsumoSedeDTO dto) {
-        InventarioInsumoSede entidad = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Inventario de insumo no encontrado con ID: " + id));
+    public InventarioInsumoSedeDTO actualizar(Long tiendaId, Long id, InventarioInsumoSedeDTO dto) {
+        InventarioInsumoSede inventario = repository.findByIdAndTiendaId(id, tiendaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Inventario de insumo no encontrado"));
 
-        if (dto.getCantidadActual() != null) {
-            entidad.setCantidadActual(dto.getCantidadActual());
-        }
-        if (dto.getUbicacionFisica() != null) {
-            entidad.setUbicacionFisica(dto.getUbicacionFisica());
-        }
+        inventario.setCantidadActual(dto.getCantidadActual());
+        inventario.setUbicacionFisica(dto.getUbicacionFisica());
 
-        InventarioInsumoSede actualizado = repository.save(entidad);
-        return convertirADTO(actualizado);
+        InventarioInsumoSede actualizado = repository.save(inventario);
+        return toDTO(actualizado);
     }
 
     @Override
     @Transactional
-    public void eliminar(Long id) {
-        if (!repository.existsById(id)) {
-            throw new RuntimeException("Inventario de insumo no encontrado con ID: " + id);
-        }
-        repository.deleteById(id);
+    public void eliminar(Long tiendaId, Long id) {
+        InventarioInsumoSede inventario = repository.findByIdAndTiendaId(id, tiendaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Inventario de insumo no encontrado"));
+        repository.delete(inventario);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<InventarioInsumoSedeDTO> obtenerInventarioBajo(Long sedeId, BigDecimal cantidadMinima) {
-        return repository.findInventarioBajo(sedeId, cantidadMinima).stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
+    public List<InventarioInsumoSedeDTO> listarBajoStock(Long tiendaId, Long sedeId, BigDecimal cantidadMinima) {
+        return repository.findBajoStock(tiendaId, sedeId, cantidadMinima).stream()
+                .map(this::toDTO)
+                .toList();
     }
 
-    private InventarioInsumoSedeDTO convertirADTO(InventarioInsumoSede entidad) {
-        InventarioInsumoSedeDTO dto = new InventarioInsumoSedeDTO();
-        dto.setId(entidad.getId());
-        dto.setTiendaId(entidad.getTiendaId());
-        dto.setSedeId(entidad.getSedeId());
-        dto.setInsumoId(entidad.getInsumoId());
-        dto.setCantidadActual(entidad.getCantidadActual());
-        dto.setUbicacionFisica(entidad.getUbicacionFisica());
-        return dto;
-    }
-
-    private InventarioInsumoSede convertirAEntidad(InventarioInsumoSedeDTO dto) {
-        InventarioInsumoSede entidad = new InventarioInsumoSede();
-        entidad.setId(dto.getId());
-        entidad.setTiendaId(dto.getTiendaId());
-        entidad.setSedeId(dto.getSedeId());
-        entidad.setInsumoId(dto.getInsumoId());
-        entidad.setCantidadActual(dto.getCantidadActual());
-        entidad.setUbicacionFisica(dto.getUbicacionFisica());
-        return entidad;
+    private InventarioInsumoSedeDTO toDTO(InventarioInsumoSede entity) {
+        return InventarioInsumoSedeDTO.builder()
+                .id(entity.getId())
+                .sedeId(entity.getSedeId())
+                .insumoId(entity.getInsumoId())
+                .cantidadActual(entity.getCantidadActual())
+                .ubicacionFisica(entity.getUbicacionFisica())
+                .actualizadoEn(entity.getActualizadoEn())
+                .build();
     }
 }

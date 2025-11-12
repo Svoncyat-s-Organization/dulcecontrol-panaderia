@@ -27,13 +27,4 @@ public class ItemTransferencia {
 
     @Column(name = "cantidad_recibida", precision = 12, scale = 4)
     private BigDecimal cantidadRecibida;
-
-    @PrePersist
-    @PreUpdate
-    protected void validateItem() {
-        // Validación: debe tener insumo o producto, pero no ambos
-        if ((insumoId == null && productoId == null) || (insumoId != null && productoId != null)) {
-            throw new IllegalStateException("El item debe tener insumo_id O producto_id, no ambos ni ninguno");
-        }
-    }
 }

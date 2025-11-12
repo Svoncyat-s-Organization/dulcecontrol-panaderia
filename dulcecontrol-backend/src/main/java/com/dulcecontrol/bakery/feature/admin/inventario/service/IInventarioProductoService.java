@@ -1,26 +1,22 @@
 package com.dulcecontrol.bakery.feature.admin.inventario.service;
 
 import com.dulcecontrol.bakery.feature.admin.inventario.controller.dto.InventarioProductoDTO;
+
 import java.util.List;
 
 public interface IInventarioProductoService {
-    List<InventarioProductoDTO> obtenerTodos();
 
-    InventarioProductoDTO obtenerPorId(Long id);
+    List<InventarioProductoDTO> listarPorTienda(Long tiendaId);
 
-    List<InventarioProductoDTO> obtenerPorTienda(Long tiendaId);
+    List<InventarioProductoDTO> listarPorTiendaYSede(Long tiendaId, Long sedeId);
 
-    List<InventarioProductoDTO> obtenerPorSede(Long sedeId);
+    InventarioProductoDTO obtenerPorId(Long tiendaId, Long id);
 
-    InventarioProductoDTO obtenerPorSedeYProducto(Long sedeId, Long productoId);
+    InventarioProductoDTO crear(Long tiendaId, InventarioProductoDTO dto);
 
-    InventarioProductoDTO crear(InventarioProductoDTO dto);
+    InventarioProductoDTO actualizar(Long tiendaId, Long id, InventarioProductoDTO dto);
 
-    InventarioProductoDTO actualizar(Long id, InventarioProductoDTO dto);
+    void eliminar(Long tiendaId, Long id);
 
-    void eliminar(Long id);
-
-    List<InventarioProductoDTO> obtenerInventarioBajo(Long sedeId, Integer cantidadMinima);
-
-    List<InventarioProductoDTO> obtenerProductosAgotados(Long sedeId);
+    List<InventarioProductoDTO> listarBajoStock(Long tiendaId, Long sedeId, Integer cantidadMinima);
 }

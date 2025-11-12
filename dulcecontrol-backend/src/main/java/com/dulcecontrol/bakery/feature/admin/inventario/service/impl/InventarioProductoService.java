@@ -4,11 +4,13 @@ import com.dulcecontrol.bakery.feature.admin.inventario.controller.dto.Inventari
 import com.dulcecontrol.bakery.feature.admin.inventario.entity.InventarioProducto;
 import com.dulcecontrol.bakery.feature.admin.inventario.repository.InventarioProductoRepository;
 import com.dulcecontrol.bakery.feature.admin.inventario.service.IInventarioProductoService;
+import com.dulcecontrol.bakery.shared.exception.BadRequestException;
+import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -18,114 +20,84 @@ public class InventarioProductoService implements IInventarioProductoService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<InventarioProductoDTO> obtenerTodos() {
-        return repository.findAll().stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public InventarioProductoDTO obtenerPorId(Long id) {
-        return repository.findById(id)
-                .map(this::convertirADTO)
-                .orElseThrow(() -> new RuntimeException("Inventario de producto no encontrado con ID: " + id));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<InventarioProductoDTO> obtenerPorTienda(Long tiendaId) {
+    public List<InventarioProductoDTO> listarPorTienda(Long tiendaId) {
         return repository.findByTiendaId(tiendaId).stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
+                .map(this::toDTO)
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<InventarioProductoDTO> obtenerPorSede(Long sedeId) {
-        return repository.findBySedeId(sedeId).stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
+    public List<InventarioProductoDTO> listarPorTiendaYSede(Long tiendaId, Long sedeId) {
+        return repository.findByTiendaIdAndSedeId(tiendaId, sedeId).stream()
+                .map(this::toDTO)
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public InventarioProductoDTO obtenerPorSedeYProducto(Long sedeId, Long productoId) {
-        return repository.findBySedeIdAndProductoId(sedeId, productoId)
-                .map(this::convertirADTO)
-                .orElseThrow(() -> new RuntimeException(
-                        "Inventario no encontrado para sede: " + sedeId + " y producto: " + productoId));
+    public InventarioProductoDTO obtenerPorId(Long tiendaId, Long id) {
+        InventarioProducto inventario = repository.findByIdAndTiendaId(id, tiendaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Inventario de producto no encontrado"));
+        return toDTO(inventario);
     }
 
     @Override
     @Transactional
-    public InventarioProductoDTO crear(InventarioProductoDTO dto) {
-        InventarioProducto entidad = convertirAEntidad(dto);
-        InventarioProducto guardado = repository.save(entidad);
-        return convertirADTO(guardado);
+    public InventarioProductoDTO crear(Long tiendaId, InventarioProductoDTO dto) {
+        // Validar que no exista duplicado
+        if (repository.existsBySedeIdAndProductoId(dto.getSedeId(), dto.getProductoId())) {
+            throw new BadRequestException("Ya existe un inventario para este producto en la sede");
+        }
+
+        InventarioProducto inventario = new InventarioProducto();
+        inventario.setTiendaId(tiendaId);
+        inventario.setSedeId(dto.getSedeId());
+        inventario.setProductoId(dto.getProductoId());
+        inventario.setCantidadActual(dto.getCantidadActual() != null ? dto.getCantidadActual() : 0);
+        inventario.setUbicacionFisica(dto.getUbicacionFisica());
+
+        InventarioProducto guardado = repository.save(inventario);
+        return toDTO(guardado);
     }
 
     @Override
     @Transactional
-    public InventarioProductoDTO actualizar(Long id, InventarioProductoDTO dto) {
-        InventarioProducto entidad = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Inventario de producto no encontrado con ID: " + id));
+    public InventarioProductoDTO actualizar(Long tiendaId, Long id, InventarioProductoDTO dto) {
+        InventarioProducto inventario = repository.findByIdAndTiendaId(id, tiendaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Inventario de producto no encontrado"));
 
-        if (dto.getCantidadActual() != null) {
-            entidad.setCantidadActual(dto.getCantidadActual());
-        }
-        if (dto.getUbicacionFisica() != null) {
-            entidad.setUbicacionFisica(dto.getUbicacionFisica());
-        }
+        inventario.setCantidadActual(dto.getCantidadActual());
+        inventario.setUbicacionFisica(dto.getUbicacionFisica());
 
-        InventarioProducto actualizado = repository.save(entidad);
-        return convertirADTO(actualizado);
+        InventarioProducto actualizado = repository.save(inventario);
+        return toDTO(actualizado);
     }
 
     @Override
     @Transactional
-    public void eliminar(Long id) {
-        if (!repository.existsById(id)) {
-            throw new RuntimeException("Inventario de producto no encontrado con ID: " + id);
-        }
-        repository.deleteById(id);
+    public void eliminar(Long tiendaId, Long id) {
+        InventarioProducto inventario = repository.findByIdAndTiendaId(id, tiendaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Inventario de producto no encontrado"));
+        repository.delete(inventario);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<InventarioProductoDTO> obtenerInventarioBajo(Long sedeId, Integer cantidadMinima) {
-        return repository.findInventarioBajo(sedeId, cantidadMinima).stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
+    public List<InventarioProductoDTO> listarBajoStock(Long tiendaId, Long sedeId, Integer cantidadMinima) {
+        return repository.findBajoStock(tiendaId, sedeId, cantidadMinima).stream()
+                .map(this::toDTO)
+                .toList();
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<InventarioProductoDTO> obtenerProductosAgotados(Long sedeId) {
-        return repository.findProductosAgotados(sedeId).stream()
-                .map(this::convertirADTO)
-                .collect(Collectors.toList());
-    }
-
-    private InventarioProductoDTO convertirADTO(InventarioProducto entidad) {
-        InventarioProductoDTO dto = new InventarioProductoDTO();
-        dto.setId(entidad.getId());
-        dto.setTiendaId(entidad.getTiendaId());
-        dto.setSedeId(entidad.getSedeId());
-        dto.setProductoId(entidad.getProductoId());
-        dto.setCantidadActual(entidad.getCantidadActual());
-        dto.setUbicacionFisica(entidad.getUbicacionFisica());
-        return dto;
-    }
-
-    private InventarioProducto convertirAEntidad(InventarioProductoDTO dto) {
-        InventarioProducto entidad = new InventarioProducto();
-        entidad.setId(dto.getId());
-        entidad.setTiendaId(dto.getTiendaId());
-        entidad.setSedeId(dto.getSedeId());
-        entidad.setProductoId(dto.getProductoId());
-        entidad.setCantidadActual(dto.getCantidadActual());
-        entidad.setUbicacionFisica(dto.getUbicacionFisica());
-        return entidad;
+    private InventarioProductoDTO toDTO(InventarioProducto entity) {
+        return InventarioProductoDTO.builder()
+                .id(entity.getId())
+                .sedeId(entity.getSedeId())
+                .productoId(entity.getProductoId())
+                .cantidadActual(entity.getCantidadActual())
+                .ubicacionFisica(entity.getUbicacionFisica())
+                .actualizadoEn(entity.getActualizadoEn())
+                .build();
     }
 }

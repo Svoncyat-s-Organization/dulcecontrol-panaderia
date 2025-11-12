@@ -1,6 +1,7 @@
 package com.dulcecontrol.bakery.feature.admin.inventario.entity;
 
 import com.dulcecontrol.bakery.feature.admin.inventario.entity.enums.MotivoMovimientoProducto;
+import com.dulcecontrol.bakery.feature.admin.inventario.entity.enums.TipoMovimientoInsumo;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -23,8 +24,9 @@ public class MovimientoInventarioProducto {
     @Column(name = "producto_id", nullable = false)
     private Long productoId;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "tipo_movimiento", nullable = false, length = 50)
-    private String tipoMovimiento;
+    private TipoMovimientoInsumo tipoMovimiento;
 
     @Column(nullable = false)
     private Integer cantidad;

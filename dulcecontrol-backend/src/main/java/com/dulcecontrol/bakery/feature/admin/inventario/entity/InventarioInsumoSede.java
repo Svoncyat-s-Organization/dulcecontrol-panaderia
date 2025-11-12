@@ -6,9 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "inventario_insumos_sedes", uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "sede_id", "insumo_id" })
-})
+@Table(name = "inventario_insumos_sedes")
 @Data
 public class InventarioInsumoSede {
 

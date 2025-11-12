@@ -2,31 +2,22 @@ package com.dulcecontrol.bakery.feature.admin.inventario.service;
 
 import com.dulcecontrol.bakery.feature.admin.inventario.controller.dto.TransferenciaInventarioDTO;
 import com.dulcecontrol.bakery.feature.admin.inventario.entity.enums.EstadoTransferencia;
-import java.time.LocalDateTime;
+
 import java.util.List;
 
 public interface ITransferenciaInventarioService {
-    List<TransferenciaInventarioDTO> obtenerTodas();
 
-    TransferenciaInventarioDTO obtenerPorId(Long id);
+    List<TransferenciaInventarioDTO> listarPorTienda(Long tiendaId);
 
-    List<TransferenciaInventarioDTO> obtenerPorTienda(Long tiendaId);
+    List<TransferenciaInventarioDTO> listarPorEstado(Long tiendaId, EstadoTransferencia estado);
 
-    List<TransferenciaInventarioDTO> obtenerPorSede(Long sedeId);
+    TransferenciaInventarioDTO obtenerPorId(Long tiendaId, Long id);
 
-    List<TransferenciaInventarioDTO> obtenerPorEstado(EstadoTransferencia estado);
+    TransferenciaInventarioDTO crear(Long tiendaId, TransferenciaInventarioDTO dto);
 
-    TransferenciaInventarioDTO crear(TransferenciaInventarioDTO dto);
+    TransferenciaInventarioDTO actualizar(Long tiendaId, Long id, TransferenciaInventarioDTO dto);
 
-    TransferenciaInventarioDTO actualizar(Long id, TransferenciaInventarioDTO dto);
+    TransferenciaInventarioDTO cambiarEstado(Long tiendaId, Long id, EstadoTransferencia nuevoEstado);
 
-    void eliminar(Long id);
-
-    TransferenciaInventarioDTO cambiarEstado(Long id, EstadoTransferencia nuevoEstado);
-
-    TransferenciaInventarioDTO autorizarTransferencia(Long id, Long autorizadoPor);
-
-    TransferenciaInventarioDTO recibirTransferencia(Long id, Long recibidoPor);
-
-    List<TransferenciaInventarioDTO> obtenerPorRangoFechas(LocalDateTime fechaInicio, LocalDateTime fechaFin);
+    void eliminar(Long tiendaId, Long id);
 }
