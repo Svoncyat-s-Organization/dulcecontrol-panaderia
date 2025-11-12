@@ -24,7 +24,6 @@ public class MovimientoInventarioInsumo {
     @Column(name = "insumo_id", nullable = false)
     private Long insumoId;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "tipo_movimiento", nullable = false, length = 50)
     private TipoMovimientoInsumo tipoMovimiento;
 

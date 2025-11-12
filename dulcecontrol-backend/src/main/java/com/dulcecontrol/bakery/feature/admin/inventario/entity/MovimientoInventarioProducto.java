@@ -24,7 +24,6 @@ public class MovimientoInventarioProducto {
     @Column(name = "producto_id", nullable = false)
     private Long productoId;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "tipo_movimiento", nullable = false, length = 50)
     private TipoMovimientoInsumo tipoMovimiento;
 
@@ -43,8 +42,7 @@ public class MovimientoInventarioProducto {
     @Column(name = "plan_produccion_id")
     private Long planProduccionId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "ENUM('produccion', 'venta', 'merma', 'ajuste', 'transferencia', 'devolucion')")
     private MotivoMovimientoProducto motivo;
 
     @Column(name = "responsable_id")

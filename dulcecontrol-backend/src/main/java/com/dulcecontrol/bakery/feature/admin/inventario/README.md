@@ -134,14 +134,140 @@ Mismos endpoints que movimientos de insumos, pero para productos.
 
 ## Ejemplo de Uso
 
+### ⚠️ IMPORTANTE: Reemplazar Path Variables
+
+Los ejemplos de endpoints usan `{tiendaId}`, `{sedeId}`, etc. como placeholders. Debes reemplazarlos con valores numéricos reales:
+
+**❌ Incorrecto:**
+```
+GET /api/admin/tiendas/{tiendaId}/inventario/insumos
+```
+
+**✅ Correcto:**
+```
+GET /api/admin/tiendas/1/inventario/insumos
+```
+
+### Ejemplos de Peticiones con cURL
+
+#### 1. Listar inventario de insumos de una tienda
+
+```bash
+curl -X GET http://localhost:8080/api/admin/tiendas/1/inventario/insumos
+```
+
+#### 2. Listar inventario de una sede específica
+
+```bash
+curl -X GET http://localhost:8080/api/admin/tiendas/1/inventario/insumos/sede/1
+```
+
+#### 3. Consultar productos con bajo stock
+
+```bash
+curl -X GET "http://localhost:8080/api/admin/tiendas/1/inventario/productos/sede/1/bajo-stock?cantidadMinima=10"
+```
+
 ### Crear un movimiento de entrada de insumos
 
+```bash
+curl -X POST http://localhost:8080/api/admin/tiendas/1/inventario/movimientos/insumos \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sedeId": 1,
+    "insumoId": 5,
+    "tipoMovimiento": "entrada",
+    "cantidad": 50.5,
+    "motivo": "Compra de harina - Orden #123",
+    "ordenCompraId": 123,
+    "responsableId": 10
+  }'
+```
+
+**Resultado:** 
+- Se crea el movimiento en la tabla `movimientos_inventario_insumos`
+- Se actualiza automáticamente el `cantidadActual` en `inventario_insumos_sedes`
+- Se registra la cantidad anterior y posterior para auditoría
+
+### Crear una transferencia entre sedes
+
+```bash
+curl -X POST http://localhost:8080/api/admin/tiendas/1/inventario/transferencias \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sedeOrigenId": 1,
+    "sedeDestinoId": 2,
+    "solicitadoPor": 10,
+    "observaciones": "Transferencia de urgencia",
+    "items": [
+      {
+        "insumoId": 5,
+        "cantidadEnviada": 20.0
+      },
+      {
+        "productoId": 3,
+        "cantidadEnviada": 15.0
+      }
+    ]
+  }'
+```
+
+### Cambiar estado de una transferencia
+
+```bash
+# Marcar como en tránsito
+curl -X PATCH "http://localhost:8080/api/admin/tiendas/1/inventario/transferencias/1/estado?nuevoEstado=en_transito"
+
+# Marcar como recibida
+curl -X PATCH "http://localhost:8080/api/admin/tiendas/1/inventario/transferencias/1/estado?nuevoEstado=recibido"
+```
+
+## Valores Válidos para Enums
+
+### EstadoTransferencia
+Los valores deben enviarse en **minúsculas con guion bajo**:
+- `pendiente` - Transferencia solicitada
+- `en_transito` - Mercancía enviada
+- `recibido` - Mercancía recibida en destino
+- `cancelado` - Transferencia cancelada
+
+**Ejemplo JSON:**
+```json
+{
+  "estado": "en_transito"
+}
+```
+
+### TipoMovimientoInsumo
+Los valores deben enviarse en **minúsculas**:
+- `entrada` - Ingreso de stock
+- `salida` - Salida de stock
+- `ajuste` - Ajuste de inventario
+- `transferencia` - Transferencia entre sedes
+
+**Ejemplo JSON:**
+```json
+{
+  "tipoMovimiento": "entrada"
+}
+```
+
+### MotivoMovimientoProducto
+Los valores deben enviarse en **minúsculas**:
+- `produccion` - Entrada por producción
+- `venta` - Salida por venta
+- `merma` - Pérdida de producto
+- `ajuste` - Ajuste de inventario
+- `transferencia` - Transferencia entre sedes
+- `devolucion` - Devolución de producto
+
+**Ejemplo JSON:**
 ```json
 POST /api/admin/tiendas/1/inventario/movimientos/insumos
 {
   "sedeId": 1,
   "insumoId": 5,
-  "tipoMovimiento": "ENTRADA",
+  "tipoMovimiento": "entrada",
   "cantidad": 50.5,
   "motivo": "Compra de harina - Orden #123",
   "ordenCompraId": 123,
@@ -156,24 +282,25 @@ POST /api/admin/tiendas/1/inventario/movimientos/insumos
 
 ### Crear una transferencia entre sedes
 
-```json
-POST /api/admin/tiendas/1/inventario/transferencias
-{
-  "sedeOrigenId": 1,
-  "sedeDestinoId": 2,
-  "solicitadoPor": 10,
-  "observaciones": "Transferencia de urgencia",
-  "items": [
-    {
-      "insumoId": 5,
-      "cantidadEnviada": 20.0
-    },
-    {
-      "productoId": 3,
-      "cantidadEnviada": 15.0
-    }
-  ]
-}
+```bash
+curl -X POST http://localhost:8080/api/admin/tiendas/1/inventario/transferencias \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sedeOrigenId": 1,
+    "sedeDestinoId": 2,
+    "solicitadoPor": 10,
+    "observaciones": "Transferencia de urgencia",
+    "items": [
+      {
+        "insumoId": 5,
+        "cantidadEnviada": 20.0
+      },
+      {
+        "productoId": 3,
+        "cantidadEnviada": 15.0
+      }
+    ]
+  }'
 ```
 
 ## Características Importantes

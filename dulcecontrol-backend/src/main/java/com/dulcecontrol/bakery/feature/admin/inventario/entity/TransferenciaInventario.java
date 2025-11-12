@@ -27,7 +27,6 @@ public class TransferenciaInventario {
     @Column(name = "sede_destino_id", nullable = false)
     private Long sedeDestinoId;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
     private EstadoTransferencia estado = EstadoTransferencia.PENDIENTE;
 
