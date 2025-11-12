@@ -17,6 +17,7 @@ VALUES
   ('11', 'Ica'),
   ('12', 'Junin'),
   ('13', 'La Libertad'),
+  
   ('14', 'Lambayeque'),
   ('15', 'Lima'),
   ('16', 'Loreto'),
