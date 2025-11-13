@@ -260,8 +260,8 @@ FROM (
     AND s.codigo_interno = 'TD-001'
 ) AS new
 ON DUPLICATE KEY UPDATE
-  cantidad_actual = new.cantidad_actual,
-  ubicacion_fisica = new.ubicacion_fisica;
+  cantidad_actual = VALUES(cantidad_actual),
+  ubicacion_fisica = VALUES(ubicacion_fisica);
 
 -- =================================
 -- INVENTARIO DE PRODUCTOS POR SEDE
@@ -323,8 +323,8 @@ FROM (
     AND s.codigo_interno = 'DM-002'
 ) AS new
 ON DUPLICATE KEY UPDATE
-  cantidad_actual = new.cantidad_actual,
-  ubicacion_fisica = new.ubicacion_fisica;
+  cantidad_actual = VALUES(cantidad_actual),
+  ubicacion_fisica = VALUES(ubicacion_fisica);
 
 -- =================================
 -- TRANSFERENCIAS DE INVENTARIO
@@ -386,11 +386,10 @@ VALUES
     NULL,
     'Solicitud de transferencia de productos terminados'
   )
-AS new
 ON DUPLICATE KEY UPDATE
-  estado = new.estado,
-  fecha_envio = new.fecha_envio,
-  fecha_recepcion = new.fecha_recepcion;
+  estado = VALUES(estado),
+  fecha_envio = VALUES(fecha_envio),
+  fecha_recepcion = VALUES(fecha_recepcion);
 
 -- =================================
 -- ITEMS DE TRANSFERENCIAS
@@ -429,7 +428,7 @@ FROM (
     AND i.codigo_interno = 'INS-002'
 ) AS new
 ON DUPLICATE KEY UPDATE
-  cantidad_recibida = new.cantidad_recibida;
+  cantidad_recibida = VALUES(cantidad_recibida);
 
 -- Items de Transferencia 2 (En tránsito)
 INSERT INTO items_transferencia (transferencia_id, insumo_id, producto_id, cantidad_enviada, cantidad_recibida)
@@ -464,7 +463,7 @@ FROM (
     AND i.codigo_interno = 'INS-010'
 ) AS new
 ON DUPLICATE KEY UPDATE
-  cantidad_enviada = new.cantidad_enviada;
+  cantidad_enviada = VALUES(cantidad_enviada);
 
 -- Items de Transferencia 3 (Pendiente - Productos)
 INSERT INTO items_transferencia (transferencia_id, insumo_id, producto_id, cantidad_enviada, cantidad_recibida)
@@ -499,7 +498,7 @@ FROM (
     AND p.sku = 'TORTA-001'
 ) AS new
 ON DUPLICATE KEY UPDATE
-  cantidad_enviada = new.cantidad_enviada;
+  cantidad_enviada = VALUES(cantidad_enviada);
 
 -- =================================
 -- MOVIMIENTOS DE INVENTARIO INSUMOS
@@ -593,9 +592,9 @@ FROM (
     AND t.fecha_solicitud = DATE_SUB(NOW(), INTERVAL 5 DAY)
 ) AS new
 ON DUPLICATE KEY UPDATE
-  cantidad = new.cantidad,
-  cantidad_anterior = new.cantidad_anterior,
-  cantidad_posterior = new.cantidad_posterior;
+  cantidad = VALUES(cantidad),
+  cantidad_anterior = VALUES(cantidad_anterior),
+  cantidad_posterior = VALUES(cantidad_posterior);
 
 -- =================================
 -- MOVIMIENTOS DE INVENTARIO PRODUCTOS
@@ -705,6 +704,6 @@ FROM (
     AND pp.fecha_produccion = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
 ) AS new
 ON DUPLICATE KEY UPDATE
-  cantidad = new.cantidad,
-  cantidad_anterior = new.cantidad_anterior,
-  cantidad_posterior = new.cantidad_posterior;
+  cantidad = VALUES(cantidad),
+  cantidad_anterior = VALUES(cantidad_anterior),
+  cantidad_posterior = VALUES(cantidad_posterior);

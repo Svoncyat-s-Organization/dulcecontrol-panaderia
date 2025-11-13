@@ -47,18 +47,17 @@ VALUES
     '2024-01-10 09:10:00',
     '2024-01-10 09:10:00'
   )
-AS new
 ON DUPLICATE KEY UPDATE
-  codigo = new.codigo,
-  nombre = new.nombre,
-  descripcion = new.descripcion,
-  precio_mensual_centimos = new.precio_mensual_centimos,
-  precio_anual_centimos = new.precio_anual_centimos,
-  moneda = new.moneda,
-  limites = new.limites,
-  activo = new.activo,
-  creado_en = new.creado_en,
-  actualizado_en = new.actualizado_en;
+  codigo = VALUES(codigo),
+  nombre = VALUES(nombre),
+  descripcion = VALUES(descripcion),
+  precio_mensual_centimos = VALUES(precio_mensual_centimos),
+  precio_anual_centimos = VALUES(precio_anual_centimos),
+  moneda = VALUES(moneda),
+  limites = VALUES(limites),
+  activo = VALUES(activo),
+  creado_en = VALUES(creado_en),
+  actualizado_en = VALUES(actualizado_en);
 
 -- =================================
 -- SUSCRIPCIONES DE TIENDAS
@@ -108,19 +107,18 @@ VALUES
     '2024-01-01 10:15:00',
     '2024-05-20 12:05:00'
   )
-AS new
 ON DUPLICATE KEY UPDATE
-  tienda_id = new.tienda_id,
-  plan_id = new.plan_id,
-  ciclo = new.ciclo,
-  precio_pactado_centimos = new.precio_pactado_centimos,
-  fecha_inicio = new.fecha_inicio,
-  fecha_fin = new.fecha_fin,
-  estado = new.estado,
-  autorenovar = new.autorenovar,
-  cancelado_en = new.cancelado_en,
-  creado_en = new.creado_en,
-  actualizado_en = new.actualizado_en;
+  tienda_id = VALUES(tienda_id),
+  plan_id = VALUES(plan_id),
+  ciclo = VALUES(ciclo),
+  precio_pactado_centimos = VALUES(precio_pactado_centimos),
+  fecha_inicio = VALUES(fecha_inicio),
+  fecha_fin = VALUES(fecha_fin),
+  estado = VALUES(estado),
+  autorenovar = VALUES(autorenovar),
+  cancelado_en = VALUES(cancelado_en),
+  creado_en = VALUES(creado_en),
+  actualizado_en = VALUES(actualizado_en);
 
 -- =================================
 -- HISTORIAL DE SUSCRIPCIONES
@@ -183,13 +181,12 @@ VALUES
     '2024-05-20 12:00:00',
     (SELECT id FROM usuarios_superadmin WHERE correo = 'administrador@dulcecontrol.pe')
   )
-AS new
 ON DUPLICATE KEY UPDATE
-  suscripcion_id = new.suscripcion_id,
-  plan_anterior_id = new.plan_anterior_id,
-  plan_nuevo_id = new.plan_nuevo_id,
-  tipo_movimiento = new.tipo_movimiento,
-  precio_anterior_centimos = new.precio_anterior_centimos,
-  precio_nuevo_centimos = new.precio_nuevo_centimos,
-  fecha_movimiento = new.fecha_movimiento,
-  usuario_responsable_id = new.usuario_responsable_id;
+  suscripcion_id = VALUES(suscripcion_id),
+  plan_anterior_id = VALUES(plan_anterior_id),
+  plan_nuevo_id = VALUES(plan_nuevo_id),
+  tipo_movimiento = VALUES(tipo_movimiento),
+  precio_anterior_centimos = VALUES(precio_anterior_centimos),
+  precio_nuevo_centimos = VALUES(precio_nuevo_centimos),
+  fecha_movimiento = VALUES(fecha_movimiento),
+  usuario_responsable_id = VALUES(usuario_responsable_id);

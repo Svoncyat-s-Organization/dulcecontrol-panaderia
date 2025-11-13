@@ -336,13 +336,12 @@ VALUES
     5.0000,
     TRUE
   )
-AS new
 ON DUPLICATE KEY UPDATE
-  costo_promedio_unitario_centimos = new.costo_promedio_unitario_centimos,
-  ultimo_precio_compra_centimos = new.ultimo_precio_compra_centimos,
-  stock_actual_global = new.stock_actual_global,
-  stock_minimo_global = new.stock_minimo_global,
-  activo = new.activo;
+  costo_promedio_unitario_centimos = VALUES(costo_promedio_unitario_centimos),
+  ultimo_precio_compra_centimos = VALUES(ultimo_precio_compra_centimos),
+  stock_actual_global = VALUES(stock_actual_global),
+  stock_minimo_global = VALUES(stock_minimo_global),
+  activo = VALUES(activo);
 
 -- =================================
 -- PROVEEDORES
@@ -485,14 +484,13 @@ VALUES
     TRUE,
     TRUE
   )
-AS new
 ON DUPLICATE KEY UPDATE
-  razon_social = new.razon_social,
-  nombre_contacto = new.nombre_contacto,
-  telefono_contacto = new.telefono_contacto,
-  email_contacto = new.email_contacto,
-  es_generico = new.es_generico,
-  activo = new.activo;
+  razon_social = VALUES(razon_social),
+  nombre_contacto = VALUES(nombre_contacto),
+  telefono_contacto = VALUES(telefono_contacto),
+  email_contacto = VALUES(email_contacto),
+  es_generico = VALUES(es_generico),
+  activo = VALUES(activo);
 
 -- =================================
 -- ÓRDENES DE COMPRA
@@ -612,11 +610,10 @@ VALUES
     'Pedido de insumos de repostería',
     (SELECT id FROM usuarios_tienda WHERE correo = 'admin@tortasdelicias.pe')
   )
-AS new
 ON DUPLICATE KEY UPDATE
-  estado = new.estado,
-  fecha_recepcion_real = new.fecha_recepcion_real,
-  total_compra_centimos = new.total_compra_centimos;
+  estado = VALUES(estado),
+  fecha_recepcion_real = VALUES(fecha_recepcion_real),
+  total_compra_centimos = VALUES(total_compra_centimos);
 
 -- =================================
 -- DETALLES DE ÓRDENES DE COMPRA
@@ -679,8 +676,8 @@ FROM (
     AND i.codigo_interno = 'INS-003'
 ) AS new
 ON DUPLICATE KEY UPDATE
-  cantidad_recibida = new.cantidad_recibida,
-  recibido_completo = new.recibido_completo;
+  cantidad_recibida = VALUES(cantidad_recibida),
+  recibido_completo = VALUES(recibido_completo);
 
 -- Detalles de Orden 2: Dulce Manjar - Lácteos
 INSERT INTO detalles_orden_compra (orden_compra_id, insumo_id, cantidad_solicitada, unidad_compra, costo_unitario_pactado_centimos, total_linea_centimos, cantidad_recibida, recibido_completo)
@@ -721,8 +718,8 @@ FROM (
     AND i.codigo_interno = 'INS-008'
 ) AS new
 ON DUPLICATE KEY UPDATE
-  cantidad_recibida = new.cantidad_recibida,
-  recibido_completo = new.recibido_completo;
+  cantidad_recibida = VALUES(cantidad_recibida),
+  recibido_completo = VALUES(recibido_completo);
 
 -- Detalles de Orden 3: Dulce Manjar - Chocolate e insumos especiales (Borrador)
 INSERT INTO detalles_orden_compra (orden_compra_id, insumo_id, cantidad_solicitada, unidad_compra, costo_unitario_pactado_centimos, total_linea_centimos, cantidad_recibida, recibido_completo)
@@ -763,8 +760,8 @@ FROM (
     AND i.codigo_interno = 'INS-010'
 ) AS new
 ON DUPLICATE KEY UPDATE
-  cantidad_recibida = new.cantidad_recibida,
-  recibido_completo = new.recibido_completo;
+  cantidad_recibida = VALUES(cantidad_recibida),
+  recibido_completo = VALUES(recibido_completo);
 
 -- Detalles de Orden 4: Panadería El Sol
 INSERT INTO detalles_orden_compra (orden_compra_id, insumo_id, cantidad_solicitada, unidad_compra, costo_unitario_pactado_centimos, total_linea_centimos, cantidad_recibida, recibido_completo)
@@ -823,8 +820,8 @@ FROM (
     AND i.codigo_interno = 'INS-S003'
 ) AS new
 ON DUPLICATE KEY UPDATE
-  cantidad_recibida = new.cantidad_recibida,
-  recibido_completo = new.recibido_completo;
+  cantidad_recibida = VALUES(cantidad_recibida),
+  recibido_completo = VALUES(recibido_completo);
 
 -- Detalles de Orden 5: Tortas & Delicias
 INSERT INTO detalles_orden_compra (orden_compra_id, insumo_id, cantidad_solicitada, unidad_compra, costo_unitario_pactado_centimos, total_linea_centimos, cantidad_recibida, recibido_completo)
@@ -865,5 +862,5 @@ FROM (
     AND i.codigo_interno = 'INS-T003'
 ) AS new
 ON DUPLICATE KEY UPDATE
-  cantidad_recibida = new.cantidad_recibida,
-  recibido_completo = new.recibido_completo;
+  cantidad_recibida = VALUES(cantidad_recibida),
+  recibido_completo = VALUES(recibido_completo);

@@ -30,9 +30,8 @@ VALUES
   ('23', 'Tacna'),
   ('24', 'Tumbes'),
   ('25', 'Ucayali')
-AS new
 ON DUPLICATE KEY UPDATE
-  nombre = new.nombre;
+  nombre = VALUES(nombre);
 
 INSERT INTO ubigeo_provincias (codigo_ubigeo, nombre, departamento_id)
 VALUES
@@ -230,10 +229,9 @@ VALUES
   ('2502', 'Atalaya', (SELECT id FROM ubigeo_departamentos WHERE codigo_ubigeo = '25')),
   ('2503', 'Padre Abad', (SELECT id FROM ubigeo_departamentos WHERE codigo_ubigeo = '25')),
   ('2504', 'Purus', (SELECT id FROM ubigeo_departamentos WHERE codigo_ubigeo = '25'))
-AS new
 ON DUPLICATE KEY UPDATE
-  nombre = new.nombre,
-  departamento_id = new.departamento_id;
+  nombre = VALUES(nombre),
+  departamento_id = VALUES(departamento_id);
 
 INSERT INTO ubigeo_distritos (codigo_ubigeo, nombre, provincia_id)
 VALUES
@@ -2070,7 +2068,6 @@ VALUES
   ('250302', 'Irazola', (SELECT id FROM ubigeo_provincias WHERE codigo_ubigeo = '2503')),
   ('250303', 'Curimana', (SELECT id FROM ubigeo_provincias WHERE codigo_ubigeo = '2503')),
   ('250401', 'Purus', (SELECT id FROM ubigeo_provincias WHERE codigo_ubigeo = '2504'))
-AS new
 ON DUPLICATE KEY UPDATE
-  nombre = new.nombre,
-  provincia_id = new.provincia_id;
+  nombre = VALUES(nombre),
+  provincia_id = VALUES(provincia_id);

@@ -41,14 +41,13 @@ VALUES
     '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- contraseña: demo123
     'en_prueba'
   )
-AS new
 ON DUPLICATE KEY UPDATE
-  slug = new.slug,
-  nombre_doc = new.nombre_doc,
-  nombre_comercial = new.nombre_comercial,
-  correo_contacto = new.correo_contacto,
-  telefono_contacto = new.telefono_contacto,
-  estado = new.estado;
+  slug = VALUES(slug),
+  nombre_doc = VALUES(nombre_doc),
+  nombre_comercial = VALUES(nombre_comercial),
+  correo_contacto = VALUES(correo_contacto),
+  telefono_contacto = VALUES(telefono_contacto),
+  estado = VALUES(estado);
 
 -- =================================
 -- SEDES DE LAS TIENDAS
@@ -99,15 +98,14 @@ VALUES
     TRUE,
     TRUE
   )
-AS new
 ON DUPLICATE KEY UPDATE
-  codigo_interno = new.codigo_interno,
-  nombre = new.nombre,
-  direccion = new.direccion,
-  telefono = new.telefono,
-  distrito_id = new.distrito_id,
-  es_principal = new.es_principal,
-  activo = new.activo;
+  codigo_interno = VALUES(codigo_interno),
+  nombre = VALUES(nombre),
+  direccion = VALUES(direccion),
+  telefono = VALUES(telefono),
+  distrito_id = VALUES(distrito_id),
+  es_principal = VALUES(es_principal),
+  activo = VALUES(activo);
 
 -- =================================
 -- DOMINIOS DE LAS TIENDAS
@@ -172,11 +170,10 @@ VALUES
     '#FF69B4',
     '#FFF5EE'
   )
-AS new
 ON DUPLICATE KEY UPDATE
-  tipo = new.tipo,
-  url_dominio = new.url_dominio,
-  url_logo = new.url_logo,
-  url_favicon = new.url_favicon,
-  color_primario = new.color_primario,
-  color_secundario = new.color_secundario;
+  tipo = VALUES(tipo),
+  url_dominio = VALUES(url_dominio),
+  url_logo = VALUES(url_logo),
+  url_favicon = VALUES(url_favicon),
+  color_primario = VALUES(color_primario),
+  color_secundario = VALUES(color_secundario);

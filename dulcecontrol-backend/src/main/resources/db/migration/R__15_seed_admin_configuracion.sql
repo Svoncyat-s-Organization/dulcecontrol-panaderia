@@ -154,29 +154,28 @@ VALUES
     'bot_token_telegram_td_654321',
     'chat_id_telegram_td_321098'
   )
-AS new
 ON DUPLICATE KEY UPDATE
-  ruc = new.ruc,
-  razon_social = new.razon_social,
-  direccion_fiscal = new.direccion_fiscal,
-  ubigeo_fiscal = new.ubigeo_fiscal,
-  usuario_sunat_sol = new.usuario_sunat_sol,
-  clave_sunat_sol_encriptada = new.clave_sunat_sol_encriptada,
-  certificado_digital_url = new.certificado_digital_url,
-  modo_sunat = new.modo_sunat,
-  tasa_igv = new.tasa_igv,
-  api_key_yape = new.api_key_yape,
-  api_key_plin = new.api_key_plin,
-  merchant_id_niubiz = new.merchant_id_niubiz,
-  banner_principal_url = new.banner_principal_url,
-  mensaje_bienvenida = new.mensaje_bienvenida,
-  horario_atencion = new.horario_atencion,
-  redes_sociales = new.redes_sociales,
-  politicas_envio = new.politicas_envio,
-  politicas_devolucion = new.politicas_devolucion,
-  email_notificaciones = new.email_notificaciones,
-  telegram_bot_token = new.telegram_bot_token,
-  telegram_chat_id = new.telegram_chat_id;
+  ruc = VALUES(ruc),
+  razon_social = VALUES(razon_social),
+  direccion_fiscal = VALUES(direccion_fiscal),
+  ubigeo_fiscal = VALUES(ubigeo_fiscal),
+  usuario_sunat_sol = VALUES(usuario_sunat_sol),
+  clave_sunat_sol_encriptada = VALUES(clave_sunat_sol_encriptada),
+  certificado_digital_url = VALUES(certificado_digital_url),
+  modo_sunat = VALUES(modo_sunat),
+  tasa_igv = VALUES(tasa_igv),
+  api_key_yape = VALUES(api_key_yape),
+  api_key_plin = VALUES(api_key_plin),
+  merchant_id_niubiz = VALUES(merchant_id_niubiz),
+  banner_principal_url = VALUES(banner_principal_url),
+  mensaje_bienvenida = VALUES(mensaje_bienvenida),
+  horario_atencion = VALUES(horario_atencion),
+  redes_sociales = VALUES(redes_sociales),
+  politicas_envio = VALUES(politicas_envio),
+  politicas_devolucion = VALUES(politicas_devolucion),
+  email_notificaciones = VALUES(email_notificaciones),
+  telegram_bot_token = VALUES(telegram_bot_token),
+  telegram_chat_id = VALUES(telegram_chat_id);
 
 -- =================================
 -- PÁGINAS STOREFRONT (CMS)
@@ -436,11 +435,10 @@ VALUES
     TRUE,
     TRUE
   )
-AS new
 ON DUPLICATE KEY UPDATE
-  titulo = new.titulo,
-  contenido = new.contenido,
-  meta_descripcion = new.meta_descripcion,
-  orden_menu = new.orden_menu,
-  visible_en_menu = new.visible_en_menu,
-  activa = new.activa;
+  titulo = VALUES(titulo),
+  contenido = VALUES(contenido),
+  meta_descripcion = VALUES(meta_descripcion),
+  orden_menu = VALUES(orden_menu),
+  visible_en_menu = VALUES(visible_en_menu),
+  activa = VALUES(activa);

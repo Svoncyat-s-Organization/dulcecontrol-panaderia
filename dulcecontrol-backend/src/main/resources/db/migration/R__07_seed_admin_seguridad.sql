@@ -111,10 +111,9 @@ VALUES
   -- Módulo CMS
   ('cms.view', 'Ver Páginas', 'cms'),
   ('cms.edit', 'Editar Páginas', 'cms')
-AS new
 ON DUPLICATE KEY UPDATE
-  nombre_visible = new.nombre_visible,
-  modulo = new.modulo;
+  nombre_visible = VALUES(nombre_visible),
+  modulo = VALUES(modulo);
 
 -- =================================
 -- ROLES DEL SISTEMA (Para cada tienda)
@@ -185,10 +184,9 @@ VALUES
     'Registro de ventas y atención al cliente',
     TRUE
   )
-AS new
 ON DUPLICATE KEY UPDATE
-  descripcion = new.descripcion,
-  es_sistema = new.es_sistema;
+  descripcion = VALUES(descripcion),
+  es_sistema = VALUES(es_sistema);
 
 -- =================================
 -- ASIGNACIÓN DE PERMISOS A ROLES
@@ -206,7 +204,7 @@ FROM (
   WHERE r.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
     AND r.nombre = 'Administrador'
 ) AS new
-ON DUPLICATE KEY UPDATE rol_id = new.rol_id;
+ON DUPLICATE KEY UPDATE rol_id = VALUES(rol_id);
 
 -- Gerente de Dulce Manjar (permisos de gestión, sin configuración)
 INSERT INTO roles_permisos (rol_id, permiso_id)
@@ -222,7 +220,7 @@ FROM (
     AND p.slug NOT LIKE 'config.%'
     AND p.slug NOT LIKE 'usuarios.%'
 ) AS new
-ON DUPLICATE KEY UPDATE rol_id = new.rol_id;
+ON DUPLICATE KEY UPDATE rol_id = VALUES(rol_id);
 
 -- Vendedor de Dulce Manjar (solo ventas, clientes, pedidos, caja)
 INSERT INTO roles_permisos (rol_id, permiso_id)
@@ -244,7 +242,7 @@ FROM (
       OR p.slug LIKE 'caja.%'
     )
 ) AS new
-ON DUPLICATE KEY UPDATE rol_id = new.rol_id;
+ON DUPLICATE KEY UPDATE rol_id = VALUES(rol_id);
 
 -- Maestro Panadero de Dulce Manjar (producción, recetas, inventario)
 INSERT INTO roles_permisos (rol_id, permiso_id)
@@ -266,7 +264,7 @@ FROM (
       OR p.slug LIKE 'reportes.produccion'
     )
 ) AS new
-ON DUPLICATE KEY UPDATE rol_id = new.rol_id;
+ON DUPLICATE KEY UPDATE rol_id = VALUES(rol_id);
 
 -- Almacenero de Dulce Manjar (inventario, compras, proveedores)
 INSERT INTO roles_permisos (rol_id, permiso_id)
@@ -288,7 +286,7 @@ FROM (
       OR p.slug LIKE 'reportes.inventario'
     )
 ) AS new
-ON DUPLICATE KEY UPDATE rol_id = new.rol_id;
+ON DUPLICATE KEY UPDATE rol_id = VALUES(rol_id);
 
 -- Administrador de Panadería El Sol (todos los permisos)
 INSERT INTO roles_permisos (rol_id, permiso_id)
@@ -302,7 +300,7 @@ FROM (
   WHERE r.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234568')
     AND r.nombre = 'Administrador'
 ) AS new
-ON DUPLICATE KEY UPDATE rol_id = new.rol_id;
+ON DUPLICATE KEY UPDATE rol_id = VALUES(rol_id);
 
 -- Vendedor de Panadería El Sol
 INSERT INTO roles_permisos (rol_id, permiso_id)
@@ -324,7 +322,7 @@ FROM (
       OR p.slug LIKE 'caja.%'
     )
 ) AS new
-ON DUPLICATE KEY UPDATE rol_id = new.rol_id;
+ON DUPLICATE KEY UPDATE rol_id = VALUES(rol_id);
 
 -- Panadero de Panadería El Sol
 INSERT INTO roles_permisos (rol_id, permiso_id)
@@ -344,7 +342,7 @@ FROM (
       OR p.slug LIKE 'recetas.view'
     )
 ) AS new
-ON DUPLICATE KEY UPDATE rol_id = new.rol_id;
+ON DUPLICATE KEY UPDATE rol_id = VALUES(rol_id);
 
 -- Administrador de Tortas & Delicias
 INSERT INTO roles_permisos (rol_id, permiso_id)
@@ -358,7 +356,7 @@ FROM (
   WHERE r.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234569')
     AND r.nombre = 'Administrador'
 ) AS new
-ON DUPLICATE KEY UPDATE rol_id = new.rol_id;
+ON DUPLICATE KEY UPDATE rol_id = VALUES(rol_id);
 
 -- Vendedor de Tortas & Delicias
 INSERT INTO roles_permisos (rol_id, permiso_id)
@@ -380,7 +378,7 @@ FROM (
       OR p.slug LIKE 'caja.%'
     )
 ) AS new
-ON DUPLICATE KEY UPDATE rol_id = new.rol_id;
+ON DUPLICATE KEY UPDATE rol_id = VALUES(rol_id);
 
 -- =================================
 -- USUARIOS DE PRUEBA
@@ -501,13 +499,12 @@ VALUES
     '987654333',
     TRUE
   )
-AS new
 ON DUPLICATE KEY UPDATE
-  correo = new.correo,
-  hash_contrasena = new.hash_contrasena,
-  nombres_doc = new.nombres_doc,
-  telefono = new.telefono,
-  activo = new.activo;
+  correo = VALUES(correo),
+  hash_contrasena = VALUES(hash_contrasena),
+  nombres_doc = VALUES(nombres_doc),
+  telefono = VALUES(telefono),
+  activo = VALUES(activo);
 
 -- =================================
 -- ASIGNACIÓN DE USUARIOS A SEDES
@@ -526,7 +523,7 @@ FROM (
   WHERE u.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
     AND s.codigo_interno = 'DM-001'
 ) AS new
-ON DUPLICATE KEY UPDATE es_sede_principal = new.es_sede_principal;
+ON DUPLICATE KEY UPDATE es_sede_principal = VALUES(es_sede_principal);
 
 -- Vendedor de Dulce Manjar también tiene acceso a San Isidro
 INSERT INTO usuario_sedes (usuario_id, sede_id, es_sede_principal)
@@ -542,7 +539,7 @@ FROM (
     AND u.correo = 'vendedor1@dulcemanjar.pe'
     AND s.codigo_interno = 'DM-002'
 ) AS new
-ON DUPLICATE KEY UPDATE es_sede_principal = new.es_sede_principal;
+ON DUPLICATE KEY UPDATE es_sede_principal = VALUES(es_sede_principal);
 
 -- Usuarios de Panadería El Sol - Sede Única
 INSERT INTO usuario_sedes (usuario_id, sede_id, es_sede_principal)
@@ -557,7 +554,7 @@ FROM (
   WHERE u.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234568')
     AND s.codigo_interno = 'PS-001'
 ) AS new
-ON DUPLICATE KEY UPDATE es_sede_principal = new.es_sede_principal;
+ON DUPLICATE KEY UPDATE es_sede_principal = VALUES(es_sede_principal);
 
 -- Usuarios de Tortas & Delicias - Sede Única
 INSERT INTO usuario_sedes (usuario_id, sede_id, es_sede_principal)
@@ -572,4 +569,4 @@ FROM (
   WHERE u.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234569')
     AND s.codigo_interno = 'TD-001'
 ) AS new
-ON DUPLICATE KEY UPDATE es_sede_principal = new.es_sede_principal;
+ON DUPLICATE KEY UPDATE es_sede_principal = VALUES(es_sede_principal);

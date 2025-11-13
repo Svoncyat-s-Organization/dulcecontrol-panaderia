@@ -167,15 +167,14 @@ VALUES
     'Cliente sin documento',
     TRUE
   )
-AS new
 ON DUPLICATE KEY UPDATE
-  nombre_doc = new.nombre_doc,
-  email = new.email,
-  telefono = new.telefono,
-  es_usuario_virtual = new.es_usuario_virtual,
-  hash_contrasena = new.hash_contrasena,
-  notas = new.notas,
-  activo = new.activo;
+  nombre_doc = VALUES(nombre_doc),
+  email = VALUES(email),
+  telefono = VALUES(telefono),
+  es_usuario_virtual = VALUES(es_usuario_virtual),
+  hash_contrasena = VALUES(hash_contrasena),
+  notas = VALUES(notas),
+  activo = VALUES(activo);
 
 -- =================================
 -- DIRECCIONES DE CLIENTES
@@ -372,10 +371,10 @@ FROM (
     AND c.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234569')
 ) AS new
 ON DUPLICATE KEY UPDATE
-  etiqueta = new.etiqueta,
-  direccion_completa = new.direccion_completa,
-  referencia = new.referencia,
-  distrito_id = new.distrito_id,
-  codigo_postal = new.codigo_postal,
-  es_fiscal = new.es_fiscal,
-  es_entrega = new.es_entrega;
+  etiqueta = VALUES(etiqueta),
+  direccion_completa = VALUES(direccion_completa),
+  referencia = VALUES(referencia),
+  distrito_id = VALUES(distrito_id),
+  codigo_postal = VALUES(codigo_postal),
+  es_fiscal = VALUES(es_fiscal),
+  es_entrega = VALUES(es_entrega);

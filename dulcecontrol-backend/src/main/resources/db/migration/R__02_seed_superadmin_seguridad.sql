@@ -44,17 +44,16 @@ VALUES
     '2024-01-06 10:10:00',
     '2024-01-06 10:10:00'
   )
-AS new
 ON DUPLICATE KEY UPDATE
-  correo = new.correo,
-  hash_contrasena = new.hash_contrasena,
-  tipo_doc = new.tipo_doc,
-  numero_doc = new.numero_doc,
-  nombres_doc = new.nombres_doc,
-  telefono = new.telefono,
-  activo = new.activo,
-  creado_en = new.creado_en,
-  actualizado_en = new.actualizado_en;
+  correo = VALUES(correo),
+  hash_contrasena = VALUES(hash_contrasena),
+  tipo_doc = VALUES(tipo_doc),
+  numero_doc = VALUES(numero_doc),
+  nombres_doc = VALUES(nombres_doc),
+  telefono = VALUES(telefono),
+  activo = VALUES(activo),
+  creado_en = VALUES(creado_en),
+  actualizado_en = VALUES(actualizado_en);
 
 -- =================================
 -- ACTIVIDADES RECIENTES
@@ -94,10 +93,9 @@ VALUES
     JSON_OBJECT('accion', 'programacion_mantenimiento', 'ventana', '2024-02-05 00:00 - 02:00'),
     '2024-02-04 18:30:00'
   )
-AS new
 ON DUPLICATE KEY UPDATE
-  admin_id = new.admin_id,
-  tipo_evento = new.tipo_evento,
-  ip_origen = new.ip_origen,
-  detalles = new.detalles,
-  creado_en = new.creado_en;
+  admin_id = VALUES(admin_id),
+  tipo_evento = VALUES(tipo_evento),
+  ip_origen = VALUES(ip_origen),
+  detalles = VALUES(detalles),
+  creado_en = VALUES(creado_en);

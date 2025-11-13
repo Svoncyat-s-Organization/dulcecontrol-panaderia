@@ -152,8 +152,8 @@ FROM (
     AND i.codigo_interno = 'INS-007'
 ) AS new
 ON DUPLICATE KEY UPDATE
-  cantidad_requerida = new.cantidad_requerida,
-  notas_preparacion = new.notas_preparacion;
+  cantidad_requerida = VALUES(cantidad_requerida),
+  notas_preparacion = VALUES(notas_preparacion);
 
 -- =================================
 -- STOCK IDEAL (Productos por Sede)
@@ -215,8 +215,8 @@ FROM (
     AND s.codigo_interno = 'DM-002'
 ) AS new
 ON DUPLICATE KEY UPDATE
-  cantidad_ideal = new.cantidad_ideal,
-  punto_reposicion = new.punto_reposicion;
+  cantidad_ideal = VALUES(cantidad_ideal),
+  punto_reposicion = VALUES(punto_reposicion);
 
 -- =================================
 -- CONTEOS DIARIOS
@@ -256,9 +256,8 @@ VALUES
     (SELECT id FROM usuarios_tienda WHERE correo = 'panadero@panaderiasol.pe'),
     'Conteo nocturno'
   )
-AS new
 ON DUPLICATE KEY UPDATE
-  observaciones = new.observaciones;
+  observaciones = VALUES(observaciones);
 
 -- =================================
 -- DETALLES DE CONTEOS DIARIOS
@@ -293,8 +292,8 @@ FROM (
     AND p.sku = 'TORTA-001'
 ) AS new
 ON DUPLICATE KEY UPDATE
-  cantidad_fisica = new.cantidad_fisica,
-  cantidad_sistema = new.cantidad_sistema;
+  cantidad_fisica = VALUES(cantidad_fisica),
+  cantidad_sistema = VALUES(cantidad_sistema);
 
 -- Detalle conteo hoy - Dulce Manjar Miraflores
 INSERT INTO detalle_conteo_diario (conteo_id, producto_id, cantidad_fisica, cantidad_sistema)
@@ -325,8 +324,8 @@ FROM (
     AND p.sku = 'TORTA-001'
 ) AS new
 ON DUPLICATE KEY UPDATE
-  cantidad_fisica = new.cantidad_fisica,
-  cantidad_sistema = new.cantidad_sistema;
+  cantidad_fisica = VALUES(cantidad_fisica),
+  cantidad_sistema = VALUES(cantidad_sistema);
 
 -- =================================
 -- PLANES DE PRODUCCIÓN
@@ -404,12 +403,11 @@ VALUES
     CONCAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), ' 08:00:00'),
     'Todo bien'
   )
-AS new
 ON DUPLICATE KEY UPDATE
-  estado = new.estado,
-  hora_inicio_real = new.hora_inicio_real,
-  hora_fin_real = new.hora_fin_real,
-  notas_maestro = new.notas_maestro;
+  estado = VALUES(estado),
+  hora_inicio_real = VALUES(hora_inicio_real),
+  hora_fin_real = VALUES(hora_fin_real),
+  notas_maestro = VALUES(notas_maestro);
 
 -- =================================
 -- DETALLES DE PLANES DE PRODUCCIÓN
@@ -479,10 +477,10 @@ FROM (
     AND p.sku = 'TORTA-001'
 ) AS new
 ON DUPLICATE KEY UPDATE
-  cantidad_producida = new.cantidad_producida,
-  cantidad_merma = new.cantidad_merma,
-  estado = new.estado,
-  hora_termino = new.hora_termino;
+  cantidad_producida = VALUES(cantidad_producida),
+  cantidad_merma = VALUES(cantidad_merma),
+  estado = VALUES(estado),
+  hora_termino = VALUES(hora_termino);
 
 -- Detalle plan de hoy - Dulce Manjar Miraflores (En proceso)
 INSERT INTO detalles_plan_produccion (
@@ -548,9 +546,9 @@ FROM (
     AND p.sku = 'TORTA-001'
 ) AS new
 ON DUPLICATE KEY UPDATE
-  cantidad_producida = new.cantidad_producida,
-  cantidad_merma = new.cantidad_merma,
-  estado = new.estado;
+  cantidad_producida = VALUES(cantidad_producida),
+  cantidad_merma = VALUES(cantidad_merma),
+  estado = VALUES(estado);
 
 -- Detalle plan de mañana - Dulce Manjar Miraflores (Confirmado)
 INSERT INTO detalles_plan_produccion (
@@ -616,5 +614,5 @@ FROM (
     AND p.sku = 'TORTA-001'
 ) AS new
 ON DUPLICATE KEY UPDATE
-  cantidad_planificada = new.cantidad_planificada,
-  observaciones = new.observaciones;
+  cantidad_planificada = VALUES(cantidad_planificada),
+  observaciones = VALUES(observaciones);
