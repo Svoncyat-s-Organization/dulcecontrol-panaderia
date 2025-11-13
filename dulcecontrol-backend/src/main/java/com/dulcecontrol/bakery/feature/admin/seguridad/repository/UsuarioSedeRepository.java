@@ -1,15 +1,27 @@
 package com.dulcecontrol.bakery.feature.admin.seguridad.repository;
 
-/**
- * Reservado para futuras operaciones sobre la tabla usuario_sedes.
- *
- * Actualmente no se expone un repositorio dedicado porque la asignación de
- * sedes
- * se abordará en una iteración posterior del módulo de seguridad.
- */
-public final class UsuarioSedeRepository {
+import com.dulcecontrol.bakery.feature.admin.seguridad.entity.UsuarioSede;
+import com.dulcecontrol.bakery.feature.admin.seguridad.entity.UsuarioSedeId;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
-    private UsuarioSedeRepository() {
-        throw new IllegalStateException("Clase utilitaria");
-    }
+import java.util.List;
+
+@Repository
+public interface UsuarioSedeRepository extends JpaRepository<UsuarioSede, UsuarioSedeId> {
+
+    List<UsuarioSede> findByIdUsuarioId(Long usuarioId);
+
+    List<UsuarioSede> findByIdSedeId(Long sedeId);
+
+    @Modifying
+    @Query("DELETE FROM UsuarioSede us WHERE us.id.usuarioId = :usuarioId")
+    void deleteByIdUsuarioId(@Param("usuarioId") Long usuarioId);
+
+    @Modifying
+    @Query("DELETE FROM UsuarioSede us WHERE us.id.sedeId = :sedeId")
+    void deleteByIdSedeId(@Param("sedeId") Long sedeId);
 }
