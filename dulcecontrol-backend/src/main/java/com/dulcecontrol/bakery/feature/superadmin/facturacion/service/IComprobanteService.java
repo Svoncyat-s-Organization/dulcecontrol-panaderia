@@ -1,0 +1,14 @@
+package com.dulcecontrol.bakery.feature.superadmin.facturacion.service;
+
+import com.dulcecontrol.bakery.feature.superadmin.facturacion.controller.dto.ComprobanteResponse;
+import com.dulcecontrol.bakery.feature.superadmin.facturacion.controller.dto.DetalleComprobanteResponse;
+import com.dulcecontrol.bakery.feature.superadmin.facturacion.entity.enums.EstadoSunat;
+import com.dulcecontrol.bakery.feature.superadmin.facturacion.entity.enums.TipoComprobante;
+
+import java.util.List;
+
+public interface IComprobanteService {
+    List<ComprobanteResponse> listar(Long tiendaId, EstadoSunat estadoSunat, TipoComprobante tipo);
+    ComprobanteResponse obtener(Long id);
+    List<DetalleComprobanteResponse> listarDetalles(Long comprobanteId);
+}
