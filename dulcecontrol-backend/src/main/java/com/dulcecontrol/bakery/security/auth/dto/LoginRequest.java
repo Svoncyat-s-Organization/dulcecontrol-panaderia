@@ -1,4 +1,4 @@
-package com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto;
+package com.dulcecontrol.bakery.security.auth.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

@@ -1,9 +1,7 @@
 package com.dulcecontrol.bakery.security;
 
-import com.dulcecontrol.bakery.feature.admin.seguridad.entity.Rol;
-import com.dulcecontrol.bakery.feature.admin.seguridad.entity.UsuarioTienda;
-import com.dulcecontrol.bakery.feature.admin.seguridad.repository.RolRepository;
-import com.dulcecontrol.bakery.feature.admin.seguridad.repository.UsuarioTiendaRepository;
+import com.dulcecontrol.bakery.feature.superadmin.seguridad.entity.UsuarioSuperadmin;
+import com.dulcecontrol.bakery.feature.superadmin.seguridad.repository.UsuarioSuperadminRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,7 +18,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.text.Normalizer;
 import java.util.Collections;
 import java.util.List;
 
@@ -30,8 +27,7 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
-    private final UsuarioTiendaRepository usuarioTiendaRepository;
-    private final RolRepository rolRepository;
+    private final UsuarioSuperadminRepository usuarioSuperadminRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -46,7 +42,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 String correo = jwtProvider.extraerCorreo(token);
 
-                usuarioTiendaRepository.findByCorreoAndActivo(correo)
+                usuarioSuperadminRepository.findByCorreo(correo)
                         .ifPresent(usuario -> autenticarUsuario(usuario, request));
             }
         } catch (Exception ex) {
@@ -64,28 +60,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return null;
     }
 
-    private void autenticarUsuario(UsuarioTienda usuario, HttpServletRequest request) {
-        List<SimpleGrantedAuthority> authorities = obtenerAuthorities(usuario);
+    private void autenticarUsuario(UsuarioSuperadmin usuario, HttpServletRequest request) {
+        // Verificar que el usuario esté activo
+        if (!usuario.getActivo()) {
+            return;
+        }
+
+        List<SimpleGrantedAuthority> authorities = Collections.singletonList(
+            new SimpleGrantedAuthority("ROLE_SUPERADMIN")
+        );
 
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                 usuario.getCorreo(), null, authorities);
         authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-    }
-
-    private List<SimpleGrantedAuthority> obtenerAuthorities(UsuarioTienda usuario) {
-        return rolRepository.findById(usuario.getRolId())
-                .map(rol -> Collections.singletonList(new SimpleGrantedAuthority(formatearAuthority(rol))))
-                .orElseGet(Collections::emptyList);
-    }
-
-    private String formatearAuthority(Rol rol) {
-        String nombre = rol.getNombre() != null ? rol.getNombre() : "USUARIO";
-        String normalizado = Normalizer.normalize(nombre, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "") // remover tildes
-                .replaceAll("[^a-zA-Z0-9]", "_")
-                .toUpperCase();
-        return "ROLE_" + normalizado;
     }
 }

@@ -48,19 +48,6 @@ CREATE TABLE IF NOT EXISTS usuarios_tienda (
     FOREIGN KEY (rol_id) REFERENCES roles (id) ON DELETE RESTRICT
 );
 
-CREATE TABLE IF NOT EXISTS usuarios_tienda_tokens (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id BIGINT NOT NULL,
-    token_hash VARCHAR(255) NOT NULL,
-    tipo VARCHAR(50) NOT NULL DEFAULT 'sesion',
-    expira_en DATETIME NOT NULL,
-    ultimo_uso_en DATETIME,
-    revocado_en DATETIME,
-    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (token_hash),
-    FOREIGN KEY (usuario_id) REFERENCES usuarios_tienda (id) ON DELETE CASCADE
-);
-
 CREATE TABLE IF NOT EXISTS usuario_sedes (
     usuario_id BIGINT NOT NULL,
     sede_id BIGINT NOT NULL,
@@ -94,8 +81,6 @@ CREATE INDEX idx_usuarios_tienda_rol ON usuarios_tienda (rol_id, activo);
 CREATE INDEX idx_usuarios_tienda_correo ON usuarios_tienda (tienda_id, correo, eliminado_en);
 
 CREATE INDEX idx_usuarios_tienda_activos ON usuarios_tienda (tienda_id, activo, eliminado_en);
-
-CREATE INDEX idx_usuarios_tokens_validos ON usuarios_tienda_tokens (usuario_id, tipo, expira_en, revocado_en);
 
 CREATE INDEX idx_usuario_sedes ON usuario_sedes (usuario_id, es_sede_principal);
 

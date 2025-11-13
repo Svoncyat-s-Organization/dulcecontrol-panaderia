@@ -1,9 +1,9 @@
-package com.dulcecontrol.bakery.feature.admin.seguridad.controller;
+package com.dulcecontrol.bakery.security.auth.controller;
 
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.LoginRequest;
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.LoginResponse;
-import com.dulcecontrol.bakery.feature.admin.seguridad.service.IAuthService;
 import com.dulcecontrol.bakery.security.JwtProvider;
+import com.dulcecontrol.bakery.security.auth.dto.LoginRequest;
+import com.dulcecontrol.bakery.security.auth.dto.LoginResponse;
+import com.dulcecontrol.bakery.security.auth.service.IAuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
