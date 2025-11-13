@@ -1,0 +1,24 @@
+package com.dulcecontrol.bakery.feature.admin.compras.service;
+
+import com.dulcecontrol.bakery.feature.admin.compras.controller.dto.InsumoCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.compras.controller.dto.InsumoResponse;
+import com.dulcecontrol.bakery.feature.admin.compras.controller.dto.InsumoUpdateRequest;
+
+import java.util.List;
+
+public interface IInsumoService {
+
+    List<InsumoResponse> listarPorTienda(Long tiendaId);
+
+    List<InsumoResponse> listarActivos(Long tiendaId);
+
+    List<InsumoResponse> listarConStockBajo(Long tiendaId);
+
+    InsumoResponse obtenerPorId(Long tiendaId, Long insumoId);
+
+    InsumoResponse crear(InsumoCreateRequest request);
+
+    InsumoResponse actualizar(Long tiendaId, Long insumoId, InsumoUpdateRequest request);
+
+    void eliminar(Long tiendaId, Long insumoId);
+}
