@@ -4,7 +4,6 @@ import com.dulcecontrol.bakery.feature.admin.clientes.controller.dto.ClienteCrea
 import com.dulcecontrol.bakery.feature.admin.clientes.controller.dto.ClienteResponse;
 import com.dulcecontrol.bakery.feature.admin.clientes.controller.dto.ClienteUpdateRequest;
 import com.dulcecontrol.bakery.feature.admin.clientes.entity.Cliente;
-import com.dulcecontrol.bakery.feature.admin.clientes.entity.enums.TipoDocumento;
 import com.dulcecontrol.bakery.feature.admin.clientes.repository.ClienteRepository;
 import com.dulcecontrol.bakery.feature.admin.clientes.service.IClienteAdminService;
 import com.dulcecontrol.bakery.shared.exception.BadRequestException;
@@ -56,15 +55,12 @@ public class ClienteAdminService implements IClienteAdminService {
     @Override
     @Transactional
     public ClienteResponse crear(Long tiendaId, ClienteCreateRequest request) {
-        // Validar que el tipo de documento sea válido
-        String tipoDocString = request.getTipoDocumento().toUpperCase();
-        if (!tipoDocString.equals("DNI") && !tipoDocString.equals("RUC")) {
-            throw new BadRequestException("El tipo de documento debe ser DNI o RUC");
-        }
-
         // Validar duplicados
-        if (clienteRepository.existsByTiendaIdAndTipoDocAndNumeroDoc(tiendaId, tipoDocString, request.getNumeroDoc())) {
-            throw new BadRequestException("Ya existe un cliente con el mismo tipo y número de documento");
+        if (request.getTipoDocumento() != null && request.getNumeroDoc() != null) {
+            if (clienteRepository.existsByTiendaIdAndTipoDocAndNumeroDoc(
+                    tiendaId, request.getTipoDocumento(), request.getNumeroDoc())) {
+                throw new BadRequestException("Ya existe un cliente con el mismo tipo y número de documento");
+            }
         }
         if (request.getEmail() != null && clienteRepository.existsByTiendaIdAndEmail(tiendaId, request.getEmail())) {
             throw new BadRequestException("Ya existe un cliente con el mismo email");
@@ -72,7 +68,7 @@ public class ClienteAdminService implements IClienteAdminService {
 
         Cliente cliente = new Cliente();
         cliente.setTiendaId(tiendaId);
-        cliente.setTipoDoc(tipoDocString);
+        cliente.setTipoDoc(request.getTipoDocumento());
         cliente.setNumeroDoc(request.getNumeroDoc());
         cliente.setNombreDoc(request.getNombreDoc());
         cliente.setEmail(request.getEmail());
@@ -91,21 +87,19 @@ public class ClienteAdminService implements IClienteAdminService {
         Cliente cliente = clienteRepository.findByIdAndTiendaId(clienteId, tiendaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
 
-        // Validar que el tipo de documento sea válido
-        String tipoDocString = request.getTipoDocumento().toUpperCase();
-        if (!tipoDocString.equals("DNI") && !tipoDocString.equals("RUC")) {
-            throw new BadRequestException("El tipo de documento debe ser DNI o RUC");
-        }
-
         // Validar duplicados (excluyendo el actual)
-        if (clienteRepository.existsByTiendaIdAndTipoDocAndNumeroDocAndIdNot(tiendaId, tipoDocString, request.getNumeroDoc(), clienteId)) {
-            throw new BadRequestException("Ya existe otro cliente con el mismo tipo y número de documento");
+        if (request.getTipoDocumento() != null && request.getNumeroDoc() != null) {
+            if (clienteRepository.existsByTiendaIdAndTipoDocAndNumeroDocAndIdNot(
+                    tiendaId, request.getTipoDocumento(), request.getNumeroDoc(), clienteId)) {
+                throw new BadRequestException("Ya existe otro cliente con el mismo tipo y número de documento");
+            }
         }
-        if (request.getEmail() != null && clienteRepository.existsByTiendaIdAndEmailAndIdNot(tiendaId, request.getEmail(), clienteId)) {
+        if (request.getEmail() != null
+                && clienteRepository.existsByTiendaIdAndEmailAndIdNot(tiendaId, request.getEmail(), clienteId)) {
             throw new BadRequestException("Ya existe otro cliente con el mismo email");
         }
 
-        cliente.setTipoDoc(tipoDocString);
+        cliente.setTipoDoc(request.getTipoDocumento());
         cliente.setNumeroDoc(request.getNumeroDoc());
         cliente.setNombreDoc(request.getNombreDoc());
         cliente.setEmail(request.getEmail());

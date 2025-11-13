@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS configuracion_tienda (
     ruc VARCHAR(20),
     razon_social VARCHAR(255),
     direccion_fiscal TEXT,
-    ubigeo_fiscal CHAR(6),
+    ubigeo_fiscal VARCHAR(6),
     usuario_sunat_sol VARCHAR(100),
     clave_sunat_sol_encriptada TEXT,
     certificado_digital_url TEXT,

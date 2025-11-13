@@ -10,8 +10,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "clientes", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"tienda_id", "tipo_doc", "numero_doc"}),
-    @UniqueConstraint(columnNames = {"tienda_id", "email"})
+        @UniqueConstraint(columnNames = { "tienda_id", "tipo_doc", "numero_doc" }),
+        @UniqueConstraint(columnNames = { "tienda_id", "email" })
 })
 @SQLDelete(sql = "UPDATE clientes SET activo = false WHERE id = ?")
 @SQLRestriction("activo = true")
@@ -25,8 +25,8 @@ public class Cliente {
     @Column(name = "tienda_id", nullable = false)
     private Long tiendaId;
 
-    @Column(name = "tipo_doc", length = 10)
-    private String tipoDoc;
+    @Column(name = "tipo_doc", columnDefinition = "ENUM('DNI', 'RUC')")
+    private TipoDocumento tipoDoc;
 
     @Column(name = "numero_doc", length = 20)
     private String numeroDoc;

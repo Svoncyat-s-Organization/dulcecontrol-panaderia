@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.clientes.controller.dto;
 
+import com.dulcecontrol.bakery.feature.admin.clientes.entity.enums.TipoDocumento;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,10 +10,8 @@ import lombok.Setter;
 @Setter
 public class ClienteUpdateRequest {
 
-    @NotBlank(message = "El tipo de documento es obligatorio")
-    private String tipoDocumento;
+    private TipoDocumento tipoDocumento;
 
-    @NotBlank(message = "El número de documento es obligatorio")
     private String numeroDoc;
 
     @NotBlank(message = "El nombre es obligatorio")

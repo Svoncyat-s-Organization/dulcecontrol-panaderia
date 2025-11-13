@@ -1,5 +1,6 @@
 package com.dulcecontrol.bakery.feature.admin.clientes.controller.dto;
 
+import com.dulcecontrol.bakery.feature.admin.clientes.entity.enums.TipoDocumento;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -11,7 +12,7 @@ public class ClienteResponse {
 
     private final Long id;
     private final Long tiendaId;
-    private final String tipoDoc;
+    private final TipoDocumento tipoDoc;
     private final String numeroDoc;
     private final String nombreDoc;
     private final String email;
