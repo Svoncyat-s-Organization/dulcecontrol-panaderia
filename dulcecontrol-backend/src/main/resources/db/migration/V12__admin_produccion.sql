@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS recetas (
     producto_id BIGINT NOT NULL,
     insumo_id BIGINT NOT NULL,
     cantidad_requerida DECIMAL(12,4) NOT NULL,
-    unidad_medida ENUM('unidad', 'kg', 'g', 'l', 'ml', 'paquete', 'saco', 'lata') NOT NULL,
+    unidad_medida VARCHAR(20) NOT NULL,
     notas_preparacion TEXT,
     creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (producto_id, insumo_id),
