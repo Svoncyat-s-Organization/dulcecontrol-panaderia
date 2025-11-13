@@ -1,0 +1,20 @@
+package com.dulcecontrol.bakery.feature.admin.ventas.service;
+
+import com.dulcecontrol.bakery.feature.admin.ventas.controller.dto.MovimientoCajaCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.ventas.controller.dto.MovimientoCajaResponse;
+import com.dulcecontrol.bakery.feature.admin.ventas.controller.dto.MovimientoCajaUpdateRequest;
+
+import java.util.List;
+
+public interface IMovimientoCajaAdminService {
+
+    List<MovimientoCajaResponse> listar(Long tiendaId, Long sesionCajaId);
+
+    MovimientoCajaResponse obtener(Long tiendaId, Long sesionCajaId, Long movimientoId);
+
+    MovimientoCajaResponse crear(Long tiendaId, Long sesionCajaId, MovimientoCajaCreateRequest request);
+
+    MovimientoCajaResponse actualizar(Long tiendaId, Long sesionCajaId, Long movimientoId, MovimientoCajaUpdateRequest request);
+
+    void eliminar(Long tiendaId, Long sesionCajaId, Long movimientoId);
+}
