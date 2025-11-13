@@ -3,6 +3,7 @@ package com.dulcecontrol.bakery.security.auth.service.impl;
 import com.dulcecontrol.bakery.feature.superadmin.seguridad.entity.UsuarioSuperadmin;
 import com.dulcecontrol.bakery.feature.superadmin.seguridad.repository.UsuarioSuperadminRepository;
 import com.dulcecontrol.bakery.security.JwtProvider;
+import com.dulcecontrol.bakery.security.auth.dto.UserProfileResponse;
 import com.dulcecontrol.bakery.security.auth.service.IAuthService;
 import com.dulcecontrol.bakery.shared.exception.AuthenticationException;
 import lombok.RequiredArgsConstructor;
@@ -37,5 +38,19 @@ public class AuthService implements IAuthService {
 
         // 4. Generar JWT (sin persistencia en BD - stateless)
         return jwtProvider.generarToken(usuario.getCorreo(), "SUPERADMIN");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserProfileResponse obtenerPerfilUsuario(String correo) {
+        UsuarioSuperadmin usuario = usuarioSuperadminRepository.findByCorreo(correo)
+                .orElseThrow(() -> new AuthenticationException("Usuario no encontrado"));
+
+        return new UserProfileResponse(
+                usuario.getId(),
+                usuario.getCorreo(),
+                usuario.getNombres(),
+                "SUPERADMIN",
+                usuario.getActivo());
     }
 }

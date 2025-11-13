@@ -84,7 +84,7 @@ public class TiendaComprobanteController {
     public ResponseEntity<TiendaComprobanteResponse> obtener(
             @PathVariable Long tiendaId,
             @PathVariable Long comprobanteId) {
-        TiendaComprobanteResponse response = tiendaComprobanteService.obtenerPorId(comprobanteId);
+        TiendaComprobanteResponse response = tiendaComprobanteService.obtenerPorIdYTienda(comprobanteId, tiendaId);
         return ResponseEntity.ok(response);
     }
 
@@ -95,7 +95,7 @@ public class TiendaComprobanteController {
     public ResponseEntity<TiendaComprobanteResponse> obtenerPorPedido(
             @PathVariable Long tiendaId,
             @PathVariable Long pedidoId) {
-        TiendaComprobanteResponse response = tiendaComprobanteService.obtenerPorPedidoId(pedidoId);
+        TiendaComprobanteResponse response = tiendaComprobanteService.obtenerPorPedidoIdYTienda(pedidoId, tiendaId);
         return ResponseEntity.ok(response);
     }
 
@@ -106,7 +106,7 @@ public class TiendaComprobanteController {
     public ResponseEntity<TiendaComprobanteResponse> crear(
             @PathVariable Long tiendaId,
             @Valid @RequestBody TiendaComprobanteRequest request) {
-        TiendaComprobanteResponse response = tiendaComprobanteService.crear(request);
+        TiendaComprobanteResponse response = tiendaComprobanteService.crear(tiendaId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -118,7 +118,7 @@ public class TiendaComprobanteController {
             @PathVariable Long tiendaId,
             @PathVariable Long comprobanteId,
             @Valid @RequestBody TiendaComprobanteRequest request) {
-        TiendaComprobanteResponse response = tiendaComprobanteService.actualizar(comprobanteId, request);
+        TiendaComprobanteResponse response = tiendaComprobanteService.actualizar(tiendaId, comprobanteId, request);
         return ResponseEntity.ok(response);
     }
 
@@ -135,7 +135,7 @@ public class TiendaComprobanteController {
         String descripcionRespuesta = payload.get("descripcionRespuesta");
 
         TiendaComprobanteResponse response = tiendaComprobanteService.actualizarEstadoSunat(
-                comprobanteId, nuevoEstado, codigoRespuesta, descripcionRespuesta);
+                tiendaId, comprobanteId, nuevoEstado, codigoRespuesta, descripcionRespuesta);
         return ResponseEntity.ok(response);
     }
 
@@ -153,7 +153,7 @@ public class TiendaComprobanteController {
         String pdfUrl = payload.get("pdfUrl");
 
         TiendaComprobanteResponse response = tiendaComprobanteService.registrarEnvioSunat(
-                comprobanteId, codigoHash, xmlUrl, cdrUrl, pdfUrl);
+                tiendaId, comprobanteId, codigoHash, xmlUrl, cdrUrl, pdfUrl);
         return ResponseEntity.ok(response);
     }
 
@@ -164,7 +164,7 @@ public class TiendaComprobanteController {
     public ResponseEntity<Void> eliminar(
             @PathVariable Long tiendaId,
             @PathVariable Long comprobanteId) {
-        tiendaComprobanteService.eliminar(comprobanteId);
+        tiendaComprobanteService.eliminar(tiendaId, comprobanteId);
         return ResponseEntity.noContent().build();
     }
 }

@@ -13,71 +13,91 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/admin/facturacion/series")
+@RequestMapping("/api/admin/tiendas/{tiendaId}/facturacion/series")
 @RequiredArgsConstructor
 public class TiendaSerieController {
 
     private final TiendaSerieService tiendaSerieService;
 
     /**
-     * [POST] Crear una nueva serie de comprobantes
-     */
-    @PostMapping
-    public ResponseEntity<TiendaSerieResponse> crear(@Valid @RequestBody TiendaSerieRequest request) {
-        TiendaSerieResponse response = tiendaSerieService.crear(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
-    /**
-     * [GET] Obtener una serie por ID
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<TiendaSerieResponse> obtenerPorId(@PathVariable Long id) {
-        TiendaSerieResponse response = tiendaSerieService.obtenerPorId(id);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
      * [GET] Listar todas las series de una tienda
      */
-    @GetMapping("/tienda/{tiendaId}")
-    public ResponseEntity<List<TiendaSerieResponse>> listarPorTienda(@PathVariable Long tiendaId) {
+    @GetMapping
+    public ResponseEntity<List<TiendaSerieResponse>> listar(@PathVariable Long tiendaId) {
         List<TiendaSerieResponse> response = tiendaSerieService.listarPorTienda(tiendaId);
         return ResponseEntity.ok(response);
     }
 
     /**
-     * [GET] Listar todas las series de una sede
+     * [GET] Obtener una serie por ID
      */
-    @GetMapping("/sede/{sedeId}")
-    public ResponseEntity<List<TiendaSerieResponse>> listarPorSede(@PathVariable Long sedeId) {
-        List<TiendaSerieResponse> response = tiendaSerieService.listarPorSede(sedeId);
+    @GetMapping("/{serieId}")
+    public ResponseEntity<TiendaSerieResponse> obtener(
+            @PathVariable Long tiendaId,
+            @PathVariable Long serieId) {
+        TiendaSerieResponse response = tiendaSerieService.obtenerPorIdYTienda(serieId, tiendaId);
         return ResponseEntity.ok(response);
     }
 
     /**
-     * [GET] Listar series activas de una tienda
+     * [POST] Crear una nueva serie de comprobantes
      */
-    @GetMapping("/tienda/{tiendaId}/activas")
-    public ResponseEntity<List<TiendaSerieResponse>> listarActivasPorTienda(@PathVariable Long tiendaId) {
+    @PostMapping
+    public ResponseEntity<TiendaSerieResponse> crear(
+            @PathVariable Long tiendaId,
+            @Valid @RequestBody TiendaSerieRequest request) {
+        TiendaSerieResponse response = tiendaSerieService.crear(tiendaId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * [PUT] Actualizar una serie
+     */
+    @PutMapping("/{serieId}")
+    public ResponseEntity<TiendaSerieResponse> actualizar(
+            @PathVariable Long tiendaId,
+            @PathVariable Long serieId,
+            @Valid @RequestBody TiendaSerieRequest request) {
+        TiendaSerieResponse response = tiendaSerieService.actualizar(tiendaId, serieId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * [DELETE] Desactivar una serie (soft delete)
+     */
+    @DeleteMapping("/{serieId}")
+    public ResponseEntity<Void> desactivar(
+            @PathVariable Long tiendaId,
+            @PathVariable Long serieId) {
+        tiendaSerieService.desactivar(tiendaId, serieId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * [GET] Listar series activas
+     */
+    @GetMapping("/activas")
+    public ResponseEntity<List<TiendaSerieResponse>> listarActivas(@PathVariable Long tiendaId) {
         List<TiendaSerieResponse> response = tiendaSerieService.listarActivasPorTienda(tiendaId);
         return ResponseEntity.ok(response);
     }
 
     /**
-     * [GET] Listar series activas de una sede
+     * [GET] Listar series por sede
      */
-    @GetMapping("/sede/{sedeId}/activas")
-    public ResponseEntity<List<TiendaSerieResponse>> listarActivasPorSede(@PathVariable Long sedeId) {
-        List<TiendaSerieResponse> response = tiendaSerieService.listarActivasPorSede(sedeId);
+    @GetMapping("/sede/{sedeId}")
+    public ResponseEntity<List<TiendaSerieResponse>> listarPorSede(
+            @PathVariable Long tiendaId,
+            @PathVariable Long sedeId) {
+        List<TiendaSerieResponse> response = tiendaSerieService.listarPorTiendaYSede(tiendaId, sedeId);
         return ResponseEntity.ok(response);
     }
 
     /**
-     * [GET] Listar series activas de una tienda filtradas por tipo de comprobante
+     * [GET] Listar series por tipo de comprobante
      */
-    @GetMapping("/tienda/{tiendaId}/tipo/{tipoComprobante}/activas")
-    public ResponseEntity<List<TiendaSerieResponse>> listarActivasPorTiendaYTipo(
+    @GetMapping("/tipo/{tipoComprobante}")
+    public ResponseEntity<List<TiendaSerieResponse>> listarPorTipo(
             @PathVariable Long tiendaId,
             @PathVariable TipoComprobante tipoComprobante) {
         List<TiendaSerieResponse> response = tiendaSerieService.listarActivasPorTiendaYTipo(tiendaId, tipoComprobante);
@@ -85,40 +105,24 @@ public class TiendaSerieController {
     }
 
     /**
-     * [PUT] Actualizar una serie
-     */
-    @PutMapping("/{id}")
-    public ResponseEntity<TiendaSerieResponse> actualizar(
-            @PathVariable Long id,
-            @Valid @RequestBody TiendaSerieRequest request) {
-        TiendaSerieResponse response = tiendaSerieService.actualizar(id, request);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * [DELETE] Desactivar una serie (soft delete)
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> desactivar(@PathVariable Long id) {
-        tiendaSerieService.desactivar(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    /**
      * [PUT] Activar una serie previamente desactivada
      */
-    @PutMapping("/{id}/activar")
-    public ResponseEntity<Void> activar(@PathVariable Long id) {
-        tiendaSerieService.activar(id);
+    @PutMapping("/{serieId}/activar")
+    public ResponseEntity<Void> activar(
+            @PathVariable Long tiendaId,
+            @PathVariable Long serieId) {
+        tiendaSerieService.activar(tiendaId, serieId);
         return ResponseEntity.ok().build();
     }
 
     /**
      * [POST] Incrementar el correlativo de una serie
      */
-    @PostMapping("/{id}/incrementar-correlativo")
-    public ResponseEntity<Integer> incrementarCorrelativo(@PathVariable Long id) {
-        Integer nuevoCorrelativo = tiendaSerieService.incrementarCorrelativo(id);
+    @PostMapping("/{serieId}/incrementar-correlativo")
+    public ResponseEntity<Integer> incrementarCorrelativo(
+            @PathVariable Long tiendaId,
+            @PathVariable Long serieId) {
+        Integer nuevoCorrelativo = tiendaSerieService.incrementarCorrelativo(tiendaId, serieId);
         return ResponseEntity.ok(nuevoCorrelativo);
     }
 }

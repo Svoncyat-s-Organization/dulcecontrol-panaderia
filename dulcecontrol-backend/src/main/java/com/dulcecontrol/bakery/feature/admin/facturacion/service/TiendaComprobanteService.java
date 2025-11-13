@@ -10,35 +10,37 @@ import java.util.List;
 
 public interface TiendaComprobanteService {
 
-    TiendaComprobanteResponse crear(TiendaComprobanteRequest request);
+        TiendaComprobanteResponse crear(Long tiendaId, TiendaComprobanteRequest request);
 
-    TiendaComprobanteResponse obtenerPorId(Long id);
+        TiendaComprobanteResponse obtenerPorIdYTienda(Long comprobanteId, Long tiendaId);
 
-    TiendaComprobanteResponse obtenerPorPedidoId(Long pedidoId);
+        TiendaComprobanteResponse obtenerPorPedidoIdYTienda(Long pedidoId, Long tiendaId);
 
-    List<TiendaComprobanteResponse> listarPorTienda(Long tiendaId);
+        List<TiendaComprobanteResponse> listarPorTienda(Long tiendaId);
 
-    List<TiendaComprobanteResponse> listarPorSerie(Long serieId);
+        List<TiendaComprobanteResponse> listarPorSerie(Long serieId);
 
-    List<TiendaComprobanteResponse> listarPorEstado(EstadoSunat estadoSunat);
+        List<TiendaComprobanteResponse> listarPorEstado(EstadoSunat estadoSunat);
 
-    List<TiendaComprobanteResponse> listarPorTiendaYEstado(Long tiendaId, EstadoSunat estadoSunat);
+        List<TiendaComprobanteResponse> listarPorTiendaYEstado(Long tiendaId, EstadoSunat estadoSunat);
 
-    List<TiendaComprobanteResponse> listarPorTiendaYTipo(Long tiendaId, TipoComprobante tipoComprobante);
+        List<TiendaComprobanteResponse> listarPorTiendaYTipo(Long tiendaId, TipoComprobante tipoComprobante);
 
-    List<TiendaComprobanteResponse> listarPorCliente(String clienteNumeroDoc);
+        List<TiendaComprobanteResponse> listarPorCliente(String clienteNumeroDoc);
 
-    List<TiendaComprobanteResponse> listarPorRangoFechas(LocalDateTime inicio, LocalDateTime fin);
+        List<TiendaComprobanteResponse> listarPorRangoFechas(LocalDateTime inicio, LocalDateTime fin);
 
-    List<TiendaComprobanteResponse> listarPorTiendaYRangoFechas(Long tiendaId, LocalDateTime inicio, LocalDateTime fin);
+        List<TiendaComprobanteResponse> listarPorTiendaYRangoFechas(Long tiendaId, LocalDateTime inicio,
+                        LocalDateTime fin);
 
-    TiendaComprobanteResponse actualizar(Long id, TiendaComprobanteRequest request);
+        TiendaComprobanteResponse actualizar(Long tiendaId, Long comprobanteId, TiendaComprobanteRequest request);
 
-    void eliminar(Long id);
+        void eliminar(Long tiendaId, Long comprobanteId);
 
-    TiendaComprobanteResponse actualizarEstadoSunat(Long id, EstadoSunat nuevoEstado, String codigoRespuesta,
-            String descripcionRespuesta);
+        TiendaComprobanteResponse actualizarEstadoSunat(Long tiendaId, Long comprobanteId, EstadoSunat nuevoEstado,
+                        String codigoRespuesta, String descripcionRespuesta);
 
-    TiendaComprobanteResponse registrarEnvioSunat(Long id, String codigoHash, String xmlUrl, String cdrUrl,
-            String pdfUrl);
+        TiendaComprobanteResponse registrarEnvioSunat(Long tiendaId, Long comprobanteId, String codigoHash,
+                        String xmlUrl,
+                        String cdrUrl, String pdfUrl);
 }

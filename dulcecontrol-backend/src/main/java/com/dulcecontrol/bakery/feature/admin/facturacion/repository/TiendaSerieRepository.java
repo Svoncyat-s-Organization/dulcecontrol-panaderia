@@ -11,21 +11,23 @@ import java.util.Optional;
 @Repository
 public interface TiendaSerieRepository extends JpaRepository<TiendaSerie, Long> {
 
-    List<TiendaSerie> findByTiendaId(Long tiendaId);
+        Optional<TiendaSerie> findByIdAndTiendaId(Long id, Long tiendaId);
 
-    List<TiendaSerie> findBySedeId(Long sedeId);
+        List<TiendaSerie> findByTiendaId(Long tiendaId);
 
-    List<TiendaSerie> findByTiendaIdAndActivaTrue(Long tiendaId);
+        List<TiendaSerie> findByTiendaIdAndSedeId(Long tiendaId, Long sedeId);
 
-    List<TiendaSerie> findBySedeIdAndActivaTrue(Long sedeId);
+        List<TiendaSerie> findByTiendaIdAndActivaTrue(Long tiendaId);
 
-    Optional<TiendaSerie> findByIdAndActivaTrue(Long id);
+        List<TiendaSerie> findBySedeIdAndActivaTrue(Long sedeId);
 
-    Optional<TiendaSerie> findByTiendaIdAndSedeIdAndTipoComprobanteAndSerieAndActivaTrue(
-            Long tiendaId, Long sedeId, TipoComprobante tipoComprobante, String serie);
+        Optional<TiendaSerie> findByIdAndActivaTrue(Long id);
 
-    List<TiendaSerie> findByTiendaIdAndTipoComprobanteAndActivaTrue(
-            Long tiendaId, TipoComprobante tipoComprobante);
+        Optional<TiendaSerie> findByTiendaIdAndSedeIdAndTipoComprobanteAndSerieAndActivaTrue(
+                        Long tiendaId, Long sedeId, TipoComprobante tipoComprobante, String serie);
 
-    boolean existsBySerieAndActivaTrue(String serie);
+        List<TiendaSerie> findByTiendaIdAndTipoComprobanteAndActivaTrue(
+                        Long tiendaId, TipoComprobante tipoComprobante);
+
+        boolean existsByTiendaIdAndSerieAndActivaTrue(Long tiendaId, String serie);
 }

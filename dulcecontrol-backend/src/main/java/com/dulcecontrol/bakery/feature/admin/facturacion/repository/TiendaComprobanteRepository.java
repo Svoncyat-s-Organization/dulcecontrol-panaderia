@@ -13,9 +13,11 @@ import java.util.Optional;
 @Repository
 public interface TiendaComprobanteRepository extends JpaRepository<TiendaComprobante, Long> {
 
+    Optional<TiendaComprobante> findByIdAndTiendaId(Long id, Long tiendaId);
+
     List<TiendaComprobante> findByTiendaId(Long tiendaId);
 
-    Optional<TiendaComprobante> findByPedidoId(Long pedidoId);
+    Optional<TiendaComprobante> findByPedidoIdAndTiendaId(Long pedidoId, Long tiendaId);
 
     List<TiendaComprobante> findBySerieId(Long serieId);
 
@@ -32,7 +34,7 @@ public interface TiendaComprobanteRepository extends JpaRepository<TiendaComprob
     List<TiendaComprobante> findByTiendaIdAndFechaEmisionBetween(
             Long tiendaId, LocalDateTime inicio, LocalDateTime fin);
 
-    boolean existsByPedidoId(Long pedidoId);
+    boolean existsByTiendaIdAndPedidoId(Long tiendaId, Long pedidoId);
 
     Optional<TiendaComprobante> findBySerieIdAndCorrelativo(Long serieId, Integer correlativo);
 }

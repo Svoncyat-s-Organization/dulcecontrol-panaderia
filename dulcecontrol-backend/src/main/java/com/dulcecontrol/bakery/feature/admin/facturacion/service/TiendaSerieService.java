@@ -8,25 +8,23 @@ import java.util.List;
 
 public interface TiendaSerieService {
 
-    TiendaSerieResponse crear(TiendaSerieRequest request);
+    TiendaSerieResponse crear(Long tiendaId, TiendaSerieRequest request);
 
-    TiendaSerieResponse obtenerPorId(Long id);
+    TiendaSerieResponse obtenerPorIdYTienda(Long serieId, Long tiendaId);
 
     List<TiendaSerieResponse> listarPorTienda(Long tiendaId);
 
-    List<TiendaSerieResponse> listarPorSede(Long sedeId);
-
     List<TiendaSerieResponse> listarActivasPorTienda(Long tiendaId);
 
-    List<TiendaSerieResponse> listarActivasPorSede(Long sedeId);
+    List<TiendaSerieResponse> listarPorTiendaYSede(Long tiendaId, Long sedeId);
 
     List<TiendaSerieResponse> listarActivasPorTiendaYTipo(Long tiendaId, TipoComprobante tipoComprobante);
 
-    TiendaSerieResponse actualizar(Long id, TiendaSerieRequest request);
+    TiendaSerieResponse actualizar(Long tiendaId, Long serieId, TiendaSerieRequest request);
 
-    void desactivar(Long id);
+    void desactivar(Long tiendaId, Long serieId);
 
-    void activar(Long id);
+    void activar(Long tiendaId, Long serieId);
 
-    Integer incrementarCorrelativo(Long serieId);
+    Integer incrementarCorrelativo(Long tiendaId, Long serieId);
 }

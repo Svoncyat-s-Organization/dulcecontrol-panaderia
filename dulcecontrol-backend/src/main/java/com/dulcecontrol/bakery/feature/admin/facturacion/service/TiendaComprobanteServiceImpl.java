@@ -22,9 +22,14 @@ public class TiendaComprobanteServiceImpl implements TiendaComprobanteService {
 
     @Override
     @Transactional
-    public TiendaComprobanteResponse crear(TiendaComprobanteRequest request) {
-        // Validar que no exista un comprobante para el pedido
-        if (tiendaComprobanteRepository.existsByPedidoId(request.getPedidoId())) {
+    public TiendaComprobanteResponse crear(Long tiendaId, TiendaComprobanteRequest request) {
+        // Validar que el tiendaId coincida
+        if (!tiendaId.equals(request.getTiendaId())) {
+            throw new IllegalArgumentException("El tiendaId de la URL no coincide con el tiendaId del request");
+        }
+
+        // Validar que no exista un comprobante para el pedido en esta tienda
+        if (tiendaComprobanteRepository.existsByTiendaIdAndPedidoId(tiendaId, request.getPedidoId())) {
             throw new IllegalArgumentException("Ya existe un comprobante para el pedido: " + request.getPedidoId());
         }
 
@@ -36,7 +41,7 @@ public class TiendaComprobanteServiceImpl implements TiendaComprobanteService {
         }
 
         TiendaComprobante comprobante = new TiendaComprobante();
-        comprobante.setTiendaId(request.getTiendaId());
+        comprobante.setTiendaId(tiendaId);
         comprobante.setPedidoId(request.getPedidoId());
         comprobante.setSerieId(request.getSerieId());
         comprobante.setEmisorRazonSocial(request.getEmisorRazonSocial());
@@ -65,16 +70,16 @@ public class TiendaComprobanteServiceImpl implements TiendaComprobanteService {
 
     @Override
     @Transactional(readOnly = true)
-    public TiendaComprobanteResponse obtenerPorId(Long id) {
-        TiendaComprobante comprobante = tiendaComprobanteRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Comprobante no encontrado con id: " + id));
+    public TiendaComprobanteResponse obtenerPorIdYTienda(Long comprobanteId, Long tiendaId) {
+        TiendaComprobante comprobante = tiendaComprobanteRepository.findByIdAndTiendaId(comprobanteId, tiendaId)
+                .orElseThrow(() -> new IllegalArgumentException("Comprobante no encontrado con id: " + comprobanteId));
         return mapToResponse(comprobante);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public TiendaComprobanteResponse obtenerPorPedidoId(Long pedidoId) {
-        TiendaComprobante comprobante = tiendaComprobanteRepository.findByPedidoId(pedidoId)
+    public TiendaComprobanteResponse obtenerPorPedidoIdYTienda(Long pedidoId, Long tiendaId) {
+        TiendaComprobante comprobante = tiendaComprobanteRepository.findByPedidoIdAndTiendaId(pedidoId, tiendaId)
                 .orElseThrow(
                         () -> new IllegalArgumentException("No se encontró comprobante para el pedido: " + pedidoId));
         return mapToResponse(comprobante);
@@ -155,9 +160,9 @@ public class TiendaComprobanteServiceImpl implements TiendaComprobanteService {
 
     @Override
     @Transactional
-    public TiendaComprobanteResponse actualizar(Long id, TiendaComprobanteRequest request) {
-        TiendaComprobante comprobante = tiendaComprobanteRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Comprobante no encontrado con id: " + id));
+    public TiendaComprobanteResponse actualizar(Long tiendaId, Long comprobanteId, TiendaComprobanteRequest request) {
+        TiendaComprobante comprobante = tiendaComprobanteRepository.findByIdAndTiendaId(comprobanteId, tiendaId)
+                .orElseThrow(() -> new IllegalArgumentException("Comprobante no encontrado con id: " + comprobanteId));
 
         // No permitir actualizar comprobantes ya enviados a SUNAT
         if (comprobante.getEstadoSunat() != EstadoSunat.PENDIENTE) {
@@ -185,9 +190,9 @@ public class TiendaComprobanteServiceImpl implements TiendaComprobanteService {
 
     @Override
     @Transactional
-    public void eliminar(Long id) {
-        TiendaComprobante comprobante = tiendaComprobanteRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Comprobante no encontrado con id: " + id));
+    public void eliminar(Long tiendaId, Long comprobanteId) {
+        TiendaComprobante comprobante = tiendaComprobanteRepository.findByIdAndTiendaId(comprobanteId, tiendaId)
+                .orElseThrow(() -> new IllegalArgumentException("Comprobante no encontrado con id: " + comprobanteId));
 
         // Solo permitir eliminar comprobantes pendientes
         if (comprobante.getEstadoSunat() != EstadoSunat.PENDIENTE) {
@@ -199,10 +204,10 @@ public class TiendaComprobanteServiceImpl implements TiendaComprobanteService {
 
     @Override
     @Transactional
-    public TiendaComprobanteResponse actualizarEstadoSunat(Long id, EstadoSunat nuevoEstado,
+    public TiendaComprobanteResponse actualizarEstadoSunat(Long tiendaId, Long comprobanteId, EstadoSunat nuevoEstado,
             String codigoRespuesta, String descripcionRespuesta) {
-        TiendaComprobante comprobante = tiendaComprobanteRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Comprobante no encontrado con id: " + id));
+        TiendaComprobante comprobante = tiendaComprobanteRepository.findByIdAndTiendaId(comprobanteId, tiendaId)
+                .orElseThrow(() -> new IllegalArgumentException("Comprobante no encontrado con id: " + comprobanteId));
 
         comprobante.setEstadoSunat(nuevoEstado);
         comprobante.setRespuestaSunatCodigo(codigoRespuesta);
@@ -214,10 +219,10 @@ public class TiendaComprobanteServiceImpl implements TiendaComprobanteService {
 
     @Override
     @Transactional
-    public TiendaComprobanteResponse registrarEnvioSunat(Long id, String codigoHash,
+    public TiendaComprobanteResponse registrarEnvioSunat(Long tiendaId, Long comprobanteId, String codigoHash,
             String xmlUrl, String cdrUrl, String pdfUrl) {
-        TiendaComprobante comprobante = tiendaComprobanteRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Comprobante no encontrado con id: " + id));
+        TiendaComprobante comprobante = tiendaComprobanteRepository.findByIdAndTiendaId(comprobanteId, tiendaId)
+                .orElseThrow(() -> new IllegalArgumentException("Comprobante no encontrado con id: " + comprobanteId));
 
         comprobante.setCodigoHashCpe(codigoHash);
         comprobante.setXmlFirmadoUrl(xmlUrl);

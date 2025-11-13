@@ -20,14 +20,19 @@ public class TiendaSerieServiceImpl implements TiendaSerieService {
 
     @Override
     @Transactional
-    public TiendaSerieResponse crear(TiendaSerieRequest request) {
-        // Validar que no exista una serie activa con el mismo código
-        if (tiendaSerieRepository.existsBySerieAndActivaTrue(request.getSerie())) {
+    public TiendaSerieResponse crear(Long tiendaId, TiendaSerieRequest request) {
+        // Validar que el tiendaId coincida
+        if (!tiendaId.equals(request.getTiendaId())) {
+            throw new IllegalArgumentException("El tiendaId de la URL no coincide con el tiendaId del request");
+        }
+
+        // Validar que no exista una serie activa con el mismo código en la tienda
+        if (tiendaSerieRepository.existsByTiendaIdAndSerieAndActivaTrue(tiendaId, request.getSerie())) {
             throw new IllegalArgumentException("Ya existe una serie activa con el código: " + request.getSerie());
         }
 
         TiendaSerie serie = new TiendaSerie();
-        serie.setTiendaId(request.getTiendaId());
+        serie.setTiendaId(tiendaId);
         serie.setSedeId(request.getSedeId());
         serie.setTipoComprobante(request.getTipoComprobante());
         serie.setSerie(request.getSerie());
@@ -41,9 +46,9 @@ public class TiendaSerieServiceImpl implements TiendaSerieService {
 
     @Override
     @Transactional(readOnly = true)
-    public TiendaSerieResponse obtenerPorId(Long id) {
-        TiendaSerie serie = tiendaSerieRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Serie no encontrada con id: " + id));
+    public TiendaSerieResponse obtenerPorIdYTienda(Long serieId, Long tiendaId) {
+        TiendaSerie serie = tiendaSerieRepository.findByIdAndTiendaId(serieId, tiendaId)
+                .orElseThrow(() -> new IllegalArgumentException("Serie no encontrada con id: " + serieId));
         return mapToResponse(serie);
     }
 
@@ -58,8 +63,8 @@ public class TiendaSerieServiceImpl implements TiendaSerieService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<TiendaSerieResponse> listarPorSede(Long sedeId) {
-        return tiendaSerieRepository.findBySedeId(sedeId)
+    public List<TiendaSerieResponse> listarPorTiendaYSede(Long tiendaId, Long sedeId) {
+        return tiendaSerieRepository.findByTiendaIdAndSedeId(tiendaId, sedeId)
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -76,15 +81,6 @@ public class TiendaSerieServiceImpl implements TiendaSerieService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<TiendaSerieResponse> listarActivasPorSede(Long sedeId) {
-        return tiendaSerieRepository.findBySedeIdAndActivaTrue(sedeId)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public List<TiendaSerieResponse> listarActivasPorTiendaYTipo(Long tiendaId, TipoComprobante tipoComprobante) {
         return tiendaSerieRepository.findByTiendaIdAndTipoComprobanteAndActivaTrue(tiendaId, tipoComprobante)
                 .stream()
@@ -94,17 +90,16 @@ public class TiendaSerieServiceImpl implements TiendaSerieService {
 
     @Override
     @Transactional
-    public TiendaSerieResponse actualizar(Long id, TiendaSerieRequest request) {
-        TiendaSerie serie = tiendaSerieRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Serie no encontrada con id: " + id));
+    public TiendaSerieResponse actualizar(Long tiendaId, Long serieId, TiendaSerieRequest request) {
+        TiendaSerie serie = tiendaSerieRepository.findByIdAndTiendaId(serieId, tiendaId)
+                .orElseThrow(() -> new IllegalArgumentException("Serie no encontrada con id: " + serieId));
 
-        // Validar que no exista otra serie activa con el mismo código
+        // Validar que no exista otra serie activa con el mismo código en la tienda
         if (!serie.getSerie().equals(request.getSerie()) &&
-                tiendaSerieRepository.existsBySerieAndActivaTrue(request.getSerie())) {
+                tiendaSerieRepository.existsByTiendaIdAndSerieAndActivaTrue(tiendaId, request.getSerie())) {
             throw new IllegalArgumentException("Ya existe una serie activa con el código: " + request.getSerie());
         }
 
-        serie.setTiendaId(request.getTiendaId());
         serie.setSedeId(request.getSedeId());
         serie.setTipoComprobante(request.getTipoComprobante());
         serie.setSerie(request.getSerie());
@@ -118,21 +113,21 @@ public class TiendaSerieServiceImpl implements TiendaSerieService {
 
     @Override
     @Transactional
-    public void desactivar(Long id) {
-        TiendaSerie serie = tiendaSerieRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Serie no encontrada con id: " + id));
+    public void desactivar(Long tiendaId, Long serieId) {
+        TiendaSerie serie = tiendaSerieRepository.findByIdAndTiendaId(serieId, tiendaId)
+                .orElseThrow(() -> new IllegalArgumentException("Serie no encontrada con id: " + serieId));
         serie.setActiva(Boolean.FALSE);
         tiendaSerieRepository.save(serie);
     }
 
     @Override
     @Transactional
-    public void activar(Long id) {
-        TiendaSerie serie = tiendaSerieRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Serie no encontrada con id: " + id));
+    public void activar(Long tiendaId, Long serieId) {
+        TiendaSerie serie = tiendaSerieRepository.findByIdAndTiendaId(serieId, tiendaId)
+                .orElseThrow(() -> new IllegalArgumentException("Serie no encontrada con id: " + serieId));
 
-        // Validar que no exista otra serie activa con el mismo código
-        if (tiendaSerieRepository.existsBySerieAndActivaTrue(serie.getSerie())) {
+        // Validar que no exista otra serie activa con el mismo código en la tienda
+        if (tiendaSerieRepository.existsByTiendaIdAndSerieAndActivaTrue(tiendaId, serie.getSerie())) {
             throw new IllegalArgumentException("Ya existe una serie activa con el código: " + serie.getSerie());
         }
 
@@ -142,8 +137,8 @@ public class TiendaSerieServiceImpl implements TiendaSerieService {
 
     @Override
     @Transactional
-    public Integer incrementarCorrelativo(Long serieId) {
-        TiendaSerie serie = tiendaSerieRepository.findById(serieId)
+    public Integer incrementarCorrelativo(Long tiendaId, Long serieId) {
+        TiendaSerie serie = tiendaSerieRepository.findByIdAndTiendaId(serieId, tiendaId)
                 .orElseThrow(() -> new IllegalArgumentException("Serie no encontrada con id: " + serieId));
 
         if (!serie.getActiva()) {
