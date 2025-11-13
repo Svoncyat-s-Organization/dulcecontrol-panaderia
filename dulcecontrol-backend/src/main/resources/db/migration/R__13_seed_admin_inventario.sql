@@ -1,5 +1,6 @@
 -- ============================================================================
 -- R_13: SEED MÓDULO DE INVENTARIO (INVENTARIOS, TRANSFERENCIAS, MOVIMIENTOS)
+-- Updated: 2025-11-12 - Fixed enum values to match Java enums
 -- ============================================================================
 
 -- =================================
@@ -525,7 +526,7 @@ FROM (
     i.tienda_id,
     s.id AS sede_id,
     i.id AS insumo_id,
-    'entrada_compra' AS tipo_movimiento,
+    'entrada' AS tipo_movimiento,
     250.0000 AS cantidad,
     0.0000 AS cantidad_anterior,
     250.0000 AS cantidad_posterior,
@@ -549,7 +550,7 @@ FROM (
     i.tienda_id,
     s.id AS sede_id,
     i.id AS insumo_id,
-    'salida_produccion' AS tipo_movimiento,
+    'salida' AS tipo_movimiento,
     50.0000 AS cantidad,
     250.0000 AS cantidad_anterior,
     200.0000 AS cantidad_posterior,
@@ -573,7 +574,7 @@ FROM (
     i.tienda_id,
     s.id AS sede_id,
     i.id AS insumo_id,
-    'salida_transferencia' AS tipo_movimiento,
+    'transferencia' AS tipo_movimiento,
     50.0000 AS cantidad,
     200.0000 AS cantidad_anterior,
     150.0000 AS cantidad_posterior,
@@ -620,7 +621,7 @@ FROM (
     p.tienda_id,
     s.id AS sede_id,
     p.id AS producto_id,
-    'entrada_produccion' AS tipo_movimiento,
+    'entrada' AS tipo_movimiento,
     98 AS cantidad,
     0 AS cantidad_anterior,
     98 AS cantidad_posterior,
@@ -643,7 +644,7 @@ FROM (
     p.tienda_id,
     s.id AS sede_id,
     p.id AS producto_id,
-    'salida_venta' AS tipo_movimiento,
+    'salida' AS tipo_movimiento,
     40 AS cantidad,
     98 AS cantidad_anterior,
     58 AS cantidad_posterior,
@@ -664,7 +665,7 @@ FROM (
     p.tienda_id,
     s.id AS sede_id,
     p.id AS producto_id,
-    'salida_merma' AS tipo_movimiento,
+    'salida' AS tipo_movimiento,
     2 AS cantidad,
     0 AS cantidad_anterior,
     -2 AS cantidad_posterior,
@@ -687,7 +688,7 @@ FROM (
     p.tienda_id,
     s.id AS sede_id,
     p.id AS producto_id,
-    'entrada_produccion' AS tipo_movimiento,
+    'entrada' AS tipo_movimiento,
     20 AS cantidad,
     0 AS cantidad_anterior,
     20 AS cantidad_posterior,
