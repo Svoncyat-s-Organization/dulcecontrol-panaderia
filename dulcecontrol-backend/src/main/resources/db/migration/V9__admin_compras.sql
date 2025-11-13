@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS ordenes_compra (
     fecha_recepcion_esperada DATE,
     fecha_recepcion_real DATE,
     estado ENUM('borrador', 'enviada', 'recibida_parcial', 'recibida_total', 'cancelada') NOT NULL DEFAULT 'borrador',
-    moneda CHAR(3) DEFAULT 'PEN',
+    moneda VARCHAR(3) DEFAULT 'PEN',
     total_compra_centimos BIGINT NOT NULL DEFAULT 0,
     metodo_pago ENUM('efectivo', 'transferencia', 'credito', 'tarjeta'),
     referencia_pago VARCHAR(100) NULL,
