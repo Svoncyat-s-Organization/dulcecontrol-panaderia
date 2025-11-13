@@ -49,8 +49,13 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .authorizeHttpRequests(auth -> auth
+                        // Autenticación
                         .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        // Swagger UI y OpenAPI
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()
+                        .requestMatchers("/swagger-resources/**", "/webjars/**").permitAll()
+                        // Todos los demás endpoints requieren autenticación
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

@@ -15,7 +15,8 @@ import org.springframework.context.annotation.Configuration;
 import java.util.List;
 
 /**
- * Configuración de OpenAPI (Swagger) para la documentación interactiva de la API.
+ * Configuración de OpenAPI (Swagger) para la documentación interactiva de la
+ * API.
  * 
  * Accede a la interfaz en: http://localhost:2250/swagger-ui.html
  */
@@ -37,12 +38,12 @@ public class OpenApiConfig {
                         .version("1.0.0")
                         .description("""
                                 API REST para la gestión integral de panaderías y pastelerías.
-                                
+
                                 **Características:**
                                 - Multi-tenant (Superadmin gestiona múltiples tiendas)
                                 - Autenticación JWT stateless
                                 - Módulos: Seguridad, Inventario, Ventas, Producción, Facturación, etc.
-                                
+
                                 **Autenticación:**
                                 1. Obtén un token haciendo login en `/api/v1/auth/login`
                                 2. Haz clic en el botón **Authorize** 🔓 (arriba a la derecha)
