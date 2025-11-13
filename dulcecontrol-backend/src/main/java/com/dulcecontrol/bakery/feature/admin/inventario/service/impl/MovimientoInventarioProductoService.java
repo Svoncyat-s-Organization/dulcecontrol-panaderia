@@ -138,6 +138,10 @@ public class MovimientoInventarioProductoService implements IMovimientoInventari
     @Transactional(readOnly = true)
     public List<MovimientoInventarioProductoDTO> listarPorRangoFechas(Long tiendaId, LocalDateTime inicio,
             LocalDateTime fin) {
+        // Si no se proporcionan fechas, retornar todos los movimientos de la tienda
+        if (inicio == null || fin == null) {
+            return listarPorTienda(tiendaId);
+        }
         return repository.findByTiendaIdAndCreadoEnBetween(tiendaId, inicio, fin).stream()
                 .map(this::toDTO)
                 .toList();
