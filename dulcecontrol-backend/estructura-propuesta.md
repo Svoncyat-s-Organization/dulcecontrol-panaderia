@@ -63,7 +63,7 @@ src/main/java/com/dulcecontrol/bakery/
 │   ├── clientes/                   # Módulo encapsulado
 │   │   ├── controller/
 │   │   │   ├── ClienteController.java
-│   │   │   └── dto/                # DTOs para contratos externos
+│   │   ├── dto/                # DTOs para contratos externos
 │   │   │       ├── ClienteRequest.java
 │   │   │       └── ClienteResponse.java
 │   │   ├── service/
@@ -83,7 +83,7 @@ src/main/java/com/dulcecontrol/bakery/
 │       ├── controller/
 │       │   ├── UsuarioController.java
 │       │   ├── AuthController.java
-│       │   └── dto/ ...
+│       ├── dto/ ...
 │       ├── service/
 │       │   └── ...
 │       ├── entity/                 # MEJORA: Separación de identidad y sesión
