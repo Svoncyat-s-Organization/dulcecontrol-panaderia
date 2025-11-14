@@ -12,15 +12,11 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ItemTransferenciaDTO {
-    private Long id;
-    private Long transferenciaId;
+public class ItemTransferenciaCreateRequest {
     private Long insumoId;
     private Long productoId;
 
     @NotNull(message = "La cantidad enviada es requerida")
     @DecimalMin(value = "0.01", message = "La cantidad enviada debe ser mayor a 0")
     private BigDecimal cantidadEnviada;
-
-    private BigDecimal cantidadRecibida;
 }

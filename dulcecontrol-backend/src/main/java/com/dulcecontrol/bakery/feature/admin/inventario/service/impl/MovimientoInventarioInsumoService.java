@@ -1,6 +1,7 @@
 package com.dulcecontrol.bakery.feature.admin.inventario.service.impl;
 
-import com.dulcecontrol.bakery.feature.admin.inventario.dto.MovimientoInventarioInsumoDTO;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.MovimientoInventarioInsumoCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.MovimientoInventarioInsumoResponse;
 import com.dulcecontrol.bakery.feature.admin.inventario.entity.InventarioInsumoSede;
 import com.dulcecontrol.bakery.feature.admin.inventario.entity.MovimientoInventarioInsumo;
 import com.dulcecontrol.bakery.feature.admin.inventario.repository.InventarioInsumoSedeRepository;
@@ -27,47 +28,47 @@ public class MovimientoInventarioInsumoService implements IMovimientoInventarioI
 
     @Override
     @Transactional(readOnly = true)
-    public List<MovimientoInventarioInsumoDTO> listarPorTienda(Long tiendaId) {
+    public List<MovimientoInventarioInsumoResponse> listarPorTienda(Long tiendaId) {
         return repository.findByTiendaId(tiendaId).stream()
-                .map(this::toDTO)
+                .map(this::toResponse)
                 .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<MovimientoInventarioInsumoDTO> listarPorTiendaYSede(Long tiendaId, Long sedeId) {
+    public List<MovimientoInventarioInsumoResponse> listarPorTiendaYSede(Long tiendaId, Long sedeId) {
         return repository.findByTiendaIdAndSedeId(tiendaId, sedeId).stream()
-                .map(this::toDTO)
+                .map(this::toResponse)
                 .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<MovimientoInventarioInsumoDTO> listarPorTiendaYSedePaginado(Long tiendaId, Long sedeId,
+    public Page<MovimientoInventarioInsumoResponse> listarPorTiendaYSedePaginado(Long tiendaId, Long sedeId,
             Pageable pageable) {
         return repository.findByTiendaIdAndSedeIdOrderByCreadoEnDesc(tiendaId, sedeId, pageable)
-                .map(this::toDTO);
+                .map(this::toResponse);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public MovimientoInventarioInsumoDTO obtenerPorId(Long tiendaId, Long id) {
+    public MovimientoInventarioInsumoResponse obtenerPorId(Long tiendaId, Long id) {
         MovimientoInventarioInsumo movimiento = repository.findByIdAndTiendaId(id, tiendaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Movimiento de inventario no encontrado"));
-        return toDTO(movimiento);
+        return toResponse(movimiento);
     }
 
     @Override
     @Transactional
-    public MovimientoInventarioInsumoDTO crear(Long tiendaId, MovimientoInventarioInsumoDTO dto) {
+    public MovimientoInventarioInsumoResponse crear(Long tiendaId, MovimientoInventarioInsumoCreateRequest request) {
         // Buscar o crear inventario
         InventarioInsumoSede inventario = inventarioRepository
-                .findBySedeIdAndInsumoId(dto.getSedeId(), dto.getInsumoId())
+                .findBySedeIdAndInsumoId(request.getSedeId(), request.getInsumoId())
                 .orElseGet(() -> {
                     InventarioInsumoSede nuevo = new InventarioInsumoSede();
                     nuevo.setTiendaId(tiendaId);
-                    nuevo.setSedeId(dto.getSedeId());
-                    nuevo.setInsumoId(dto.getInsumoId());
+                    nuevo.setSedeId(request.getSedeId());
+                    nuevo.setInsumoId(request.getInsumoId());
                     nuevo.setCantidadActual(BigDecimal.ZERO);
                     return inventarioRepository.save(nuevo);
                 });
@@ -76,26 +77,26 @@ public class MovimientoInventarioInsumoService implements IMovimientoInventarioI
         BigDecimal nuevaCantidad;
 
         // Calcular nueva cantidad según tipo de movimiento
-        switch (dto.getTipoMovimiento()) {
+        switch (request.getTipoMovimiento()) {
             case ENTRADA:
-                nuevaCantidad = cantidadAnterior.add(dto.getCantidad());
+                nuevaCantidad = cantidadAnterior.add(request.getCantidad());
                 break;
             case SALIDA:
-                nuevaCantidad = cantidadAnterior.subtract(dto.getCantidad());
+                nuevaCantidad = cantidadAnterior.subtract(request.getCantidad());
                 if (nuevaCantidad.compareTo(BigDecimal.ZERO) < 0) {
                     throw new BadRequestException("No hay suficiente stock. Stock actual: " + cantidadAnterior);
                 }
                 break;
             case AJUSTE:
-                nuevaCantidad = dto.getCantidad(); // Ajuste establece la cantidad directamente
+                nuevaCantidad = request.getCantidad(); // Ajuste establece la cantidad directamente
                 break;
             case TRANSFERENCIA:
                 // Para transferencias, el tipo de movimiento (entrada/salida) determina el
                 // signo
-                if (dto.getCantidad().compareTo(BigDecimal.ZERO) > 0) {
-                    nuevaCantidad = cantidadAnterior.add(dto.getCantidad()); // Entrada
+                if (request.getCantidad().compareTo(BigDecimal.ZERO) > 0) {
+                    nuevaCantidad = cantidadAnterior.add(request.getCantidad()); // Entrada
                 } else {
-                    nuevaCantidad = cantidadAnterior.add(dto.getCantidad()); // Salida (cantidad negativa)
+                    nuevaCantidad = cantidadAnterior.add(request.getCantidad()); // Salida (cantidad negativa)
                     if (nuevaCantidad.compareTo(BigDecimal.ZERO) < 0) {
                         throw new BadRequestException(
                                 "No hay suficiente stock para la transferencia. Stock actual: " + cantidadAnterior);
@@ -113,45 +114,45 @@ public class MovimientoInventarioInsumoService implements IMovimientoInventarioI
         // Crear movimiento
         MovimientoInventarioInsumo movimiento = new MovimientoInventarioInsumo();
         movimiento.setTiendaId(tiendaId);
-        movimiento.setSedeId(dto.getSedeId());
-        movimiento.setInsumoId(dto.getInsumoId());
-        movimiento.setTipoMovimiento(dto.getTipoMovimiento());
-        movimiento.setCantidad(dto.getCantidad());
+        movimiento.setSedeId(request.getSedeId());
+        movimiento.setInsumoId(request.getInsumoId());
+        movimiento.setTipoMovimiento(request.getTipoMovimiento());
+        movimiento.setCantidad(request.getCantidad());
         movimiento.setCantidadAnterior(cantidadAnterior);
         movimiento.setCantidadPosterior(nuevaCantidad);
-        movimiento.setOrdenCompraId(dto.getOrdenCompraId());
-        movimiento.setPlanProduccionId(dto.getPlanProduccionId());
-        movimiento.setTransferenciaId(dto.getTransferenciaId());
-        movimiento.setMotivo(dto.getMotivo());
-        movimiento.setResponsableId(dto.getResponsableId());
+        movimiento.setOrdenCompraId(request.getOrdenCompraId());
+        movimiento.setPlanProduccionId(request.getPlanProduccionId());
+        movimiento.setTransferenciaId(request.getTransferenciaId());
+        movimiento.setMotivo(request.getMotivo());
+        movimiento.setResponsableId(request.getResponsableId());
 
         MovimientoInventarioInsumo guardado = repository.save(movimiento);
-        return toDTO(guardado);
+        return toResponse(guardado);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<MovimientoInventarioInsumoDTO> listarPorInsumo(Long tiendaId, Long sedeId, Long insumoId) {
+    public List<MovimientoInventarioInsumoResponse> listarPorInsumo(Long tiendaId, Long sedeId, Long insumoId) {
         return repository.findByTiendaIdAndSedeIdAndInsumoId(tiendaId, sedeId, insumoId).stream()
-                .map(this::toDTO)
+                .map(this::toResponse)
                 .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<MovimientoInventarioInsumoDTO> listarPorRangoFechas(Long tiendaId, LocalDateTime inicio,
+    public List<MovimientoInventarioInsumoResponse> listarPorRangoFechas(Long tiendaId, LocalDateTime inicio,
             LocalDateTime fin) {
         // Si no se proporcionan fechas, retornar todos los movimientos de la tienda
         if (inicio == null || fin == null) {
             return listarPorTienda(tiendaId);
         }
         return repository.findByTiendaIdAndCreadoEnBetween(tiendaId, inicio, fin).stream()
-                .map(this::toDTO)
+                .map(this::toResponse)
                 .toList();
     }
 
-    private MovimientoInventarioInsumoDTO toDTO(MovimientoInventarioInsumo entity) {
-        return MovimientoInventarioInsumoDTO.builder()
+    private MovimientoInventarioInsumoResponse toResponse(MovimientoInventarioInsumo entity) {
+        return MovimientoInventarioInsumoResponse.builder()
                 .id(entity.getId())
                 .sedeId(entity.getSedeId())
                 .insumoId(entity.getInsumoId())

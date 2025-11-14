@@ -1,6 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.inventario.service.impl;
 
-import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioProductoDTO;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioProductoCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioProductoUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioProductoResponse;
 import com.dulcecontrol.bakery.feature.admin.inventario.entity.InventarioProducto;
 import com.dulcecontrol.bakery.feature.admin.inventario.repository.InventarioProductoRepository;
 import com.dulcecontrol.bakery.feature.admin.inventario.service.IInventarioProductoService;
@@ -20,58 +22,58 @@ public class InventarioProductoService implements IInventarioProductoService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<InventarioProductoDTO> listarPorTienda(Long tiendaId) {
+    public List<InventarioProductoResponse> listarPorTienda(Long tiendaId) {
         return repository.findByTiendaId(tiendaId).stream()
-                .map(this::toDTO)
+                .map(this::toResponse)
                 .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<InventarioProductoDTO> listarPorTiendaYSede(Long tiendaId, Long sedeId) {
+    public List<InventarioProductoResponse> listarPorTiendaYSede(Long tiendaId, Long sedeId) {
         return repository.findByTiendaIdAndSedeId(tiendaId, sedeId).stream()
-                .map(this::toDTO)
+                .map(this::toResponse)
                 .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public InventarioProductoDTO obtenerPorId(Long tiendaId, Long id) {
+    public InventarioProductoResponse obtenerPorId(Long tiendaId, Long id) {
         InventarioProducto inventario = repository.findByIdAndTiendaId(id, tiendaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventario de producto no encontrado"));
-        return toDTO(inventario);
+        return toResponse(inventario);
     }
 
     @Override
     @Transactional
-    public InventarioProductoDTO crear(Long tiendaId, InventarioProductoDTO dto) {
+    public InventarioProductoResponse crear(Long tiendaId, InventarioProductoCreateRequest request) {
         // Validar que no exista duplicado
-        if (repository.existsBySedeIdAndProductoId(dto.getSedeId(), dto.getProductoId())) {
+        if (repository.existsBySedeIdAndProductoId(request.getSedeId(), request.getProductoId())) {
             throw new BadRequestException("Ya existe un inventario para este producto en la sede");
         }
 
         InventarioProducto inventario = new InventarioProducto();
         inventario.setTiendaId(tiendaId);
-        inventario.setSedeId(dto.getSedeId());
-        inventario.setProductoId(dto.getProductoId());
-        inventario.setCantidadActual(dto.getCantidadActual() != null ? dto.getCantidadActual() : 0);
-        inventario.setUbicacionFisica(dto.getUbicacionFisica());
+        inventario.setSedeId(request.getSedeId());
+        inventario.setProductoId(request.getProductoId());
+        inventario.setCantidadActual(request.getCantidadActual() != null ? request.getCantidadActual() : 0);
+        inventario.setUbicacionFisica(request.getUbicacionFisica());
 
         InventarioProducto guardado = repository.save(inventario);
-        return toDTO(guardado);
+        return toResponse(guardado);
     }
 
     @Override
     @Transactional
-    public InventarioProductoDTO actualizar(Long tiendaId, Long id, InventarioProductoDTO dto) {
+    public InventarioProductoResponse actualizar(Long tiendaId, Long id, InventarioProductoUpdateRequest request) {
         InventarioProducto inventario = repository.findByIdAndTiendaId(id, tiendaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventario de producto no encontrado"));
 
-        inventario.setCantidadActual(dto.getCantidadActual());
-        inventario.setUbicacionFisica(dto.getUbicacionFisica());
+        inventario.setCantidadActual(request.getCantidadActual());
+        inventario.setUbicacionFisica(request.getUbicacionFisica());
 
         InventarioProducto actualizado = repository.save(inventario);
-        return toDTO(actualizado);
+        return toResponse(actualizado);
     }
 
     @Override
@@ -84,14 +86,14 @@ public class InventarioProductoService implements IInventarioProductoService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<InventarioProductoDTO> listarBajoStock(Long tiendaId, Long sedeId, Integer cantidadMinima) {
+    public List<InventarioProductoResponse> listarBajoStock(Long tiendaId, Long sedeId, Integer cantidadMinima) {
         return repository.findBajoStock(tiendaId, sedeId, cantidadMinima).stream()
-                .map(this::toDTO)
+                .map(this::toResponse)
                 .toList();
     }
 
-    private InventarioProductoDTO toDTO(InventarioProducto entity) {
-        return InventarioProductoDTO.builder()
+    private InventarioProductoResponse toResponse(InventarioProducto entity) {
+        return InventarioProductoResponse.builder()
                 .id(entity.getId())
                 .sedeId(entity.getSedeId())
                 .productoId(entity.getProductoId())

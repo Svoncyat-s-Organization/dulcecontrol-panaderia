@@ -1,6 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.inventario.controller;
 
-import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioProductoDTO;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioProductoCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioProductoUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioProductoResponse;
 import com.dulcecontrol.bakery.feature.admin.inventario.service.IInventarioProductoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,26 +22,26 @@ public class InventarioProductoController {
     private final IInventarioProductoService service;
 
     @GetMapping
-    public ResponseEntity<List<InventarioProductoDTO>> listar(@PathVariable Long tiendaId) {
+    public ResponseEntity<List<InventarioProductoResponse>> listar(@PathVariable Long tiendaId) {
         return ResponseEntity.ok(service.listarPorTienda(tiendaId));
     }
 
     @GetMapping("/sede/{sedeId}")
-    public ResponseEntity<List<InventarioProductoDTO>> listarPorSede(
+    public ResponseEntity<List<InventarioProductoResponse>> listarPorSede(
             @PathVariable Long tiendaId,
             @PathVariable Long sedeId) {
         return ResponseEntity.ok(service.listarPorTiendaYSede(tiendaId, sedeId));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<InventarioProductoDTO> obtener(
+    public ResponseEntity<InventarioProductoResponse> obtener(
             @PathVariable Long tiendaId,
             @PathVariable Long id) {
         return ResponseEntity.ok(service.obtenerPorId(tiendaId, id));
     }
 
     @GetMapping("/sede/{sedeId}/bajo-stock")
-    public ResponseEntity<List<InventarioProductoDTO>> listarBajoStock(
+    public ResponseEntity<List<InventarioProductoResponse>> listarBajoStock(
             @PathVariable Long tiendaId,
             @PathVariable Long sedeId,
             @RequestParam(defaultValue = "5") Integer cantidadMinima) {
@@ -47,19 +49,19 @@ public class InventarioProductoController {
     }
 
     @PostMapping
-    public ResponseEntity<InventarioProductoDTO> crear(
+    public ResponseEntity<InventarioProductoResponse> crear(
             @PathVariable Long tiendaId,
-            @Valid @RequestBody InventarioProductoDTO dto) {
-        InventarioProductoDTO creado = service.crear(tiendaId, dto);
+            @Valid @RequestBody InventarioProductoCreateRequest request) {
+        InventarioProductoResponse creado = service.crear(tiendaId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<InventarioProductoDTO> actualizar(
+    public ResponseEntity<InventarioProductoResponse> actualizar(
             @PathVariable Long tiendaId,
             @PathVariable Long id,
-            @Valid @RequestBody InventarioProductoDTO dto) {
-        InventarioProductoDTO actualizado = service.actualizar(tiendaId, id, dto);
+            @Valid @RequestBody InventarioProductoUpdateRequest request) {
+        InventarioProductoResponse actualizado = service.actualizar(tiendaId, id, request);
         return ResponseEntity.ok(actualizado);
     }
 

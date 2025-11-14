@@ -1,22 +1,24 @@
 package com.dulcecontrol.bakery.feature.admin.inventario.service;
 
-import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioProductoDTO;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioProductoCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioProductoUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioProductoResponse;
 
 import java.util.List;
 
 public interface IInventarioProductoService {
 
-    List<InventarioProductoDTO> listarPorTienda(Long tiendaId);
+    List<InventarioProductoResponse> listarPorTienda(Long tiendaId);
 
-    List<InventarioProductoDTO> listarPorTiendaYSede(Long tiendaId, Long sedeId);
+    List<InventarioProductoResponse> listarPorTiendaYSede(Long tiendaId, Long sedeId);
 
-    InventarioProductoDTO obtenerPorId(Long tiendaId, Long id);
+    InventarioProductoResponse obtenerPorId(Long tiendaId, Long id);
 
-    InventarioProductoDTO crear(Long tiendaId, InventarioProductoDTO dto);
+    InventarioProductoResponse crear(Long tiendaId, InventarioProductoCreateRequest request);
 
-    InventarioProductoDTO actualizar(Long tiendaId, Long id, InventarioProductoDTO dto);
+    InventarioProductoResponse actualizar(Long tiendaId, Long id, InventarioProductoUpdateRequest request);
 
     void eliminar(Long tiendaId, Long id);
 
-    List<InventarioProductoDTO> listarBajoStock(Long tiendaId, Long sedeId, Integer cantidadMinima);
+    List<InventarioProductoResponse> listarBajoStock(Long tiendaId, Long sedeId, Integer cantidadMinima);
 }

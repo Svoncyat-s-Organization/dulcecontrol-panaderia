@@ -1,23 +1,25 @@
 package com.dulcecontrol.bakery.feature.admin.inventario.service;
 
-import com.dulcecontrol.bakery.feature.admin.inventario.dto.TransferenciaInventarioDTO;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.TransferenciaInventarioCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.TransferenciaInventarioUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.TransferenciaInventarioResponse;
 import com.dulcecontrol.bakery.feature.admin.inventario.entity.enums.EstadoTransferencia;
 
 import java.util.List;
 
 public interface ITransferenciaInventarioService {
 
-    List<TransferenciaInventarioDTO> listarPorTienda(Long tiendaId);
+    List<TransferenciaInventarioResponse> listarPorTienda(Long tiendaId);
 
-    List<TransferenciaInventarioDTO> listarPorEstado(Long tiendaId, EstadoTransferencia estado);
+    List<TransferenciaInventarioResponse> listarPorEstado(Long tiendaId, EstadoTransferencia estado);
 
-    TransferenciaInventarioDTO obtenerPorId(Long tiendaId, Long id);
+    TransferenciaInventarioResponse obtenerPorId(Long tiendaId, Long id);
 
-    TransferenciaInventarioDTO crear(Long tiendaId, TransferenciaInventarioDTO dto);
+    TransferenciaInventarioResponse crear(Long tiendaId, TransferenciaInventarioCreateRequest request);
 
-    TransferenciaInventarioDTO actualizar(Long tiendaId, Long id, TransferenciaInventarioDTO dto);
+    TransferenciaInventarioResponse actualizar(Long tiendaId, Long id, TransferenciaInventarioUpdateRequest request);
 
-    TransferenciaInventarioDTO cambiarEstado(Long tiendaId, Long id, EstadoTransferencia nuevoEstado);
+    TransferenciaInventarioResponse cambiarEstado(Long tiendaId, Long id, EstadoTransferencia nuevoEstado);
 
     void eliminar(Long tiendaId, Long id);
 }

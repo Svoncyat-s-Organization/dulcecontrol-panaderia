@@ -1,6 +1,7 @@
 package com.dulcecontrol.bakery.feature.admin.inventario.controller;
 
-import com.dulcecontrol.bakery.feature.admin.inventario.dto.MovimientoInventarioProductoDTO;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.MovimientoInventarioProductoCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.MovimientoInventarioProductoResponse;
 import com.dulcecontrol.bakery.feature.admin.inventario.service.IMovimientoInventarioProductoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,19 +25,19 @@ public class MovimientoInventarioProductoController {
     private final IMovimientoInventarioProductoService service;
 
     @GetMapping
-    public ResponseEntity<List<MovimientoInventarioProductoDTO>> listar(@PathVariable Long tiendaId) {
+    public ResponseEntity<List<MovimientoInventarioProductoResponse>> listar(@PathVariable Long tiendaId) {
         return ResponseEntity.ok(service.listarPorTienda(tiendaId));
     }
 
     @GetMapping("/sede/{sedeId}")
-    public ResponseEntity<List<MovimientoInventarioProductoDTO>> listarPorSede(
+    public ResponseEntity<List<MovimientoInventarioProductoResponse>> listarPorSede(
             @PathVariable Long tiendaId,
             @PathVariable Long sedeId) {
         return ResponseEntity.ok(service.listarPorTiendaYSede(tiendaId, sedeId));
     }
 
     @GetMapping("/sede/{sedeId}/paginado")
-    public ResponseEntity<Page<MovimientoInventarioProductoDTO>> listarPorSedePaginado(
+    public ResponseEntity<Page<MovimientoInventarioProductoResponse>> listarPorSedePaginado(
             @PathVariable Long tiendaId,
             @PathVariable Long sedeId,
             Pageable pageable) {
@@ -44,14 +45,14 @@ public class MovimientoInventarioProductoController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<MovimientoInventarioProductoDTO> obtener(
+    public ResponseEntity<MovimientoInventarioProductoResponse> obtener(
             @PathVariable Long tiendaId,
             @PathVariable Long id) {
         return ResponseEntity.ok(service.obtenerPorId(tiendaId, id));
     }
 
     @GetMapping("/sede/{sedeId}/producto/{productoId}")
-    public ResponseEntity<List<MovimientoInventarioProductoDTO>> listarPorProducto(
+    public ResponseEntity<List<MovimientoInventarioProductoResponse>> listarPorProducto(
             @PathVariable Long tiendaId,
             @PathVariable Long sedeId,
             @PathVariable Long productoId) {
@@ -59,7 +60,7 @@ public class MovimientoInventarioProductoController {
     }
 
     @GetMapping("/rango-fechas")
-    public ResponseEntity<List<MovimientoInventarioProductoDTO>> listarPorRangoFechas(
+    public ResponseEntity<List<MovimientoInventarioProductoResponse>> listarPorRangoFechas(
             @PathVariable Long tiendaId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime inicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin) {
@@ -67,10 +68,10 @@ public class MovimientoInventarioProductoController {
     }
 
     @PostMapping
-    public ResponseEntity<MovimientoInventarioProductoDTO> crear(
+    public ResponseEntity<MovimientoInventarioProductoResponse> crear(
             @PathVariable Long tiendaId,
-            @Valid @RequestBody MovimientoInventarioProductoDTO dto) {
-        MovimientoInventarioProductoDTO creado = service.crear(tiendaId, dto);
+            @Valid @RequestBody MovimientoInventarioProductoCreateRequest request) {
+        MovimientoInventarioProductoResponse creado = service.crear(tiendaId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 }

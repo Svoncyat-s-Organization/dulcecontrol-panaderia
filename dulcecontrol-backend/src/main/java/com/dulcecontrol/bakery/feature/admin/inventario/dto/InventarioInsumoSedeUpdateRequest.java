@@ -7,14 +7,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class InventarioInsumoSedeDTO {
-    private Long id;
+public class InventarioInsumoSedeUpdateRequest {
 
     @NotNull(message = "La sede es requerida")
     private Long sedeId;
@@ -27,5 +25,4 @@ public class InventarioInsumoSedeDTO {
     private BigDecimal cantidadActual;
 
     private String ubicacionFisica;
-    private LocalDateTime actualizadoEn;
 }

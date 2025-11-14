@@ -1,6 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.inventario.controller;
 
-import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioInsumoSedeDTO;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioInsumoSedeCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioInsumoSedeUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioInsumoSedeResponse;
 import com.dulcecontrol.bakery.feature.admin.inventario.service.IInventarioInsumoSedeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,26 +23,26 @@ public class InventarioInsumoSedeController {
     private final IInventarioInsumoSedeService service;
 
     @GetMapping
-    public ResponseEntity<List<InventarioInsumoSedeDTO>> listar(@PathVariable Long tiendaId) {
+    public ResponseEntity<List<InventarioInsumoSedeResponse>> listar(@PathVariable Long tiendaId) {
         return ResponseEntity.ok(service.listarPorTienda(tiendaId));
     }
 
     @GetMapping("/sede/{sedeId}")
-    public ResponseEntity<List<InventarioInsumoSedeDTO>> listarPorSede(
+    public ResponseEntity<List<InventarioInsumoSedeResponse>> listarPorSede(
             @PathVariable Long tiendaId,
             @PathVariable Long sedeId) {
         return ResponseEntity.ok(service.listarPorTiendaYSede(tiendaId, sedeId));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<InventarioInsumoSedeDTO> obtener(
+    public ResponseEntity<InventarioInsumoSedeResponse> obtener(
             @PathVariable Long tiendaId,
             @PathVariable Long id) {
         return ResponseEntity.ok(service.obtenerPorId(tiendaId, id));
     }
 
     @GetMapping("/sede/{sedeId}/bajo-stock")
-    public ResponseEntity<List<InventarioInsumoSedeDTO>> listarBajoStock(
+    public ResponseEntity<List<InventarioInsumoSedeResponse>> listarBajoStock(
             @PathVariable Long tiendaId,
             @PathVariable Long sedeId,
             @RequestParam(defaultValue = "10") BigDecimal cantidadMinima) {
@@ -48,19 +50,19 @@ public class InventarioInsumoSedeController {
     }
 
     @PostMapping
-    public ResponseEntity<InventarioInsumoSedeDTO> crear(
+    public ResponseEntity<InventarioInsumoSedeResponse> crear(
             @PathVariable Long tiendaId,
-            @Valid @RequestBody InventarioInsumoSedeDTO dto) {
-        InventarioInsumoSedeDTO creado = service.crear(tiendaId, dto);
+            @Valid @RequestBody InventarioInsumoSedeCreateRequest request) {
+        InventarioInsumoSedeResponse creado = service.crear(tiendaId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<InventarioInsumoSedeDTO> actualizar(
+    public ResponseEntity<InventarioInsumoSedeResponse> actualizar(
             @PathVariable Long tiendaId,
             @PathVariable Long id,
-            @Valid @RequestBody InventarioInsumoSedeDTO dto) {
-        InventarioInsumoSedeDTO actualizado = service.actualizar(tiendaId, id, dto);
+            @Valid @RequestBody InventarioInsumoSedeUpdateRequest request) {
+        InventarioInsumoSedeResponse actualizado = service.actualizar(tiendaId, id, request);
         return ResponseEntity.ok(actualizado);
     }
 

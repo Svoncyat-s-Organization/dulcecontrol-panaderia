@@ -1,6 +1,7 @@
 package com.dulcecontrol.bakery.feature.admin.inventario.service;
 
-import com.dulcecontrol.bakery.feature.admin.inventario.dto.MovimientoInventarioProductoDTO;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.MovimientoInventarioProductoCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.MovimientoInventarioProductoResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -9,17 +10,19 @@ import java.util.List;
 
 public interface IMovimientoInventarioProductoService {
 
-    List<MovimientoInventarioProductoDTO> listarPorTienda(Long tiendaId);
+    List<MovimientoInventarioProductoResponse> listarPorTienda(Long tiendaId);
 
-    List<MovimientoInventarioProductoDTO> listarPorTiendaYSede(Long tiendaId, Long sedeId);
+    List<MovimientoInventarioProductoResponse> listarPorTiendaYSede(Long tiendaId, Long sedeId);
 
-    Page<MovimientoInventarioProductoDTO> listarPorTiendaYSedePaginado(Long tiendaId, Long sedeId, Pageable pageable);
+    Page<MovimientoInventarioProductoResponse> listarPorTiendaYSedePaginado(Long tiendaId, Long sedeId,
+            Pageable pageable);
 
-    MovimientoInventarioProductoDTO obtenerPorId(Long tiendaId, Long id);
+    MovimientoInventarioProductoResponse obtenerPorId(Long tiendaId, Long id);
 
-    MovimientoInventarioProductoDTO crear(Long tiendaId, MovimientoInventarioProductoDTO dto);
+    MovimientoInventarioProductoResponse crear(Long tiendaId, MovimientoInventarioProductoCreateRequest request);
 
-    List<MovimientoInventarioProductoDTO> listarPorProducto(Long tiendaId, Long sedeId, Long productoId);
+    List<MovimientoInventarioProductoResponse> listarPorProducto(Long tiendaId, Long sedeId, Long productoId);
 
-    List<MovimientoInventarioProductoDTO> listarPorRangoFechas(Long tiendaId, LocalDateTime inicio, LocalDateTime fin);
+    List<MovimientoInventarioProductoResponse> listarPorRangoFechas(Long tiendaId, LocalDateTime inicio,
+            LocalDateTime fin);
 }

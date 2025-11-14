@@ -1,23 +1,25 @@
 package com.dulcecontrol.bakery.feature.admin.inventario.service;
 
-import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioInsumoSedeDTO;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioInsumoSedeCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioInsumoSedeUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioInsumoSedeResponse;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 public interface IInventarioInsumoSedeService {
 
-    List<InventarioInsumoSedeDTO> listarPorTienda(Long tiendaId);
+    List<InventarioInsumoSedeResponse> listarPorTienda(Long tiendaId);
 
-    List<InventarioInsumoSedeDTO> listarPorTiendaYSede(Long tiendaId, Long sedeId);
+    List<InventarioInsumoSedeResponse> listarPorTiendaYSede(Long tiendaId, Long sedeId);
 
-    InventarioInsumoSedeDTO obtenerPorId(Long tiendaId, Long id);
+    InventarioInsumoSedeResponse obtenerPorId(Long tiendaId, Long id);
 
-    InventarioInsumoSedeDTO crear(Long tiendaId, InventarioInsumoSedeDTO dto);
+    InventarioInsumoSedeResponse crear(Long tiendaId, InventarioInsumoSedeCreateRequest request);
 
-    InventarioInsumoSedeDTO actualizar(Long tiendaId, Long id, InventarioInsumoSedeDTO dto);
+    InventarioInsumoSedeResponse actualizar(Long tiendaId, Long id, InventarioInsumoSedeUpdateRequest request);
 
     void eliminar(Long tiendaId, Long id);
 
-    List<InventarioInsumoSedeDTO> listarBajoStock(Long tiendaId, Long sedeId, BigDecimal cantidadMinima);
+    List<InventarioInsumoSedeResponse> listarBajoStock(Long tiendaId, Long sedeId, BigDecimal cantidadMinima);
 }
