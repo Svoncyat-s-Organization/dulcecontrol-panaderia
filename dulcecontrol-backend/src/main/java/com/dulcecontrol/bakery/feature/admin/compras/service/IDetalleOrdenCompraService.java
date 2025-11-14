@@ -1,7 +1,7 @@
 package com.dulcecontrol.bakery.feature.admin.compras.service;
 
-import com.dulcecontrol.bakery.feature.admin.compras.controller.dto.DetalleOrdenCompraRequest;
-import com.dulcecontrol.bakery.feature.admin.compras.controller.dto.DetalleOrdenCompraResponse;
+import com.dulcecontrol.bakery.feature.admin.compras.dto.DetalleOrdenCompraRequest;
+import com.dulcecontrol.bakery.feature.admin.compras.dto.DetalleOrdenCompraResponse;
 
 import java.util.List;
 

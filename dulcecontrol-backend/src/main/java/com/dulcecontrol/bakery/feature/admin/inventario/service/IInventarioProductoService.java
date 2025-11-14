@@ -1,6 +1,6 @@
 package com.dulcecontrol.bakery.feature.admin.inventario.service;
 
-import com.dulcecontrol.bakery.feature.admin.inventario.controller.dto.InventarioProductoDTO;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioProductoDTO;
 
 import java.util.List;
 

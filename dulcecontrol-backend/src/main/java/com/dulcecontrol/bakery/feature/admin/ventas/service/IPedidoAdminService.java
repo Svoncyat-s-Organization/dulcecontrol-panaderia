@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.ventas.service;
 
-import com.dulcecontrol.bakery.feature.admin.ventas.controller.dto.PedidoCreateRequest;
-import com.dulcecontrol.bakery.feature.admin.ventas.controller.dto.PedidoResponse;
-import com.dulcecontrol.bakery.feature.admin.ventas.controller.dto.PedidoUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.ventas.dto.PedidoCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.ventas.dto.PedidoResponse;
+import com.dulcecontrol.bakery.feature.admin.ventas.dto.PedidoUpdateRequest;
 import com.dulcecontrol.bakery.feature.admin.ventas.entity.enums.EstadoPagoPedido;
 import com.dulcecontrol.bakery.feature.admin.ventas.entity.enums.EstadoPedido;
 import com.dulcecontrol.bakery.feature.admin.ventas.entity.enums.TipoEntregaPedido;

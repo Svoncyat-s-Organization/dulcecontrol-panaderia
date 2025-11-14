@@ -1,6 +1,6 @@
 package com.dulcecontrol.bakery.feature.admin.seguridad.service.impl;
 
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.PermisoResponse;
+import com.dulcecontrol.bakery.feature.admin.seguridad.dto.PermisoResponse;
 import com.dulcecontrol.bakery.feature.admin.seguridad.entity.Permiso;
 import com.dulcecontrol.bakery.feature.admin.seguridad.repository.PermisoRepository;
 import com.dulcecontrol.bakery.feature.admin.seguridad.service.IPermisoAdminService;

@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.compras.service;
 
-import com.dulcecontrol.bakery.feature.admin.compras.controller.dto.ProveedorCreateRequest;
-import com.dulcecontrol.bakery.feature.admin.compras.controller.dto.ProveedorResponse;
-import com.dulcecontrol.bakery.feature.admin.compras.controller.dto.ProveedorUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.compras.dto.ProveedorCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.compras.dto.ProveedorResponse;
+import com.dulcecontrol.bakery.feature.admin.compras.dto.ProveedorUpdateRequest;
 
 import java.util.List;
 

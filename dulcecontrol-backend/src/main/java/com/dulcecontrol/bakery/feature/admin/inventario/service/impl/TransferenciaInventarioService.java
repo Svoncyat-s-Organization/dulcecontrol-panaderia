@@ -1,7 +1,7 @@
 package com.dulcecontrol.bakery.feature.admin.inventario.service.impl;
 
-import com.dulcecontrol.bakery.feature.admin.inventario.controller.dto.ItemTransferenciaDTO;
-import com.dulcecontrol.bakery.feature.admin.inventario.controller.dto.TransferenciaInventarioDTO;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.ItemTransferenciaDTO;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.TransferenciaInventarioDTO;
 import com.dulcecontrol.bakery.feature.admin.inventario.entity.ItemTransferencia;
 import com.dulcecontrol.bakery.feature.admin.inventario.entity.TransferenciaInventario;
 import com.dulcecontrol.bakery.feature.admin.inventario.entity.enums.EstadoTransferencia;

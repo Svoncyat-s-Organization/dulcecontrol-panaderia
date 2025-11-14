@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.superadmin.suscripciones.service.impl;
 
-import com.dulcecontrol.bakery.feature.superadmin.suscripciones.controller.dto.PlanCreateRequest;
-import com.dulcecontrol.bakery.feature.superadmin.suscripciones.controller.dto.PlanResponse;
-import com.dulcecontrol.bakery.feature.superadmin.suscripciones.controller.dto.PlanUpdateRequest;
+import com.dulcecontrol.bakery.feature.superadmin.suscripciones.dto.PlanCreateRequest;
+import com.dulcecontrol.bakery.feature.superadmin.suscripciones.dto.PlanResponse;
+import com.dulcecontrol.bakery.feature.superadmin.suscripciones.dto.PlanUpdateRequest;
 import com.dulcecontrol.bakery.feature.superadmin.suscripciones.entity.Plan;
 import com.dulcecontrol.bakery.feature.superadmin.suscripciones.repository.PlanRepository;
 import com.dulcecontrol.bakery.feature.superadmin.suscripciones.service.IPlanSuperadminService;

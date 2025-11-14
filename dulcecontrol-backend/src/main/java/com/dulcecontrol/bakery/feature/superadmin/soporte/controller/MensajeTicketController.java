@@ -1,7 +1,8 @@
 package com.dulcecontrol.bakery.feature.superadmin.soporte.controller;
 
-import com.dulcecontrol.bakery.feature.superadmin.soporte.controller.dto.MensajeCreateRequest;
-import com.dulcecontrol.bakery.feature.superadmin.soporte.controller.dto.MensajeResponse;
+import com.dulcecontrol.bakery.feature.superadmin.soporte.dto.MensajeCreateRequest;
+import com.dulcecontrol.bakery.feature.superadmin.soporte.dto.MensajeResponse;
+import com.dulcecontrol.bakery.feature.superadmin.soporte.dto.MensajeUpdateRequest;
 import com.dulcecontrol.bakery.feature.superadmin.soporte.service.IMensajeTicketService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +41,7 @@ public class MensajeTicketController {
     }
 
     @PutMapping("/mensajes/{id}")
-    public ResponseEntity<MensajeResponse> actualizar(@PathVariable Long id, @Valid @RequestBody com.dulcecontrol.bakery.feature.superadmin.soporte.controller.dto.MensajeUpdateRequest request) {
+    public ResponseEntity<MensajeResponse> actualizar(@PathVariable Long id, @Valid @RequestBody MensajeUpdateRequest request) {
         return ResponseEntity.ok(mensajeService.actualizar(id, request));
     }
 

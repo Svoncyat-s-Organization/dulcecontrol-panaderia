@@ -1,0 +1,21 @@
+package com.dulcecontrol.bakery.feature.admin.seguridad.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.Set;
+
+@Getter
+@Setter
+public class RolUpdateRequest {
+
+    @NotBlank
+    private String nombre;
+
+    private String descripcion;
+
+    private Set<Long> permisos;
+
+    private Boolean esSistema;
+}

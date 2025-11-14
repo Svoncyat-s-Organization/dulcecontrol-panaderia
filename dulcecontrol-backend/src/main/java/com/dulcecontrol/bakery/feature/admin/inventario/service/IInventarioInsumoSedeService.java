@@ -1,6 +1,6 @@
 package com.dulcecontrol.bakery.feature.admin.inventario.service;
 
-import com.dulcecontrol.bakery.feature.admin.inventario.controller.dto.InventarioInsumoSedeDTO;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioInsumoSedeDTO;
 
 import java.math.BigDecimal;
 import java.util.List;

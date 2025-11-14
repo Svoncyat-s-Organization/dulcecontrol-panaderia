@@ -1,6 +1,6 @@
 package com.dulcecontrol.bakery.feature.superadmin.facturacion.controller;
 
-import com.dulcecontrol.bakery.feature.superadmin.facturacion.controller.dto.TransaccionPagoResponse;
+import com.dulcecontrol.bakery.feature.superadmin.facturacion.dto.TransaccionPagoResponse;
 import com.dulcecontrol.bakery.feature.superadmin.facturacion.entity.enums.EstadoTransaccion;
 import com.dulcecontrol.bakery.feature.superadmin.facturacion.service.ITransaccionPagoService;
 import lombok.RequiredArgsConstructor;

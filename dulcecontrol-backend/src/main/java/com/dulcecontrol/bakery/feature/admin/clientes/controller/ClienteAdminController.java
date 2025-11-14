@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.clientes.controller;
 
-import com.dulcecontrol.bakery.feature.admin.clientes.controller.dto.ClienteCreateRequest;
-import com.dulcecontrol.bakery.feature.admin.clientes.controller.dto.ClienteResponse;
-import com.dulcecontrol.bakery.feature.admin.clientes.controller.dto.ClienteUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.clientes.dto.ClienteCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.clientes.dto.ClienteResponse;
+import com.dulcecontrol.bakery.feature.admin.clientes.dto.ClienteUpdateRequest;
 import com.dulcecontrol.bakery.feature.admin.clientes.service.IClienteAdminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

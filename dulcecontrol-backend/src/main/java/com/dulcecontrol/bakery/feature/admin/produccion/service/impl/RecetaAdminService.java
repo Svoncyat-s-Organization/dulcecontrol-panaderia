@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.produccion.service.impl;
 
-import com.dulcecontrol.bakery.feature.admin.produccion.controller.dto.RecetaCreateRequest;
-import com.dulcecontrol.bakery.feature.admin.produccion.controller.dto.RecetaResponse;
-import com.dulcecontrol.bakery.feature.admin.produccion.controller.dto.RecetaUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.produccion.dto.RecetaCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.produccion.dto.RecetaResponse;
+import com.dulcecontrol.bakery.feature.admin.produccion.dto.RecetaUpdateRequest;
 import com.dulcecontrol.bakery.feature.admin.produccion.entity.Receta;
 import com.dulcecontrol.bakery.feature.admin.produccion.repository.RecetaRepository;
 import com.dulcecontrol.bakery.feature.admin.produccion.service.IRecetaAdminService;

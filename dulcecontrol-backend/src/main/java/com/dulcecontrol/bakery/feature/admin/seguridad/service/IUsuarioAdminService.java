@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.seguridad.service;
 
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.UsuarioCreateRequest;
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.UsuarioResponse;
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.UsuarioUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.seguridad.dto.UsuarioCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.seguridad.dto.UsuarioResponse;
+import com.dulcecontrol.bakery.feature.admin.seguridad.dto.UsuarioUpdateRequest;
 
 import java.util.List;
 

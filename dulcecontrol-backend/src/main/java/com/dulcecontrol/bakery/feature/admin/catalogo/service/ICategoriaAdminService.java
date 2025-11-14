@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.catalogo.service;
 
-import com.dulcecontrol.bakery.feature.admin.catalogo.controller.dto.CategoriaCreateRequest;
-import com.dulcecontrol.bakery.feature.admin.catalogo.controller.dto.CategoriaResponse;
-import com.dulcecontrol.bakery.feature.admin.catalogo.controller.dto.CategoriaUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.catalogo.dto.CategoriaCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.catalogo.dto.CategoriaResponse;
+import com.dulcecontrol.bakery.feature.admin.catalogo.dto.CategoriaUpdateRequest;
 
 import java.util.List;
 

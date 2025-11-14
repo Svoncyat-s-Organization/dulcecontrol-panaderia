@@ -1,6 +1,6 @@
 package com.dulcecontrol.bakery.feature.superadmin.suscripciones.controller;
 
-import com.dulcecontrol.bakery.feature.superadmin.suscripciones.controller.dto.HistorialSuscripcionResponse;
+import com.dulcecontrol.bakery.feature.superadmin.suscripciones.dto.HistorialSuscripcionResponse;
 import com.dulcecontrol.bakery.feature.superadmin.suscripciones.service.IHistorialSuscripcionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

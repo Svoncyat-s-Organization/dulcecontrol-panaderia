@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.ventas.service.impl;
 
-import com.dulcecontrol.bakery.feature.admin.ventas.controller.dto.MovimientoCajaCreateRequest;
-import com.dulcecontrol.bakery.feature.admin.ventas.controller.dto.MovimientoCajaResponse;
-import com.dulcecontrol.bakery.feature.admin.ventas.controller.dto.MovimientoCajaUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.ventas.dto.MovimientoCajaCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.ventas.dto.MovimientoCajaResponse;
+import com.dulcecontrol.bakery.feature.admin.ventas.dto.MovimientoCajaUpdateRequest;
 import com.dulcecontrol.bakery.feature.admin.ventas.entity.MovimientoCaja;
 import com.dulcecontrol.bakery.feature.admin.ventas.repository.MovimientoCajaRepository;
 import com.dulcecontrol.bakery.feature.admin.ventas.repository.SesionCajaRepository;

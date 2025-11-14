@@ -1,7 +1,7 @@
 package com.dulcecontrol.bakery.feature.admin.seguridad.service.impl;
 
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.AsignarSedesRequest;
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.UsuarioSedeResponse;
+import com.dulcecontrol.bakery.feature.admin.seguridad.dto.AsignarSedesRequest;
+import com.dulcecontrol.bakery.feature.admin.seguridad.dto.UsuarioSedeResponse;
 import com.dulcecontrol.bakery.feature.admin.seguridad.entity.UsuarioSede;
 import com.dulcecontrol.bakery.feature.admin.seguridad.entity.UsuarioSedeId;
 import com.dulcecontrol.bakery.feature.admin.seguridad.repository.UsuarioSedeRepository;

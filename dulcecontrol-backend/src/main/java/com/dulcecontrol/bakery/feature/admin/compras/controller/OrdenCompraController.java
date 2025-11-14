@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.compras.controller;
 
-import com.dulcecontrol.bakery.feature.admin.compras.controller.dto.OrdenCompraCreateRequest;
-import com.dulcecontrol.bakery.feature.admin.compras.controller.dto.OrdenCompraResponse;
-import com.dulcecontrol.bakery.feature.admin.compras.controller.dto.OrdenCompraUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.compras.dto.OrdenCompraCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.compras.dto.OrdenCompraResponse;
+import com.dulcecontrol.bakery.feature.admin.compras.dto.OrdenCompraUpdateRequest;
 import com.dulcecontrol.bakery.feature.admin.compras.entity.enums.EstadoOrdenCompra;
 import com.dulcecontrol.bakery.feature.admin.compras.service.IOrdenCompraService;
 import jakarta.validation.Valid;

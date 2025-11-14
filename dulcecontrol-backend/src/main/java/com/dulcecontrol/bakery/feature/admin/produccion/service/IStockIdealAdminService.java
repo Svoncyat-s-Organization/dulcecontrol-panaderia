@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.produccion.service;
 
-import com.dulcecontrol.bakery.feature.admin.produccion.controller.dto.StockIdealCreateRequest;
-import com.dulcecontrol.bakery.feature.admin.produccion.controller.dto.StockIdealResponse;
-import com.dulcecontrol.bakery.feature.admin.produccion.controller.dto.StockIdealUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.produccion.dto.StockIdealCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.produccion.dto.StockIdealResponse;
+import com.dulcecontrol.bakery.feature.admin.produccion.dto.StockIdealUpdateRequest;
 import java.util.List;
 
 public interface IStockIdealAdminService {

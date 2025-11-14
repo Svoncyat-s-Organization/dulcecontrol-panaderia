@@ -1,6 +1,6 @@
 package com.dulcecontrol.bakery.feature.admin.seguridad.service;
 
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.AuditoriaUsuarioResponse;
+import com.dulcecontrol.bakery.feature.admin.seguridad.dto.AuditoriaUsuarioResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

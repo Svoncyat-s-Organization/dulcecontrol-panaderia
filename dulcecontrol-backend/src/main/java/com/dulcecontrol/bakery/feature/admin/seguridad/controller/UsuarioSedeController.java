@@ -1,7 +1,7 @@
 package com.dulcecontrol.bakery.feature.admin.seguridad.controller;
 
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.AsignarSedesRequest;
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.UsuarioSedeResponse;
+import com.dulcecontrol.bakery.feature.admin.seguridad.dto.AsignarSedesRequest;
+import com.dulcecontrol.bakery.feature.admin.seguridad.dto.UsuarioSedeResponse;
 import com.dulcecontrol.bakery.feature.admin.seguridad.service.IUsuarioSedeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

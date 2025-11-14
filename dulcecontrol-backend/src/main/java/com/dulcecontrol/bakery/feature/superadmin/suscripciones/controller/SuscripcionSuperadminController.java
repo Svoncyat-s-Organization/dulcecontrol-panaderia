@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.superadmin.suscripciones.controller;
 
-import com.dulcecontrol.bakery.feature.superadmin.suscripciones.controller.dto.SuscripcionCreateRequest;
-import com.dulcecontrol.bakery.feature.superadmin.suscripciones.controller.dto.SuscripcionResponse;
-import com.dulcecontrol.bakery.feature.superadmin.suscripciones.controller.dto.SuscripcionUpdateRequest;
+import com.dulcecontrol.bakery.feature.superadmin.suscripciones.dto.SuscripcionCreateRequest;
+import com.dulcecontrol.bakery.feature.superadmin.suscripciones.dto.SuscripcionResponse;
+import com.dulcecontrol.bakery.feature.superadmin.suscripciones.dto.SuscripcionUpdateRequest;
 import com.dulcecontrol.bakery.feature.superadmin.suscripciones.entity.enums.EstadoSuscripcion;
 import com.dulcecontrol.bakery.feature.superadmin.suscripciones.service.ISuscripcionSuperadminService;
 import jakarta.validation.Valid;

@@ -1,6 +1,6 @@
 package com.dulcecontrol.bakery.feature.superadmin.facturacion.service.impl;
 
-import com.dulcecontrol.bakery.feature.superadmin.facturacion.controller.dto.TransaccionPagoResponse;
+import com.dulcecontrol.bakery.feature.superadmin.facturacion.dto.TransaccionPagoResponse;
 import com.dulcecontrol.bakery.feature.superadmin.facturacion.entity.enums.EstadoTransaccion;
 import com.dulcecontrol.bakery.feature.superadmin.facturacion.entity.TransaccionPago;
 import com.dulcecontrol.bakery.feature.superadmin.facturacion.repository.TransaccionPagoRepository;

@@ -1,7 +1,7 @@
 package com.dulcecontrol.bakery.feature.admin.compras.service.impl;
 
-import com.dulcecontrol.bakery.feature.admin.compras.controller.dto.DetalleOrdenCompraRequest;
-import com.dulcecontrol.bakery.feature.admin.compras.controller.dto.DetalleOrdenCompraResponse;
+import com.dulcecontrol.bakery.feature.admin.compras.dto.DetalleOrdenCompraRequest;
+import com.dulcecontrol.bakery.feature.admin.compras.dto.DetalleOrdenCompraResponse;
 import com.dulcecontrol.bakery.feature.admin.compras.entity.DetalleOrdenCompra;
 import com.dulcecontrol.bakery.feature.admin.compras.entity.OrdenCompra;
 import com.dulcecontrol.bakery.feature.admin.compras.repository.DetalleOrdenCompraRepository;

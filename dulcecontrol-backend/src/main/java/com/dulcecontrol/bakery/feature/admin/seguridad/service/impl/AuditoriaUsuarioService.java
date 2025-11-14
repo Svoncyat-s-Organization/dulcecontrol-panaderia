@@ -1,6 +1,6 @@
 package com.dulcecontrol.bakery.feature.admin.seguridad.service.impl;
 
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.AuditoriaUsuarioResponse;
+import com.dulcecontrol.bakery.feature.admin.seguridad.dto.AuditoriaUsuarioResponse;
 import com.dulcecontrol.bakery.feature.admin.seguridad.entity.AuditoriaUsuario;
 import com.dulcecontrol.bakery.feature.admin.seguridad.entity.UsuarioTienda;
 import com.dulcecontrol.bakery.feature.admin.seguridad.repository.AuditoriaUsuarioRepository;

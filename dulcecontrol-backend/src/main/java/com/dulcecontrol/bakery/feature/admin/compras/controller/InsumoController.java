@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.compras.controller;
 
-import com.dulcecontrol.bakery.feature.admin.compras.controller.dto.InsumoCreateRequest;
-import com.dulcecontrol.bakery.feature.admin.compras.controller.dto.InsumoResponse;
-import com.dulcecontrol.bakery.feature.admin.compras.controller.dto.InsumoUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.compras.dto.InsumoCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.compras.dto.InsumoResponse;
+import com.dulcecontrol.bakery.feature.admin.compras.dto.InsumoUpdateRequest;
 import com.dulcecontrol.bakery.feature.admin.compras.service.IInsumoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

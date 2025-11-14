@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.ventas.controller;
 
-import com.dulcecontrol.bakery.feature.admin.ventas.controller.dto.CajaCreateRequest;
-import com.dulcecontrol.bakery.feature.admin.ventas.controller.dto.CajaResponse;
-import com.dulcecontrol.bakery.feature.admin.ventas.controller.dto.CajaUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.ventas.dto.CajaCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.ventas.dto.CajaResponse;
+import com.dulcecontrol.bakery.feature.admin.ventas.dto.CajaUpdateRequest;
 import com.dulcecontrol.bakery.feature.admin.ventas.service.ICajaAdminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

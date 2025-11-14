@@ -1,6 +1,6 @@
 package com.dulcecontrol.bakery.feature.admin.inventario.service.impl;
 
-import com.dulcecontrol.bakery.feature.admin.inventario.controller.dto.InventarioProductoDTO;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.InventarioProductoDTO;
 import com.dulcecontrol.bakery.feature.admin.inventario.entity.InventarioProducto;
 import com.dulcecontrol.bakery.feature.admin.inventario.repository.InventarioProductoRepository;
 import com.dulcecontrol.bakery.feature.admin.inventario.service.IInventarioProductoService;

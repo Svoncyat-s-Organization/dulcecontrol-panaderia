@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.seguridad.service.impl;
 
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.RolCreateRequest;
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.RolResponse;
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.RolUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.seguridad.dto.RolCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.seguridad.dto.RolResponse;
+import com.dulcecontrol.bakery.feature.admin.seguridad.dto.RolUpdateRequest;
 import com.dulcecontrol.bakery.feature.admin.seguridad.entity.Permiso;
 import com.dulcecontrol.bakery.feature.admin.seguridad.entity.Rol;
 import com.dulcecontrol.bakery.feature.admin.seguridad.repository.PermisoRepository;

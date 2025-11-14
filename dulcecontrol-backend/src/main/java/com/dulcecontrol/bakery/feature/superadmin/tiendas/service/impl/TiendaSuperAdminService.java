@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.superadmin.tiendas.service.impl;
 
-import com.dulcecontrol.bakery.feature.superadmin.tiendas.controller.dto.TiendaCreateRequest;
-import com.dulcecontrol.bakery.feature.superadmin.tiendas.controller.dto.TiendaResponse;
-import com.dulcecontrol.bakery.feature.superadmin.tiendas.controller.dto.TiendaUpdateRequest;
+import com.dulcecontrol.bakery.feature.superadmin.tiendas.dto.TiendaCreateRequest;
+import com.dulcecontrol.bakery.feature.superadmin.tiendas.dto.TiendaResponse;
+import com.dulcecontrol.bakery.feature.superadmin.tiendas.dto.TiendaUpdateRequest;
 import com.dulcecontrol.bakery.feature.superadmin.tiendas.entity.Tienda;
 import com.dulcecontrol.bakery.feature.superadmin.tiendas.entity.enums.EstadoTienda;
 import com.dulcecontrol.bakery.feature.superadmin.tiendas.repository.TiendaRepository;

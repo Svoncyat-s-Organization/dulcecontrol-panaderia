@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.ventas.service;
 
-import com.dulcecontrol.bakery.feature.admin.ventas.controller.dto.DireccionPedidoCreateRequest;
-import com.dulcecontrol.bakery.feature.admin.ventas.controller.dto.DireccionPedidoResponse;
-import com.dulcecontrol.bakery.feature.admin.ventas.controller.dto.DireccionPedidoUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.ventas.dto.DireccionPedidoCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.ventas.dto.DireccionPedidoResponse;
+import com.dulcecontrol.bakery.feature.admin.ventas.dto.DireccionPedidoUpdateRequest;
 
 import java.util.List;
 

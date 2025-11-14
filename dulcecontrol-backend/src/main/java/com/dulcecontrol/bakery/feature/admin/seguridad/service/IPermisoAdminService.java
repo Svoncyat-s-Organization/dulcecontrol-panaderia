@@ -1,6 +1,6 @@
 package com.dulcecontrol.bakery.feature.admin.seguridad.service;
 
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.PermisoResponse;
+import com.dulcecontrol.bakery.feature.admin.seguridad.dto.PermisoResponse;
 
 import java.util.List;
 

@@ -1,7 +1,7 @@
 package com.dulcecontrol.bakery.feature.admin.compras.controller;
 
-import com.dulcecontrol.bakery.feature.admin.compras.controller.dto.DetalleOrdenCompraRequest;
-import com.dulcecontrol.bakery.feature.admin.compras.controller.dto.DetalleOrdenCompraResponse;
+import com.dulcecontrol.bakery.feature.admin.compras.dto.DetalleOrdenCompraRequest;
+import com.dulcecontrol.bakery.feature.admin.compras.dto.DetalleOrdenCompraResponse;
 import com.dulcecontrol.bakery.feature.admin.compras.service.IDetalleOrdenCompraService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

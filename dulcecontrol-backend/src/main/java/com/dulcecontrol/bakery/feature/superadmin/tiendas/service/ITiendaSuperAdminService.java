@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.superadmin.tiendas.service;
 
-import com.dulcecontrol.bakery.feature.superadmin.tiendas.controller.dto.TiendaCreateRequest;
-import com.dulcecontrol.bakery.feature.superadmin.tiendas.controller.dto.TiendaResponse;
-import com.dulcecontrol.bakery.feature.superadmin.tiendas.controller.dto.TiendaUpdateRequest;
+import com.dulcecontrol.bakery.feature.superadmin.tiendas.dto.TiendaCreateRequest;
+import com.dulcecontrol.bakery.feature.superadmin.tiendas.dto.TiendaResponse;
+import com.dulcecontrol.bakery.feature.superadmin.tiendas.dto.TiendaUpdateRequest;
 
 import java.util.List;
 

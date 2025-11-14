@@ -1,6 +1,6 @@
 package com.dulcecontrol.bakery.feature.admin.inventario.service;
 
-import com.dulcecontrol.bakery.feature.admin.inventario.controller.dto.TransferenciaInventarioDTO;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.TransferenciaInventarioDTO;
 import com.dulcecontrol.bakery.feature.admin.inventario.entity.enums.EstadoTransferencia;
 
 import java.util.List;

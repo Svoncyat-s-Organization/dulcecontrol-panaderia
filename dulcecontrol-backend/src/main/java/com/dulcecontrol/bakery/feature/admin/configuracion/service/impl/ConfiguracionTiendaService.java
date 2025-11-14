@@ -1,7 +1,7 @@
 package com.dulcecontrol.bakery.feature.admin.configuracion.service.impl;
 
-import com.dulcecontrol.bakery.feature.admin.configuracion.controller.dto.ConfiguracionTiendaResponse;
-import com.dulcecontrol.bakery.feature.admin.configuracion.controller.dto.ConfiguracionTiendaUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.configuracion.dto.ConfiguracionTiendaResponse;
+import com.dulcecontrol.bakery.feature.admin.configuracion.dto.ConfiguracionTiendaUpdateRequest;
 import com.dulcecontrol.bakery.feature.admin.configuracion.entity.ConfiguracionTienda;
 import com.dulcecontrol.bakery.feature.admin.configuracion.repository.ConfiguracionTiendaRepository;
 import com.dulcecontrol.bakery.feature.admin.configuracion.service.IConfiguracionTiendaService;

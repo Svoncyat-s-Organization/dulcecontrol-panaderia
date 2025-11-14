@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.catalogo.service.impl;
 
-import com.dulcecontrol.bakery.feature.admin.catalogo.controller.dto.ProductoCreateRequest;
-import com.dulcecontrol.bakery.feature.admin.catalogo.controller.dto.ProductoResponse;
-import com.dulcecontrol.bakery.feature.admin.catalogo.controller.dto.ProductoUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.catalogo.dto.ProductoCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.catalogo.dto.ProductoResponse;
+import com.dulcecontrol.bakery.feature.admin.catalogo.dto.ProductoUpdateRequest;
 import com.dulcecontrol.bakery.feature.admin.catalogo.entity.Producto;
 import com.dulcecontrol.bakery.feature.admin.catalogo.repository.CategoriaRepository;
 import com.dulcecontrol.bakery.feature.admin.catalogo.repository.ProductoRepository;

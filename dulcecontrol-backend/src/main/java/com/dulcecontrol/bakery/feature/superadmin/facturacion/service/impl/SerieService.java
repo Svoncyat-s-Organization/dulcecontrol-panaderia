@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.superadmin.facturacion.service.impl;
 
-import com.dulcecontrol.bakery.feature.superadmin.facturacion.controller.dto.SerieCreateRequest;
-import com.dulcecontrol.bakery.feature.superadmin.facturacion.controller.dto.SerieResponse;
-import com.dulcecontrol.bakery.feature.superadmin.facturacion.controller.dto.SerieUpdateRequest;
+import com.dulcecontrol.bakery.feature.superadmin.facturacion.dto.SerieCreateRequest;
+import com.dulcecontrol.bakery.feature.superadmin.facturacion.dto.SerieResponse;
+import com.dulcecontrol.bakery.feature.superadmin.facturacion.dto.SerieUpdateRequest;
 import com.dulcecontrol.bakery.feature.superadmin.facturacion.entity.Serie;
 import com.dulcecontrol.bakery.feature.superadmin.facturacion.repository.SerieRepository;
 import com.dulcecontrol.bakery.feature.superadmin.facturacion.service.ISerieService;

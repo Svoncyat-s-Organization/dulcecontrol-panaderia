@@ -1,6 +1,6 @@
 package com.dulcecontrol.bakery.feature.superadmin.suscripciones.service.impl;
 
-import com.dulcecontrol.bakery.feature.superadmin.suscripciones.controller.dto.HistorialSuscripcionResponse;
+import com.dulcecontrol.bakery.feature.superadmin.suscripciones.dto.HistorialSuscripcionResponse;
 import com.dulcecontrol.bakery.feature.superadmin.suscripciones.entity.HistorialSuscripcion;
 import com.dulcecontrol.bakery.feature.superadmin.suscripciones.repository.HistorialSuscripcionRepository;
 import com.dulcecontrol.bakery.feature.superadmin.suscripciones.service.IHistorialSuscripcionService;

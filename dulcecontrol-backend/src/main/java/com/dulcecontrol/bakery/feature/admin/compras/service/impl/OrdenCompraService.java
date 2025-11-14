@@ -1,6 +1,6 @@
 package com.dulcecontrol.bakery.feature.admin.compras.service.impl;
 
-import com.dulcecontrol.bakery.feature.admin.compras.controller.dto.*;
+import com.dulcecontrol.bakery.feature.admin.compras.dto.*;
 import com.dulcecontrol.bakery.feature.admin.compras.entity.DetalleOrdenCompra;
 import com.dulcecontrol.bakery.feature.admin.compras.entity.OrdenCompra;
 import com.dulcecontrol.bakery.feature.admin.compras.entity.enums.EstadoOrdenCompra;

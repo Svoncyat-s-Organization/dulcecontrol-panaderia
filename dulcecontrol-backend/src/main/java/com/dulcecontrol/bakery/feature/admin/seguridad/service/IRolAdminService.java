@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.seguridad.service;
 
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.RolCreateRequest;
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.RolResponse;
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.RolUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.seguridad.dto.RolCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.seguridad.dto.RolResponse;
+import com.dulcecontrol.bakery.feature.admin.seguridad.dto.RolUpdateRequest;
 
 import java.util.List;
 

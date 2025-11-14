@@ -1,6 +1,6 @@
 package com.dulcecontrol.bakery.feature.admin.seguridad.controller;
 
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.AuditoriaUsuarioResponse;
+import com.dulcecontrol.bakery.feature.admin.seguridad.dto.AuditoriaUsuarioResponse;
 import com.dulcecontrol.bakery.feature.admin.seguridad.service.IAuditoriaUsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

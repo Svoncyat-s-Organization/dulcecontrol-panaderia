@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.configuracion.service;
 
-import com.dulcecontrol.bakery.feature.admin.configuracion.controller.dto.PaginaStorefrontCreateRequest;
-import com.dulcecontrol.bakery.feature.admin.configuracion.controller.dto.PaginaStorefrontResponse;
-import com.dulcecontrol.bakery.feature.admin.configuracion.controller.dto.PaginaStorefrontUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.configuracion.dto.PaginaStorefrontCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.configuracion.dto.PaginaStorefrontResponse;
+import com.dulcecontrol.bakery.feature.admin.configuracion.dto.PaginaStorefrontUpdateRequest;
 
 import java.util.List;
 

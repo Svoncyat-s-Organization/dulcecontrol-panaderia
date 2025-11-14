@@ -1,7 +1,8 @@
 package com.dulcecontrol.bakery.feature.superadmin.soporte.service.impl;
 
-import com.dulcecontrol.bakery.feature.superadmin.soporte.controller.dto.MensajeCreateRequest;
-import com.dulcecontrol.bakery.feature.superadmin.soporte.controller.dto.MensajeResponse;
+import com.dulcecontrol.bakery.feature.superadmin.soporte.dto.MensajeCreateRequest;
+import com.dulcecontrol.bakery.feature.superadmin.soporte.dto.MensajeResponse;
+import com.dulcecontrol.bakery.feature.superadmin.soporte.dto.MensajeUpdateRequest;
 import com.dulcecontrol.bakery.feature.superadmin.soporte.entity.MensajeTicket;
 import com.dulcecontrol.bakery.feature.superadmin.soporte.repository.MensajeTicketRepository;
 import com.dulcecontrol.bakery.feature.superadmin.soporte.service.IMensajeTicketService;
@@ -54,7 +55,7 @@ public class MensajeTicketService implements IMensajeTicketService {
 
     @Override
     @Transactional
-    public MensajeResponse actualizar(Long id, com.dulcecontrol.bakery.feature.superadmin.soporte.controller.dto.MensajeUpdateRequest request) {
+    public MensajeResponse actualizar(Long id, MensajeUpdateRequest request) {
         MensajeTicket m = mensajeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Mensaje no encontrado"));
         if (request.getMensaje() != null) m.setMensaje(request.getMensaje());

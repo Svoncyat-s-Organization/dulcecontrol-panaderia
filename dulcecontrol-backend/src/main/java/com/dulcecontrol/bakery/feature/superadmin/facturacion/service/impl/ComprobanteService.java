@@ -1,7 +1,7 @@
 package com.dulcecontrol.bakery.feature.superadmin.facturacion.service.impl;
 
-import com.dulcecontrol.bakery.feature.superadmin.facturacion.controller.dto.ComprobanteResponse;
-import com.dulcecontrol.bakery.feature.superadmin.facturacion.controller.dto.DetalleComprobanteResponse;
+import com.dulcecontrol.bakery.feature.superadmin.facturacion.dto.ComprobanteResponse;
+import com.dulcecontrol.bakery.feature.superadmin.facturacion.dto.DetalleComprobanteResponse;
 import com.dulcecontrol.bakery.feature.superadmin.facturacion.entity.Comprobante;
 import com.dulcecontrol.bakery.feature.superadmin.facturacion.entity.DetalleComprobante;
 import com.dulcecontrol.bakery.feature.superadmin.facturacion.entity.enums.EstadoSunat;

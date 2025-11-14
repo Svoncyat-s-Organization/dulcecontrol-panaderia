@@ -1,6 +1,6 @@
 package com.dulcecontrol.bakery.feature.admin.seguridad.controller;
 
-import com.dulcecontrol.bakery.feature.admin.seguridad.controller.dto.PermisoResponse;
+import com.dulcecontrol.bakery.feature.admin.seguridad.dto.PermisoResponse;
 import com.dulcecontrol.bakery.feature.admin.seguridad.service.IPermisoAdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

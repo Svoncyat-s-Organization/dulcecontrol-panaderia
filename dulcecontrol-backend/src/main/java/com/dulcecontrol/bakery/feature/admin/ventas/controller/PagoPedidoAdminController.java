@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.ventas.controller;
 
-import com.dulcecontrol.bakery.feature.admin.ventas.controller.dto.PagoPedidoCreateRequest;
-import com.dulcecontrol.bakery.feature.admin.ventas.controller.dto.PagoPedidoResponse;
-import com.dulcecontrol.bakery.feature.admin.ventas.controller.dto.PagoPedidoUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.ventas.dto.PagoPedidoCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.ventas.dto.PagoPedidoResponse;
+import com.dulcecontrol.bakery.feature.admin.ventas.dto.PagoPedidoUpdateRequest;
 import com.dulcecontrol.bakery.feature.admin.ventas.service.IPagoPedidoAdminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

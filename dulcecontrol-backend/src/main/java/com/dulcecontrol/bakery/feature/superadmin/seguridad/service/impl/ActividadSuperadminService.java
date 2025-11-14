@@ -1,7 +1,7 @@
 package com.dulcecontrol.bakery.feature.superadmin.seguridad.service.impl;
 
-import com.dulcecontrol.bakery.feature.superadmin.seguridad.controller.dto.ActividadSuperadminCreateRequest;
-import com.dulcecontrol.bakery.feature.superadmin.seguridad.controller.dto.ActividadSuperadminResponse;
+import com.dulcecontrol.bakery.feature.superadmin.seguridad.dto.ActividadSuperadminCreateRequest;
+import com.dulcecontrol.bakery.feature.superadmin.seguridad.dto.ActividadSuperadminResponse;
 import com.dulcecontrol.bakery.feature.superadmin.seguridad.entity.ActividadSuperadmin;
 import com.dulcecontrol.bakery.feature.superadmin.seguridad.entity.UsuarioSuperadmin;
 import com.dulcecontrol.bakery.feature.superadmin.seguridad.repository.ActividadSuperadminRepository;

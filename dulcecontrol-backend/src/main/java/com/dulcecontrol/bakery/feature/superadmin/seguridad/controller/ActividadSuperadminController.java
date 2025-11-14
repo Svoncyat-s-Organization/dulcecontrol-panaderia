@@ -1,7 +1,7 @@
 package com.dulcecontrol.bakery.feature.superadmin.seguridad.controller;
 
-import com.dulcecontrol.bakery.feature.superadmin.seguridad.controller.dto.ActividadSuperadminCreateRequest;
-import com.dulcecontrol.bakery.feature.superadmin.seguridad.controller.dto.ActividadSuperadminResponse;
+import com.dulcecontrol.bakery.feature.superadmin.seguridad.dto.ActividadSuperadminCreateRequest;
+import com.dulcecontrol.bakery.feature.superadmin.seguridad.dto.ActividadSuperadminResponse;
 import com.dulcecontrol.bakery.feature.superadmin.seguridad.service.IActividadSuperadminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.superadmin.seguridad.controller;
 
-import com.dulcecontrol.bakery.feature.superadmin.seguridad.controller.dto.UsuarioSuperadminCreateRequest;
-import com.dulcecontrol.bakery.feature.superadmin.seguridad.controller.dto.UsuarioSuperadminResponse;
-import com.dulcecontrol.bakery.feature.superadmin.seguridad.controller.dto.UsuarioSuperadminUpdateRequest;
+import com.dulcecontrol.bakery.feature.superadmin.seguridad.dto.UsuarioSuperadminCreateRequest;
+import com.dulcecontrol.bakery.feature.superadmin.seguridad.dto.UsuarioSuperadminResponse;
+import com.dulcecontrol.bakery.feature.superadmin.seguridad.dto.UsuarioSuperadminUpdateRequest;
 import com.dulcecontrol.bakery.feature.superadmin.seguridad.service.IUsuarioSuperadminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

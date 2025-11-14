@@ -1,6 +1,6 @@
 package com.dulcecontrol.bakery.feature.admin.inventario.controller;
 
-import com.dulcecontrol.bakery.feature.admin.inventario.controller.dto.MovimientoInventarioInsumoDTO;
+import com.dulcecontrol.bakery.feature.admin.inventario.dto.MovimientoInventarioInsumoDTO;
 import com.dulcecontrol.bakery.feature.admin.inventario.service.IMovimientoInventarioInsumoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

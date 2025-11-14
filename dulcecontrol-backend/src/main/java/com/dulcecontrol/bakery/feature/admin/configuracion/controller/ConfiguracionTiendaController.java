@@ -1,7 +1,7 @@
 package com.dulcecontrol.bakery.feature.admin.configuracion.controller;
 
-import com.dulcecontrol.bakery.feature.admin.configuracion.controller.dto.ConfiguracionTiendaResponse;
-import com.dulcecontrol.bakery.feature.admin.configuracion.controller.dto.ConfiguracionTiendaUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.configuracion.dto.ConfiguracionTiendaResponse;
+import com.dulcecontrol.bakery.feature.admin.configuracion.dto.ConfiguracionTiendaUpdateRequest;
 import com.dulcecontrol.bakery.feature.admin.configuracion.service.IConfiguracionTiendaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

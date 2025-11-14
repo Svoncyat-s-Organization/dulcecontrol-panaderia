@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.feature.admin.produccion.controller;
 
-import com.dulcecontrol.bakery.feature.admin.produccion.controller.dto.RecetaCreateRequest;
-import com.dulcecontrol.bakery.feature.admin.produccion.controller.dto.RecetaResponse;
-import com.dulcecontrol.bakery.feature.admin.produccion.controller.dto.RecetaUpdateRequest;
+import com.dulcecontrol.bakery.feature.admin.produccion.dto.RecetaCreateRequest;
+import com.dulcecontrol.bakery.feature.admin.produccion.dto.RecetaResponse;
+import com.dulcecontrol.bakery.feature.admin.produccion.dto.RecetaUpdateRequest;
 import com.dulcecontrol.bakery.feature.admin.produccion.service.IRecetaAdminService;
 import jakarta.validation.Valid;
 import java.util.List;
