@@ -1,7 +1,7 @@
 package com.dulcecontrol.bakery.security.auth.service.impl;
 
-import com.dulcecontrol.bakery.feature.superadmin.seguridad.entity.UsuarioSuperadmin;
-import com.dulcecontrol.bakery.feature.superadmin.seguridad.repository.UsuarioSuperadminRepository;
+import com.dulcecontrol.bakery.features.superadmin.seguridad.entity.UsuarioSuperadmin;
+import com.dulcecontrol.bakery.features.superadmin.seguridad.repository.UsuarioSuperadminRepository;
 import com.dulcecontrol.bakery.security.JwtProvider;
 import com.dulcecontrol.bakery.security.auth.dto.UserProfileResponse;
 import com.dulcecontrol.bakery.security.auth.service.IAuthService;

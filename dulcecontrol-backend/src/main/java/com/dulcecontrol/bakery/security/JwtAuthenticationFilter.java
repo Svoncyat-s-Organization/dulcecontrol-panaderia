@@ -1,7 +1,7 @@
 package com.dulcecontrol.bakery.security;
 
-import com.dulcecontrol.bakery.feature.superadmin.seguridad.entity.UsuarioSuperadmin;
-import com.dulcecontrol.bakery.feature.superadmin.seguridad.repository.UsuarioSuperadminRepository;
+import com.dulcecontrol.bakery.features.superadmin.seguridad.entity.UsuarioSuperadmin;
+import com.dulcecontrol.bakery.features.superadmin.seguridad.repository.UsuarioSuperadminRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
