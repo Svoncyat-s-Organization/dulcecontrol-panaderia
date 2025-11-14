@@ -444,3 +444,120 @@ COMMENT ON INDEX idx_detalles_plan_personalizados IS
 
 COMMENT ON INDEX idx_insumos_stock_bajo IS 
 'Alertas automáticas de stock bajo para generar órdenes de compra';
+
+-- =================================
+-- TRIGGERS PARA ACTUALIZAR actualizado_en
+-- =================================
+
+CREATE OR REPLACE FUNCTION update_actualizado_en()
+RETURNS TRIGGER AS $
+BEGIN
+    NEW.actualizado_en = CURRENT_TIMESTAMP;
+RETURN NEW;
+END;
+$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_usuarios_superadmin_actualizado
+    BEFORE UPDATE ON usuarios_superadmin
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();
+
+CREATE TRIGGER trigger_tiendas_actualizado
+    BEFORE UPDATE ON tiendas
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();
+
+CREATE TRIGGER trigger_sedes_actualizado
+    BEFORE UPDATE ON sedes
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();
+
+CREATE TRIGGER trigger_dominios_tienda_actualizado
+    BEFORE UPDATE ON dominios_tienda
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();
+
+CREATE TRIGGER trigger_planes_actualizado
+    BEFORE UPDATE ON planes
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();
+
+CREATE TRIGGER trigger_suscripciones_actualizado
+    BEFORE UPDATE ON suscripciones
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();
+
+CREATE TRIGGER trigger_series_actualizado
+    BEFORE UPDATE ON series
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();
+
+CREATE TRIGGER trigger_comprobantes_actualizado
+    BEFORE UPDATE ON comprobantes
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();
+
+CREATE TRIGGER trigger_tickets_soporte_actualizado
+    BEFORE UPDATE ON tickets_soporte
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();
+
+CREATE TRIGGER trigger_usuarios_tienda_actualizado
+    BEFORE UPDATE ON usuarios_tienda
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();
+
+CREATE TRIGGER trigger_productos_actualizado
+    BEFORE UPDATE ON productos
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();
+
+CREATE TRIGGER trigger_ordenes_compra_actualizado
+    BEFORE UPDATE ON ordenes_compra
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();
+
+CREATE TRIGGER trigger_clientes_actualizado
+    BEFORE UPDATE ON clientes
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();
+
+CREATE TRIGGER trigger_pedidos_actualizado
+    BEFORE UPDATE ON pedidos
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();
+
+CREATE TRIGGER trigger_movimientos_caja_actualizado
+    BEFORE UPDATE ON movimientos_caja
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();
+
+CREATE TRIGGER trigger_stock_ideal_actualizado
+    BEFORE UPDATE ON stock_ideal
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();
+
+CREATE TRIGGER trigger_planes_produccion_actualizado
+    BEFORE UPDATE ON planes_produccion
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();
+
+CREATE TRIGGER trigger_inventario_insumos_sedes_actualizado
+    BEFORE UPDATE ON inventario_insumos_sedes
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();
+
+CREATE TRIGGER trigger_inventario_productos_actualizado
+    BEFORE UPDATE ON inventario_productos
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();
+
+CREATE TRIGGER trigger_configuracion_tienda_actualizado
+    BEFORE UPDATE ON configuracion_tienda
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();
+
+CREATE TRIGGER trigger_paginas_storefront_actualizado
+    BEFORE UPDATE ON paginas_storefront
+    FOR EACH ROW
+    EXECUTE FUNCTION update_actualizado_en();

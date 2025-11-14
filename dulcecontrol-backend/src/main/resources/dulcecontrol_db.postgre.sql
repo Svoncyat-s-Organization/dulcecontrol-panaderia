@@ -1,4 +1,4 @@
-CREATE DATABASE IF NOT EXISTS dulcecontrol_db;
+CREATE DATABASE dulcecontrol_db;
 
 \connect dulcecontrol_db
 
@@ -38,7 +38,6 @@ CREATE TYPE origenes_produccion AS ENUM ('stock_diario', 'pedido_cliente');
 CREATE TYPE tipos_producto AS ENUM ('producto_terminado', 'insumo_venta', 'servicio');
 CREATE TYPE estados_orden_compra AS ENUM ('borrador', 'enviada', 'recibida_parcial', 'recibida_total', 'cancelada');
 CREATE TYPE metodos_pago_compra AS ENUM ('efectivo', 'transferencia', 'credito', 'tarjeta');
-CREATE TYPE unidades_medida AS ENUM ('unidad', 'kg', 'g', 'l', 'ml', 'paquete', 'saco', 'lata');
 CREATE TYPE estados_pedido AS ENUM ('borrador', 'pendiente_pago', 'pagado', 'en_preparacion', 'listo_entrega', 'entregado', 'cancelado', 'devuelto');
 CREATE TYPE origenes_pedido AS ENUM ('pos_local', 'storefront_online', 'telefono');
 CREATE TYPE tipos_entrega AS ENUM ('recojo_tienda', 'delivery', 'consumo_local');
@@ -54,21 +53,21 @@ CREATE TYPE tipos_movimiento_caja AS ENUM ('venta', 'devolucion', 'gasto_operati
 CREATE TABLE IF NOT EXISTS ubigeo_departamentos (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nombre TEXT NOT NULL,
-    codigo_ubigeo CHAR(2) NOT NULL UNIQUE
+    codigo_ubigeo VARCHAR(2) NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS ubigeo_provincias (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     departamento_id BIGINT NOT NULL REFERENCES ubigeo_departamentos(id) ON DELETE RESTRICT,
     nombre TEXT NOT NULL,
-    codigo_ubigeo CHAR(4) NOT NULL UNIQUE
+    codigo_ubigeo VARCHAR(4) NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS ubigeo_distritos (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     provincia_id BIGINT NOT NULL REFERENCES ubigeo_provincias(id) ON DELETE RESTRICT,
     nombre TEXT NOT NULL,
-    codigo_ubigeo CHAR(6) NOT NULL UNIQUE
+    codigo_ubigeo VARCHAR(6) NOT NULL UNIQUE
 );
 
 -- =================================
@@ -140,8 +139,8 @@ CREATE TABLE IF NOT EXISTS dominios_tienda (
     url_dominio TEXT NOT NULL UNIQUE,
     url_logo TEXT,
     url_favicon TEXT,
-    color_primario CHAR(7) NOT NULL DEFAULT '#000000',
-    color_secundario CHAR(7) NOT NULL DEFAULT '#ffffff',
+    color_primario VARCHAR(7) NOT NULL DEFAULT '#000000',
+    color_secundario VARCHAR(7) NOT NULL DEFAULT '#ffffff',
     creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     actualizado_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -155,7 +154,7 @@ CREATE TABLE IF NOT EXISTS planes (
     descripcion TEXT,
     precio_mensual_centimos BIGINT NOT NULL,
     precio_anual_centimos BIGINT NOT NULL,
-    moneda CHAR(3) NOT NULL DEFAULT 'PEN',
+    moneda VARCHAR(3) NOT NULL DEFAULT 'PEN',
     limites JSONB NOT NULL DEFAULT '{}',
     activo BOOLEAN NOT NULL DEFAULT TRUE,
     creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -194,7 +193,7 @@ CREATE TABLE IF NOT EXISTS historial_suscripciones (
 CREATE TABLE IF NOT EXISTS series (
     id SERIAL PRIMARY KEY,
     tipos_comprobante tipos_comprobante NOT NULL,
-    serie CHAR(4) NOT NULL UNIQUE,
+    serie VARCHAR(4) NOT NULL UNIQUE,
     ultimo_correlativo INTEGER NOT NULL DEFAULT 0,
     activo BOOLEAN NOT NULL DEFAULT TRUE,
     es_predeterminada BOOLEAN NOT NULL DEFAULT FALSE,
@@ -216,7 +215,7 @@ CREATE TABLE IF NOT EXISTS comprobantes (
     cliente_num_doc TEXT NOT NULL,
     cliente_nombre_doc TEXT NOT NULL,
     cliente_direccion TEXT,
-    moneda CHAR(3) NOT NULL DEFAULT 'PEN',
+    moneda VARCHAR(3) NOT NULL DEFAULT 'PEN',
     total_gravado_centimos BIGINT NOT NULL DEFAULT 0,
     total_igv_centimos BIGINT NOT NULL DEFAULT 0,
     total_importe_centimos BIGINT NOT NULL,
@@ -249,7 +248,7 @@ CREATE TABLE IF NOT EXISTS transacciones_pago (
     pasarela TEXT NOT NULL,
     id_transaccion_pasarela TEXT,
     monto_centimos BIGINT NOT NULL,
-    moneda CHAR(3) NOT NULL DEFAULT 'PEN',
+    moneda VARCHAR(3) NOT NULL DEFAULT 'PEN',
     estado estados_transaccion NOT NULL DEFAULT 'pendiente',
     codigo_error TEXT,
     mensaje_error TEXT,
@@ -438,7 +437,7 @@ CREATE TABLE IF NOT EXISTS ordenes_compra (
     fecha_recepcion_esperada DATE,
     fecha_recepcion_real DATE,
     estado estados_orden_compra NOT NULL DEFAULT 'borrador',
-    moneda CHAR(3) DEFAULT 'PEN',
+    moneda VARCHAR(3) DEFAULT 'PEN',
     total_compra_centimos BIGINT NOT NULL DEFAULT 0,
     metodo_pago metodos_pago_compra,
     referencia_pago TEXT NULL,
@@ -538,7 +537,7 @@ CREATE TABLE IF NOT EXISTS pedidos (
     fecha_entrega_pactada TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     direccion_entrega TEXT,
     costo_delivery_centimos BIGINT DEFAULT 0,
-    moneda CHAR(3) DEFAULT 'PEN',
+    moneda VARCHAR(3) DEFAULT 'PEN',
     subtotal_items_centimos BIGINT NOT NULL DEFAULT 0,
     descuento_total_centimos BIGINT NOT NULL DEFAULT 0,
     impuestos_totales_centimos BIGINT NOT NULL DEFAULT 0,
@@ -569,7 +568,7 @@ CREATE TABLE IF NOT EXISTS direcciones_pedido (
     distrito TEXT,
     provincia TEXT,
     departamento TEXT,
-    codigo_ubigeo CHAR(6),
+    codigo_ubigeo VARCHAR(6),
     codigo_postal TEXT,
     creado_en TIMESTAMPTZ DEFAULT NOW()
 );
@@ -630,7 +629,7 @@ CREATE TABLE IF NOT EXISTS recetas (
     producto_id BIGINT NOT NULL REFERENCES productos(id) ON DELETE CASCADE,
     insumo_id BIGINT NOT NULL REFERENCES insumos(id) ON DELETE RESTRICT,
     cantidad_requerida NUMERIC(12,4) NOT NULL,
-    unidad_medida unidades_medida NOT NULL,
+    unidad_medida VARCHAR(20) NOT NULL,
     notas_preparacion TEXT,
     creado_en TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE (producto_id, insumo_id)
@@ -790,7 +789,7 @@ CREATE TABLE IF NOT EXISTS tienda_series (
     tienda_id BIGINT NOT NULL REFERENCES tiendas(id) ON DELETE CASCADE,
     sede_id BIGINT NOT NULL REFERENCES sedes(id) ON DELETE CASCADE,
     tipo_comprobante tipos_comprobante NOT NULL,
-    serie CHAR(4) NOT NULL,
+    serie VARCHAR(4) NOT NULL,
     correlativo_actual INTEGER NOT NULL DEFAULT 0,
     es_electronica BOOLEAN DEFAULT TRUE,
     activa BOOLEAN DEFAULT TRUE,
@@ -813,7 +812,7 @@ CREATE TABLE IF NOT EXISTS tienda_comprobantes (
     tipo_comprobante tipos_comprobante NOT NULL,
     correlativo INTEGER NOT NULL,
     fecha_emision TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    moneda CHAR(3) DEFAULT 'PEN',
+    moneda VARCHAR(3) DEFAULT 'PEN',
     total_gravado_centimos BIGINT NOT NULL DEFAULT 0,
     total_inafecto_centimos BIGINT NOT NULL DEFAULT 0,
     total_exonerado_centimos BIGINT NOT NULL DEFAULT 0,
@@ -838,7 +837,7 @@ CREATE TABLE IF NOT EXISTS configuracion_tienda (
     ruc TEXT,
     razon_social TEXT,
     direccion_fiscal TEXT,
-    ubigeo_fiscal CHAR(6) REFERENCES ubigeo_distritos(codigo_ubigeo),
+    ubigeo_fiscal VARCHAR(6) REFERENCES ubigeo_distritos(codigo_ubigeo),
     usuario_sunat_sol TEXT,
     clave_sunat_sol_encriptada TEXT,
     certificado_digital_url TEXT,

@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS paginas_storefront (
     tienda_id BIGINT NOT NULL,
     slug VARCHAR(100) NOT NULL,
     titulo VARCHAR(255) NOT NULL,
-    contenido LONGTEXT NOT NULL,
+    contenido TEXT NOT NULL,
     meta_descripcion TEXT,
     orden_menu INTEGER DEFAULT 0,
     visible_en_menu BOOLEAN DEFAULT TRUE,

@@ -11,7 +11,7 @@ VALUES
   (
     1,
     'sofia.rojas@dulcecontrol.pe',
-    '$2a$10$.VTbUPug.CwBqEurWC/1GuCBAaZAK4ZBsbqwXFcWKpev31J/JvGQK', -- contraseña: demo123
+    '$2a$12$Oq8FdZHwWJNEi0LleTdJNeKr/yFTTD42IzFoOIfkrvPN1Sq/ICxlm', -- contraseña: clave123
     'DNI',
     '45879632',
     'Sofía Andrea Rojas Delgado',
@@ -23,7 +23,7 @@ VALUES
   (
     2,
     'martin.leon@dulcecontrol.pe',
-    '$2a$10$.VTbUPug.CwBqEurWC/1GuCBAaZAK4ZBsbqwXFcWKpev31J/JvGQK', -- contraseña: demo123
+    '$2a$12$Oq8FdZHwWJNEi0LleTdJNeKr/yFTTD42IzFoOIfkrvPN1Sq/ICxlm', -- contraseña: clave123
     'DNI',
     '41236547',
     'Martín Eduardo León Paredes',
@@ -35,7 +35,7 @@ VALUES
   (
     3,
     'administrador@dulcecontrol.pe',
-    '$2a$10$.VTbUPug.CwBqEurWC/1GuCBAaZAK4ZBsbqwXFcWKpev31J/JvGQK', -- contraseña: demo123
+    '$2a$12$Oq8FdZHwWJNEi0LleTdJNeKr/yFTTD42IzFoOIfkrvPN1Sq/ICxlm', -- contraseña: clave123
     'RUC',
     '20609999888',
     'DulceControl S.A.C.',

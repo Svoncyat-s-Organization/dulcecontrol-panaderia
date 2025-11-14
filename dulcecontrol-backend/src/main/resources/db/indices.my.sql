@@ -2,7 +2,7 @@
 -- ÍNDICES MYSQL - DULCECONTROL (Equivalentes PostgreSQL)
 -- ======================================================
 
-USE dulcecontrol_db;
+-- USE dulcecontrol_db;
 
 -- ============================================
 -- ÍNDICES BASE (UBIGEO)
@@ -357,9 +357,269 @@ CREATE INDEX idx_ordenes_compra_pendientes
     ON ordenes_compra(sede_destino_id, estado, fecha_recepcion_esperada);
 
 -- ==============================
--- NOTAS SOBRE FILTROS PARCIALES
--- ==============================
--- MySQL 8.0 no soporta índices parciales con condiciones WHERE.
--- Se incluyen las columnas de filtrado (por ejemplo, activo, eliminado_en, estado)
--- dentro de los índices para acercarse al comportamiento selectivo definido en PostgreSQL.
+-- =======================================================
+-- TRIGGERS MYSQL - DULCECONTROL MVP
+-- Actualización automática de columnas actualizado_en
+-- =======================================================
 
+-- =================================
+-- MÓDULO: SUPERADMINISTRADOR
+-- =================================
+
+-- Trigger para usuarios_superadmin
+DELIMITER $$
+CREATE TRIGGER trigger_usuarios_superadmin_actualizado
+    BEFORE UPDATE ON usuarios_superadmin
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- Trigger para tiendas
+DELIMITER $$
+CREATE TRIGGER trigger_tiendas_actualizado
+    BEFORE UPDATE ON tiendas
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- Trigger para sedes
+DELIMITER $$
+CREATE TRIGGER trigger_sedes_actualizado
+    BEFORE UPDATE ON sedes
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- Trigger para dominios_tienda
+DELIMITER $$
+CREATE TRIGGER trigger_dominios_tienda_actualizado
+    BEFORE UPDATE ON dominios_tienda
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- =================================
+-- MÓDULO: PLANES Y SUSCRIPCIONES
+-- =================================
+
+-- Trigger para planes
+DELIMITER $$
+CREATE TRIGGER trigger_planes_actualizado
+    BEFORE UPDATE ON planes
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- Trigger para suscripciones
+DELIMITER $$
+CREATE TRIGGER trigger_suscripciones_actualizado
+    BEFORE UPDATE ON suscripciones
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- =================================
+-- MÓDULO: FACTURACIÓN SAAS
+-- =================================
+
+-- Trigger para series
+DELIMITER $$
+CREATE TRIGGER trigger_series_actualizado
+    BEFORE UPDATE ON series
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- Trigger para comprobantes
+DELIMITER $$
+CREATE TRIGGER trigger_comprobantes_actualizado
+    BEFORE UPDATE ON comprobantes
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- =================================
+-- MÓDULO: SOPORTE
+-- =================================
+
+-- Trigger para tickets_soporte
+DELIMITER $$
+CREATE TRIGGER trigger_tickets_soporte_actualizado
+    BEFORE UPDATE ON tickets_soporte
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- =================================
+-- MÓDULO: ADMINISTRADOR - SEGURIDAD
+-- =================================
+
+-- Trigger para usuarios_tienda
+DELIMITER $$
+CREATE TRIGGER trigger_usuarios_tienda_actualizado
+    BEFORE UPDATE ON usuarios_tienda
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- =================================
+-- MÓDULO: CATÁLOGO
+-- =================================
+
+-- Trigger para productos
+DELIMITER $$
+CREATE TRIGGER trigger_productos_actualizado
+    BEFORE UPDATE ON productos
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- =================================
+-- MÓDULO: COMPRAS E INSUMOS
+-- =================================
+
+-- Trigger para ordenes_compra
+DELIMITER $$
+CREATE TRIGGER trigger_ordenes_compra_actualizado
+    BEFORE UPDATE ON ordenes_compra
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- =================================
+-- MÓDULO: CLIENTES
+-- =================================
+
+-- Trigger para clientes
+DELIMITER $$
+CREATE TRIGGER trigger_clientes_actualizado
+    BEFORE UPDATE ON clientes
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- =================================
+-- MÓDULO: VENTAS (POS Y STOREFRONT)
+-- =================================
+
+-- Trigger para pedidos
+DELIMITER $$
+CREATE TRIGGER trigger_pedidos_actualizado
+    BEFORE UPDATE ON pedidos
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- Trigger para movimientos_caja
+DELIMITER $$
+CREATE TRIGGER trigger_movimientos_caja_actualizado
+    BEFORE UPDATE ON movimientos_caja
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- =================================
+-- MÓDULO: PRODUCCIÓN
+-- =================================
+
+-- Trigger para stock_ideal
+DELIMITER $$
+CREATE TRIGGER trigger_stock_ideal_actualizado
+    BEFORE UPDATE ON stock_ideal
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- Trigger para planes_produccion
+DELIMITER $$
+CREATE TRIGGER trigger_planes_produccion_actualizado
+    BEFORE UPDATE ON planes_produccion
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- =================================
+-- MÓDULO: INVENTARIO
+-- =================================
+
+-- Trigger para inventario_insumos_sedes
+DELIMITER $$
+CREATE TRIGGER trigger_inventario_insumos_sedes_actualizado
+    BEFORE UPDATE ON inventario_insumos_sedes
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- Trigger para inventario_productos
+DELIMITER $$
+CREATE TRIGGER trigger_inventario_productos_actualizado
+    BEFORE UPDATE ON inventario_productos
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- =================================
+-- MÓDULO: CONFIGURACIÓN
+-- =================================
+
+-- Trigger para configuracion_tienda
+DELIMITER $$
+CREATE TRIGGER trigger_configuracion_tienda_actualizado
+    BEFORE UPDATE ON configuracion_tienda
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
+
+-- =================================
+-- MÓDULO: CMS
+-- =================================
+
+-- Trigger para paginas_storefront
+DELIMITER $$
+CREATE TRIGGER trigger_paginas_storefront_actualizado
+    BEFORE UPDATE ON paginas_storefront
+    FOR EACH ROW
+BEGIN
+    SET NEW.actualizado_en = CURRENT_TIMESTAMP;
+END$$
+DELIMITER ;
