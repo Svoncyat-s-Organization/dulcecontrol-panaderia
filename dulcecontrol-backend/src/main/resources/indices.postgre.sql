@@ -333,10 +333,6 @@ CREATE INDEX IF NOT EXISTS idx_usuarios_tienda_correo
     ON usuarios_tienda(tienda_id, correo) 
     WHERE eliminado_en IS NULL;
 
-CREATE INDEX IF NOT EXISTS idx_usuarios_tokens_validos 
-    ON usuarios_tienda_tokens(usuario_id, tipo, expira_en) 
-    WHERE revocado_en IS NULL;
-
 CREATE INDEX IF NOT EXISTS idx_usuario_sedes 
     ON usuario_sedes(usuario_id, es_sede_principal);
 

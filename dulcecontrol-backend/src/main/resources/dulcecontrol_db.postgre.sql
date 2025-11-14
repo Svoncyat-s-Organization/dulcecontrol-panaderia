@@ -332,18 +332,6 @@ CREATE TABLE IF NOT EXISTS usuarios_tienda (
     UNIQUE (tienda_id, numero_doc)
 );
 
-CREATE TABLE IF NOT EXISTS usuarios_tienda_tokens (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    usuario_id BIGINT NOT NULL REFERENCES usuarios_tienda(id) ON DELETE CASCADE,
-    token_hash TEXT NOT NULL,
-    tipo TEXT NOT NULL DEFAULT 'sesion',
-    expira_en TIMESTAMP(0) WITH TIME ZONE NOT NULL,
-    ultimo_uso_en TIMESTAMP(0) WITH TIME ZONE,
-    revocado_en TIMESTAMP(0) WITH TIME ZONE,
-    creado_en TIMESTAMP(0) WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE (token_hash)
-);
-
 CREATE TABLE IF NOT EXISTS usuario_sedes (
     usuario_id BIGINT NOT NULL REFERENCES usuarios_tienda(id) ON DELETE CASCADE,
     sede_id BIGINT NOT NULL REFERENCES sedes(id) ON DELETE CASCADE,

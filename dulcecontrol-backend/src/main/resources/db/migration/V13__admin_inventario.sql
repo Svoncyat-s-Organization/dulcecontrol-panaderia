@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS movimientos_inventario_productos (
     cantidad_posterior INTEGER NOT NULL,
     pedido_id BIGINT,
     plan_produccion_id BIGINT,
-    motivo ENUM('produccion', 'venta', 'merma', 'ajuste', 'transferencia', 'devolucion') NOT NULL,
+    motivo ENUM('PRODUCCION', 'VENTA', 'MERMA', 'AJUSTE', 'TRANSFERENCIA', 'DEVOLUCION') NOT NULL,
     responsable_id BIGINT,
     creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id),

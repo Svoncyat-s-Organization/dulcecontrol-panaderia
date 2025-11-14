@@ -282,9 +282,6 @@ CREATE INDEX idx_usuarios_tienda_correo
 CREATE INDEX idx_usuarios_tienda_activos
     ON usuarios_tienda(tienda_id, activo, eliminado_en);
 
-CREATE INDEX idx_usuarios_tokens_validos
-    ON usuarios_tienda_tokens(usuario_id, tipo, expira_en, revocado_en);
-
 CREATE INDEX idx_usuario_sedes
     ON usuario_sedes(usuario_id, es_sede_principal);
 

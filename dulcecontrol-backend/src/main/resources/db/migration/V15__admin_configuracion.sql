@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS configuracion_tienda (
     usuario_sunat_sol VARCHAR(100),
     clave_sunat_sol_encriptada TEXT,
     certificado_digital_url TEXT,
-    modo_sunat VARCHAR(20) DEFAULT 'pruebas',
+    modo_sunat VARCHAR(20) DEFAULT 'PRUEBAS',
     tasa_igv DECIMAL(5,2) DEFAULT 18.00,
     api_key_yape VARCHAR(255),
     api_key_plin VARCHAR(255),

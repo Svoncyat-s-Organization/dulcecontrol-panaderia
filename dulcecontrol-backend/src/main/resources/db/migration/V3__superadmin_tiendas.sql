@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS tiendas (
     correo_contacto VARCHAR(255) NOT NULL,
     telefono_contacto VARCHAR(50),
     hash_contrasena VARCHAR(255) NOT NULL,
-    estado ENUM('en_prueba', 'activa', 'suspendida', 'cancelada') NOT NULL DEFAULT 'en_prueba',
+    estado ENUM('EN_PRUEBA', 'ACTIVA', 'SUSPENDIDA', 'CANCELADA') NOT NULL DEFAULT 'EN_PRUEBA',
     creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     actualizado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     eliminado_en DATETIME
@@ -38,12 +38,12 @@ CREATE TABLE IF NOT EXISTS sedes (
 CREATE TABLE IF NOT EXISTS dominios_tienda (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     tienda_id BIGINT NOT NULL,
-    tipo ENUM('administrativo', 'tienda_virtual') NOT NULL DEFAULT 'tienda_virtual',
+    tipo ENUM('ADMINISTRATIVO', 'TIENDA_VIRTUAL') NOT NULL DEFAULT 'TIENDA_VIRTUAL',
     url_dominio VARCHAR(255) NOT NULL UNIQUE,
     url_logo TEXT,
     url_favicon TEXT,
-    color_primario CHAR(7) NOT NULL DEFAULT '#000000',
-    color_secundario CHAR(7) NOT NULL DEFAULT '#ffffff',
+    color_primario VARCHAR(7) NOT NULL DEFAULT '#000000',
+    color_secundario VARCHAR(7) NOT NULL DEFAULT '#ffffff',
     creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     actualizado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (tienda_id) REFERENCES tiendas(id) ON DELETE CASCADE

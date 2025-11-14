@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS productos (
     slug VARCHAR(255) NOT NULL,
     sku VARCHAR(100) NOT NULL,
     descripcion TEXT,
-    tipo ENUM('producto_terminado', 'insumo_venta', 'servicio') NOT NULL DEFAULT 'producto_terminado',
+    tipo ENUM('PRODUCTO_TERMINADO', 'INSUMO_VENTA', 'SERVICIO') NOT NULL DEFAULT 'PRODUCTO_TERMINADO',
     es_personalizable BOOLEAN NOT NULL DEFAULT FALSE,
     precio_base_centimos BIGINT NOT NULL DEFAULT 0,
     precio_oferta_centimos BIGINT,

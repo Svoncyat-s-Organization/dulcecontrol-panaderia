@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS planes (
     descripcion TEXT,
     precio_mensual_centimos BIGINT NOT NULL,
     precio_anual_centimos BIGINT NOT NULL,
-    moneda CHAR(3) NOT NULL DEFAULT 'PEN',
+    moneda VARCHAR(3) NOT NULL DEFAULT 'PEN',
     limites JSON NOT NULL DEFAULT (JSON_OBJECT()),
     activo BOOLEAN NOT NULL DEFAULT TRUE,
     creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
