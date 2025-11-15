@@ -24,7 +24,7 @@ const postLogin = async (formData) => {
     return response.data; // Retorna el LoginResponse
 };
 
-export const useToken = () => {
+export const useTokenGet = () => {
     const [generatedToken, setGeneratedToken] = useState(null);
     const [isTokenVisible, setIsTokenVisible] = useState(false);
 

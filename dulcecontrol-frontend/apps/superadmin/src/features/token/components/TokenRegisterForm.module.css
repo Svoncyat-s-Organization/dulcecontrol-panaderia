@@ -1,0 +1,126 @@
+.wrapper {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.card {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 2rem;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.headerIcon {
+    color: var(--color-secondary);
+}
+
+.title {
+    margin: 0 !important;
+    color: var(--color-text) !important;
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+}
+
+.formItem {
+    margin-bottom: 1.25rem;
+}
+
+.label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text);
+}
+
+.documentRow {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.formItemSmall {
+    margin-bottom: 0;
+}
+
+.formItemLarge {
+    margin-bottom: 0;
+}
+
+.alert {
+    margin-bottom: 1rem;
+}
+
+.buttonGroup {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.credentials {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.credentialItem {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.passwordGroup {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.eyeButton {
+    padding: 0 4px !important;
+    height: auto !important;
+    min-width: auto !important;
+}
+
+@media (max-width: 640px) {
+    .wrapper {
+        max-width: 100%;
+    }
+
+    .card {
+        padding: 1.25rem;
+    }
+
+    .documentRow {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .formItemSmall,
+    .formItemLarge {
+        margin-bottom: 1.25rem;
+    }
+
+    .buttonGroup {
+        flex-direction: column;
+    }
+}

@@ -17,7 +17,7 @@ import java.util.List;
 /**
  * Configuración de OpenAPI (Swagger) para la documentación interactiva de la
  * API.
- * 
+ * <p>
  * Accede a la interfaz en: http://localhost:2250/swagger-ui.html
  */
 @Configuration
@@ -37,25 +37,38 @@ public class OpenApiConfig {
                         .title("Dulce Control API")
                         .version("1.0.0")
                         .description("""
-                                API REST para la gestión integral de panaderías y pastelerías.
-
-                                **Características:**
-                                - Multi-tenant (Superadmin gestiona múltiples tiendas)
-                                - Autenticación JWT stateless
-                                - Módulos: Seguridad, Inventario, Ventas, Producción, Facturación, etc.
-
-                                **Autenticación:**
-                                1. Obtén un token haciendo login en `/api/v1/auth/login`
-                                2. Haz clic en el botón **Authorize** 🔓 (arriba a la derecha)
-                                3. Ingresa: `Bearer {tu_token_aqui}`
-                                4. ¡Listo! Ahora puedes probar todos los endpoints protegidos 🎉
+                                🍰 **API REST para la gestión integral de panaderías y pastelerías**
+                                
+                                Sistema multi-tenant que permite al Superadmin gestionar múltiples tiendas
+                                con módulos completos de: Seguridad, Inventario, Ventas, Producción,
+                                Facturación, Reportes y más.
+                                
+                                ---
+                                
+                                ### 🔐 Autenticación JWT
+                                
+                                Esta API utiliza autenticación stateless con tokens JWT (JSON Web Tokens).
+                                
+                                **Pasos para autenticarte:**
+                                
+                                1. **Obtenga sus credenciales:**
+                                   - Vaya a: https://sa-dulcecontrol.vercel.app/token
+                                   - Registre un usuario
+                                   - Genere su token JWT
+                                
+                                2. **Autorice en Swagger:**
+                                   - Haga clic en el botón **Authorize 🔓** (abajo a la derecha)
+                                   - En el campo ingrese: `Bearer {su_token_aqui}`
+                                   - Haga clic en **Authorize** y luego **Close**
+                                
+                                3. **Pruebe los endpoints:**
+                                   - ¡Listo! Ahora puede probar todos los endpoints 🎉
+                                
+                                ---
                                 """)
-                        .contact(new Contact()
-                                .name("Equipo Dulce Control")
-                                .email("soporte@dulcecontrol.pe"))
                         .license(new License()
-                                .name("MIT License")
-                                .url("https://opensource.org/licenses/MIT")))
+                                .name("Generador de tokens JWT")
+                                .url("https://sa-dulcecontrol.vercel.app/token")))
 
                 // Servidor local
                 .servers(List.of(

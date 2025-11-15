@@ -10,7 +10,7 @@ import {
     IconTrash,
     IconCheck
 } from '@tabler/icons-react';
-import styles from './TokenFormCard.module.css';
+import styles from './TokenGetForm.module.css';
 
 const {Title} = Typography;
 
@@ -29,7 +29,7 @@ const {Title} = Typography;
  * @param {Function} props.handleCopyToken - Función para copiar el token al portapapeles.
  * @param {Error | null} props.error - El objeto de error de la mutación.
  */
-export const TokenFormCard = ({
+export const TokenGetForm = ({
                                   control,
                                   onSubmit,
                                   handleClearForm,
@@ -40,6 +40,8 @@ export const TokenFormCard = ({
                                   handleCopyToken,
                                   error,
                               }) => (
+
+
     <div className={styles.wrapper}>
         <Card className={styles.card} bordered={false}>
             <div className={styles.header}>
@@ -49,12 +51,55 @@ export const TokenFormCard = ({
                 </Title>
             </div>
 
+            {error && (
+                    <Alert
+                        type="error"
+                        showIcon
+                        message={error?.message || 'Error al generar el token'}
+                        className={styles.alert}
+                    />
+            )}
+
+            {generatedToken && (
+                <Alert
+                    type="success"
+                    message="Token generado exitosamente ✅"
+                    description={
+                        <div className={styles.tokenContainer}>
+                            <code className={styles.tokenValue}>
+                                {isTokenVisible ? generatedToken : '•'.repeat(100)}
+                            </code>
+                            <Space size="small" className={styles.tokenActions}>
+                                <Button
+                                    size="small"
+                                    icon={isTokenVisible ? <IconEyeOff size={16}/> : <IconEye size={16}/>}
+                                    onClick={toggleTokenVisibility}
+                                >
+                                    {isTokenVisible ? 'Ocultar' : 'Mostrar'}
+                                </Button>
+                                <Button
+                                    type="primary"
+                                    size="small"
+                                    icon={<IconCopy size={16}/>}
+                                    onClick={handleCopyToken}
+                                >
+                                    Copiar
+                                </Button>
+                            </Space>
+                        </div>
+                    }
+                    closable
+                    className={styles.tokenAlert}
+                />
+            )}
+
             {/* Formulario */}
             <Form
                 layout="vertical"
                 onFinish={onSubmit}
                 className={styles.form}
             >
+
                 <Controller
                     name="correo"
                     control={control}
@@ -97,16 +142,15 @@ export const TokenFormCard = ({
                     )}
                 />
 
-                {error && (
-                    <Alert
-                        type="error"
-                        showIcon
-                        message={error?.message || 'Error al generar el token'}
-                        className={styles.alert}
-                    />
-                )}
-
                 <Space size="middle" className={styles.buttonGroup}>
+                    <Button
+                        icon={<IconTrash size={18}/>}
+                        onClick={handleClearForm}
+                        disabled={isLoading}
+                        size="large"
+                    >
+                        Limpiar
+                    </Button>
                     <Button
                         type="primary"
                         htmlType="submit"
@@ -117,47 +161,10 @@ export const TokenFormCard = ({
                     >
                         Generar Token
                     </Button>
-                    <Button
-                        icon={<IconTrash size={18}/>}
-                        onClick={handleClearForm}
-                        disabled={isLoading}
-                        size="large"
-                    >
-                        Limpiar
-                    </Button>
                 </Space>
             </Form>
         </Card>
 
-        {generatedToken && (
-            <Card className={styles.tokenCard} bordered={false}>
-                <div className={styles.tokenHeader}>
-                    <IconCheck size={20} className={styles.successIcon}/>
-                    <Title level={4} className={styles.tokenTitle}>Token Generado</Title>
-                </div>
 
-                <div className={styles.tokenContent}>
-                    <code className={styles.tokenValue}>
-                        {isTokenVisible ? generatedToken : '•'.repeat(100)}
-                    </code>
-                </div>
-
-                <Space size="small" className={styles.tokenActions}>
-                    <Button
-                        icon={isTokenVisible ? <IconEyeOff size={18}/> : <IconEye size={18}/>}
-                        onClick={toggleTokenVisibility}
-                    >
-                        {isTokenVisible ? 'Ocultar' : 'Mostrar'}
-                    </Button>
-                    <Button
-                        type="primary"
-                        icon={<IconCopy size={18}/>}
-                        onClick={handleCopyToken}
-                    >
-                        Copiar
-                    </Button>
-                </Space>
-            </Card>
-        )}
     </div>
 );
