@@ -3,9 +3,9 @@ import { useForm } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import axios from 'axios';
 import { message } from 'antd';
+import { getApiUrl, ENDPOINTS } from '../../../config/api.config.js';
 
-const API_URL = 'http://localhost:2250';
-const REGISTER_ENDPOINT = `${API_URL}/api/superadmin/seguridad/usuarios`;
+const REGISTER_ENDPOINT = `${getApiUrl()}${ENDPOINTS.USERS_REGISTER}`;
 
 /**
  * Función de API para registrar un usuario superadmin.

@@ -1,6 +1,7 @@
 import { Card, Button, Typography } from 'antd';
 import { IconApi, IconExternalLink } from '@tabler/icons-react';
 import styles from './SwaggerEndpointsCard.module.css';
+import { getApiUrl, ENDPOINTS } from '../../../config/api.config.js';
 
 const { Title, Paragraph } = Typography;
 
@@ -8,7 +9,7 @@ const { Title, Paragraph } = Typography;
  * Componente para mostrar el enlace a la documentación Swagger UI.
  */
 export const SwaggerEndpointsCard = () => {
-    const swaggerUrl = 'http://localhost:2250/swagger-ui/index.html';
+    const swaggerUrl = `${getApiUrl()}${ENDPOINTS.SWAGGER_UI}`;
 
     const handleOpenSwagger = () => {
         window.open(swaggerUrl, '_blank', 'noopener,noreferrer');

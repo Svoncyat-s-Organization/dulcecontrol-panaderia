@@ -3,9 +3,9 @@ import { useForm } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import axios from 'axios';
 import { message } from 'antd';
+import { getApiUrl, ENDPOINTS } from '../../../config/api.config.js';
 
-const API_URL = 'http://localhost:2250';
-const LOGIN_ENDPOINT = `${API_URL}/api/v1/auth/login`;
+const LOGIN_ENDPOINT = `${getApiUrl()}${ENDPOINTS.AUTH_LOGIN}`;
 
 
 /**

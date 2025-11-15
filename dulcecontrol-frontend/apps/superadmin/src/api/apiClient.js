@@ -1,10 +1,9 @@
 import axios from 'axios';
 import { useTokenStore} from '../shared/store/tokenStore.js';
-
-const API_URL = 'http://localhost:2250';
+import { getApiUrl } from '../config/api.config.js';
 
 const apiClient = axios.create({
-    baseURL: API_URL,
+    baseURL: getApiUrl(),
     headers: {
         'Content-Type': 'application/json',
     }
