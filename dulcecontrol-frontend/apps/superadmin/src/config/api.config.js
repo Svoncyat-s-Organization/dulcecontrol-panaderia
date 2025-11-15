@@ -6,7 +6,11 @@
  */
 
 // URL principal (producción)
-export const API_BASE_URL = 'http://pasteleria.spring.informaticapp.com:2250';
+// Opciones:
+// 1. Con subdominio proxy: 'https://api.pasteleria.spring.informaticapp.com'
+// 2. Con ruta proxy: 'https://pasteleria.spring.informaticapp.com'
+// 3. Puerto directo (requiere SSL en Spring): 'https://pasteleria.spring.informaticapp.com:2250'
+export const API_BASE_URL = 'https://pasteleria.spring.informaticapp.com';
 
 // URL de desarrollo/local (para referencia o fallback)
 export const API_LOCAL_URL = 'http://localhost:2250';

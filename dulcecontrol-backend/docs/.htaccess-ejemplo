@@ -1,0 +1,11 @@
+# Proxy para Spring Boot API en puerto 2250
+# Coloca este archivo en public_html de tu dominio en cPanel
+
+RewriteEngine On
+
+# Habilitar proxy
+RewriteCond %{HTTPS} on
+RewriteCond %{REQUEST_URI} ^/api/
+RewriteRule ^(.*)$ http://localhost:2250/$1 [P,L]
+
+# Si no tienes mod_proxy habilitado, contacta a tu hosting
