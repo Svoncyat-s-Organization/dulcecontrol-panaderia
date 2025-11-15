@@ -1,4 +1,3 @@
-TOKEN=$(curl -s -X POST http://localhost:2250/api/v1/auth/login -H 'Content-Type: application/json' -d '{"correo": "sofia.rojas@dulcecontrol.pe", "contrasena": "demo123"}' | jq -r '.accessToken'); curl -s http://localhost:2250/actuator/mappings -H "Authorization: Bearer $TOKEN" | jq -r '.contexts | .[] | .mappings.dispatcherServlets.dispatcherServlet[] | select(.details.requestMappingConditions != null) | .details.requestMappingConditions | .methods[] as $m | .patterns[] as $p | select($p | startswith("/actu") | not) | select($p | startswith("/error") | not) | "[\($m)] \($p)"' | sort
 [DELETE] /api/admin/tiendas/{tiendaId}/catalogo/categorias/{categoriaId}
 [DELETE] /api/admin/tiendas/{tiendaId}/catalogo/productos/{productoId}
 [DELETE] /api/admin/tiendas/{tiendaId}/clientes/{clienteId}
