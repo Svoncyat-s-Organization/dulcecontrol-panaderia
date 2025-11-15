@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### SSL Certificates ###
+src/main/resources/keystore.p12
+src/main/resources/ssl/
+*.key
+*.crt
+*.pem
+*.p12

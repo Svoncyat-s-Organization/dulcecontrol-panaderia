@@ -5,10 +5,8 @@
  * Si falla, puede usar la URL local como fallback (implementar lógica según necesidad).
  */
 
-// URL principal (producción)
-// TEMPORAL: Usando HTTP directo porque cPanel no soporta mod_proxy
-// Mixed Content será bloqueado por Vercel, considera migrar a Railway
-export const API_BASE_URL = 'http://pasteleria.spring.informaticapp.com:2250';
+// URL principal (producción) - Spring Boot con certificado SSL de cPanel
+export const API_BASE_URL = 'https://pasteleria.spring.informaticapp.com:2250';
 
 // URL de desarrollo/local (para referencia o fallback)
 export const API_LOCAL_URL = 'http://localhost:2250';
