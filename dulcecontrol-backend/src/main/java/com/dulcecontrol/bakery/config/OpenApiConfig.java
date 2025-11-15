@@ -70,8 +70,11 @@ public class OpenApiConfig {
                                 .name("Generador de tokens JWT")
                                 .url("https://sa-dulcecontrol.vercel.app/token")))
 
-                // Servidor local
+                // Servidores disponibles
                 .servers(List.of(
+                        new Server()
+                                .url("https://pasteleria.spring.informaticapp.com:2250")
+                                .description("Servidor de Producción (HTTPS)"),
                         new Server()
                                 .url("http://localhost:" + serverPort)
                                 .description("Servidor de Desarrollo Local")))
