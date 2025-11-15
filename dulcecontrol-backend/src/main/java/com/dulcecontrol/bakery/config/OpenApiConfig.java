@@ -58,11 +58,11 @@ public class OpenApiConfig {
                                 
                                 2. **Autorice en Swagger:**
                                    - Haga clic en el botón **Authorize 🔓** (abajo a la derecha)
-                                   - En el campo ingrese: `Bearer {su_token_aqui}`
+                                   - En el campo **Value** debe ingresar su token generado.
                                    - Haga clic en **Authorize** y luego **Close**
                                 
                                 3. **Pruebe los endpoints:**
-                                   - ¡Listo! Ahora puede probar todos los endpoints 🎉
+                                   - ¡Listo! Ahora puede probar todos los endpoints 🎉 Solo seleccione uno de la lista de abajo, desglose y de click a Try it out. Ingrese los parametros necesarios si se requieren.
                                 
                                 ---
                                 """)

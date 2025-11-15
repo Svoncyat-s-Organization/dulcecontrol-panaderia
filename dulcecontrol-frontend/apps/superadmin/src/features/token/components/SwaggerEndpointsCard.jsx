@@ -43,7 +43,7 @@ export const SwaggerEndpointsCard = () => {
                     </Button>
 
                     <div className={styles.infoBox}>
-                        Copie el token generado y úsalo en Swagger
+                        Copie el token generado y úselo en Swagger
                         haciendo clic en el botón <strong>Authorize 🔓</strong>
                     </div>
                 </div>
