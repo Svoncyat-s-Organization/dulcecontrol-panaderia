@@ -55,8 +55,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .authorizeHttpRequests(auth -> auth
-                        // Autenticación
-                        .requestMatchers("/api/v1/auth/**", "/api/superadmin/seguridad/usuarios").permitAll()
+                        // Token API (público para registro y login)
+                        .requestMatchers("/api/token/register", "/api/token/login").permitAll()
                         // Swagger UI y OpenAPI
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()

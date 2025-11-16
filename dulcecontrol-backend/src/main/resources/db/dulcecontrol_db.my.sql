@@ -34,6 +34,22 @@ CREATE TABLE IF NOT EXISTS ubigeo_distritos (
     FOREIGN KEY (provincia_id) REFERENCES ubigeo_provincias(id) ON DELETE RESTRICT
 );
 
+
+-- =================================
+-- CREDENCIALES TOKEN PARA ENDPOINTS
+--         SOLO PARA DEVS
+-- =================================
+
+CREATE TABLE IF NOT EXIST desarrollador_token (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre_completo VARCHAR(255) NOT NULL UNIQUE,
+    correo VARCHAR(255) NOT NULL UNIQUE,
+    hash_contrasena VARCHAR(255) NOT NULL,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    actualizado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+)
+
 -- =================================
 -- TABLAS PARA EL SUPERADMINISTRADOR
 -- =================================

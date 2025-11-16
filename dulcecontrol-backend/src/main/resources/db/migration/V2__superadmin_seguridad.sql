@@ -2,6 +2,18 @@
 -- TABLAS PARA EL SUPERADMINISTRADOR
 -- =================================
 
+-- Credenciales Token para Devs
+
+CREATE TABLE IF NOT EXISTS desarrollador_token (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre_completo VARCHAR(255) NOT NULL UNIQUE,
+    correo VARCHAR(255) NOT NULL UNIQUE,
+    hash_contrasena VARCHAR(255) NOT NULL,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    eliminado_en DATETIME
+);
+
 -- Seguridad
 CREATE TABLE IF NOT EXISTS usuarios_superadmin (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,

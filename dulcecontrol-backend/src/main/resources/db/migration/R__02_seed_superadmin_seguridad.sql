@@ -3,6 +3,56 @@
 -- ============================================================================
 
 -- =================================
+-- DESARROLLADOR TOKEN
+-- =================================
+
+INSERT INTO desarrollador_token (id, nombre_completo, correo, hash_contrasena, activo, creado_en, eliminado_en)
+VALUES
+  (
+    1,
+    'Joy Steven Correa Torres',
+    'joy.correa@dev.dulcecontrol.pe',
+    '$2a$12$Oq8FdZHwWJNEi0LleTdJNeKr/yFTTD42IzFoOIfkrvPN1Sq/ICxlm', -- contraseña: clave123
+    TRUE,
+    '2025-01-01 08:00:00',
+    NULL
+  ),
+  (
+    2,
+    'Belthe Alain Rodas Cubas',
+    'belthe.rodas@dev.dulcecontrol.pe',
+    '$2a$12$Oq8FdZHwWJNEi0LleTdJNeKr/yFTTD42IzFoOIfkrvPN1Sq/ICxlm', -- contraseña: clave123
+    TRUE,
+    '2025-01-02 09:30:00',
+    NULL
+  ),
+  (
+    3,
+    'Frank Edgardo Vasquez Bardalez',
+    'frank.vasquez@dev.dulcecontrol.pe',
+    '$2a$12$Oq8FdZHwWJNEi0LleTdJNeKr/yFTTD42IzFoOIfkrvPN1Sq/ICxlm', -- contraseña: clave123
+    TRUE,
+    '2025-01-03 10:15:00',
+    NULL
+  ),
+  (
+    4,
+    'Jeison Yamir Carranza Diaz',
+    'jeison.carranza@dev.dulcecontrol.pe',
+    '$2a$12$Oq8FdZHwWJNEi0LleTdJNeKr/yFTTD42IzFoOIfkrvPN1Sq/ICxlm', -- contraseña: clave123
+    FALSE,
+    '2025-01-04 11:00:00',
+    '2025-06-15 14:30:00'
+  )
+ON DUPLICATE KEY UPDATE
+  nombre_completo = VALUES(nombre_completo),
+  correo = VALUES(correo),
+  hash_contrasena = VALUES(hash_contrasena),
+  activo = VALUES(activo),
+  creado_en = VALUES(creado_en),
+  eliminado_en = VALUES(eliminado_en);
+
+-- =================================
 -- USUARIOS SUPERADMIN
 -- =================================
 

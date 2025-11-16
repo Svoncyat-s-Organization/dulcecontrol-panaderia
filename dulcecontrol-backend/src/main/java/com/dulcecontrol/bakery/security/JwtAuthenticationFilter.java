@@ -1,7 +1,7 @@
 package com.dulcecontrol.bakery.security;
 
-import com.dulcecontrol.bakery.features.superadmin.seguridad.entity.UsuarioSuperadmin;
-import com.dulcecontrol.bakery.features.superadmin.seguridad.repository.UsuarioSuperadminRepository;
+import com.dulcecontrol.bakery.security.token.entity.DesarrolladorToken;
+import com.dulcecontrol.bakery.security.token.repository.DesarrolladorTokenRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,7 +27,7 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
-    private final UsuarioSuperadminRepository usuarioSuperadminRepository;
+    private final DesarrolladorTokenRepository desarrolladorTokenRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -42,8 +42,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 String correo = jwtProvider.extraerCorreo(token);
 
-                usuarioSuperadminRepository.findByCorreo(correo)
-                        .ifPresent(usuario -> autenticarUsuario(usuario, request));
+                // Solo autenticar si el desarrollador no está eliminado (gracias a @SQLRestriction)
+                desarrolladorTokenRepository.findByCorreo(correo)
+                        .ifPresent(desarrollador -> autenticarDesarrollador(desarrollador, request));
             }
         } catch (Exception ex) {
             log.debug("Error validando token JWT: {}", ex.getMessage());
@@ -60,18 +61,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return null;
     }
 
-    private void autenticarUsuario(UsuarioSuperadmin usuario, HttpServletRequest request) {
-        // Verificar que el usuario esté activo
-        if (!usuario.getActivo()) {
+    private void autenticarDesarrollador(DesarrolladorToken desarrollador, HttpServletRequest request) {
+        // Verificar que el desarrollador esté activo
+        if (!desarrollador.getActivo()) {
             return;
         }
 
         List<SimpleGrantedAuthority> authorities = Collections.singletonList(
-            new SimpleGrantedAuthority("ROLE_SUPERADMIN")
+            new SimpleGrantedAuthority("ROLE_DEVELOPER")
         );
 
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                usuario.getCorreo(), null, authorities);
+                desarrollador.getCorreo(), null, authorities);
         authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
