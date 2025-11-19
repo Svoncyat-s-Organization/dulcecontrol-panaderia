@@ -57,6 +57,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Token API (público para registro y login)
                         .requestMatchers("/api/token/register", "/api/token/login").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
                         // Swagger UI y OpenAPI
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()

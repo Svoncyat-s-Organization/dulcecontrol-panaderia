@@ -17,6 +17,9 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
 
     Optional<Cliente> findByIdAndTiendaId(Long id, Long tiendaId);
 
+        @Query("SELECT c FROM Cliente c WHERE c.tiendaId = :tiendaId AND LOWER(c.email) = LOWER(:email)")
+        Optional<Cliente> findByTiendaIdAndEmail(@Param("tiendaId") Long tiendaId, @Param("email") String email);
+
     @Query("SELECT COUNT(c) > 0 FROM Cliente c WHERE c.tiendaId = :tiendaId AND c.tipoDoc = :tipoDoc AND c.numeroDoc = :numeroDoc AND c.activo = true")
     boolean existsByTiendaIdAndTipoDocAndNumeroDoc(@Param("tiendaId") Long tiendaId,
             @Param("tipoDoc") TipoDocumento tipoDoc, @Param("numeroDoc") String numeroDoc);

@@ -76,7 +76,7 @@ public class OpenApiConfig {
                                 .url("https://pasteleria.spring.informaticapp.com:2250")
                                 .description("Servidor de Producción (HTTPS)"),
                         new Server()
-                                .url("http://localhost:" + serverPort)
+                                .url("https://localhost:" + serverPort)
                                 .description("Servidor de Desarrollo Local")))
 
                 // Configuración de seguridad JWT

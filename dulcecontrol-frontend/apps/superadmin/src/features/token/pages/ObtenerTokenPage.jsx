@@ -1,37 +1,12 @@
 import {Typography} from 'antd';
-import {useTokenGet} from '../hooks/useTokenGet.js';
-import {useTokenRegister} from '../hooks/useTokenRegister.js';
-import {TokenGetForm} from '../components/TokenGetForm.jsx';
-import {TokenRegisterForm} from '../components/TokenRegisterForm.jsx';
-import {SwaggerEndpointsCard} from '../components/SwaggerEndpointsCard.jsx';
+import { TokenGetCard } from '../components/TokenGetCard';
+import { TokenRegisterCard } from '../components/TokenRegisterCard';
+import {SwaggerEndpointsCard} from '../components/SwaggerEnpointsCard/SwaggerEndpointsCard.jsx';
 import styles from './ObtenerTokenPage.module.css';
 
 const {Title, Paragraph} = Typography;
 
 const ObtenerTokenPage = () => {
-    const {
-        control: controlGet,
-        generatedToken,
-        isTokenVisible,
-        isLoading: isLoadingGet,
-        error: errorGet,
-        onSubmit: onSubmitGet,
-        handleClearForm: handleClearFormGet,
-        toggleTokenVisibility,
-        handleCopyToken,
-    } = useTokenGet();
-
-    const {
-        control: controlRegister,
-        isLoading: isLoadingRegister,
-        error: errorRegister,
-        isSuccess: isSuccessRegister,
-        registeredCredentials,
-        onSubmit: onSubmitRegister,
-        handleClearForm: handleClearFormRegister,
-        handleCloseSuccess,
-    } = useTokenRegister();
-
     return (
         <div className={styles.container}>
             <div className={styles.pageHeader}>
@@ -45,27 +20,8 @@ const ObtenerTokenPage = () => {
                 </Paragraph>
             </div>
             <div className={styles.formsWrapper}>
-                <TokenRegisterForm
-                    control={controlRegister}
-                    onSubmit={onSubmitRegister}
-                    handleClearForm={handleClearFormRegister}
-                    isLoading={isLoadingRegister}
-                    error={errorRegister}
-                    isSuccess={isSuccessRegister}
-                    registeredCredentials={registeredCredentials}
-                    handleCloseSuccess={handleCloseSuccess}
-                />
-                <TokenGetForm
-                    control={controlGet}
-                    onSubmit={onSubmitGet}
-                    handleClearForm={handleClearFormGet}
-                    isLoading={isLoadingGet}
-                    generatedToken={generatedToken}
-                    isTokenVisible={isTokenVisible}
-                    toggleTokenVisibility={toggleTokenVisibility}
-                    handleCopyToken={handleCopyToken}
-                    error={errorGet}
-                />
+                <TokenRegisterCard />
+                <TokenGetCard />
             </div>
             <div className={styles.pageHeader}>
                 <SwaggerEndpointsCard />

@@ -1,6 +1,7 @@
 package com.dulcecontrol.bakery.security.token.service.impl;
 
 import com.dulcecontrol.bakery.security.JwtProvider;
+import com.dulcecontrol.bakery.security.TipoUsuario;
 import com.dulcecontrol.bakery.security.token.dto.TokenListResponse;
 import com.dulcecontrol.bakery.security.token.dto.TokenProfileResponse;
 import com.dulcecontrol.bakery.security.token.dto.TokenRegisterRequest;
@@ -48,7 +49,7 @@ public class TokenService implements ITokenService {
         desarrolladorTokenRepository.save(desarrollador);
 
         // 4. Generar y devolver token JWT
-        return jwtProvider.generarToken(desarrollador.getCorreo(), "DEVELOPER");
+        return jwtProvider.generarToken(desarrollador.getCorreo(), "ROLE_DEVELOPER", TipoUsuario.DEVELOPER, null);
     }
 
     @Override
@@ -69,7 +70,7 @@ public class TokenService implements ITokenService {
         }
 
         // 4. Generar y devolver token JWT
-        return jwtProvider.generarToken(desarrollador.getCorreo(), "DEVELOPER");
+        return jwtProvider.generarToken(desarrollador.getCorreo(), "ROLE_DEVELOPER", TipoUsuario.DEVELOPER, null);
     }
 
     @Override
