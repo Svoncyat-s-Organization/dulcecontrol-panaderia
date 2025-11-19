@@ -25,9 +25,9 @@ apiClient.interceptors.response.use(
         if (error.response && error.response.status === 401) {
             const { token, userType, logout } = useTokenStore.getState();
             if (token) {
-                const loginPath = userType === 'SUPERADMIN' ? '/login/super-admin' : '/login/admin';
+                const loginPath = userType === 'SUPERADMIN' ? '/superadmin/login' : '/admin/login';
                 logout();
-                if (!window.location.pathname.startsWith('/login')) {
+                if (window.location.pathname !== loginPath) {
                     window.location.href = loginPath;
                 }
             }

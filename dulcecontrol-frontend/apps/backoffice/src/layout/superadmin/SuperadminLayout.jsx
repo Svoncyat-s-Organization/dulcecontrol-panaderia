@@ -9,11 +9,11 @@ import {
     IconShieldLock,
     IconLogout,
 } from '@tabler/icons-react';
-import { Breadcrumb, Button, Layout, Menu, theme } from 'antd';
+import { Button, Layout, Menu, theme } from 'antd';
 import { useTokenStore } from '../../shared/store/tokenStore.js';
 
 const { Header, Sider, Content, Footer } = Layout;
-const BASE_PATH = '/super-admin';
+const BASE_PATH = '/superadmin';
 
 const getItem = (label, key, icon, children) => ({
     key,
@@ -91,13 +91,29 @@ const SuperadminLayout = () => {
     return (
         <Layout style={{ minHeight: '100vh' }}>
             <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} theme="dark">
-                <div className="logo" style={{ height: 48, margin: 12, background: 'rgba(255,255,255,0.15)' }} />
+                <div
+                    style={{
+                        height: 56,
+                        margin: 16,
+                        borderRadius: 12,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#fff',
+                        fontWeight: 600,
+                        background: 'linear-gradient(135deg, #22c55e 0%, #14b8a6 100%)',
+                        boxShadow: '0 10px 25px rgba(15, 23, 42, 0.35)',
+                    }}
+                >
+                    {collapsed ? 'DC' : 'DulceControl HQ'}
+                </div>
                 <Menu
+                    theme="dark"
                     mode="inline"
                     items={items}
                     style={{ height: '100%', borderRight: 0 }}
                     selectedKeys={[selectedKey]}
-                    openKeys={expandedKeys}
+                    openKeys={collapsed ? [] : expandedKeys}
                     onOpenChange={setExpandedKeys}
                     onClick={handleMenuClick}
                 />
@@ -109,22 +125,31 @@ const SuperadminLayout = () => {
                         background: themeToken.colorBgElevated,
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'flex-end',
+                        justifyContent: 'space-between',
+                        borderBottom: `1px solid ${themeToken.colorBorderSecondary}`,
                     }}
                 >
+                    <div style={{ fontWeight: 600, fontSize: 16 }}>Panel Corporativo</div>
                     <Button type="text" icon={<IconLogout size={18} />} onClick={logout}>
                         Cerrar sesión
                     </Button>
                 </Header>
-                <Content style={{ margin: '16px' }}>
-                    <Breadcrumb style={{ margin: '16px 0' }}>{/* TODO: breadcrumbs */}</Breadcrumb>
+                <Content
+                    style={{
+                        margin: '24px',
+                        padding: 0,
+                        minHeight: 'calc(100vh - 160px)',
+                        background:
+                            'radial-gradient(circle at top, rgba(34, 197, 94, 0.18), transparent 45%)',
+                    }}
+                >
                     <div
                         style={{
-                            padding: 24,
+                            padding: 32,
                             minHeight: 360,
-                            borderRadius: 16,
                             background: themeToken.colorBgContainer,
-                            boxShadow: '0 35px 80px rgba(15, 23, 42, 0.35)',
+                            borderRadius: 20,
+                            boxShadow: '0 25px 80px rgba(15, 23, 42, 0.08)',
                         }}
                     >
                         <Outlet />

@@ -54,8 +54,8 @@ public class AuthService {
         validarPassword(request.getPassword(), usuario.getHashContrasena());
 
         Long tiendaId = usuario.getTiendaId();
-        String token = jwtProvider.generarToken(usuario.getCorreo(), "ROLE_TIENDA", TipoUsuario.TIENDA, tiendaId);
-        return buildResponse(token, TipoUsuario.TIENDA, tiendaId);
+        String token = jwtProvider.generarToken(usuario.getCorreo(), "ROLE_ADMIN", TipoUsuario.ADMIN, tiendaId);
+        return buildResponse(token, TipoUsuario.ADMIN, tiendaId);
     }
 
     public AuthTokenResponse loginStorefront(StorefrontLoginRequest request) {

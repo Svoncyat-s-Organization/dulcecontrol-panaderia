@@ -13,7 +13,7 @@ const cardStyle = {
 };
 
 const LoginCardView = ({ loading, onSubmit, errorMessage }) => (
-    <Card style={cardStyle} bordered={false}>
+    <Card style={cardStyle} variant="borderless">
         <Flex vertical gap="small" style={{ marginBottom: 24 }}>
             <Text type="secondary" strong>
                 Acceso Superadmin

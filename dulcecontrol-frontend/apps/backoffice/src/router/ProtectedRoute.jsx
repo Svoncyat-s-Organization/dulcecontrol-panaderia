@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useTokenStore } from '../shared/store/tokenStore.js';
 
 const ROLE_FALLBACKS = {
-  SUPERADMIN: '/super-admin',
+  SUPERADMIN: '/superadmin',
   ADMIN: '/admin',
 };
 
@@ -23,12 +23,12 @@ const ProtectedRoute = ({ allowedRoles = [], children }) => {
   }, [token, sessionActive, logout]);
 
   if (!sessionActive) {
-    const loginPath = userType === 'SUPERADMIN' ? '/login/super-admin' : '/login/admin';
+    const loginPath = userType === 'SUPERADMIN' ? '/superadmin/login' : '/admin/login';
     return <Navigate to={loginPath} state={{ from: location }} replace />;
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(userType)) {
-    const fallback = ROLE_FALLBACKS[userType] ?? '/login/admin';
+    const fallback = ROLE_FALLBACKS[userType] ?? '/admin/login';
     return <Navigate to={fallback} replace />;
   }
 

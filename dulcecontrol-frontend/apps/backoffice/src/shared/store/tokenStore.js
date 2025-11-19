@@ -7,6 +7,7 @@ const initialState = {
     tiendaId: null,
     expiresAt: null,
     isAuthenticated: false,
+    panelRoleHint: null,
 };
 
 export const useTokenStore = create(
@@ -21,11 +22,15 @@ export const useTokenStore = create(
                     tiendaId,
                     expiresAt,
                     isAuthenticated: true,
+                    panelRoleHint: null,
                 });
             },
             logout: () => {
                 set({ ...initialState });
                 localStorage.removeItem('token-storage');
+            },
+            setPanelRoleHint: (role) => {
+                set({ panelRoleHint: role });
             },
             hasValidSession: () => {
                 const { token, expiresAt } = get();

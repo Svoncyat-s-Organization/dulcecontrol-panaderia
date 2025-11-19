@@ -6,7 +6,7 @@
 	- **Notas:** Emite un JWT con los claims `tipo_usuario=SUPERADMIN`. Requiere credenciales activas en `usuarios_superadmin`.
 * **POST** `/api/auth/admin/login`
 	- **Body:** `{ "email": "string", "password": "string" }`
-	- **Respuesta:** `{ "token", "tokenType", "expiresIn", "userType": "TIENDA", "tiendaId": number }`
+	- **Respuesta:** `{ "token", "tokenType", "expiresIn", "userType": "ADMIN", "tiendaId": number }`
 	- **Notas:** Autentica contra `usuarios_tienda`. El JWT incluye el `tienda_id` asignado al usuario.
 * **POST** `/api/auth/storefront/login`
 	- **Body:** `{ "email": "string", "password": "string", "tiendaId": number }`

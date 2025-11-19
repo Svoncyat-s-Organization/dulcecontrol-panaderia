@@ -36,7 +36,7 @@ export const ENDPOINTS = {
 
     // Endpoints para el superadministrador
     // Tiendas
-    API_TIENDA: '/api/superadmin/tiendas',
+    API_ADMIN: '/api/superadmin/tiendas',
     // Tiendas - Sedes
-    API_TIENDA_SEDE: '/api/superadmin/tiendas/{tiendaId}/sedes',
+    API_ADMIN_SEDE: '/api/superadmin/tiendas/{tiendaId}/sedes',
 };

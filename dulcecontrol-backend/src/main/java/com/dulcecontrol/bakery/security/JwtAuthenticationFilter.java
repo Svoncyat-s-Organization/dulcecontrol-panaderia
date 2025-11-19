@@ -60,7 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 switch (tipoUsuario) {
                     case SUPERADMIN -> autenticarSuperadmin(correo, request);
-                    case TIENDA -> autenticarUsuarioTienda(correo, tiendaId, request);
+                    case ADMIN -> autenticarUsuarioTienda(correo, tiendaId, request);
                     case CLIENTE -> autenticarCliente(correo, tiendaId, request);
                     case DEVELOPER -> autenticarDesarrollador(correo, request);
                 }
@@ -102,7 +102,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         log.debug("El token de tienda no coincide con la tienda del usuario");
                         return;
                     }
-                    establecerAutenticacion(usuario.getCorreo(), TipoUsuario.TIENDA, usuario.getTiendaId(), request);
+                    establecerAutenticacion(usuario.getCorreo(), TipoUsuario.ADMIN, usuario.getTiendaId(), request);
                 });
     }
 

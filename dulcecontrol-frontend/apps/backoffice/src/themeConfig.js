@@ -1,3 +1,9 @@
+const sharedComponents = {
+  Tag: {
+    borderRadiusSM: 999,
+  },
+};
+
 export const ROLE_THEMES = {
   SUPERADMIN: {
     token: {
@@ -6,27 +12,13 @@ export const ROLE_THEMES = {
       colorSuccess: '#53db9e',
       colorWarning: '#d3992e',
     },
-    components: {
-    Tag: {
-      borderRadiusSM: 999,
-    },
-  }
+    components: sharedComponents,
   },
   ADMIN: {
     token: {
       colorPrimary: '#2f54eb',
       colorInfo: '#2f54eb',
-  },
-  components: {
-    Tag: {
-      borderRadiusSM: 999,
     },
+    components: sharedComponents,
   },
-  },
-  DEFAULT: {
-    token: {
-      colorPrimary: '#2f54eb',
-      colorInfo: '#2f54eb',
-    }
-  }
 };

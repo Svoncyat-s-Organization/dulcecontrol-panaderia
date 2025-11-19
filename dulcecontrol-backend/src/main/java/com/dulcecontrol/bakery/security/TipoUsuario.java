@@ -6,6 +6,6 @@ package com.dulcecontrol.bakery.security;
 public enum TipoUsuario {
     DEVELOPER,
     SUPERADMIN,
-    TIENDA,
+    ADMIN,
     CLIENTE
 }

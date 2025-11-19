@@ -1,7 +1,7 @@
 import axios from 'axios';
 import {ENDPOINTS, getApiUrl} from "../../../../config/api.config.js";
 
-const TIENDA_ENDPOINT = `${getApiUrl()}${ENDPOINTS.API_TIENDA}`;
+const ADMIN_ENDPOINT = `${getApiUrl()}${ENDPOINTS.API_ADMIN}`;
 
 /**
 * Función para OBTENER la lista de tiendas (con filtros)
@@ -11,7 +11,7 @@ const TIENDA_ENDPOINT = `${getApiUrl()}${ENDPOINTS.API_TIENDA}`;
 * */
 export const getTiendas = async (queryParams = {}) => {
     try {
-        const response = await axios.get(TIENDA_ENDPOINT, {params: queryParams});
+        const response = await axios.get(ADMIN_ENDPOINT, {params: queryParams});
         return response.data;
     } catch (error) {
         console.error('Error al obtener tiendas', error);
@@ -27,7 +27,7 @@ export const getTiendas = async (queryParams = {}) => {
  **/
 export const postTienda = async (payload) => {
     try {
-        const response = await axios.post(TIENDA_ENDPOINT, payload);
+        const response = await axios.post(ADMIN_ENDPOINT, payload);
         return response.data;
     } catch (error) {
         console.error('Error al crear tienda', error);
@@ -43,7 +43,7 @@ export const postTienda = async (payload) => {
  */
 export const getTiendaById = async (tiendaId) => {
     try {
-        const url = `${TIENDA_ENDPOINT}/${tiendaId}`;
+        const url = `${ADMIN_ENDPOINT}/${tiendaId}`;
         const response = await axios.get(url);
         return response.data;
     } catch (error) {
@@ -61,7 +61,7 @@ export const getTiendaById = async (tiendaId) => {
  */
 export const putTienda = async (tiendaId, payload) => {
     try {
-        const url = `${TIENDA_ENDPOINT}/${tiendaId}`;
+        const url = `${ADMIN_ENDPOINT}/${tiendaId}`;
         const response = await axios.put(url, payload);
         return response.data;
     } catch (error) {
@@ -78,7 +78,7 @@ export const putTienda = async (tiendaId, payload) => {
  */
 export const deleteTienda = async (tiendaId) => {
     try {
-        const url = `${TIENDA_ENDPOINT}/${tiendaId}`;
+        const url = `${ADMIN_ENDPOINT}/${tiendaId}`;
         const response = await axios.delete(url);
         return response.data;
     } catch (error) {
