@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ObtenerTokenPage } from '../features/token';
 import { LoginPage } from '../features/autenticacion';
 import SuperadminLayout from '../shared/layout/SuperadminLayout';
@@ -11,17 +11,21 @@ const AppRouter = () => {
         <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/token" element={<ObtenerTokenPage />} />
-            <Route path="/*" element={
-                <RouteProtector>
-                    <SuperadminLayout />
-                </RouteProtector>
-            }>
+            <Route
+                path="/"
+                element={
+                    <RouteProtector>
+                        <SuperadminLayout />
+                    </RouteProtector>
+                }
+            >
                 <Route index element={<VerTableroPage />} />
                 <Route path="tiendas/directorio" element={<Tiendas.DirectorioTiendasPage />} />
                 <Route path="tiendas/sedes" element={<Tiendas.DirectorioSedesPage />} />
                 <Route path="tiendas/dominios" element={<Tiendas.DirectorioDominiosPage />} />
                 <Route path="tiendas/usuarios" element={<Tiendas.DirectorioUsuariosPage />} />
             </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     );
 };
