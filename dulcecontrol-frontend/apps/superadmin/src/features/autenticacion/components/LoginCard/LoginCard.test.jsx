@@ -136,4 +136,29 @@ describe('LoginCard', () => {
         expect(useTokenStore.getState().token).toBeNull();
         expect(mockNavigate).not.toHaveBeenCalled();
     });
+
+    it('treats responses without token as errors', async () => {
+        postSuperadminLogin.mockResolvedValue({ message: 'Credenciales inválidas' });
+
+        mockFormValues = {
+            email: 'root@dulcecontrol.com',
+            password: 'badpass',
+        };
+
+        renderLoginCard();
+        fireEvent.click(screen.getByRole('button', { name: /Ingresar/i }));
+
+        await waitFor(() => {
+            expect(errorSpy).toHaveBeenCalledWith('Credenciales inválidas');
+        });
+
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: /Ingresar/i }).dataset.error).toBe(
+                'Credenciales inválidas'
+            );
+        });
+
+        expect(useTokenStore.getState().token).toBeNull();
+        expect(mockNavigate).not.toHaveBeenCalled();
+    });
 });

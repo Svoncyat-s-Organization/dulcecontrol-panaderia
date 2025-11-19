@@ -13,7 +13,14 @@ const LoginCard = ({ redirectPath }) => {
     const [formError, setFormError] = useState(null);
 
     const mutation = useMutation({
-        mutationFn: postSuperadminLogin,
+        mutationFn: async (payload) => {
+            const response = await postSuperadminLogin(payload);
+            if (!response?.token) {
+                const fallbackMessage = response?.message ?? AUTH_MESSAGES.ERROR;
+                throw new Error(fallbackMessage);
+            }
+            return response;
+        },
         onSuccess: (data) => {
             setFormError(null);
             login({
@@ -26,7 +33,8 @@ const LoginCard = ({ redirectPath }) => {
             navigate(redirectPath, { replace: true });
         },
         onError: (error) => {
-            const detail = error?.response?.data?.message ?? AUTH_MESSAGES.ERROR;
+            const detail =
+                error?.response?.data?.message ?? error?.message ?? AUTH_MESSAGES.ERROR;
             setFormError(detail);
             message.error(detail);
         },

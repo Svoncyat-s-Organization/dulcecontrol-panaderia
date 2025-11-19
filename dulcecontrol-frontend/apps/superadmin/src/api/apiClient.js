@@ -23,8 +23,13 @@ apiClient.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response && error.response.status === 401) {
-            useTokenStore.getState().logout();
-            window.location.href = '/login';
+            const { token, logout } = useTokenStore.getState();
+            if (token) {
+                logout();
+                if (window.location.pathname !== '/login') {
+                    window.location.href = '/login';
+                }
+            }
         }
         return Promise.reject(error);
     }
