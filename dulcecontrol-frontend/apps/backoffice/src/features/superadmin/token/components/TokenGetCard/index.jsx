@@ -1,11 +1,12 @@
 import {useState} from 'react';
 import {useMutation} from '@tanstack/react-query';
-import {message} from 'antd';
+import {App} from 'antd';
 import {postLogin} from "../../api/token.api.js";
 import {TokenGetForm} from "./TokenGetForm.jsx";
 
 export const TokenGetCard = () => {
     const [tokenSuccessData, setTokenSuccessData] = useState(null);
+    const { message } = App.useApp();
 
     const loginMutation = useMutation({
         mutationFn: postLogin,

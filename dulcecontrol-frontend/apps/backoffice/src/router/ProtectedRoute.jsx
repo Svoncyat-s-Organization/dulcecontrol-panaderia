@@ -9,12 +9,12 @@ const ROLE_FALLBACKS = {
 
 const ProtectedRoute = ({ allowedRoles = [], children }) => {
   const location = useLocation();
-  const token = useTokenStore((state) => state.token);
-  const expiresAt = useTokenStore((state) => state.expiresAt);
   const userType = useTokenStore((state) => state.userType);
   const logout = useTokenStore((state) => state.logout);
+  const hasValidSession = useTokenStore((state) => state.hasValidSession);
+  const token = useTokenStore((state) => state.token);
 
-  const sessionActive = !!token && (!expiresAt || expiresAt > Date.now());
+  const sessionActive = hasValidSession();
 
   useEffect(() => {
     if (token && !sessionActive) {

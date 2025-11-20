@@ -7,10 +7,8 @@ const sharedComponents = {
 export const ROLE_THEMES = {
   SUPERADMIN: {
     token: {
-      colorPrimary: '#105340',
-      colorInfo: '#0f172a',
-      colorSuccess: '#53db9e',
-      colorWarning: '#d3992e',
+      colorPrimary: '#eb2f96',
+      colorInfo: '#eb2f96',
     },
     components: sharedComponents,
   },

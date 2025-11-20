@@ -1,1 +1,0 @@
-export { default as VerTableroPage } from './pages/VerTableroPage.jsx';

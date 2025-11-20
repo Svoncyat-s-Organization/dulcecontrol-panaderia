@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useLocation, useNavigate, Outlet, Link } from 'react-router-dom';
+import { useMemo } from 'react';
+import { Outlet } from 'react-router-dom';
 import {
     IconLayoutGrid,
     IconBuildingStore,
@@ -8,21 +8,18 @@ import {
     IconHeartHandshake,
     IconShieldLock,
     IconLogout,
+    IconChevronDown,
 } from '@tabler/icons-react';
-import { Button, Layout, Menu, theme, Breadcrumb } from 'antd';
+import { Layout, Menu, theme, Breadcrumb, Dropdown, Avatar, Space } from 'antd';
 import { useTokenStore } from '../../shared/store/tokenStore.js';
+import { useMenuLogic } from '../../shared/hooks/useMenuLogic.jsx';
 
 const { Header, Sider, Content, Footer } = Layout;
 const BASE_PATH = '/superadmin';
 
-const getItem = (label, key, icon, children) => ({
-    key,
-    icon,
-    children,
-    label,
-});
+const getItem = (label, key, icon, children) => ({ key, icon, label, children });
 
-const items = [
+const menuItems = [
     getItem('Tablero', BASE_PATH, <IconLayoutGrid size={20} />),
     getItem('Clientes', `${BASE_PATH}/tiendas`, <IconBuildingStore size={20} />, [
         getItem('Tiendas', `${BASE_PATH}/tiendas/directorio`),
@@ -47,123 +44,88 @@ const items = [
     ]),
 ];
 
-const flattenKeys = (menuItems) =>
-    menuItems.flatMap((item) =>
-        item.children ? [item.key, ...flattenKeys(item.children)] : [item.key]
-    );
-
-const buildBreadcrumbLookup = (menuItems, trail = []) =>
-    menuItems.reduce((acc, item) => {
-        const currentTrail = [...trail, { path: item.key, label: item.label }];
-        acc[item.key] = currentTrail;
-        if (item.children) {
-            Object.assign(acc, buildBreadcrumbLookup(item.children, currentTrail));
-        }
-        return acc;
-    }, {});
-
 const SuperadminLayout = () => {
-    const [collapsed, setCollapsed] = useState(false);
-    const location = useLocation();
-    const navigate = useNavigate();
-    const { token: themeToken } = theme.useToken();
     const logout = useTokenStore((state) => state.logout);
-
-    const flatKeys = useMemo(() => flattenKeys(items), []);
-    const breadcrumbLookup = useMemo(() => buildBreadcrumbLookup(items), []);
-
-    const selectedKey = useMemo(() => {
-        const current = location.pathname;
-        return (
-            flatKeys.find((key) => current === key) ||
-            flatKeys.find((key) => current.startsWith(key)) ||
-            BASE_PATH
-        );
-    }, [flatKeys, location.pathname]);
-
-    const openKeys = useMemo(
-        () =>
-            items
-                .filter((item) => item.children?.some((child) => location.pathname.startsWith(child.key)))
-                .map((item) => item.key),
-        [location.pathname]
+    const { token: themeToken } = theme.useToken();
+    const { collapsed, setCollapsed, menuKey, menuProps, breadcrumbItems } = useMenuLogic(
+        menuItems,
+        BASE_PATH
     );
 
-    const [expandedKeys, setExpandedKeys] = useState(openKeys);
+    const profileMenuItems = useMemo(
+        () => [
+            { key: 'profile', label: 'Mi perfil' },
+            { type: 'divider' },
+            { key: 'logout', label: 'Cerrar sesión', icon: <IconLogout size={16} /> },
+        ],
+        []
+    );
 
-    useEffect(() => {
-        setExpandedKeys(openKeys);
-    }, [openKeys]);
-
-    const handleMenuClick = ({ key }) => {
-        navigate(key);
+    const handleProfileClick = ({ key }) => {
+        if (key === 'logout') {
+            logout();
+        }
     };
-
-    const breadcrumbItems = useMemo(() => {
-        const current = location.pathname;
-        const matchKey = Object.keys(breadcrumbLookup)
-            .filter((key) => current.startsWith(key))
-            .sort((a, b) => b.length - a.length)[0];
-        const trail = breadcrumbLookup[matchKey] ?? breadcrumbLookup[BASE_PATH] ?? [];
-        return trail.map(({ path, label }) => ({
-            title: path === current ? <span>{label}</span> : <Link to={path}>{label}</Link>,
-            key: path,
-        }));
-    }, [breadcrumbLookup, location.pathname]);
 
     return (
         <Layout style={{ minHeight: '100vh' }}>
-            <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} theme="dark">
+            <Sider
+                collapsible
+                collapsed={collapsed}
+                onCollapse={setCollapsed}
+                theme="light"
+                style={{ background: '#fff'}}
+            >
                 <div
                     style={{
                         height: 56,
-                        margin: 16,
-                        borderRadius: 12,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: '#fff',
                         fontWeight: 600,
-                        background: 'linear-gradient(135deg, #22c55e 0%, #14b8a6 100%)',
-                        boxShadow: '0 10px 25px rgba(15, 23, 42, 0.35)',
+                        letterSpacing: 0.5,
+                        backgroundColor: themeToken.colorPrimary,
+                        boxShadow: '0 12px 30px rgba(15, 23, 42, 0.12)',
                     }}
                 >
-                    {collapsed ? 'DC' : 'DulceControl HQ'}
+                    {collapsed ? 'DC' : 'DulceControl'}
                 </div>
                 <Menu
-                    theme="dark"
+                    key={menuKey}
+                    theme="light"
                     mode="inline"
-                    items={items}
-                    style={{ height: '100%', borderRight: 0 }}
-                    selectedKeys={[selectedKey]}
-                    openKeys={collapsed ? [] : expandedKeys}
-                    onOpenChange={setExpandedKeys}
-                    onClick={handleMenuClick}
+                    style={{ height: '100%', borderRight: 0,  }}
+                    {...menuProps}
                 />
             </Sider>
-            <Layout>
+            <Layout style={{borderLeft: `2px solid ${themeToken.colorBorderSecondary}`}}>
                 <Header
                     style={{
-                        padding: '0 24px',
+                        height: 56,
+                        padding: '0 16px',
                         background: themeToken.colorBgElevated,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        borderBottom: `1px solid ${themeToken.colorBorderSecondary}`,
+                        borderBottom: `2px solid ${themeToken.colorPrimary}`,
                     }}
                 >
                     <div style={{ fontWeight: 600, fontSize: 16 }}>Panel Corporativo</div>
-                    <Button type="text" icon={<IconLogout size={18} />} onClick={logout}>
-                        Cerrar sesión
-                    </Button>
+                    <Dropdown menu={{ items: profileMenuItems, onClick: handleProfileClick }} trigger={['click']}>
+                        <Space size={10} style={{ cursor: 'pointer' }}>
+                            <Avatar style={{ backgroundColor: themeToken.colorPrimary, color: '#fff' }}>SA</Avatar>
+                            <span style={{ fontWeight: 500 }}>Superadmin</span>
+                            <IconChevronDown size={16} />
+                        </Space>
+                    </Dropdown>
                 </Header>
                 <Content
                     style={{
                         margin: '24px',
                         padding: 0,
                         minHeight: 'calc(100vh - 160px)',
-                        background:
-                            'radial-gradient(circle at top, rgba(34, 197, 94, 0.18), transparent 45%)',
+                        background: themeToken.colorBgLayout,
                     }}
                 >
                     <div style={{ padding: '0 32px 16px' }}>
@@ -175,7 +137,7 @@ const SuperadminLayout = () => {
                             minHeight: 360,
                             background: themeToken.colorBgContainer,
                             borderRadius: 20,
-                            boxShadow: '0 25px 80px rgba(15, 23, 42, 0.08)',
+                            boxShadow: '0 25px 80px rgba(134, 84, 84, 0.08)',
                         }}
                     >
                         <Outlet />

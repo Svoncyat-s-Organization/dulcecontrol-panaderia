@@ -1,11 +1,12 @@
 import {useState} from 'react';
 import {useMutation} from '@tanstack/react-query';
-import {message} from 'antd';
+import {App} from 'antd';
 import {postRegister} from "../../api/token.api.js";
 import {TokenRegisterForm} from "./TokenRegisterForm.jsx";
 
 export const TokenRegisterCard = () => {
     const [registeredCredentials, setRegisteredCredentials] = useState(null);
+    const { message } = App.useApp();
 
     const registerMutation = useMutation({
         mutationFn: postRegister,

@@ -1,4 +1,4 @@
-import { Route } from 'react-router-dom';
+import { Navigate, Route } from 'react-router-dom';
 import ProtectedRoute from '../ProtectedRoute.jsx';
 import SuperadminLayout from '../../layout/superadmin/SuperadminLayout.jsx';
 import PlaceholderPage from '../../shared/components/PlaceholderPage.jsx';
@@ -13,7 +13,10 @@ const superadminRoutes = (
       </ProtectedRoute>
     }
   >
-    <Route index element={
+    <Route index element={<Navigate to="tablero" replace />} />
+    <Route
+      path="tablero"
+      element={
         <PlaceholderPage
           title="Resumen General"
           description="Hola Superadmin, bienvenido al panel de control. Aquí podrás ver un resumen de la actividad reciente, métricas clave y notificaciones importantes relacionadas con la gestión de las tiendas."
@@ -131,7 +134,7 @@ const superadminRoutes = (
         <NotFoundPage
           title="Vista corporativa no encontrada"
           description="Verifica la URL o regresa al panel principal de Superadmin."
-          homePath="/superadmin"
+          homePath="/superadmin/tablero"
           actionLabel="Ir al panel"
         />
       }

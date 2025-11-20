@@ -1,4 +1,4 @@
-import { Route } from 'react-router-dom';
+import { Navigate, Route } from 'react-router-dom';
 import ProtectedRoute from '../ProtectedRoute.jsx';
 import AdminLayout from '../../layout/admin/AdminLayout.jsx';
 import { DashboardPage as AdminDashboardPage } from '../../features/admin/tablero/index.js';
@@ -14,7 +14,8 @@ const adminRoutes = (
       </ProtectedRoute>
     }
   >
-    <Route index element={<AdminDashboardPage />} />
+    <Route index element={<Navigate to="tablero" replace />} />
+    <Route path="tablero" element={<AdminDashboardPage />} />
     <Route
       path="clientes"
       element={
@@ -228,7 +229,7 @@ const adminRoutes = (
         <NotFoundPage
           title="Sección no encontrada"
           description="No encontramos la página dentro del panel administrativo."
-          homePath="/admin"
+          homePath="/admin/tablero"
           actionLabel="Volver al tablero"
         />
       }

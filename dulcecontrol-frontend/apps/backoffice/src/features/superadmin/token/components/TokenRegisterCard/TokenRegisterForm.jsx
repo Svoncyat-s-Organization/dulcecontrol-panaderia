@@ -37,7 +37,7 @@ export const TokenRegisterForm = ({
                     <Title level={3} style={{margin: 0}}>Registrar Usuario</Title>
                 </Space>
 
-                <Space direction="vertical" className={styles.alertSpace}>
+                <Space orientation="vertical" className={styles.alertSpace}>
                     {error && (
                         <Alert
                             type="error"

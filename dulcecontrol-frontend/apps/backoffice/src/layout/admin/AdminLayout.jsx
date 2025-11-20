@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Layout, Menu, Button, theme, Breadcrumb } from 'antd';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { Layout, Menu, Breadcrumb, theme, Dropdown, Avatar, Space } from 'antd';
+import { Outlet } from 'react-router-dom';
 import {
   IconLayoutGrid,
   IconUsers,
@@ -13,8 +13,11 @@ import {
   IconShieldLock,
   IconSettings,
   IconLogout,
+  IconChevronDown,
 } from '@tabler/icons-react';
 import { useTokenStore } from '../../shared/store/tokenStore.js';
+import { useMenuLogic } from '../../shared/hooks/useMenuLogic.jsx';
+import SedeSelector from '../../shared/components/SedeSelector.jsx';
 
 const { Header, Sider, Content, Footer } = Layout;
 
@@ -55,128 +58,86 @@ const menuItems = [
   ]),
 ];
 
-const flattenKeys = (items) =>
-  items.flatMap((item) => (item.children ? [item.key, ...flattenKeys(item.children)] : [item.key]));
-
-const buildBreadcrumbLookup = (items, trail = []) => {
-  return items.reduce((acc, item) => {
-    const currentTrail = [...trail, { path: item.key, label: item.label }];
-    acc[item.key] = currentTrail;
-    if (item.children) {
-      Object.assign(acc, buildBreadcrumbLookup(item.children, currentTrail));
-    }
-    return acc;
-  }, {});
-};
-
 const AdminLayout = () => {
-  const [collapsed, setCollapsed] = useState(false);
-  const [openKeys, setOpenKeys] = useState([]);
-  const location = useLocation();
-  const navigate = useNavigate();
   const logout = useTokenStore((state) => state.logout);
   const { token: themeToken } = theme.useToken();
-  const flatKeys = useMemo(() => flattenKeys(menuItems), []);
-  const breadcrumbLookup = useMemo(() => buildBreadcrumbLookup(menuItems), []);
-
-  const selectedKey = useMemo(() => {
-    const current = location.pathname;
-    const exactMatch = flatKeys.find((key) => current === key);
-    if (exactMatch) return exactMatch;
-    const partialMatch = flatKeys
-      .slice()
-      .sort((a, b) => b.length - a.length)
-      .find((key) => current.startsWith(key));
-    return partialMatch ?? BASE_PATH;
-  }, [flatKeys, location.pathname]);
-
-  const derivedOpenKeys = useMemo(
-    () =>
-      menuItems
-        .filter((item) => item.children?.some((child) => location.pathname.startsWith(child.key)))
-        .map((item) => item.key),
-    [location.pathname]
+  const [currentSede, setCurrentSede] = useState('central');
+  const { collapsed, setCollapsed, menuKey, menuProps, breadcrumbItems } = useMenuLogic(
+    menuItems,
+    BASE_PATH
   );
 
-  useEffect(() => {
-    if (!collapsed) {
-      setOpenKeys(derivedOpenKeys);
+  const profileMenuItems = useMemo(
+    () => [
+      { key: 'profile', label: 'Mi perfil' },
+      { type: 'divider' },
+      { key: 'logout', label: 'Cerrar sesión', icon: <IconLogout size={16} /> },
+    ],
+    []
+  );
+
+  const handleProfileClick = ({ key }) => {
+    if (key === 'logout') {
+      logout();
     }
-  }, [collapsed, derivedOpenKeys]);
-
-  const handleMenuClick = ({ key }) => {
-    navigate(key);
   };
-
-  const breadcrumbItems = useMemo(() => {
-    const current = location.pathname;
-    const matchKey = Object.keys(breadcrumbLookup)
-      .filter((key) => current.startsWith(key))
-      .sort((a, b) => b.length - a.length)[0];
-    const trail = breadcrumbLookup[matchKey] ?? breadcrumbLookup[BASE_PATH] ?? [];
-    return trail.map(({ path, label }) => ({
-      title: path === current ? (
-        <span>{label}</span>
-      ) : (
-        <Link to={path}>{label}</Link>
-      ),
-      key: path,
-    }));
-  }, [breadcrumbLookup, location.pathname]);
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} theme="dark">
+      <Sider
+        collapsible
+        collapsed={collapsed}
+        onCollapse={setCollapsed}
+        theme="light"
+        style={{ background: '#fff'}}
+      >
         <div
           style={{
             height: 56,
-            margin: 16,
-            borderRadius: 12,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: '#fff',
             letterSpacing: 0.5,
             fontWeight: 600,
-            background: 'linear-gradient(135deg, #1a7cfe 0%, #2dd4ff 100%)',
-            boxShadow: '0 10px 25px rgba(15, 23, 42, 0.35)',
+            backgroundColor: themeToken.colorPrimary,
+            boxShadow: '0 12px 30px rgba(15, 23, 42, 0.12)',
           }}
         >
           {collapsed ? 'DC' : 'DulceControl Admin'}
         </div>
-        <Menu
-          theme="dark"
-          mode="inline"
-          items={menuItems}
-          selectedKeys={[selectedKey]}
-          openKeys={collapsed ? [] : openKeys}
-          onOpenChange={setOpenKeys}
-          onClick={handleMenuClick}
-        />
+        <Menu key={menuKey} theme="light" mode="inline" {...menuProps} />
       </Sider>
-      <Layout>
+      <Layout style={{borderLeft: `2px solid ${themeToken.colorBorderSecondary}` }}>
         <Header
           style={{
-            padding: '0 24px',
+            height: 56,
+            padding: '0 16px',
             background: themeToken.colorBgElevated,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            borderBottom: `1px solid ${themeToken.colorBorderSecondary}`,
+            borderBottom: `2px solid ${themeToken.colorPrimary}`,
           }}
         >
           <div style={{ fontWeight: 600, fontSize: 16 }}>Panel Administrativo</div>
-          <Button type="text" icon={<IconLogout size={18} />} onClick={logout}>
-            Cerrar sesión
-          </Button>
+          <Space size={16} align="center">
+            <SedeSelector value={currentSede} onChange={setCurrentSede} />
+            <Dropdown menu={{ items: profileMenuItems, onClick: handleProfileClick }} trigger={['click']}>
+              <Space size={10} style={{ cursor: 'pointer' }}>
+                <Avatar style={{ backgroundColor: themeToken.colorPrimary, color: '#fff' }}>AD</Avatar>
+                <span style={{ fontWeight: 500 }}>Administrador</span>
+                <IconChevronDown size={16} />
+              </Space>
+            </Dropdown>
+          </Space>
         </Header>
         <Content
           style={{
             margin: '24px',
             padding: 0,
             minHeight: 'calc(100vh - 160px)',
-            background:
-              'radial-gradient(circle at top, rgba(45, 212, 255, 0.18), transparent 45%)',
+            background: themeToken.colorBgLayout,
           }}
         >
           <div style={{ padding: '0 32px 16px' }}>

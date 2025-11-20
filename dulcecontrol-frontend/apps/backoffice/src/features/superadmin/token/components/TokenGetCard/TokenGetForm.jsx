@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {Card, Form, Input, Button, Alert, Space, Typography, message} from 'antd';
+import {Card, Form, Input, Button, Alert, Space, Typography, App} from 'antd';
 import {
     IconKey, IconMail, IconLock, IconTrash, IconCopy, IconEye, IconEyeOff
 } from '@tabler/icons-react';
@@ -17,6 +17,7 @@ export const TokenGetForm = ({
                              }) => {
     const [form] = Form.useForm();
     const [showSuccessToken, setShowSuccessToken] = useState(false);
+    const { message } = App.useApp();
 
     const onFinish = async (values) => {
         try {
@@ -44,7 +45,7 @@ export const TokenGetForm = ({
                     <Title level={3} style={{margin: 0}}>Obtener Token</Title>
                 </Space>
 
-                <Space direction="vertical" className={styles.alertSpace}>
+                <Space orientation="vertical" className={styles.alertSpace}>
                     {error && (
                         <Alert
                             type="error"

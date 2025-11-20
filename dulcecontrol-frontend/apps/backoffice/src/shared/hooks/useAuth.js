@@ -5,7 +5,7 @@ import { ENDPOINTS, getApiUrl } from '../../config/api.config.js';
 
 export const useAuthStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       token: null,
       user: null,
       isAuthenticated: false,
