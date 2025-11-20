@@ -17,6 +17,7 @@ import {
 import { useTokenStore } from '../../shared/store/tokenStore.js';
 import SedeSelector from '../../shared/components/SedeSelector.jsx';
 import MainLayout from '../shared/MainLayout.jsx';
+import { buildInitials, buildPreferredName } from '../../shared/utils/nameUtils.js';
 
 const BASE_PATH = '/admin';
 
@@ -79,9 +80,9 @@ const AdminLayout = () => {
     }
   };
 
-  const profileName = user?.nombre || user?.name || user?.sub || 'Administrador';
-  const profileInitialsSource = profileName ? String(profileName).trim() : '';
-  const profileInitials = (profileInitialsSource.charAt(0) || 'A').toUpperCase();
+  const fullName = user?.nombre_completo || user?.nombre || user?.name || '';
+  const profileName = buildPreferredName(fullName) || user?.sub || 'Administrador';
+  const profileInitials = buildInitials(profileName, user?.sub || 'Administrador');
 
   return (
     <MainLayout

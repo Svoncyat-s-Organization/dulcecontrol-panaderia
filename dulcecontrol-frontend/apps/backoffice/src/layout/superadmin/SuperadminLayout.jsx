@@ -11,6 +11,7 @@ import {
 } from '@tabler/icons-react';
 import { useTokenStore } from '../../shared/store/tokenStore.js';
 import MainLayout from '../shared/MainLayout.jsx';
+import { buildInitials, buildPreferredName } from '../../shared/utils/nameUtils.js';
 
 const BASE_PATH = '/superadmin';
 
@@ -61,9 +62,9 @@ const SuperadminLayout = () => {
         }
     };
 
-    const profileName = user?.nombre || user?.name || user?.sub || 'Superadmin';
-    const profileInitialsSource = profileName ? String(profileName).trim() : '';
-    const profileInitials = (profileInitialsSource.charAt(0) || 'S').toUpperCase();
+    const fullName = user?.nombre_completo || user?.nombre || user?.name || '';
+    const profileName = buildPreferredName(fullName) || user?.sub || 'Superadmin';
+    const profileInitials = buildInitials(profileName, user?.sub || 'Superadmin');
 
     return (
         <MainLayout
