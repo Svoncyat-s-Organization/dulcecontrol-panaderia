@@ -3,7 +3,7 @@ import { Flex } from 'antd';
 const containerStyle = {
   minHeight: '100vh',
   padding: '2rem',
-  backgroundColor: '#0f172a',
+  backgroundColor: '#2a4bcfff',
 };
 
 const AuthLayoutView = ({ children }) => (

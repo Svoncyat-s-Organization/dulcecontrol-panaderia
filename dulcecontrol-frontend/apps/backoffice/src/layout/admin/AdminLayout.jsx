@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Layout, Menu, Breadcrumb, theme, Dropdown, Avatar, Space } from 'antd';
-import { Outlet } from 'react-router-dom';
+import { theme } from 'antd';
 import {
   IconLayoutGrid,
   IconUsers,
@@ -13,13 +12,10 @@ import {
   IconShieldLock,
   IconSettings,
   IconLogout,
-  IconChevronDown,
 } from '@tabler/icons-react';
 import { useTokenStore } from '../../shared/store/tokenStore.js';
-import { useMenuLogic } from '../../shared/hooks/useMenuLogic.jsx';
 import SedeSelector from '../../shared/components/SedeSelector.jsx';
-
-const { Header, Sider, Content, Footer } = Layout;
+import MainLayout from '../shared/MainLayout.jsx';
 
 const BASE_PATH = '/admin';
 
@@ -62,10 +58,6 @@ const AdminLayout = () => {
   const logout = useTokenStore((state) => state.logout);
   const { token: themeToken } = theme.useToken();
   const [currentSede, setCurrentSede] = useState('central');
-  const { collapsed, setCollapsed, menuKey, menuProps, breadcrumbItems } = useMenuLogic(
-    menuItems,
-    BASE_PATH
-  );
 
   const profileMenuItems = useMemo(
     () => [
@@ -83,81 +75,18 @@ const AdminLayout = () => {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sider
-        collapsible
-        collapsed={collapsed}
-        onCollapse={setCollapsed}
-        theme="light"
-        style={{ background: '#fff'}}
-      >
-        <div
-          style={{
-            height: 56,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#fff',
-            letterSpacing: 0.5,
-            fontWeight: 600,
-            backgroundColor: themeToken.colorPrimary,
-            boxShadow: '0 12px 30px rgba(15, 23, 42, 0.12)',
-          }}
-        >
-          {collapsed ? 'DC' : 'DulceControl Admin'}
-        </div>
-        <Menu key={menuKey} theme="light" mode="inline" {...menuProps} />
-      </Sider>
-      <Layout style={{borderLeft: `2px solid ${themeToken.colorBorderSecondary}` }}>
-        <Header
-          style={{
-            height: 56,
-            padding: '0 16px',
-            background: themeToken.colorBgElevated,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            borderBottom: `2px solid ${themeToken.colorPrimary}`,
-          }}
-        >
-          <div style={{ fontWeight: 600, fontSize: 16 }}>Panel Administrativo</div>
-          <Space size={16} align="center">
-            <SedeSelector value={currentSede} onChange={setCurrentSede} />
-            <Dropdown menu={{ items: profileMenuItems, onClick: handleProfileClick }} trigger={['click']}>
-              <Space size={10} style={{ cursor: 'pointer' }}>
-                <Avatar style={{ backgroundColor: themeToken.colorPrimary, color: '#fff' }}>AD</Avatar>
-                <span style={{ fontWeight: 500 }}>Administrador</span>
-                <IconChevronDown size={16} />
-              </Space>
-            </Dropdown>
-          </Space>
-        </Header>
-        <Content
-          style={{
-            margin: '24px',
-            padding: 0,
-            minHeight: 'calc(100vh - 160px)',
-            background: themeToken.colorBgLayout,
-          }}
-        >
-          <div style={{ padding: '0 32px 16px' }}>
-            <Breadcrumb items={breadcrumbItems} />
-          </div>
-          <div
-            style={{
-              padding: 32,
-              minHeight: 360,
-              background: themeToken.colorBgContainer,
-              borderRadius: 20,
-              boxShadow: '0 25px 80px rgba(15, 23, 42, 0.08)',
-            }}
-          >
-            <Outlet />
-          </div>
-        </Content>
-        <Footer style={{ textAlign: 'center' }}>DulceControl Admin ©2025</Footer>
-      </Layout>
-    </Layout>
+    <MainLayout
+      basePath={BASE_PATH}
+      menuItems={menuItems}
+      headerTitle="Panel Administrativo"
+      brandLabel="DulceControl Admin"
+      profileMenu={{ items: profileMenuItems, onClick: handleProfileClick }}
+      profileName="Administrador"
+      profileInitials="AD"
+      headerExtras={<SedeSelector value={currentSede} onChange={setCurrentSede} />}
+      footerText="DulceControl Admin ©2025"
+      headerStyle={{ borderBottom: `2px solid ${themeToken.colorPrimary}` }}
+    />
   );
 };
 

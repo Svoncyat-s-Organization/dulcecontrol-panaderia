@@ -9,22 +9,34 @@ import { postSuperadminLogin } from '../../api/auth.api.js';
 
 const mockNavigate = vi.fn();
 let mockFormValues = { email: '', password: '' };
+const featureFlagsMock = { devLoginEnabled: false };
 
 vi.mock('../../api/auth.api.js', () => ({
     postSuperadminLogin: vi.fn(),
 }));
 
 vi.mock('./LoginCardView.jsx', () => ({
-    default: ({ onSubmit, loading, errorMessage }) => (
-        <button
-            type="button"
-            data-error={errorMessage ?? ''}
-            disabled={loading}
-            onClick={() => onSubmit(mockFormValues)}
-        >
-            Ingresar
-        </button>
+    default: ({ onSubmit, loading, errorMessage, devLoginEnabled, onDevLogin }) => (
+        <>
+            <button
+                type="button"
+                data-error={errorMessage ?? ''}
+                disabled={loading}
+                onClick={() => onSubmit(mockFormValues)}
+            >
+                Ingresar
+            </button>
+            {devLoginEnabled && (
+                <button type="button" onClick={onDevLogin}>
+                    Dev Login
+                </button>
+            )}
+        </>
     ),
+}));
+
+vi.mock('../../../../../config/featureFlags.js', () => ({
+    featureFlags: featureFlagsMock,
 }));
 
 vi.mock('react-router-dom', async () => {
@@ -64,6 +76,7 @@ const resetStore = () => {
 
 let successSpy;
 let errorSpy;
+let infoSpy;
 
 describe('LoginCard', () => {
     beforeEach(() => {
@@ -74,6 +87,8 @@ describe('LoginCard', () => {
         resetStore();
         successSpy = vi.spyOn(message, 'success').mockImplementation(() => {});
         errorSpy = vi.spyOn(message, 'error').mockImplementation(() => {});
+        infoSpy = vi.spyOn(message, 'info').mockImplementation(() => {});
+        featureFlagsMock.devLoginEnabled = false;
     });
 
     it('stores token data and redirects after a successful login', async () => {
@@ -160,5 +175,21 @@ describe('LoginCard', () => {
 
         expect(useTokenStore.getState().token).toBeNull();
         expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('permite el acceso directo al panel corporativo cuando el modo dev está activo', async () => {
+        featureFlagsMock.devLoginEnabled = true;
+
+        renderLoginCard();
+        const devButton = screen.getByRole('button', { name: /Dev Login/i });
+        fireEvent.click(devButton);
+
+        await waitFor(() => {
+            expect(useTokenStore.getState().token).toBe('dev-superadmin-token');
+        });
+
+        expect(infoSpy).toHaveBeenCalledWith('Modo desarrollador activado. Token temporal generado.');
+        expect(mockNavigate).toHaveBeenCalledWith('/panel', { replace: true });
+        expect(postSuperadminLogin).not.toHaveBeenCalled();
     });
 });

@@ -1,6 +1,5 @@
 import { Alert, Button, Card, Flex, Form, Input, Typography } from 'antd';
 import { IconLock, IconMail } from '@tabler/icons-react';
-import { Link } from 'react-router-dom';
 import { LOGIN_INITIAL_VALUES } from '../../utils/formDefaults.js';
 
 const { Title, Text } = Typography;
@@ -12,14 +11,20 @@ const cardStyle = {
   boxShadow: '0 25px 80px rgba(15, 23, 42, 0.35)',
 };
 
-const LoginCardView = ({ loading, onSubmit, errorMessage }) => (
+const LoginCardView = ({
+  loading,
+  onSubmit,
+  errorMessage,
+  devLoginEnabled = false,
+  onDevLogin = () => {},
+}) => (
   <Card style={cardStyle} variant="borderless">
-    <Flex vertical gap="small" style={{ marginBottom: 24 }}>
-      <Text type="secondary" strong>
-        Acceso Administrador
+    <Flex vertical gap="small" style={{ marginBottom: 24, }}>
+      <Text type="secondary" strong style={{ margin: 0}}>
+        ACCESO ADMINISTRADOR
       </Text>
-      <Title level={2} style={{ margin: 0 }}>
-        Dulce Control · Admin
+      <Title level={2} style={{ margin: 0}}>
+        Dulce Control
       </Title>
       <Text type="secondary">
         Inicia sesión con tus credenciales para gestionar tu tienda, sedes y operaciones.
@@ -62,6 +67,13 @@ const LoginCardView = ({ loading, onSubmit, errorMessage }) => (
         </Button>
       </Form.Item>
     </Form>
+    {devLoginEnabled && (
+      <Flex justify="center">
+        <Button type="link" onClick={onDevLogin} data-testid="dev-login-button">
+          Ingresar como desarrollador
+        </Button>
+      </Flex>
+    )}
   </Card>
 );
 

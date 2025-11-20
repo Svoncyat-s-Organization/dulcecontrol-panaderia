@@ -6,11 +6,13 @@ import { postSuperadminLogin } from '../../api/auth.api.js';
 import { AUTH_MESSAGES } from '../../constants/messages.js';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 import LoginCardView from './LoginCardView.jsx';
+import { featureFlags } from '../../../../../config/featureFlags.js';
 
 const LoginCard = ({ redirectPath }) => {
     const login = useTokenStore((state) => state.login);
     const navigate = useNavigate();
     const [formError, setFormError] = useState(null);
+    const devLoginEnabled = featureFlags.devLoginEnabled;
 
     const mutation = useMutation({
         mutationFn: async (payload) => {
@@ -40,11 +42,29 @@ const LoginCard = ({ redirectPath }) => {
         },
     });
 
+    const handleDevLogin = () => {
+        if (!devLoginEnabled) {
+            return;
+        }
+
+        setFormError(null);
+        login({
+            token: 'dev-superadmin-token',
+            userType: 'SUPERADMIN',
+            tiendaId: null,
+            expiresIn: null,
+        });
+        message.info(AUTH_MESSAGES.DEV_LOGIN);
+        navigate(redirectPath, { replace: true });
+    };
+
     return (
         <LoginCardView
             loading={mutation.isPending}
             onSubmit={mutation.mutate}
             errorMessage={formError}
+            devLoginEnabled={devLoginEnabled}
+            onDevLogin={handleDevLogin}
         />
     );
 };

@@ -1,6 +1,13 @@
 # React + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Modo desarrollador (login rápido)
+
+1. Copia `.env.example` a `.env.local` (o `.env.development`).
+2. Edita el archivo copiado y asigna `VITE_ENABLE_DEV_LOGIN=true` cuando necesites entrar sin credenciales.
+3. Inicia el servidor (`pnpm dev`) y usa el botón **Ingresar como desarrollador** dentro de las tarjetas de login de admin o superadmin.
+4. Para restaurar el comportamiento normal, cambia el valor a `false` o elimina la variable.
+
+Esta plantilla proporciona una configuración mínima para que React funcione en Vite con HMR y algunas reglas de ESLint.
 
 Currently, two official plugins are available:
 
