@@ -43,6 +43,7 @@ const menuItems = [
 
 const SuperadminLayout = () => {
     const logout = useTokenStore((state) => state.logout);
+    const user = useTokenStore((state) => state.user);
     const { token: themeToken } = theme.useToken();
 
     const profileMenuItems = useMemo(
@@ -60,6 +61,10 @@ const SuperadminLayout = () => {
         }
     };
 
+    const profileName = user?.nombre || user?.name || user?.sub || 'Superadmin';
+    const profileInitialsSource = profileName ? String(profileName).trim() : '';
+    const profileInitials = (profileInitialsSource.charAt(0) || 'S').toUpperCase();
+
     return (
         <MainLayout
             basePath={BASE_PATH}
@@ -67,8 +72,8 @@ const SuperadminLayout = () => {
             headerTitle="Panel Corporativo"
             brandLabel="DulceControl"
             profileMenu={{ items: profileMenuItems, onClick: handleProfileClick }}
-            profileName="Superadmin"
-            profileInitials="SA"
+            profileName={profileName}
+            profileInitials={profileInitials}
             footerText="DulceControl Superadmin ©2025"
             headerStyle={{ borderBottom: `2px solid ${themeToken.colorPrimary}` }}
             innerLayoutStyle={{ borderLeft: `2px solid ${themeToken.colorBorderSecondary}` }}

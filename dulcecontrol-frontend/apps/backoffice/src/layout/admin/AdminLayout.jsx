@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { theme } from 'antd';
 import {
   IconLayoutGrid,
@@ -8,6 +8,7 @@ import {
   IconCakeRoll,
   IconBuildingWarehouse,
   IconBrandCakephp,
+  IconBasketDollar,
   IconReport,
   IconShieldLock,
   IconSettings,
@@ -37,14 +38,18 @@ const menuItems = [
     getItem('Planificación', `${BASE_PATH}/produccion/planificacion`),
     getItem('Recetas', `${BASE_PATH}/produccion/recetas`),
   ]),
+  getItem('Catálogo', `${BASE_PATH}/catalogo`, <IconBrandCakephp size={18} />, [
+    getItem('Productos', `${BASE_PATH}/catalogo/productos`),
+    getItem('Categorías', `${BASE_PATH}/catalogo/categorias`),
+  ]),
+  getItem('Compras y Proveedores', `${BASE_PATH}/compras`, <IconBasketDollar size={18} />, [
+    getItem('Proveedores', `${BASE_PATH}/compras/proveedores`),
+    getItem('Ordenes de Compra', `${BASE_PATH}/compras/ordenes-compra`),
+  ]),
   getItem('Inventario', `${BASE_PATH}/inventario`, <IconBuildingWarehouse size={18} />, [
     getItem('Existencias', `${BASE_PATH}/inventario/existencias`),
     getItem('Insumos', `${BASE_PATH}/inventario/insumos`),
     getItem('Movimientos', `${BASE_PATH}/inventario/movimientos`),
-  ]),
-  getItem('Catálogo', `${BASE_PATH}/catalogo`, <IconBrandCakephp size={18} />, [
-    getItem('Productos', `${BASE_PATH}/catalogo/productos`),
-    getItem('Categorías', `${BASE_PATH}/catalogo/categorias`),
   ]),
   getItem('Reportes', `${BASE_PATH}/reportes`, <IconReport size={18} />),
   getItem('Seguridad', `${BASE_PATH}/seguridad`, <IconShieldLock size={18} />),
@@ -56,8 +61,8 @@ const menuItems = [
 
 const AdminLayout = () => {
   const logout = useTokenStore((state) => state.logout);
+  const user = useTokenStore((state) => state.user);
   const { token: themeToken } = theme.useToken();
-  const [currentSede, setCurrentSede] = useState('central');
 
   const profileMenuItems = useMemo(
     () => [
@@ -74,6 +79,10 @@ const AdminLayout = () => {
     }
   };
 
+  const profileName = user?.nombre || user?.name || user?.sub || 'Administrador';
+  const profileInitialsSource = profileName ? String(profileName).trim() : '';
+  const profileInitials = (profileInitialsSource.charAt(0) || 'A').toUpperCase();
+
   return (
     <MainLayout
       basePath={BASE_PATH}
@@ -81,9 +90,9 @@ const AdminLayout = () => {
       headerTitle="Panel Administrativo"
       brandLabel="DulceControl Admin"
       profileMenu={{ items: profileMenuItems, onClick: handleProfileClick }}
-      profileName="Administrador"
-      profileInitials="AD"
-      headerExtras={<SedeSelector value={currentSede} onChange={setCurrentSede} />}
+      profileName={profileName}
+      profileInitials={profileInitials}
+      headerExtras={<SedeSelector />}
       footerText="DulceControl Admin ©2025"
       headerStyle={{ borderBottom: `2px solid ${themeToken.colorPrimary}` }}
     />
