@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Modal, message } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 import CategoriasTableView from './CategoriasTableView.jsx';
+import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 import { getCategorias, deleteCategoria } from '../../api/categorias.api.js';
 import { CATEGORIA_KEYS } from '../../constants/queryKeys.js';
 import { mapCategoriasResponse } from '../../utils/categoriaMappers.js';
@@ -13,6 +13,8 @@ const CategoriasTable = () => {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCategoria, setSelectedCategoria] = useState(null);
+  // No se si esto sirva para paginar pero meh
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
 
   const { data = [], isLoading, isError, refetch } = useQuery({
     queryKey: CATEGORIA_KEYS.lists(tiendaId),
@@ -73,6 +75,34 @@ const CategoriasTable = () => {
 
   const categorias = useMemo(() => data, [data]);
 
+  useEffect(() => {
+    if (!categorias.length) {
+      setPagination((prev) => ({ ...prev, current: 1 }));
+      return;
+    }
+
+    const maxPage = Math.max(1, Math.ceil(categorias.length / pagination.pageSize));
+    if (pagination.current > maxPage) {
+      setPagination((prev) => ({ ...prev, current: maxPage }));
+    }
+  }, [categorias.length, pagination.current, pagination.pageSize]);
+
+  const handlePaginate = (page, pageSize) => {
+    setPagination({ current: page, pageSize });
+  };
+
+  const tablePagination = useMemo(
+    () => ({
+      current: pagination.current,
+      pageSize: pagination.pageSize,
+      total: categorias.length,
+      showSizeChanger: true,
+      pageSizeOptions: ['10', '20', '50'],
+      showTotal: (total, range) => `${range[0]}-${range[1]} de ${total} categorías`,
+    }),
+    [categorias.length, pagination.current, pagination.pageSize]
+  );
+
   return (
     <>
       <CategoriasTableView
@@ -84,6 +114,8 @@ const CategoriasTable = () => {
         onEdit={handleEdit}
         onDelete={handleDelete}
         deletingId={deletingId}
+        pagination={tablePagination}
+        onPaginate={handlePaginate}
       />
 
       <CategoriaForm
