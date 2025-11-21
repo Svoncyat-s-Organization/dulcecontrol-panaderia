@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useSedeStore } from './sedeStore.js';
+import { parseJwt } from '../utils/jwtUtils.js';
 
 const initialState = {
     token: null,
@@ -8,6 +10,7 @@ const initialState = {
     expiresAt: null,
     isAuthenticated: false,
     panelRoleHint: null,
+    user: null,
 };
 
 export const useTokenStore = create(
@@ -16,6 +19,11 @@ export const useTokenStore = create(
             ...initialState,
             login: ({ token, userType, tiendaId = null, expiresIn }) => {
                 const expiresAt = expiresIn ? Date.now() + expiresIn * 1000 : null;
+                const { selectedTiendaId, clearSelection } = useSedeStore.getState();
+                if (selectedTiendaId && tiendaId !== selectedTiendaId) {
+                    clearSelection();
+                }
+                const userClaims = parseJwt(token);
                 set({
                     token,
                     userType,
@@ -23,11 +31,13 @@ export const useTokenStore = create(
                     expiresAt,
                     isAuthenticated: true,
                     panelRoleHint: null,
+                    user: userClaims,
                 });
             },
             logout: () => {
                 set({ ...initialState });
                 localStorage.removeItem('token-storage');
+                useSedeStore.getState().clearSelection();
             },
             setPanelRoleHint: (role) => {
                 set({ panelRoleHint: role });
@@ -49,6 +59,7 @@ export const useTokenStore = create(
                 tiendaId: state.tiendaId,
                 expiresAt: state.expiresAt,
                 isAuthenticated: state.isAuthenticated,
+                user: state.user,
             }),
         }
     )

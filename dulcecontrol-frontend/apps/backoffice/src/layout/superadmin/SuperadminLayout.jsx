@@ -11,6 +11,7 @@ import {
 } from '@tabler/icons-react';
 import { useTokenStore } from '../../shared/store/tokenStore.js';
 import MainLayout from '../shared/MainLayout.jsx';
+import { buildInitials, buildPreferredName } from '../../shared/utils/nameUtils.js';
 
 const BASE_PATH = '/superadmin';
 
@@ -43,6 +44,7 @@ const menuItems = [
 
 const SuperadminLayout = () => {
     const logout = useTokenStore((state) => state.logout);
+    const user = useTokenStore((state) => state.user);
     const { token: themeToken } = theme.useToken();
 
     const profileMenuItems = useMemo(
@@ -60,6 +62,10 @@ const SuperadminLayout = () => {
         }
     };
 
+    const fullName = user?.nombre_completo || user?.nombre || user?.name || '';
+    const profileName = buildPreferredName(fullName) || user?.sub || 'Superadmin';
+    const profileInitials = buildInitials(profileName, user?.sub || 'Superadmin');
+
     return (
         <MainLayout
             basePath={BASE_PATH}
@@ -67,8 +73,8 @@ const SuperadminLayout = () => {
             headerTitle="Panel Corporativo"
             brandLabel="DulceControl"
             profileMenu={{ items: profileMenuItems, onClick: handleProfileClick }}
-            profileName="Superadmin"
-            profileInitials="SA"
+            profileName={profileName}
+            profileInitials={profileInitials}
             footerText="DulceControl Superadmin ©2025"
             headerStyle={{ borderBottom: `2px solid ${themeToken.colorPrimary}` }}
             innerLayoutStyle={{ borderLeft: `2px solid ${themeToken.colorBorderSecondary}` }}

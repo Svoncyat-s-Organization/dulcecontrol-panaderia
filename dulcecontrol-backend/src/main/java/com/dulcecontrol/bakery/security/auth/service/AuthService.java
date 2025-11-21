@@ -17,6 +17,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -38,7 +41,8 @@ public class AuthService {
 
         validarPassword(request.getPassword(), usuario.getHashContrasena());
 
-        String token = jwtProvider.generarToken(usuario.getCorreo(), "ROLE_SUPERADMIN", TipoUsuario.SUPERADMIN, null);
+        String token = jwtProvider.generarToken(usuario.getCorreo(), "ROLE_SUPERADMIN", TipoUsuario.SUPERADMIN, null,
+            construirClaimsNombre(usuario.getNombres()));
         return buildResponse(token, TipoUsuario.SUPERADMIN, null);
     }
 
@@ -54,7 +58,8 @@ public class AuthService {
         validarPassword(request.getPassword(), usuario.getHashContrasena());
 
         Long tiendaId = usuario.getTiendaId();
-        String token = jwtProvider.generarToken(usuario.getCorreo(), "ROLE_ADMIN", TipoUsuario.ADMIN, tiendaId);
+        String token = jwtProvider.generarToken(usuario.getCorreo(), "ROLE_ADMIN", TipoUsuario.ADMIN, tiendaId,
+            construirClaimsNombre(usuario.getNombres()));
         return buildResponse(token, TipoUsuario.ADMIN, tiendaId);
     }
 
@@ -70,7 +75,8 @@ public class AuthService {
 
         validarPassword(request.getPassword(), cliente.getHashContrasena());
 
-        String token = jwtProvider.generarToken(cliente.getEmail(), "ROLE_CLIENTE", TipoUsuario.CLIENTE, tiendaId);
+        String token = jwtProvider.generarToken(cliente.getEmail(), "ROLE_CLIENTE", TipoUsuario.CLIENTE, tiendaId,
+            construirClaimsNombre(cliente.getNombreDoc()));
         return buildResponse(token, TipoUsuario.CLIENTE, tiendaId);
     }
 
@@ -95,5 +101,14 @@ public class AuthService {
                 .userType(tipoUsuario)
                 .tiendaId(tiendaId)
                 .build();
+    }
+
+    private Map<String, Object> construirClaimsNombre(String nombreCompleto) {
+        if (nombreCompleto == null || nombreCompleto.isBlank()) {
+            return null;
+        }
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("nombre_completo", nombreCompleto.trim());
+        return claims;
     }
 }

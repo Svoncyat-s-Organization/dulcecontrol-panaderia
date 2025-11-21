@@ -79,11 +79,7 @@ const MainLayout = ({
   };
 
   const combinedContentCardStyle = {
-    padding: 32,
-    minHeight: 360,
-    background: themeToken.colorBgContainer,
-    borderRadius: 20,
-    boxShadow: '0 25px 80px rgba(15, 23, 42, 0.08)',
+    padding: '0px 32px',
     ...contentCardStyle,
   };
 

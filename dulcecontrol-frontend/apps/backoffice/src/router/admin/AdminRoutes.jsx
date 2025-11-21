@@ -5,6 +5,9 @@ import { DashboardPage as AdminDashboardPage } from '../../features/admin/tabler
 import PlaceholderPage from '../../shared/components/PlaceholderPage.jsx';
 import NotFoundPage from '../../shared/components/NotFoundPage.jsx';
 
+import { ProductosPage, CategoriasPage } from '../../features/admin/catalogo/index.js';
+import { ExistenciasPage, InsumosPage, MovimientosPage } from '../../features/admin/inventario/index.js';
+
 const adminRoutes = (
   <Route
     path="/admin"
@@ -124,33 +127,9 @@ const adminRoutes = (
         />
       }
     />
-    <Route
-      path="inventario/existencias"
-      element={
-        <PlaceholderPage
-          title="Existencias"
-          description="La vista consolidada de stock por almacén estará disponible en breve."
-        />
-      }
-    />
-    <Route
-      path="inventario/insumos"
-      element={
-        <PlaceholderPage
-          title="Insumos"
-          description="Administra fichas técnicas y costos de cada insumo."
-        />
-      }
-    />
-    <Route
-      path="inventario/movimientos"
-      element={
-        <PlaceholderPage
-          title="Movimientos"
-          description="Aquí quedarán registradas entradas, salidas y ajustes de inventario."
-        />
-      }
-    />
+    <Route path="inventario/existencias" element={<ExistenciasPage />} />
+    <Route path="inventario/insumos" element={<InsumosPage />} />
+    <Route path="inventario/movimientos" element={<MovimientosPage />} />
     <Route
       path="catalogo"
       element={
@@ -162,21 +141,11 @@ const adminRoutes = (
     />
     <Route
       path="catalogo/productos"
-      element={
-        <PlaceholderPage
-          title="Productos"
-          description="Estamos migrando el catálogo para permitir carga masiva y fotos."
-        />
-      }
+      element={<ProductosPage />}
     />
     <Route
       path="catalogo/categorias"
-      element={
-        <PlaceholderPage
-          title="Categorías"
-          description="Clasifica tus productos por familia, temporada o canal."
-        />
-      }
+      element={<CategoriasPage />}
     />
     <Route
       path="reportes"
