@@ -2,6 +2,7 @@ import { Navigate, Route } from 'react-router-dom';
 import ProtectedRoute from '../ProtectedRoute.jsx';
 import SuperadminLayout from '../../layout/superadmin/SuperadminLayout.jsx';
 import PlaceholderPage from '../../shared/components/PlaceholderPage.jsx';
+import { VerTableroPage as SuperadminDashboardPage } from '../../features/superadmin/tablero/index.js';
 import NotFoundPage from '../../shared/components/NotFoundPage.jsx';
 
 const superadminRoutes = (
@@ -17,10 +18,7 @@ const superadminRoutes = (
     <Route
       path="tablero"
       element={
-        <PlaceholderPage
-          title="Resumen General"
-          description="Hola Superadmin, bienvenido al panel de control. Aquí podrás ver un resumen de la actividad reciente, métricas clave y notificaciones importantes relacionadas con la gestión de las tiendas."
-        />
+        <SuperadminDashboardPage />
       }
     />
     <Route path="tiendas/directorio" element={

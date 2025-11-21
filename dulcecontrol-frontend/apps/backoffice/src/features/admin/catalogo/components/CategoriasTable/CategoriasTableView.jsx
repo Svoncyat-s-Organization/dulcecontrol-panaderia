@@ -12,6 +12,8 @@ const CategoriasTableView = ({
   onEdit,
   onDelete,
   deletingId,
+  pagination,
+  onPaginate,
 }) => {
   const { token } = theme.useToken();
 
@@ -124,7 +126,10 @@ const CategoriasTableView = ({
         columns={columns}
         dataSource={categorias}
         loading={loading}
-        pagination={{ pageSize: 10 }}
+        pagination={pagination}
+        onChange={(nextPagination) =>
+          onPaginate?.(nextPagination.current, nextPagination.pageSize)
+        }
       />
     </Card>
   );
