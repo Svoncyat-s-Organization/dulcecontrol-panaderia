@@ -24,6 +24,6 @@ public class TipoDocumentoConverter implements AttributeConverter<TipoDocumento,
         if (dbData == null || dbData.trim().isEmpty()) {
             return null;
         }
-        return TipoDocumento.fromString(dbData);
+        return TipoDocumento.valueOf(dbData);
     }
 }
