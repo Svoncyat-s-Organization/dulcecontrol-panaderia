@@ -90,7 +90,7 @@ public class SecurityConfig {
                 "https://dulcecontrol-superadmin.vercel.app",
                 "https://dulcecontrol-admin.vercel.app",
                 "https://dulcecontrol-storefront.vercel.app",
-                "https://*.vercel.app" // Para cualquier subdominio de Vercel
+                "https://*.vercel.app"
         ));
 
         // Métodos HTTP permitidos
