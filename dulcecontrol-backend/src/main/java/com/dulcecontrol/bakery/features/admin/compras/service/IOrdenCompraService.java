@@ -3,6 +3,7 @@ package com.dulcecontrol.bakery.features.admin.compras.service;
 import com.dulcecontrol.bakery.features.admin.compras.dto.OrdenCompraCreateRequest;
 import com.dulcecontrol.bakery.features.admin.compras.dto.OrdenCompraResponse;
 import com.dulcecontrol.bakery.features.admin.compras.dto.OrdenCompraUpdateRequest;
+import com.dulcecontrol.bakery.features.admin.compras.dto.RecepcionParcialRequest;
 import com.dulcecontrol.bakery.features.admin.compras.entity.enums.EstadoOrdenCompra;
 
 import java.time.LocalDate;
@@ -31,4 +32,8 @@ public interface IOrdenCompraService {
     void eliminar(Long tiendaId, Long ordenCompraId);
 
     OrdenCompraResponse cambiarEstado(Long tiendaId, Long ordenCompraId, EstadoOrdenCompra nuevoEstado);
+    
+    OrdenCompraResponse recibirParcial(Long tiendaId, RecepcionParcialRequest request);
+    
+    OrdenCompraResponse recibirTotal(Long tiendaId, Long ordenCompraId);
 }

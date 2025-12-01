@@ -7,6 +7,7 @@ import NotFoundPage from '../../shared/components/NotFoundPage.jsx';
 
 import { ProductosPage, CategoriasPage } from '../../features/admin/catalogo/index.js';
 import { ExistenciasPage, InsumosPage, MovimientosPage } from '../../features/admin/inventario/index.js';
+import { InsumosPage as ComprasInsumosPage, ProveedoresPage, OrdenesCompraPage } from '../../features/admin/compras/index.js';
 
 const adminRoutes = (
   <Route
@@ -91,6 +92,18 @@ const adminRoutes = (
         />
       }
     />
+    <Route
+      path="compras"
+      element={
+        <PlaceholderPage
+          title="Compras"
+          description="Gestiona insumos, proveedores y órdenes de compra para tu panadería."
+        />
+      }
+    />
+    <Route path="compras/insumos" element={<ComprasInsumosPage />} />
+    <Route path="compras/proveedores" element={<ProveedoresPage />} />
+    <Route path="compras/ordenes" element={<OrdenesCompraPage />} />
     <Route
       path="produccion"
       element={

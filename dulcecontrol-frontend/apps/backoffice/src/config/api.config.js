@@ -9,7 +9,7 @@
 export const API_BASE_URL = 'https://pasteleria.spring.informaticapp.com:2250';
 
 // URL de desarrollo/local (para referencia o fallback)
-export const API_LOCAL_URL = 'https://localhost:2250';
+export const API_LOCAL_URL = 'http://localhost:2250';
 
 // URL activa (puedes cambiar esto dinámicamente si lo necesitas)
 export const getApiUrl = () => {

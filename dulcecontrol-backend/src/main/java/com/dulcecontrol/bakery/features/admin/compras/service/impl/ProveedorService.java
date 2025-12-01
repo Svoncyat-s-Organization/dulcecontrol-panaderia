@@ -50,9 +50,10 @@ public class ProveedorService implements IProveedorService {
     @Override
     @Transactional
     public ProveedorResponse crear(ProveedorCreateRequest request) {
-        if (proveedorRepository.existsByTiendaIdAndNombreComercial(request.getTiendaId(),
+        // Verificar solo proveedores activos con el mismo nombre
+        if (proveedorRepository.existsByTiendaIdAndNombreComercialAndActivoTrue(request.getTiendaId(),
                 request.getNombreComercial())) {
-            throw new BadRequestException("Ya existe un proveedor con ese nombre comercial");
+            throw new BadRequestException("Ya existe un proveedor activo con ese nombre comercial");
         }
 
         Proveedor proveedor = new Proveedor();
@@ -77,10 +78,11 @@ public class ProveedorService implements IProveedorService {
         Proveedor proveedor = proveedorRepository.findByIdAndTiendaId(proveedorId, tiendaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Proveedor no encontrado"));
 
+        // Verificar solo proveedores activos si se está cambiando el nombre
         if (!proveedor.getNombreComercial().equalsIgnoreCase(request.getNombreComercial()) &&
-                proveedorRepository.existsByTiendaIdAndNombreComercialAndIdNot(tiendaId, request.getNombreComercial(),
-                        proveedorId)) {
-            throw new BadRequestException("Ya existe un proveedor con ese nombre comercial");
+                proveedorRepository.existsByTiendaIdAndNombreComercialAndActivoTrueAndIdNot(tiendaId, 
+                        request.getNombreComercial(), proveedorId)) {
+            throw new BadRequestException("Ya existe un proveedor activo con ese nombre comercial");
         }
 
         proveedor.setNombreComercial(request.getNombreComercial());
@@ -109,9 +111,8 @@ public class ProveedorService implements IProveedorService {
         Proveedor proveedor = proveedorRepository.findByIdAndTiendaId(proveedorId, tiendaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Proveedor no encontrado"));
 
-        // Soft delete
-        proveedor.setActivo(Boolean.FALSE);
-        proveedorRepository.save(proveedor);
+        // Hard delete - eliminar permanentemente de la base de datos
+        proveedorRepository.delete(proveedor);
     }
 
     private ProveedorResponse toResponse(Proveedor proveedor) {
