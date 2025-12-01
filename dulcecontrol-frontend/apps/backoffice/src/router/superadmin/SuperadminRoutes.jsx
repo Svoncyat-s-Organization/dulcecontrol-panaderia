@@ -3,6 +3,7 @@ import ProtectedRoute from '../ProtectedRoute.jsx';
 import SuperadminLayout from '../../layout/superadmin/SuperadminLayout.jsx';
 import PlaceholderPage from '../../shared/components/PlaceholderPage.jsx';
 import { VerTableroPage as SuperadminDashboardPage } from '../../features/superadmin/tablero/index.js';
+import { PlanesManager, SuscripcionesManager, HistorialManager } from '../../features/superadmin/suscripciones/index.js';
 import NotFoundPage from '../../shared/components/NotFoundPage.jsx';
 
 const superadminRoutes = (
@@ -22,55 +23,40 @@ const superadminRoutes = (
       }
     />
     <Route path="tiendas/directorio" element={
-        <PlaceholderPage
-          title="Tiendas"
-          description="Este será el directorio de tiendas donde podrás gestionar todas las tiendas registradas en la plataforma."
-        />
-      } />
+      <PlaceholderPage
+        title="Tiendas"
+        description="Este será el directorio de tiendas donde podrás gestionar todas las tiendas registradas en la plataforma."
+      />
+    } />
     <Route path="tiendas/sedes" element={
-        <PlaceholderPage
-          title="Sedes"
-          description="Aquí podrás administrar las sedes de cada tienda registrada."
-        />
-      } />
+      <PlaceholderPage
+        title="Sedes"
+        description="Aquí podrás administrar las sedes de cada tienda registrada."
+      />
+    } />
     <Route path="tiendas/dominios" element={
-        <PlaceholderPage
-          title="Dominios"
-          description="Se planea integrar la gestión de dominios próximamente."
-        />
-      } />
+      <PlaceholderPage
+        title="Dominios"
+        description="Se planea integrar la gestión de dominios próximamente."
+      />
+    } />
     <Route path="tiendas/usuarios" element={
-        <PlaceholderPage
-          title="Usuarios"
-          description="Muy pronto aquí estará la gestión de titulares de las tiendas registradas en la plataforma."
-        />
-      } />
+      <PlaceholderPage
+        title="Usuarios"
+        description="Muy pronto aquí estará la gestión de titulares de las tiendas registradas en la plataforma."
+      />
+    } />
     <Route
       path="suscripciones/planes"
-      element={
-        <PlaceholderPage
-          title="Planes SaaS"
-          description="Estamos preparando el catálogo de planes y precios. Muy pronto podrás crear y versionar planes desde aquí."
-        />
-      }
+      element={<PlanesManager />}
     />
     <Route
       path="suscripciones/activas"
-      element={
-        <PlaceholderPage
-          title="Suscripciones activas"
-          description="Pronto verás métricas de adopción, renovaciones y cancelaciones de todas las tiendas."
-        />
-      }
+      element={<SuscripcionesManager />}
     />
     <Route
       path="suscripciones/historial"
-      element={
-        <PlaceholderPage
-          title="Historial de suscripciones"
-          description="El equipo está migrando el historial desde la versión monolítica. Tenlo listo en las próximas iteraciones."
-        />
-      }
+      element={<HistorialManager />}
     />
     <Route
       path="facturacion/comprobantes"
