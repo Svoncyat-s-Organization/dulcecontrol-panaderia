@@ -1,4 +1,4 @@
-import { Button, Card, Empty, Result, Space, Table, Tag, Typography, Popconfirm, Switch } from 'antd';
+﻿import { Button, Card, Empty, Result, Space, Table, Tag, Typography, Popconfirm, Switch } from 'antd';
 import { IconPlus, IconEdit, IconTrash } from '@tabler/icons-react';
 
 const { Text, Title } = Typography;
@@ -34,7 +34,7 @@ const ProveedoresTableView = ({
       <Result
         status="error"
         title="No se pudo cargar los proveedores"
-        subTitle="Intenta refrescar la página"
+        subTitle="Intenta refrescar la pagina"
         extra={
           <Button type="primary" onClick={onRetry}>
             Reintentar
@@ -46,7 +46,7 @@ const ProveedoresTableView = ({
 
   const columns = [
     {
-      title: 'Nombre Comercial',
+      title: 'Proveedor',
       dataIndex: 'nombreComercial',
       key: 'nombreComercial',
       width: 200,
@@ -60,42 +60,42 @@ const ProveedoresTableView = ({
       render: (text) => text || '-',
     },
     {
-      title: 'Razón Social',
+      title: 'Razon Social',
       dataIndex: 'razonSocial',
       key: 'razonSocial',
       width: 200,
       render: (text) => <Text type="secondary">{text || '-'}</Text>,
     },
     {
-      title: 'Nombre Contacto',
+      title: 'Contacto',
       dataIndex: 'nombreContacto',
       key: 'nombreContacto',
       width: 150,
       render: (text) => text || '-',
     },
     {
-      title: 'Teléfono',
+      title: 'Telefono',
       dataIndex: 'telefonoContacto',
       key: 'telefonoContacto',
       width: 120,
       render: (text) => text || '-',
     },
     {
-      title: 'Email Contacto',
+      title: 'Email',
       dataIndex: 'emailContacto',
       key: 'emailContacto',
       width: 200,
       render: (text) => text || '-',
     },
     {
-      title: 'Genérico',
+      title: 'Generico',
       dataIndex: 'esGenerico',
       key: 'esGenerico',
       width: 100,
       align: 'center',
       render: (esGenerico) => (
         <Tag color={esGenerico ? 'default' : 'blue'}>
-          {esGenerico ? 'Sí' : 'No'}
+          {esGenerico ? 'Si' : 'No'}
         </Tag>
       ),
     },
@@ -124,10 +124,10 @@ const ProveedoresTableView = ({
             onClick={() => onEdit(record)}
           />
           <Popconfirm
-            title="⚠️ ¿Eliminar permanentemente?"
-            description="Esta acción NO se puede deshacer. El proveedor será eliminado de la base de datos."
+            title="Eliminar proveedor?"
+            description="Esta accion NO se puede deshacer."
             onConfirm={() => onDelete(record.id)}
-            okText="Sí, eliminar"
+            okText="Si, eliminar"
             cancelText="Cancelar"
             okButtonProps={{ danger: true }}
           >
@@ -144,7 +144,7 @@ const ProveedoresTableView = ({
         style={{ display: 'flex', flexDirection: 'column', width: '100%', marginBottom: 16 }}
         size="middle"
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '100px' }}>
           <Title level={4} style={{ margin: 0 }}>
             Proveedores
           </Title>

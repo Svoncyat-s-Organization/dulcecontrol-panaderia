@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 import { Form, App } from 'antd';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import ProveedorModalView from './ProveedorModalView.jsx';
@@ -29,17 +29,16 @@ const ProveedorModal = ({ open, onClose, tiendaId, proveedor }) => {
       form.setFieldsValue({
         esGenerico: false,
         activo: true,
-        tipoDoc: 'RUC', // Backend usa 'RUC' en mayúsculas
+        tipoDoc: 'RUC',
       });
     }
   }, [open, proveedor, form]);
 
   const mutation = useMutation({
     mutationFn: async (values) => {
-      // Asegurar que activo, esGenerico y tipoDoc tengan valores por defecto
       const payload = {
         ...values,
-        tipoDoc: 'RUC', // Siempre RUC
+        tipoDoc: 'RUC',
         activo: values.activo ?? true,
         esGenerico: values.esGenerico ?? false,
       };
@@ -50,25 +49,21 @@ const ProveedorModal = ({ open, onClose, tiendaId, proveedor }) => {
       return await createProveedor(tiendaId, payload);
     },
     onSuccess: async (data) => {
-      message.success(isEditing ? 'Proveedor actualizado correctamente' : 'Proveedor creado correctamente');
+      message.success(isEditing ? 'Proveedor actualizado' : 'Proveedor creado');
       
-      // Actualizar cache inmediatamente con el nuevo dato
       queryClient.setQueryData(
         PROVEEDORES_KEYS.lists(tiendaId, { soloActivos: true }),
         (oldData) => {
           if (!oldData) return [data];
           
           if (isEditing) {
-            // Actualizar el proveedor existente
             return oldData.map(p => p.id === data.id ? data : p);
           } else {
-            // Agregar el nuevo proveedor
             return [...oldData, data];
           }
         }
       );
       
-      // También actualizar la lista sin filtro
       queryClient.setQueryData(
         PROVEEDORES_KEYS.lists(tiendaId, { soloActivos: false }),
         (oldData) => {
@@ -85,7 +80,7 @@ const ProveedorModal = ({ open, onClose, tiendaId, proveedor }) => {
       handleClose();
     },
     onError: (error) => {
-      const errorMsg = error?.response?.data?.message || error?.response?.data?.error || 'Ocurrió un error al guardar el proveedor';
+      const errorMsg = error?.response?.data?.message || error?.response?.data?.error || 'Error al guardar';
       message.error(errorMsg);
     },
   });
@@ -97,7 +92,7 @@ const ProveedorModal = ({ open, onClose, tiendaId, proveedor }) => {
         mutation.mutate(values);
       })
       .catch((info) => {
-        console.log('Validación fallida:', info);
+        console.log('Validacion fallida:', info);
       });
   };
 

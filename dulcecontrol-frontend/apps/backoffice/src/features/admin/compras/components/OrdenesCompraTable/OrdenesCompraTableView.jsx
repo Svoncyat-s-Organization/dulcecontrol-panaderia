@@ -1,4 +1,4 @@
-import { Button, Card, Result, Space, Table, Tag, Typography, Popconfirm, Select, Dropdown } from 'antd';
+﻿import { Button, Card, Result, Space, Table, Tag, Typography, Popconfirm, Select, Dropdown } from 'antd';
 import { IconPlus, IconEye, IconEdit, IconTrash, IconDots } from '@tabler/icons-react';
 import { formatCurrency, formatDate } from '../../utils/formatters.js';
 import { ESTADO_ORDEN_COMPRA, ESTADO_ORDEN_COMPRA_VALUES, getEstadoColor } from '../../constants/enums.js';
@@ -24,8 +24,8 @@ const OrdenesCompraTableView = ({
     return (
       <Result
         status="error"
-        title="No se pudo cargar las órdenes de compra"
-        subTitle="Intenta refrescar la página"
+        title="No se pudo cargar las ordenes de compra"
+        subTitle="Intenta refrescar la pagina"
         extra={
           <Button type="primary" onClick={onRetry}>
             Reintentar
@@ -88,11 +88,27 @@ const OrdenesCompraTableView = ({
 
   const columns = [
     {
-      title: 'Fecha Emisión',
+      title: 'Fecha Emision',
       dataIndex: 'fechaEmision',
       key: 'fecha',
       width: 120,
+      sorter: (a, b) => new Date(b.fechaEmision) - new Date(a.fechaEmision),
+      defaultSortOrder: 'ascend',
       render: (fecha) => <Text>{formatDate(fecha)}</Text>,
+    },
+    {
+      title: 'Fecha Recepcion Esperada',
+      dataIndex: 'fechaRecepcionEsperada',
+      key: 'fechaRecepcionEsperada',
+      width: 140,
+      render: (fecha) => fecha ? <Text>{formatDate(fecha)}</Text> : <Text type="secondary">N/D</Text>,
+    },
+    {
+      title: 'Fecha Recepcion Real',
+      dataIndex: 'fechaRecepcionReal',
+      key: 'fechaRecepcion',
+      width: 140,
+      render: (fecha) => fecha ? <Text>{formatDate(fecha)}</Text> : <Text type="secondary">Pendiente</Text>,
     },
     {
       title: 'Proveedor',
@@ -125,7 +141,7 @@ const OrdenesCompraTableView = ({
       ),
     },
     {
-      title: 'Método Pago',
+      title: 'Metodo Pago',
       dataIndex: 'metodoPago',
       key: 'metodoPago',
       width: 130,
@@ -159,10 +175,10 @@ const OrdenesCompraTableView = ({
           )}
           {record.estado === ESTADO_ORDEN_COMPRA_VALUES.BORRADOR && (
             <Popconfirm
-              title="⚠️ ¿Eliminar orden permanentemente?"
-              description="Esta acción NO se puede deshacer. La orden será eliminada de la base de datos."
+              title="Eliminar orden permanentemente?"
+              description="Esta accion NO se puede deshacer."
               onConfirm={() => onDelete(record.id)}
-              okText="Sí, eliminar"
+              okText="Si, eliminar"
               cancelText="Cancelar"
               okButtonProps={{ danger: true }}
             >
@@ -180,9 +196,9 @@ const OrdenesCompraTableView = ({
         style={{ display: 'flex', flexDirection: 'column', width: '100%', marginBottom: 16 }}
         size="middle"
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexDirection: 'row', gap: '100px' }}>
           <Title level={4} style={{ margin: 0 }}>
-            Órdenes de Compra
+            Ordenes de Compra
           </Title>
           <Button type="primary" icon={<IconPlus size={18} />} onClick={onCreate}>
             Nueva Orden
@@ -210,7 +226,7 @@ const OrdenesCompraTableView = ({
         pagination={{
           pageSize: 10,
           showSizeChanger: true,
-          showTotal: (total) => `Total: ${total} órdenes`,
+          showTotal: (total) => `Total: ${total} ordenes`,
         }}
       />
     </Card>

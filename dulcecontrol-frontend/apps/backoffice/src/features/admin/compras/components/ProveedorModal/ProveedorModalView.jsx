@@ -1,4 +1,4 @@
-import { Modal, Form, Input, Switch, Row, Col, Typography } from 'antd';
+﻿import { Modal, Form, Input, Switch, Row, Col, Typography } from 'antd';
 
 const { Title } = Typography;
 
@@ -15,66 +15,65 @@ const ProveedorModalView = ({ open, onClose, onSubmit, form, loading, isEditing 
       cancelText="Cancelar"
     >
       <Form form={form} layout="vertical" style={{ marginTop: 24 }}>
-        <Title level={5}>Información General</Title>
+        <Title level={5}>Datos Generales</Title>
         <Form.Item
           name="nombreComercial"
-          label="Nombre Comercial"
-          rules={[{ required: true, message: 'El nombre comercial es requerido' }]}
+          label="Nombre Proveedor"
+          rules={[{ required: true, message: 'Nombre requerido' }]}
         >
-          <Input placeholder="Ej: Distribuidora Global SAC" />
+          <Input />
         </Form.Item>
 
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item 
               name="numeroDoc" 
-              label="Número de RUC"
+              label="RUC"
               rules={[
-                { required: true, message: 'El RUC es requerido' },
-                { len: 11, message: 'El RUC debe tener 11 dígitos' },
-                { pattern: /^[0-9]+$/, message: 'Solo se permiten números' }
+                { required: true, message: 'RUC requerido' },
+                { len: 11, message: 'RUC debe tener 11 digitos' },
+                { pattern: /^[0-9]+$/, message: 'Solo numeros' }
               ]}
             >
-              <Input placeholder="Ej: 20501234567" maxLength={11} />
+              <Input maxLength={11} />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="razonSocial" label="Razón Social">
-              <Input placeholder="Ej: Distribuidora Global SAC" />
+            <Form.Item name="razonSocial" label="Razon Social">
+              <Input />
             </Form.Item>
           </Col>
         </Row>
 
         <Title level={5} style={{ marginTop: 16 }}>
-          Información de Contacto
+          Datos de Contacto
         </Title>
         <Row gutter={16}>
           <Col span={12}>
-            <Form.Item name="nombreContacto" label="Nombre de Contacto">
-              <Input placeholder="Ej: Juan Pérez" />
+            <Form.Item name="nombreContacto" label="Contacto">
+              <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="telefonoContacto" label="Teléfono de Contacto">
-              <Input placeholder="Ej: 945123456" />
+            <Form.Item name="telefonoContacto" label="Telefono">
+              <Input />
             </Form.Item>
           </Col>
         </Row>
 
-        <Form.Item name="emailContacto" label="Email de Contacto">
-          <Input type="email" placeholder="Ej: contacto@proveedor.com" />
+        <Form.Item name="emailContacto" label="Email">
+          <Input type="email" />
         </Form.Item>
 
         <Title level={5} style={{ marginTop: 16 }}>
-          Configuración
+          Opciones
         </Title>
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
               name="esGenerico"
-              label="Proveedor Genérico"
+              label="Es Generico"
               valuePropName="checked"
-              tooltip="Marcar si es un proveedor genérico sin datos específicos"
             >
               <Switch />
             </Form.Item>
