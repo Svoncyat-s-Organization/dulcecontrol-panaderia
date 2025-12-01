@@ -26,3 +26,11 @@ export const getMovimientosInsumos = async (tiendaId, sedeId) => {
   );
   return data;
 };
+
+export const crearMovimientoInventarioProducto = async (tiendaId, payload) => {
+  const { data } = await apiClient.post(
+    buildMovimientosUrl(tiendaId, 'productos'),
+    payload
+  );
+  return data;
+};

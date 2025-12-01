@@ -30,6 +30,7 @@ const LoginCard = ({ redirectPath }) => {
         userType: data.userType,
         tiendaId: data.tiendaId,
         expiresIn: data.expiresIn,
+        userId: data.userId || data.id, 
       });
       message.success(AUTH_MESSAGES.SUCCESS);
       navigate(redirectPath, { replace: true });
