@@ -4,7 +4,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { IconShoppingBag, IconTrash, IconMinus, IconPlus } from '@tabler/icons-react';
+import { ShoppingBag, X, Plus, Minus, Trash2 } from 'lucide-react';
 import useCartStore from '@/store/useCartStore';
 
 const CartSheet = () => {
@@ -16,7 +16,7 @@ const CartSheet = () => {
     <Sheet>
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon" className="relative" aria-label="Carrito de compras">
-          <IconShoppingBag className="h-5 w-5" />
+          <ShoppingBag className="h-5 w-5" />
           {totalItems > 0 && (
             <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-medium text-primary-foreground flex items-center justify-center">
               {totalItems}
@@ -54,7 +54,7 @@ const CartSheet = () => {
                             className="h-8 w-8" 
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
                           >
-                            <IconMinus className="h-3 w-3" />
+                            <Minus className="h-3 w-3" />
                           </Button>
                           <span className="w-8 text-center text-sm">{item.quantity}</span>
                           <Button 
@@ -63,7 +63,7 @@ const CartSheet = () => {
                             className="h-8 w-8"
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                           >
-                            <IconPlus className="h-3 w-3" />
+                            <Plus className="h-3 w-3" />
                           </Button>
                         </div>
                         <Button 
@@ -72,7 +72,7 @@ const CartSheet = () => {
                           className="h-8 w-8 text-muted-foreground hover:text-destructive ml-auto"
                           onClick={() => removeItem(item.id)}
                         >
-                          <IconTrash className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
@@ -87,16 +87,20 @@ const CartSheet = () => {
                 <span>S/ {totalPrice.toFixed(2)}</span>
               </div>
               <SheetFooter>
-                <Button className="w-full" size="lg">
-                  Proceder al Pago
+                <SheetClose asChild>
+              <Link to="/checkout" className="w-full">
+                <Button className="w-full rounded-full h-12 text-lg font-bold">
+                  Checkout
                 </Button>
+              </Link>
+            </SheetClose>
               </SheetFooter>
             </div>
           </>
         ) : (
           <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center">
             <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center">
-              <IconShoppingBag className="h-10 w-10 text-muted-foreground" />
+              <ShoppingBag className="h-10 w-10 text-muted-foreground" />
             </div>
             <div className="space-y-1">
               <h3 className="font-semibold text-lg">Tu carrito está vacío</h3>
@@ -105,7 +109,7 @@ const CartSheet = () => {
               </p>
             </div>
             <Button asChild variant="outline" className="mt-4">
-              <Link to="/catalogo">Ver Catálogo</Link>
+              <Link to="/colecciones">Ver Colecciones</Link>
             </Button>
           </div>
         )}

@@ -16,7 +16,7 @@ const ProductDetailPage = () => {
     price: 45.00,
     description: 'Deliciosa torta de chocolate húmeda con relleno de fudge casero y cobertura de ganache. Perfecta para celebraciones o para darte un gusto.',
     category: 'Pastelería',
-    image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?q=80&w=1000&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=1000',
     ingredients: ['Harina', 'Cacao', 'Huevos', 'Leche', 'Mantequilla', 'Azúcar'],
     nutritionalInfo: {
       calories: '450 kcal',
@@ -36,7 +36,7 @@ const ProductDetailPage = () => {
 
   return (
     <div className="container py-10 min-h-screen">
-      <Link to="/catalogo" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-8 transition-colors">
+      <Link to="/colecciones" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-8 transition-colors">
         <IconArrowLeft className="mr-2 h-4 w-4" /> Volver al Catálogo
       </Link>
 

@@ -1,118 +1,128 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { IconArrowRight, IconBread, IconCake, IconCookie, IconCoffee } from '@tabler/icons-react';
+import { IconArrowRight } from '@tabler/icons-react';
 import ProductCard from '@/components/ProductCard';
 
 const HomePage = () => {
-  // Mock Data (Replace with API later)
-  const categories = [
-    { id: 1, name: 'Panadería', icon: <IconBread className="h-8 w-8" />, color: 'bg-orange-100 text-orange-600' },
-    { id: 2, name: 'Pastelería', icon: <IconCake className="h-8 w-8" />, color: 'bg-pink-100 text-pink-600' },
-    { id: 3, name: 'Galletas', icon: <IconCookie className="h-8 w-8" />, color: 'bg-amber-100 text-amber-600' },
-    { id: 4, name: 'Bebidas', icon: <IconCoffee className="h-8 w-8" />, color: 'bg-stone-100 text-stone-600' },
-  ];
-
   const featuredProducts = [
-    { id: 1, name: 'Torta de Chocolate', price: 45.00, category: 'Pastelería', image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?q=80&w=1000&auto=format&fit=crop' },
-    { id: 2, name: 'Croissant de Mantequilla', price: 5.50, category: 'Panadería', image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=1000&auto=format&fit=crop' },
-    { id: 3, name: 'Cheesecake de Fresa', price: 12.00, category: 'Pastelería', image: 'https://images.unsplash.com/photo-1524351199678-941a58a3df26?q=80&w=1000&auto=format&fit=crop' },
-    { id: 4, name: 'Pan Campesino', price: 8.00, category: 'Panadería', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=1000&auto=format&fit=crop' },
+    { id: 1, name: 'Torta de Chocolate', price: 45.00, category: 'Pastelería', image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=1000' },
+    { id: 2, name: 'Croissant de Mantequilla', price: 5.50, category: 'Panadería', image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&q=80&w=1000' },
+    { id: 3, name: 'Cheesecake de Fresa', price: 12.00, category: 'Pastelería', image: 'https://images.unsplash.com/photo-1524351199678-941a58a3df26?auto=format&fit=crop&q=80&w=1000' },
+    { id: 4, name: 'Pan Campesino', price: 8.00, category: 'Panadería', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=1000' },
   ];
 
   return (
-    <div className="flex flex-col gap-20 pb-24">
-      {/* Hero Section */}
-      <section className="relative bg-muted/30 py-24 md:py-40 overflow-hidden">
-        <div className="container relative z-10 flex flex-col items-center text-center gap-6">
-          <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-1000">
-            ✨ Nuevo: Envíos a todo Lima
-          </div>
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight lg:text-7xl animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-100">
-            El sabor de lo <span className="text-primary">artesanal</span><br />
-            en tu mesa
-          </h1>
-          <p className="max-w-[600px] text-muted-foreground text-base md:text-lg leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
-            Descubre nuestra selección de panes de masa madre, pasteles finos y postres irresistibles. Horneamos felicidad todos los días.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-300">
-            <Button size="lg" asChild className="rounded-full px-8 w-full sm:w-auto">
-              <Link to="/catalogo">
-                Ver Catálogo <IconArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" className="rounded-full px-8 w-full sm:w-auto">
-              Nuestras Sedes
-            </Button>
-          </div>
-        </div>
-        
-        {/* Decorative Elements */}
-        <div className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl -z-10" />
-        <div className="absolute top-0 right-0 translate-x-1/4 w-[400px] h-[400px] bg-orange-500/10 rounded-full blur-3xl -z-10" />
-      </section>
-
-      {/* Featured Categories */}
-      <section className="container py-4">
-        <div className="flex items-center justify-between mb-10">
-          <h2 className="text-3xl font-bold tracking-tight">Categorías Populares</h2>
-          <Link to="/catalogo" className="text-sm font-medium text-primary hover:underline flex items-center">
-            Ver todas <IconArrowRight className="ml-1 h-4 w-4" />
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {categories.map((cat) => (
-            <Link 
-              key={cat.id} 
-              to={`/catalogo?category=${cat.name}`}
-              className="group flex flex-col items-center justify-center p-8 rounded-2xl bg-card shadow-sm transition-all hover:shadow-md"
-            >
-              <div className={`p-4 rounded-full mb-4 ${cat.color} group-hover:scale-110 transition-transform`}>
-                {cat.icon}
-              </div>
-              <span className="font-semibold group-hover:text-primary transition-colors">{cat.name}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Featured Products */}
-      <section className="container py-4">
-        <div className="flex items-center justify-between mb-10">
-          <h2 className="text-3xl font-bold tracking-tight">Recién Horneados</h2>
-          <Link to="/catalogo" className="text-sm font-medium text-primary hover:underline flex items-center">
-            Ver todo <IconArrowRight className="ml-1 h-4 w-4" />
-          </Link>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-          {featuredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      </section>
-
-      {/* Newsletter / CTA */}
-      <section className="container py-4">
-        <div className="rounded-3xl bg-primary px-6 py-20 md:px-12 md:py-28 text-center text-primary-foreground relative overflow-hidden shadow-lg">
-          <div className="relative z-10 max-w-2xl mx-auto space-y-6">
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight">¿Te provoca algo dulce?</h2>
-            <p className="text-primary-foreground/90 text-base md:text-lg leading-relaxed">
-              Suscríbete a nuestro boletín y recibe un 10% de descuento en tu primera compra online.
+    <div className="flex flex-col w-full">
+      {/* 1. Hero Section - Pink Background */}
+      <section className="bg-secondary/30 py-20 md:py-32 overflow-hidden">
+        <div className="container flex flex-col md:flex-row items-center gap-12">
+          <div className="flex-1 text-center md:text-left space-y-8 z-10">
+            <h1 className="text-6xl md:text-8xl font-bold text-foreground leading-[0.9] tracking-tight">
+              Dulces <br/>
+              <span className="italic font-serif text-primary-foreground/80">Momentos</span>
+            </h1>
+            <p className="text-xl text-foreground/80 max-w-lg mx-auto md:mx-0 font-medium leading-relaxed">
+              Descubre la magia de la repostería artesanal. Sabores que te harán sonreír en cada bocado.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto pt-4">
-              <input 
-                type="email" 
-                placeholder="tu@email.com" 
-                className="flex h-12 w-full rounded-full border-0 bg-background px-6 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-foreground shadow-sm"
-              />
-              <Button size="lg" variant="secondary" className="rounded-full px-8 shadow-sm">
-                Suscribirme
+            <div className="pt-4">
+              <Button size="lg" asChild className="rounded-full px-10 py-7 text-sm font-bold uppercase tracking-widest bg-foreground text-white hover:bg-foreground/90 shadow-lg">
+                <Link to="/colecciones">
+                  Ver Menú de Hoy
+                </Link>
               </Button>
             </div>
           </div>
+          <div className="flex-1 relative w-full max-w-lg md:max-w-none">
+             <div className="relative z-10 rounded-[2rem] overflow-hidden shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-700 border-4 border-white">
+                <img 
+                  src="https://images.unsplash.com/photo-1535141192574-5d4897c12636?auto=format&fit=crop&q=80&w=1000" 
+                  alt="Pastel de Celebración" 
+                  className="w-full h-auto object-cover aspect-square"
+                />
+             </div>
+             {/* Decorative blobs */}
+             <div className="absolute -top-10 -right-10 w-40 h-40 bg-accent rounded-full blur-2xl -z-0 opacity-60"></div>
+             <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-primary/20 rounded-full blur-3xl -z-0"></div>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. Best Sellers - White Background */}
+      <section className="bg-background py-24">
+        <div className="container">
+          <div className="text-center mb-16 space-y-4">
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground">Los Favoritos del Barrio</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
+              Estos son los postres que todos están pidiendo. ¡No te quedes sin probarlos!
+            </p>
+          </div>
           
-          {/* Background Pattern */}
-          <div className="absolute inset-0 opacity-10 pattern-dots" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-12">
+            {featuredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+          
+          <div className="flex justify-center mt-16">
+             <Button variant="outline" asChild className="rounded-full px-8 border-2 border-foreground text-foreground hover:bg-foreground hover:text-white font-bold uppercase tracking-widest">
+               <Link to="/colecciones">Ver Todo el Catálogo</Link>
+             </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. "Crea tu Dulce" Section - Mint Background */}
+      <section className="bg-primary py-24 relative overflow-hidden">
+        <div className="container relative z-10">
+           <div className="flex flex-col md:flex-row items-center gap-16">
+              <div className="flex-1 space-y-8 text-center md:text-left">
+                 <div className="inline-block bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase text-primary-foreground mb-2 border border-white/30">
+                    Personalización Total
+                 </div>
+                 <h2 className="text-5xl md:text-6xl font-bold text-primary-foreground leading-tight">
+                    ¿Tienes una idea única? <br/>
+                    <span className="text-white">¡La hacemos realidad!</span>
+                 </h2>
+                 <p className="text-xl text-primary-foreground/90 font-medium max-w-xl">
+                    Sube una foto de referencia, elige tus sabores favoritos y nosotros nos encargamos del resto. Perfecto para cumpleaños y eventos especiales.
+                 </p>
+                 <Button asChild size="lg" className="rounded-full bg-white text-primary-foreground hover:bg-white/90 font-bold uppercase tracking-widest px-10 py-7 shadow-xl border-0">
+                    <Link to="/custom-order">Cotizar Ahora</Link>
+                 </Button>
+              </div>
+              <div className="flex-1 relative">
+                 <div className="grid grid-cols-2 gap-6">
+                    <img src="https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&q=80&w=500" className="rounded-2xl shadow-lg -rotate-6 hover:rotate-0 transition-transform duration-500 border-4 border-white/50" alt="Custom Cake 1" />
+                    <img src="https://images.unsplash.com/photo-1586985289688-ca3cf47d3e6e?auto=format&fit=crop&q=80&w=500" className="rounded-2xl shadow-lg rotate-6 hover:rotate-0 transition-transform duration-500 border-4 border-white/50 mt-12" alt="Custom Cake 2" />
+                 </div>
+              </div>
+           </div>
+        </div>
+        {/* Pattern overlay */}
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
+      </section>
+
+      {/* 4. Newsletter - Yellow Background */}
+      <section className="bg-accent py-24">
+        <div className="container text-center max-w-3xl mx-auto space-y-8">
+           <h2 className="text-4xl md:text-5xl font-bold text-foreground">Únete al Club Dulce</h2>
+           <p className="text-lg text-foreground/80 font-medium">
+             Recibe noticias frescas, ofertas exclusivas y un <span className="font-bold underline decoration-wavy decoration-primary">10% de descuento</span> en tu cumpleaños.
+           </p>
+           <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto pt-4">
+              <input 
+                type="email" 
+                placeholder="TU CORREO ELECTRÓNICO" 
+                className="flex h-14 w-full rounded-full border-2 border-foreground/10 bg-white px-8 text-xs font-bold tracking-widest placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground text-foreground"
+              />
+              <Button size="lg" className="h-14 rounded-full px-10 bg-foreground text-white hover:bg-foreground/80 font-bold uppercase tracking-widest">
+                Suscribirme
+              </Button>
+           </div>
+           <p className="text-xs text-muted-foreground pt-4">
+             Prometemos no enviarte spam, solo cosas deliciosas.
+           </p>
         </div>
       </section>
     </div>
