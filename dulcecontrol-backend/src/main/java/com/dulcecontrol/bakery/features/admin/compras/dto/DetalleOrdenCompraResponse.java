@@ -13,6 +13,7 @@ public class DetalleOrdenCompraResponse {
     private final Long id;
     private final Long ordenCompraId;
     private final Long insumoId;
+    private final String nombreInsumo;
     private final BigDecimal cantidadSolicitada;
     private final UnidadMedida unidadCompra;
     private final Long costoUnitarioPactadoCentimos;
