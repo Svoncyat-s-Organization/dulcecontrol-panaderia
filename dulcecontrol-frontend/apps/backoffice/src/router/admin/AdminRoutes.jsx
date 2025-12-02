@@ -8,6 +8,7 @@ import NotFoundPage from '../../shared/components/NotFoundPage.jsx';
 import { ProductosPage, CategoriasPage } from '../../features/admin/catalogo/index.js';
 import { ExistenciasPage, InsumosPage, MovimientosPage } from '../../features/admin/inventario/index.js';
 import { ClientesPage } from '../../features/admin/clientes/index.js';
+import { ConfiguracionPage } from '../../features/admin/configuracion/index.js';
 
 const adminRoutes = (
   <Route
@@ -176,15 +177,7 @@ const adminRoutes = (
         />
       }
     />
-    <Route
-      path="configuracion/sedes"
-      element={
-        <PlaceholderPage
-          title="Sedes"
-          description="Pronto podrás dar de alta o pausar sedes desde este apartado."
-        />
-      }
-    />
+    <Route path="configuracion/sedes" element={<ConfiguracionPage />} />
     <Route
       path="*"
       element={
