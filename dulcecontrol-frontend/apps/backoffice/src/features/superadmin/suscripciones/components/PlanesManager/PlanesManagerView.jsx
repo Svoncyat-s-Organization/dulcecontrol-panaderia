@@ -64,7 +64,7 @@ const PlanesManagerView = ({
             title: 'Código',
             dataIndex: 'codigo',
             key: 'codigo',
-            width: 150,
+            width: 250,
             render: (codigo) => <Text strong>{codigo}</Text>,
         },
         {

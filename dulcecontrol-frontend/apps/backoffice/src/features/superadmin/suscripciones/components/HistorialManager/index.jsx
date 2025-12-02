@@ -1,52 +1,59 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import HistorialManagerView from './HistorialManagerView.jsx';
-import { getSuscripciones } from '../../api/suscripciones.api.js';
-
-// Note: The API currently doesn't have a global historial endpoint
-// We'll fetch all suscripciones and display them in a historical context
-// If a specific historial endpoint is added later, this can be updated
+import { getSuscripciones, getHistorialBySuscripcion } from '../../api/suscripciones.api.js';
+import { getTiendas } from '../../../../../api/superadmin/tiendas.js';
 
 const HISTORIAL_QUERY_KEY = ['superadmin', 'historial'];
+const SUSCRIPCIONES_QUERY_KEY = ['superadmin', 'suscripciones'];
+const TIENDAS_QUERY_KEY = ['superadmin', 'tiendas'];
 
 const HistorialManager = () => {
-    const [filters, setFilters] = useState({
-        tipo_movimiento: undefined,
-        fecha_inicio: undefined,
-        fecha_fin: undefined,
+    const [selectedSuscripcionId, setSelectedSuscripcionId] = useState(null);
+
+    // Fetch tiendas for mapping names
+    const { data: tiendas = [] } = useQuery({
+        queryKey: TIENDAS_QUERY_KEY,
+        queryFn: getTiendas,
     });
 
-    // For now, we'll fetch suscripciones as a proxy for history
-    // In a real implementation, you'd fetch from /historial endpoint
-    const { data: historial = [], isLoading, isError, refetch } = useQuery({
-        queryKey: [...HISTORIAL_QUERY_KEY, filters],
-        queryFn: () => getSuscripciones(filters),
-    });
-
-    const handleFilterChange = (key, value) => {
-        setFilters((prev) => ({
-            ...prev,
-            [key]: value,
-        }));
-    };
-
-    const handleResetFilters = () => {
-        setFilters({
-            tipo_movimiento: undefined,
-            fecha_inicio: undefined,
-            fecha_fin: undefined,
+    const tiendasMap = useMemo(() => {
+        const map = new Map();
+        tiendas.forEach(tienda => {
+            const nombre = tienda.nombreComercial || tienda.nombreDoc || `Tienda #${tienda.id}`;
+            map.set(tienda.id, nombre);
         });
+        return map;
+    }, [tiendas]);
+
+    // Fetch all subscriptions for the selector
+    const { data: suscripciones = [], isLoading: isLoadingSuscripciones } = useQuery({
+        queryKey: SUSCRIPCIONES_QUERY_KEY,
+        queryFn: () => getSuscripciones(),
+    });
+
+    // Fetch history for selected subscription
+    const { data: historial = [], isLoading: isLoadingHistorial, isError, refetch } = useQuery({
+        queryKey: [...HISTORIAL_QUERY_KEY, selectedSuscripcionId],
+        queryFn: () => getHistorialBySuscripcion(selectedSuscripcionId),
+        enabled: !!selectedSuscripcionId,
+    });
+
+    const handleSelectSuscripcion = (id) => {
+        setSelectedSuscripcionId(id);
     };
 
     return (
         <HistorialManagerView
             historial={historial}
-            loading={isLoading}
+            loading={isLoadingHistorial}
             isError={isError}
             onRetry={refetch}
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            onResetFilters={handleResetFilters}
+            suscripciones={suscripciones}
+            tiendasMap={tiendasMap}
+            selectedSuscripcionId={selectedSuscripcionId}
+            onSelectSuscripcion={handleSelectSuscripcion}
+            isLoadingSuscripciones={isLoadingSuscripciones}
         />
     );
 };

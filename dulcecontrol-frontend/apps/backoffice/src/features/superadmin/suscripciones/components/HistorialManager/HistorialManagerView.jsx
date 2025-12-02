@@ -1,12 +1,8 @@
-import { useEffect } from 'react';
-import { Button, Table, Tag, Alert, Card, Select, DatePicker, Space, Typography, theme, Form } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
-import { MOVEMENT_TYPES, getMovementTag } from '../../constants/movementTypes.js';
+import { Button, Table, Tag, Alert, Card, Select, Typography, theme, Space } from 'antd';
+import { getMovementTag } from '../../constants/movementTypes.js';
 import { centimosToPEN } from '../../utils/currencyFormatter.js';
 import { formatDateTime } from '../../utils/dateFormatter.js';
-import dayjs from 'dayjs';
 
-const { RangePicker } = DatePicker;
 const { Text } = Typography;
 
 const HistorialManagerView = ({
@@ -14,102 +10,61 @@ const HistorialManagerView = ({
     loading,
     isError,
     onRetry,
-    filters,
-    onFilterChange,
-    onResetFilters,
+    suscripciones,
+    tiendasMap,
+    selectedSuscripcionId,
+    onSelectSuscripcion,
+    isLoadingSuscripciones,
 }) => {
     const { token } = theme.useToken();
-    const [form] = Form.useForm();
-
-    useEffect(() => {
-        form.setFieldsValue({
-            tipo_movimiento: filters.tipo_movimiento || undefined,
-            rangoFechas: (filters.fecha_inicio && filters.fecha_fin)
-                ? [dayjs(filters.fecha_inicio), dayjs(filters.fecha_fin)]
-                : undefined,
-        });
-    }, [filters, form]);
-
-    const handleFormChange = (_, allValues) => {
-        if (allValues.tipo_movimiento !== undefined) {
-            onFilterChange('tipo_movimiento', allValues.tipo_movimiento);
-        }
-        if (allValues.rangoFechas) {
-            onFilterChange('fecha_inicio', allValues.rangoFechas[0]?.toISOString());
-            onFilterChange('fecha_fin', allValues.rangoFechas[1]?.toISOString());
-        } else if (allValues.rangoFechas === null) {
-            onFilterChange('fecha_inicio', undefined);
-            onFilterChange('fecha_fin', undefined);
-        }
-    };
-
-    const handleReset = () => {
-        form.resetFields();
-        onResetFilters();
-    };
 
     const columns = [
         {
-            title: 'ID Suscripción',
-            dataIndex: 'id',
-            key: 'id',
-            width: 120,
-            render: (id) => <Text strong>{id}</Text>,
-        },
-        {
-            title: 'Tienda',
-            dataIndex: 'tienda_id',
-            key: 'tienda_id',
-            width: 100,
-            render: (tiendaId) => <Text>Tienda #{tiendaId}</Text>,
-        },
-        {
-            title: 'Plan Actual',
-            dataIndex: 'plan_id',
-            key: 'plan_id',
-            width: 120,
-            render: (planId) => <Text>Plan #{planId}</Text>,
-        },
-        {
-            title: 'Estado Actual',
-            dataIndex: 'estado',
-            key: 'estado',
-            width: 130,
-            render: (estado) => {
-                const colorMap = {
-                    EN_PRUEBA: 'blue',
-                    ACTIVA: 'green',
-                    VENCIDA: 'orange',
-                    CANCELADA: 'red',
-                };
-                return <Tag color={colorMap[estado] || 'default'}>{estado}</Tag>;
-            },
-        },
-        {
-            title: 'Ciclo',
-            dataIndex: 'ciclo',
-            key: 'ciclo',
-            width: 100,
-            render: (ciclo) => (
-                <Tag color={ciclo === 'MENSUAL' ? 'blue' : 'purple'}>
-                    {ciclo}
-                </Tag>
-            ),
-        },
-        {
-            title: 'Precio Pactado',
-            dataIndex: 'precio_pactado_centimos',
-            key: 'precio_pactado',
-            width: 140,
-            render: (centimos) => <Text>{centimosToPEN(centimos)}</Text>,
-        },
-        {
-            title: 'Última Actualización',
-            dataIndex: 'actualizado_en',
-            key: 'actualizado_en',
+            title: 'Fecha',
+            dataIndex: 'fechaMovimiento',
+            key: 'fechaMovimiento',
             width: 180,
             render: (fecha) => <Text>{formatDateTime(fecha)}</Text>,
         },
+        {
+            title: 'Tipo Movimiento',
+            dataIndex: 'tipoMovimiento',
+            key: 'tipoMovimiento',
+            width: 150,
+            render: (tipo) => {
+                const { label, color } = getMovementTag(tipo);
+                return <Tag color={color}>{label}</Tag>;
+            },
+        },
+        {
+            title: 'Plan Anterior',
+            dataIndex: 'planAnteriorNombre',
+            key: 'planAnteriorNombre',
+            width: 150,
+            render: (nombre) => <Text type="secondary">{nombre || '-'}</Text>,
+        },
+        {
+            title: 'Plan Nuevo',
+            dataIndex: 'planNuevoNombre',
+            key: 'planNuevoNombre',
+            width: 150,
+            render: (nombre) => <Text strong>{nombre || '-'}</Text>,
+        },
+        {
+            title: 'Precio Anterior',
+            dataIndex: 'precioAnteriorCentimos',
+            key: 'precioAnteriorCentimos',
+            width: 130,
+            render: (centimos) => <Text type="secondary">{centimos !== null ? centimosToPEN(centimos) : '-'}</Text>,
+        },
+        {
+            title: 'Precio Nuevo',
+            dataIndex: 'precioNuevoCentimos',
+            key: 'precioNuevoCentimos',
+            width: 130,
+            render: (centimos) => <Text>{centimos !== null ? centimosToPEN(centimos) : '-'}</Text>,
+        },
+
     ];
 
     if (isError) {
@@ -144,75 +99,71 @@ const HistorialManagerView = ({
                     alignItems: 'center',
                     flexWrap: 'wrap',
                     gap: 12,
-                    marginBottom: 16,
+                    marginBottom: 24,
                 }}
             >
                 <div>
                     <Typography.Title level={4} style={{ margin: 0 }}>
-                        Historial de Suscripciones
+                        Historial de Movimientos
                     </Typography.Title>
                     <Text type="secondary">
-                        Vista de actividad de suscripciones.
+                        Auditoría de cambios en las suscripciones.
                     </Text>
                 </div>
             </div>
 
-            <Form
-                form={form}
-                layout="vertical"
-                onValuesChange={handleFormChange}
-                style={{ marginBottom: 16 }}
-            >
-                <Space style={{ width: '100%' }} wrap>
-                    <Form.Item name="tipo_movimiento" label="Tipo de Movimiento" style={{ minWidth: 200 }}>
-                        <Select
-                            placeholder="Todos los movimientos"
-                            allowClear
-                        >
-                            {Object.values(MOVEMENT_TYPES).map((type) => {
-                                const { label, color } = getMovementTag(type);
-                                return (
-                                    <Select.Option key={type} value={type}>
-                                        <Tag color={color}>{label}</Tag>
-                                    </Select.Option>
-                                );
-                            })}
-                        </Select>
-                    </Form.Item>
+            <div style={{ marginBottom: 24 }}>
+                <Text strong style={{ display: 'block', marginBottom: 8 }}>Seleccionar por tienda:</Text>
+                <Select
+                    showSearch
+                    style={{ width: '100%', maxWidth: 500 }}
+                    placeholder="Seleccionar por tienda"
+                    optionFilterProp="label"
+                    onChange={onSelectSuscripcion}
+                    value={selectedSuscripcionId}
+                    loading={isLoadingSuscripciones}
+                    filterOption={(input, option) =>
+                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                    }
+                >
+                    {(suscripciones || []).map((susc) => {
+                        const tiendaNombre = tiendasMap?.get(susc.tiendaId) || `Tienda #${susc.tiendaId}`;
+                        const label = `${tiendaNombre} - ${susc.planNombre} (#${susc.id})`;
+                        return (
+                            <Select.Option
+                                key={susc.id}
+                                value={susc.id}
+                                label={label}
+                            >
+                                <Space direction="vertical" size={0}>
+                                    <Text strong>{tiendaNombre}</Text>
+                                    <Text type="secondary" style={{ fontSize: 12 }}>
+                                        {susc.planNombre} • ID: {susc.id}
+                                    </Text>
+                                </Space>
+                            </Select.Option>
+                        );
+                    })}
+                </Select>
+            </div>
 
-                    <Form.Item name="rangoFechas" label="Rango de Fechas">
-                        <RangePicker format="DD/MM/YYYY" allowClear />
-                    </Form.Item>
-
-                    <Form.Item label=" ">
-                        <Button icon={<ReloadOutlined />} onClick={handleReset}>
-                            Limpiar Filtros
-                        </Button>
-                    </Form.Item>
-                </Space>
-            </Form>
-
-            <Alert
-                message="Vista Simplificada"
-                description="Esta vista muestra las suscripciones actuales. Para ver el historial completo de movimientos (altas, upgrades, cancelaciones), se requiere implementar el endpoint específico de historial en el backend."
-                type="info"
-                showIcon
-                closable
-                style={{ marginBottom: 16 }}
-            />
-
-            <Table
-                columns={columns}
-                dataSource={historial}
-                loading={loading}
-                rowKey="id"
-                pagination={{
-                    pageSizeOptions: ['10', '20', '50', '100'],
-                    showSizeChanger: true,
-                    defaultPageSize: 10,
-                    showTotal: (total, range) => `${range[0]}-${range[1]} de ${total} registros`,
-                }}
-            />
+            {selectedSuscripcionId && (
+                <Table
+                    columns={columns}
+                    dataSource={historial}
+                    loading={loading}
+                    rowKey="id"
+                    pagination={{
+                        pageSizeOptions: ['10', '20', '50'],
+                        showSizeChanger: true,
+                        defaultPageSize: 10,
+                        showTotal: (total, range) => `${range[0]}-${range[1]} de ${total} movimientos`,
+                    }}
+                    locale={{
+                        emptyText: 'No hay movimientos registrados para esta suscripción',
+                    }}
+                />
+            )}
         </Card>
     );
 };
