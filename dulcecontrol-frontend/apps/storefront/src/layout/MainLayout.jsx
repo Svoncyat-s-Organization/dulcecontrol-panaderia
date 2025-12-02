@@ -3,6 +3,7 @@ import { Outlet, Link } from 'react-router-dom';
 import { IconShoppingBag, IconUser, IconMenu2, IconSearch } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import CartSheet from '@/components/CartSheet';
 
 const MainLayout = () => {
@@ -49,12 +50,43 @@ const MainLayout = () => {
             </Button>
             
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" aria-label="Buscar" className="text-foreground hover:text-primary">
-                 <IconSearch className="h-5 w-5" strokeWidth={1.5} />
-              </Button>
-              <Button variant="ghost" size="icon" aria-label="Usuario" className="text-foreground hover:text-primary">
-                 <IconUser className="h-5 w-5" strokeWidth={1.5} />
-              </Button>
+              {/* User Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="Usuario">
+                    <IconUser className="h-5 w-5"/>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {/* Mock: Check if user is logged in */}
+                  {false ? ( // Change to actual auth state
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link to="/mis-compras" className="cursor-pointer">
+                          Mis Compras
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-destructive focus:text-destructive cursor-pointer">
+                        Cerrar Sesión
+                      </DropdownMenuItem>
+                    </>
+                  ) : (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link to="/login" className="cursor-pointer">
+                          Iniciar Sesión
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/register" className="cursor-pointer">
+                          Registrarse
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <CartSheet />
             </div>
 
