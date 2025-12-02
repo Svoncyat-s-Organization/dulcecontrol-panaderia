@@ -11,6 +11,7 @@ import { VentasPage, CajasPage } from '../../features/admin/ventas-pedidos/index
 import { InsumosPage as ComprasInsumosPage, ProveedoresPage, OrdenesCompraPage } from '../../features/admin/compras/index.js';
 import { ClientesPage } from '../../features/admin/clientes/index.js';
 import { ConfiguracionPage } from '../../features/admin/configuracion/index.js';
+import { StockIdealPage, RecetasPage, PlanificacionPage } from '../../features/admin/produccion/index.js';
 
 const PLACEHOLDER_ROUTES = [
   {
@@ -32,21 +33,6 @@ const PLACEHOLDER_ROUTES = [
     path: 'compras',
     title: 'Compras',
     description: 'Gestiona insumos, proveedores y órdenes de compra para tu panadería.',
-  },
-  {
-    path: 'produccion',
-    title: 'Producción',
-    description: 'Gestiona planes diarios, lotes especiales y coordinaciones con el obrador.',
-  },
-  {
-    path: 'produccion/planificacion',
-    title: 'Planificación',
-    description: 'Define la producción estimada por turno y controla la demanda.',
-  },
-  {
-    path: 'produccion/recetas',
-    title: 'Recetas',
-    description: 'Muy pronto podrás versionar recetas y costos directamente desde aquí.',
   },
   {
     path: 'inventario',
@@ -103,6 +89,10 @@ const adminRoutes = (
     <Route path="inventario/existencias" element={<ExistenciasPage />} />
     <Route path="inventario/insumos" element={<InsumosPage />} />
     <Route path="inventario/movimientos" element={<MovimientosPage />} />
+    <Route path="produccion" element={<Navigate to="planificacion" replace />} />
+    <Route path="produccion/planificacion" element={<PlanificacionPage />} />
+    <Route path="produccion/stock-ideal" element={<StockIdealPage />} />
+    <Route path="produccion/recetas" element={<RecetasPage />} />
     <Route path="catalogo/productos" element={<ProductosPage />} />
     <Route path="catalogo/categorias" element={<CategoriasPage />} />
     <Route path="configuracion/sedes" element={<ConfiguracionPage />} />

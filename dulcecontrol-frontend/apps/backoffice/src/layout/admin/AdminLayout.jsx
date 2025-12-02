@@ -37,6 +37,7 @@ const menuItems = [
     getItem('Comprobantes', `${BASE_PATH}/facturacion/comprobantes`),
   ]),
   getItem('Producción', `${BASE_PATH}/produccion`, <IconCakeRoll size={18} />, [
+    getItem('Stock ideal', `${BASE_PATH}/produccion/stock-ideal`),
     getItem('Planificación', `${BASE_PATH}/produccion/planificacion`),
     getItem('Recetas', `${BASE_PATH}/produccion/recetas`),
   ]),
