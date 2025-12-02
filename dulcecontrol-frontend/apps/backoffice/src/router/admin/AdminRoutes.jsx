@@ -7,6 +7,9 @@ import NotFoundPage from '../../shared/components/NotFoundPage.jsx';
 
 import { ProductosPage, CategoriasPage } from '../../features/admin/catalogo/index.js';
 import { ExistenciasPage, InsumosPage, MovimientosPage } from '../../features/admin/inventario/index.js';
+import FacturacionPage from '../../features/admin/facturacion/pages/FacturacionPage.jsx';
+import FacturacionDetallePage from '../../features/admin/facturacion/pages/FacturacionDetallePage.jsx';
+import SeriesPage from '../../features/admin/facturacion/pages/SeriesPage.jsx';
 
 const adminRoutes = (
   <Route
@@ -75,21 +78,15 @@ const adminRoutes = (
     />
     <Route
       path="facturacion/series-correlativos"
-      element={
-        <PlaceholderPage
-          title="Series y correlativos"
-          description="Enlazaremos tus series con SUNAT para mantener la numeración bajo control."
-        />
-      }
+      element={<SeriesPage />}
     />
     <Route
       path="facturacion/comprobantes"
-      element={
-        <PlaceholderPage
-          title="Comprobantes"
-          description="Revisa, descarga o anula los comprobantes emitidos por la tienda."
-        />
-      }
+      element={<FacturacionPage />}
+    />
+    <Route
+      path="facturacion/comprobantes/:id"
+      element={<FacturacionDetallePage />}
     />
     <Route
       path="produccion"
