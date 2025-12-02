@@ -8,6 +8,7 @@ import TiendasPage from '../../features/superadmin/tiendas/pages/TiendasPage.jsx
 import SedesPage from '../../features/superadmin/tiendas/pages/SedesPage.jsx';
 import DominiosPage from '../../features/superadmin/tiendas/pages/DominiosPage.jsx';
 import UsuariosPage from '../../features/superadmin/tiendas/pages/UsuariosPage.jsx';
+import { SoporteTicketsPage } from '../../features/superadmin/soporte/index.js';
 
 const superadminRoutes = (
   <Route
@@ -86,15 +87,7 @@ const superadminRoutes = (
         />
       }
     />
-    <Route
-      path="soporte"
-      element={
-        <PlaceholderPage
-          title="Centro de soporte"
-          description="Los tickets centralizados aún están en QA. Usa la mesa de ayuda tradicional mientras concluye la migración."
-        />
-      }
-    />
+    <Route path="soporte" element={<SoporteTicketsPage />} />
     <Route
       path="seguridad/equipo-superadmin"
       element={

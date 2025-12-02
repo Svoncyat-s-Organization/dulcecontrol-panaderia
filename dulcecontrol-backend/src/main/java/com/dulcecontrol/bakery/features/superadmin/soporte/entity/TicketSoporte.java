@@ -1,5 +1,7 @@
 package com.dulcecontrol.bakery.features.superadmin.soporte.entity;
 
+import com.dulcecontrol.bakery.features.superadmin.soporte.entity.converter.EstadoTicketConverter;
+import com.dulcecontrol.bakery.features.superadmin.soporte.entity.converter.PrioridadTicketConverter;
 import com.dulcecontrol.bakery.features.superadmin.soporte.entity.enums.EstadoTicket;
 import com.dulcecontrol.bakery.features.superadmin.soporte.entity.enums.PrioridadTicket;
 import jakarta.persistence.*;
@@ -24,11 +26,11 @@ public class TicketSoporte {
     @Column(nullable = false, length = 255)
     private String asunto;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = PrioridadTicketConverter.class)
     @Column(name = "prioridad", nullable = false, columnDefinition = "ENUM('baja','media','alta','critica')")
     private PrioridadTicket prioridad = PrioridadTicket.media;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = EstadoTicketConverter.class)
     @Column(name = "estado", nullable = false, columnDefinition = "ENUM('abierto','pendiente_cliente','resuelto','cerrado')")
     private EstadoTicket estado = EstadoTicket.abierto;
 
