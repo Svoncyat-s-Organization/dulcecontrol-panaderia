@@ -27,4 +27,20 @@ public class ClienteCreateRequest {
     private String hashContrasena;
 
     private String notas;
+
+    // Campos de dirección
+    private String direccionEtiqueta;
+
+    @NotBlank(message = "La dirección completa es obligatoria")
+    private String direccionCompleta;
+
+    private String direccionReferencia;
+
+    private Long direccionDistritoId;
+
+    private String direccionCodigoPostal;
+
+    private Boolean direccionEsFiscal;
+
+    private Boolean direccionEsEntrega;
 }
