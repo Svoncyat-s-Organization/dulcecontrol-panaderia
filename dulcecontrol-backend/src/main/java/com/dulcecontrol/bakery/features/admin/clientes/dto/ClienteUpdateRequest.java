@@ -29,4 +29,19 @@ public class ClienteUpdateRequest {
     private String notas;
 
     private Boolean activo;
+
+    // Campos de dirección (solo para creación, no para actualización)
+    private String direccionEtiqueta;
+
+    private String direccionCompleta;
+
+    private String direccionReferencia;
+
+    private Long direccionDistritoId;
+
+    private String direccionCodigoPostal;
+
+    private Boolean direccionEsFiscal;
+
+    private Boolean direccionEsEntrega;
 }
