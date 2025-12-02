@@ -173,7 +173,9 @@ const SuscripcionesManagerView = ({
             dataIndex: 'tiendaId',
             key: 'tiendaId',
             width: 120,
-            render: (tiendaId) => <Text>{tiendasLabelMap.get(tiendaId) || '-'}</Text>,
+            render: (_, record) => (
+                <Text>{record.tiendaNombre || tiendasLabelMap.get(record.tiendaId) || '-'}</Text>
+            ),
         },
         {
             title: 'Plan',
@@ -313,9 +315,11 @@ const SuscripcionesManagerView = ({
             >
                 <Descriptions bordered column={2} size="small">
                     <Descriptions.Item label="Tienda">
-                        {detailSuscripcion?.tiendaId
-                            ? (tiendasLabelMap.get(detailSuscripcion.tiendaId) || `Tienda #${detailSuscripcion.tiendaId}`)
-                            : '-'}
+                        {detailSuscripcion?.tiendaNombre
+                            || (detailSuscripcion?.tiendaId
+                                ? (tiendasLabelMap.get(detailSuscripcion.tiendaId)
+                                    || `Tienda #${detailSuscripcion.tiendaId}`)
+                                : '-')}
                     </Descriptions.Item>
                     <Descriptions.Item label="Plan">
                         {detailSuscripcion?.planNombre || '-'}

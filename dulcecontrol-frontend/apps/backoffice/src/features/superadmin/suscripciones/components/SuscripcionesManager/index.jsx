@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { message } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import SuscripcionesManagerView from './SuscripcionesManagerView.jsx';
 import { getPlanes, getSuscripciones, updateSuscripcion, createSuscripcion } from '../../api/suscripciones.api.js';
 import { PENToCentimos } from '../../utils/currencyFormatter.js';
-import { getTiendas } from '../../../../../api/superadmin/tiendas.js';
+import { getTiendas } from '../../../tiendas/api/tiendas.api.js';
 import { useAuthStore } from '../../../../../shared/hooks/useAuth.js';
 
 const SUSCRIPCIONES_QUERY_KEY = ['superadmin', 'suscripciones'];
@@ -51,6 +51,18 @@ const SuscripcionesManager = () => {
         });
         return map;
     }, [tiendas]);
+
+    const getTiendaLabel = useCallback((tiendaId) => {
+        if (!tiendaId) return 'Sin tienda';
+        return tiendasMap.get(tiendaId) || `Tienda #${tiendaId}`;
+    }, [tiendasMap]);
+
+    const suscripcionesConNombre = useMemo(() => (
+        suscripciones.map((suscripcion) => ({
+            ...suscripcion,
+            tiendaNombre: getTiendaLabel(suscripcion.tiendaId),
+        }))
+    ), [suscripciones, getTiendaLabel]);
 
     const tiendasConSuscripcion = useMemo(() => {
         const set = new Set();
@@ -178,7 +190,7 @@ const SuscripcionesManager = () => {
 
     return (
         <SuscripcionesManagerView
-            suscripciones={suscripciones}
+            suscripciones={suscripcionesConNombre}
             loading={isLoading}
             isError={isError}
             onRetry={refetch}

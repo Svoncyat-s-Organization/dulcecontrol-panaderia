@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import HistorialManagerView from './HistorialManagerView.jsx';
 import { getSuscripciones, getHistorialBySuscripcion } from '../../api/suscripciones.api.js';
-import { getTiendas } from '../../../../../api/superadmin/tiendas.js';
+import { getTiendas } from '../../../tiendas/api/tiendas.api.js';
 
 const HISTORIAL_QUERY_KEY = ['superadmin', 'historial'];
 const SUSCRIPCIONES_QUERY_KEY = ['superadmin', 'suscripciones'];
@@ -26,11 +26,23 @@ const HistorialManager = () => {
         return map;
     }, [tiendas]);
 
+    const getTiendaLabel = useCallback((tiendaId) => {
+        if (!tiendaId) return 'Sin tienda';
+        return tiendasMap.get(tiendaId) || `Tienda #${tiendaId}`;
+    }, [tiendasMap]);
+
     // Fetch all subscriptions for the selector
     const { data: suscripciones = [], isLoading: isLoadingSuscripciones } = useQuery({
         queryKey: SUSCRIPCIONES_QUERY_KEY,
         queryFn: () => getSuscripciones(),
     });
+
+    const suscripcionesConNombre = useMemo(() => (
+        suscripciones.map((suscripcion) => ({
+            ...suscripcion,
+            tiendaNombre: getTiendaLabel(suscripcion.tiendaId),
+        }))
+    ), [suscripciones, getTiendaLabel]);
 
     // Fetch history for selected subscription
     const { data: historial = [], isLoading: isLoadingHistorial, isError, refetch } = useQuery({
@@ -49,7 +61,7 @@ const HistorialManager = () => {
             loading={isLoadingHistorial}
             isError={isError}
             onRetry={refetch}
-            suscripciones={suscripciones}
+            suscripciones={suscripcionesConNombre}
             tiendasMap={tiendasMap}
             selectedSuscripcionId={selectedSuscripcionId}
             onSelectSuscripcion={handleSelectSuscripcion}

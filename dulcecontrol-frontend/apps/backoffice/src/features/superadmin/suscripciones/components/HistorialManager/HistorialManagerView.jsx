@@ -119,6 +119,7 @@ const HistorialManagerView = ({
                     style={{ width: '100%', maxWidth: 500 }}
                     placeholder="Seleccionar por tienda"
                     optionFilterProp="label"
+                    optionLabelProp="label"
                     onChange={onSelectSuscripcion}
                     value={selectedSuscripcionId}
                     loading={isLoadingSuscripciones}
@@ -127,13 +128,15 @@ const HistorialManagerView = ({
                     }
                 >
                     {(suscripciones || []).map((susc) => {
-                        const tiendaNombre = tiendasMap?.get(susc.tiendaId) || `Tienda #${susc.tiendaId}`;
-                        const label = `${tiendaNombre} - ${susc.planNombre} (#${susc.id})`;
+                        const tiendaNombre = susc.tiendaNombre
+                            || tiendasMap?.get(susc.tiendaId)
+                            || `Tienda #${susc.tiendaId}`;
+                        const optionLabel = tiendaNombre;
                         return (
                             <Select.Option
                                 key={susc.id}
                                 value={susc.id}
-                                label={label}
+                                label={optionLabel}
                             >
                                 <Space direction="vertical" size={0}>
                                     <Text strong>{tiendaNombre}</Text>
