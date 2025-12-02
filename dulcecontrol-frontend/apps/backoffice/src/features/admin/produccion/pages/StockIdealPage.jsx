@@ -1,34 +1,22 @@
-import { Result } from 'antd';
-import { useTokenStore } from '../../../../shared/store/tokenStore.js';
-import { useSedeStore } from '../../../../shared/store/sedeStore.js';
-import StockIdealManager from '../components/StockIdeal/index.jsx';
+import { Space, Typography } from 'antd';
+import StockIdealTable from '../components/StockIdealTable/index.jsx';
+
+const { Title, Paragraph } = Typography;
 
 const StockIdealPage = () => {
-  const tiendaId = useTokenStore((state) => state.tiendaId);
-  const sedeId = useSedeStore((state) => state.selectedSedeId);
-  const sedeNombre = useSedeStore((state) => state.selectedSedeNombre);
+  return (
+    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+      <div>
+        <Title level={2}>Stock Ideal</Title>
+        <Paragraph type="secondary">
+          Configura la cantidad objetivo de cada producto que debe estar disponible diariamente en cada sede.
+          Estos valores son la base para calcular la producción automática.
+        </Paragraph>
+      </div>
 
-  if (!tiendaId) {
-    return (
-      <Result
-        status="warning"
-        title="No se pudo identificar la tienda"
-        subTitle="Vuelve a iniciar sesión para continuar"
-      />
-    );
-  }
-
-  if (!sedeId) {
-    return (
-      <Result
-        status="info"
-        title="Selecciona una sede"
-        subTitle="El stock ideal se configura por sede. Usa el selector en el encabezado."
-      />
-    );
-  }
-
-  return <StockIdealManager tiendaId={tiendaId} sedeId={sedeId} sedeNombre={sedeNombre} />;
+      <StockIdealTable />
+    </Space>
+  );
 };
 
 export default StockIdealPage;

@@ -1,34 +1,22 @@
-import { Result } from 'antd';
-import { useTokenStore } from '../../../../shared/store/tokenStore.js';
-import { useSedeStore } from '../../../../shared/store/sedeStore.js';
-import PlanificacionManager from '../components/Planificacion/index.jsx';
+import { Space, Typography } from 'antd';
+import PlanProduccionTable from '../components/PlanProduccionTable/index.jsx';
+
+const { Title, Paragraph } = Typography;
 
 const PlanificacionPage = () => {
-  const tiendaId = useTokenStore((state) => state.tiendaId);
-  const sedeId = useSedeStore((state) => state.selectedSedeId);
-  const sedeNombre = useSedeStore((state) => state.selectedSedeNombre);
+  return (
+    <Space orientation="vertical" size="large" style={{ width: '100%' }}>
+      <div>
+        <Title level={2}>Planificación de Producción</Title>
+        <Paragraph type="secondary">
+          Gestiona los planes de producción diarios. El sistema calcula automáticamente qué y cuánto producir
+          basándose en el stock ideal, inventario actual y pedidos especiales.
+        </Paragraph>
+      </div>
 
-  if (!tiendaId) {
-    return (
-      <Result
-        status="warning"
-        title="No se pudo identificar la tienda"
-        subTitle="Vuelve a iniciar sesión para continuar"
-      />
-    );
-  }
-
-  if (!sedeId) {
-    return (
-      <Result
-        status="info"
-        title="Selecciona una sede"
-        subTitle="La planificación se genera por sede. Usa el selector superior."
-      />
-    );
-  }
-
-  return <PlanificacionManager tiendaId={tiendaId} sedeId={sedeId} sedeNombre={sedeNombre} />;
+      <PlanProduccionTable />
+    </Space>
+  );
 };
 
 export default PlanificacionPage;
