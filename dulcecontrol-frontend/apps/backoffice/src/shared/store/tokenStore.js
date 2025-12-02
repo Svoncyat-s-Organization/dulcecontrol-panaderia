@@ -17,13 +17,16 @@ export const useTokenStore = create(
     persist(
         (set, get) => ({
             ...initialState,
-            login: ({ token, userType, tiendaId = null, expiresIn }) => {
+            login: ({ token, userType, tiendaId = null, expiresIn, userId }) => {
                 const expiresAt = expiresIn ? Date.now() + expiresIn * 1000 : null;
                 const { selectedTiendaId, clearSelection } = useSedeStore.getState();
                 if (selectedTiendaId && tiendaId !== selectedTiendaId) {
                     clearSelection();
                 }
                 const userClaims = parseJwt(token);
+                // Merge claims with explicit userId if provided
+                const user = { ...userClaims, id: userId || userClaims?.id };
+
                 set({
                     token,
                     userType,
@@ -31,7 +34,7 @@ export const useTokenStore = create(
                     expiresAt,
                     isAuthenticated: true,
                     panelRoleHint: null,
-                    user: userClaims,
+                    user,
                 });
             },
             logout: () => {

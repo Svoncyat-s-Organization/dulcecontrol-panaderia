@@ -1,5 +1,6 @@
 package com.dulcecontrol.bakery.features.superadmin.soporte.entity;
 
+import com.dulcecontrol.bakery.features.superadmin.soporte.entity.converter.TipoRemitenteConverter;
 import com.dulcecontrol.bakery.features.superadmin.soporte.entity.enums.TipoRemitente;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -17,7 +18,7 @@ public class MensajeTicket {
     @Column(name = "ticket_id", nullable = false)
     private Long ticketId;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = TipoRemitenteConverter.class)
     @Column(name = "tipo_remitente", nullable = false, columnDefinition = "ENUM('superadmin','tienda','sistema')")
     private TipoRemitente tipoRemitente;
 

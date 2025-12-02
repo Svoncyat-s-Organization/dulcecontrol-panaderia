@@ -17,7 +17,9 @@ public class OrdenCompraResponse {
     private final Long id;
     private final Long tiendaId;
     private final Long sedeDestinoId;
+    private final String nombreSede;
     private final Long proveedorId;
+    private final String nombreProveedor;
     private final LocalDate fechaEmision;
     private final LocalDate fechaRecepcionEsperada;
     private final LocalDate fechaRecepcionReal;
