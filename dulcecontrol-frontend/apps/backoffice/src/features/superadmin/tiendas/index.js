@@ -1,4 +1,4 @@
-export { default as DirectorioTiendasPage } from './pages/DirectorioTiendasPage.jsx';
-export { default as DirectorioSedesPage } from './pages/DirectorioSedesPage.jsx';
-export { default as DirectorioDominiosPage } from './pages/DirectorioDominiosPage.jsx';
-export { default as DirectorioUsuariosPage } from './pages/DirectorioUsuarios.jsx';
+export { default as TiendasPage } from './pages/TiendasPage.jsx';
+export { default as SedesPage } from './pages/SedesPage.jsx';
+export { default as DominiosPage } from './pages/DominiosPage.jsx';
+export { default as UsuariosPage } from './pages/UsuariosPage.jsx';

@@ -4,6 +4,11 @@ import SuperadminLayout from '../../layout/superadmin/SuperadminLayout.jsx';
 import PlaceholderPage from '../../shared/components/PlaceholderPage.jsx';
 import { VerTableroPage as SuperadminDashboardPage } from '../../features/superadmin/tablero/index.js';
 import NotFoundPage from '../../shared/components/NotFoundPage.jsx';
+import TiendasPage from '../../features/superadmin/tiendas/pages/TiendasPage.jsx';
+import SedesPage from '../../features/superadmin/tiendas/pages/SedesPage.jsx';
+import DominiosPage from '../../features/superadmin/tiendas/pages/DominiosPage.jsx';
+import UsuariosPage from '../../features/superadmin/tiendas/pages/UsuariosPage.jsx';
+import { SoporteTicketsPage } from '../../features/superadmin/soporte/index.js';
 
 const superadminRoutes = (
   <Route
@@ -21,30 +26,13 @@ const superadminRoutes = (
         <SuperadminDashboardPage />
       }
     />
-    <Route path="tiendas/directorio" element={
-        <PlaceholderPage
-          title="Tiendas"
-          description="Este será el directorio de tiendas donde podrás gestionar todas las tiendas registradas en la plataforma."
-        />
-      } />
-    <Route path="tiendas/sedes" element={
-        <PlaceholderPage
-          title="Sedes"
-          description="Aquí podrás administrar las sedes de cada tienda registrada."
-        />
-      } />
-    <Route path="tiendas/dominios" element={
-        <PlaceholderPage
-          title="Dominios"
-          description="Se planea integrar la gestión de dominios próximamente."
-        />
-      } />
-    <Route path="tiendas/usuarios" element={
-        <PlaceholderPage
-          title="Usuarios"
-          description="Muy pronto aquí estará la gestión de titulares de las tiendas registradas en la plataforma."
-        />
-      } />
+    <Route path="tiendas/directorio" element={<TiendasPage />} />
+    <Route path="tiendas/sedes" element={<SedesPage />} />
+    <Route path="tiendas/:tiendaId/sedes" element={<SedesPage />} />
+    <Route path="tiendas/dominios" element={<DominiosPage />} />
+    <Route path="tiendas/:tiendaId/dominios" element={<DominiosPage />} />
+    <Route path="tiendas/usuarios" element={<UsuariosPage />} />
+    <Route path="tiendas/:tiendaId/usuarios" element={<UsuariosPage />} />
     <Route
       path="suscripciones/planes"
       element={
@@ -99,15 +87,7 @@ const superadminRoutes = (
         />
       }
     />
-    <Route
-      path="soporte"
-      element={
-        <PlaceholderPage
-          title="Centro de soporte"
-          description="Los tickets centralizados aún están en QA. Usa la mesa de ayuda tradicional mientras concluye la migración."
-        />
-      }
-    />
+    <Route path="soporte" element={<SoporteTicketsPage />} />
     <Route
       path="seguridad/equipo-superadmin"
       element={
