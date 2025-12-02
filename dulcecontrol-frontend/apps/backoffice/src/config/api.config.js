@@ -16,8 +16,8 @@ export const getApiUrl = () => {
     // Prioriza la URL de producción
     // Si quieres detectar automáticamente según el entorno:
     // return import.meta.env.PROD ? API_BASE_URL : API_LOCAL_URL;
-
-    return API_LOCAL_URL;
+    
+    return API_BASE_URL;
 };
 
 // Endpoints específicos
