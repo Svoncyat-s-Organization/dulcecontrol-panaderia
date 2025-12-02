@@ -8,6 +8,9 @@ import NotFoundPage from '../../shared/components/NotFoundPage.jsx';
 import { ProductosPage, CategoriasPage } from '../../features/admin/catalogo/index.js';
 import { ExistenciasPage, InsumosPage, MovimientosPage } from '../../features/admin/inventario/index.js';
 import { VentasPage, CajasPage } from '../../features/admin/ventas-pedidos/index.js';
+import { InsumosPage as ComprasInsumosPage, ProveedoresPage, OrdenesCompraPage } from '../../features/admin/compras/index.js';
+import { ClientesPage } from '../../features/admin/clientes/index.js';
+import { ConfiguracionPage } from '../../features/admin/configuracion/index.js';
 
 const adminRoutes = (
   <Route
@@ -34,6 +37,43 @@ const adminRoutes = (
     <Route path="ventas/pedidos" element={<VentasPage />} />
     <Route path="ventas/cajas" element={<CajasPage />} />
     <Route path="ventas/historial" element={<VentasPage />} />
+    <Route path="clientes" element={<ClientesPage />} />
+    <Route
+      path="ventas"
+      element={
+        <PlaceholderPage
+          title="Ventas & Pedidos"
+          description="Resumen general de ventas, pedidos y estado de la operación diaria."
+        />
+      }
+    />
+    <Route
+      path="ventas/punto-de-venta"
+      element={
+        <PlaceholderPage
+          title="Punto de venta"
+          description="Desde aquí abriremos/cerraremos la caja y habilitaremos el POS web para registrar transacciones en mostrador."
+        />
+      }
+    />
+    <Route
+      path="ventas/pedidos"
+      element={
+        <PlaceholderPage
+          title="Pedidos"
+          description="Centralizaremos los pedidos online y programados para su seguimiento."
+        />
+      }
+    />
+    <Route
+      path="ventas/historial"
+      element={
+        <PlaceholderPage
+          title="Historial de ventas"
+          description="Consulta el histórico de ventas por tienda, sede y canal."
+        />
+      }
+    />
     <Route
       path="facturacion"
       element={
@@ -61,6 +101,18 @@ const adminRoutes = (
         />
       }
     />
+    <Route
+      path="compras"
+      element={
+        <PlaceholderPage
+          title="Compras"
+          description="Gestiona insumos, proveedores y órdenes de compra para tu panadería."
+        />
+      }
+    />
+    <Route path="compras/insumos" element={<ComprasInsumosPage />} />
+    <Route path="compras/proveedores" element={<ProveedoresPage />} />
+    <Route path="compras/ordenes" element={<OrdenesCompraPage />} />
     <Route
       path="produccion"
       element={
@@ -153,15 +205,7 @@ const adminRoutes = (
         />
       }
     />
-    <Route
-      path="configuracion/sedes"
-      element={
-        <PlaceholderPage
-          title="Sedes"
-          description="Pronto podrás dar de alta o pausar sedes desde este apartado."
-        />
-      }
-    />
+    <Route path="configuracion/sedes" element={<ConfiguracionPage />} />
     <Route
       path="*"
       element={

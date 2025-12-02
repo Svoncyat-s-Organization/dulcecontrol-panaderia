@@ -10,10 +10,12 @@ import com.dulcecontrol.bakery.features.superadmin.soporte.repository.TicketSopo
 import com.dulcecontrol.bakery.features.superadmin.soporte.service.ITicketSoporteService;
 import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -24,17 +26,14 @@ public class TicketSoporteService implements ITicketSoporteService {
     @Override
     @Transactional(readOnly = true)
     public List<TicketResponse> listar(Long tiendaId, EstadoTicket estado, PrioridadTicket prioridad) {
-        List<TicketSoporte> items;
-        if (tiendaId != null) {
-            items = ticketRepository.findByTiendaIdOrderByPrioridadDesc(tiendaId);
-        } else if (estado != null) {
-            items = ticketRepository.findByEstadoOrderByCreadoEnDesc(estado);
-        } else if (prioridad != null) {
-            items = ticketRepository.findByPrioridadOrderByCreadoEnDesc(prioridad);
-        } else {
-            items = ticketRepository.findAll();
-        }
-        return items.stream().map(this::toResponse).toList();
+        List<TicketSoporte> items = ticketRepository.findAll(Sort.by(Sort.Direction.DESC, "creadoEn"));
+
+        return items.stream()
+                .filter(ticket -> tiendaId == null || Objects.equals(ticket.getTiendaId(), tiendaId))
+                .filter(ticket -> estado == null || ticket.getEstado() == estado)
+                .filter(ticket -> prioridad == null || ticket.getPrioridad() == prioridad)
+                .map(this::toResponse)
+                .toList();
     }
 
     @Override

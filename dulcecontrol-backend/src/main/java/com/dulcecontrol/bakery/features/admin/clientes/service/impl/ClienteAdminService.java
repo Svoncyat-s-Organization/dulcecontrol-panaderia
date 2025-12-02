@@ -4,7 +4,9 @@ import com.dulcecontrol.bakery.features.admin.clientes.dto.ClienteCreateRequest;
 import com.dulcecontrol.bakery.features.admin.clientes.dto.ClienteResponse;
 import com.dulcecontrol.bakery.features.admin.clientes.dto.ClienteUpdateRequest;
 import com.dulcecontrol.bakery.features.admin.clientes.entity.Cliente;
+import com.dulcecontrol.bakery.features.admin.clientes.entity.DireccionCliente;
 import com.dulcecontrol.bakery.features.admin.clientes.repository.ClienteRepository;
+import com.dulcecontrol.bakery.features.admin.clientes.repository.DireccionClienteRepository;
 import com.dulcecontrol.bakery.features.admin.clientes.service.IClienteAdminService;
 import com.dulcecontrol.bakery.shared.exception.BadRequestException;
 import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
@@ -20,6 +22,7 @@ import java.util.List;
 public class ClienteAdminService implements IClienteAdminService {
 
     private final ClienteRepository clienteRepository;
+    private final DireccionClienteRepository direccionClienteRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -78,6 +81,22 @@ public class ClienteAdminService implements IClienteAdminService {
         cliente.setNotas(request.getNotas());
 
         Cliente saved = clienteRepository.save(cliente);
+
+        // Crear dirección si se proporcionó
+        if (request.getDireccionCompleta() != null && !request.getDireccionCompleta().trim().isEmpty()) {
+            DireccionCliente direccion = new DireccionCliente();
+            direccion.setClienteId(saved.getId());
+            direccion.setEtiqueta(request.getDireccionEtiqueta());
+            direccion.setDireccionCompleta(request.getDireccionCompleta());
+            direccion.setReferencia(request.getDireccionReferencia());
+            direccion.setDistritoId(request.getDireccionDistritoId());
+            direccion.setCodigoPostal(request.getDireccionCodigoPostal());
+            direccion.setEsFiscal(request.getDireccionEsFiscal() != null ? request.getDireccionEsFiscal() : false);
+            direccion.setEsEntrega(request.getDireccionEsEntrega() != null ? request.getDireccionEsEntrega() : false);
+
+            direccionClienteRepository.save(direccion);
+        }
+
         return toResponse(saved);
     }
 
@@ -112,6 +131,36 @@ public class ClienteAdminService implements IClienteAdminService {
         }
 
         Cliente saved = clienteRepository.save(cliente);
+
+        // Manejar dirección - actualizar la primera dirección existente o crear nueva
+        if (request.getDireccionCompleta() != null && !request.getDireccionCompleta().trim().isEmpty()) {
+            List<DireccionCliente> direccionesExistentes = direccionClienteRepository.findByClienteId(clienteId);
+            if (!direccionesExistentes.isEmpty()) {
+                // Actualizar la primera dirección existente
+                DireccionCliente direccion = direccionesExistentes.get(0);
+                direccion.setEtiqueta(request.getDireccionEtiqueta());
+                direccion.setDireccionCompleta(request.getDireccionCompleta());
+                direccion.setReferencia(request.getDireccionReferencia());
+                direccion.setDistritoId(request.getDireccionDistritoId());
+                direccion.setCodigoPostal(request.getDireccionCodigoPostal());
+                direccion.setEsFiscal(request.getDireccionEsFiscal() != null ? request.getDireccionEsFiscal() : false);
+                direccion.setEsEntrega(request.getDireccionEsEntrega() != null ? request.getDireccionEsEntrega() : false);
+                direccionClienteRepository.save(direccion);
+            } else {
+                // Crear nueva dirección
+                DireccionCliente direccion = new DireccionCliente();
+                direccion.setClienteId(saved.getId());
+                direccion.setEtiqueta(request.getDireccionEtiqueta());
+                direccion.setDireccionCompleta(request.getDireccionCompleta());
+                direccion.setReferencia(request.getDireccionReferencia());
+                direccion.setDistritoId(request.getDireccionDistritoId());
+                direccion.setCodigoPostal(request.getDireccionCodigoPostal());
+                direccion.setEsFiscal(request.getDireccionEsFiscal() != null ? request.getDireccionEsFiscal() : false);
+                direccion.setEsEntrega(request.getDireccionEsEntrega() != null ? request.getDireccionEsEntrega() : false);
+                direccionClienteRepository.save(direccion);
+            }
+        }
+
         return toResponse(saved);
     }
 
