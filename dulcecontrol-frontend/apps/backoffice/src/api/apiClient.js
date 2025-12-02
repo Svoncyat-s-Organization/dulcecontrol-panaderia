@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { useTokenStore} from '../shared/store/tokenStore.js';
+import { useTokenStore } from '../shared/store/tokenStore.js';
+import { useSedeStore } from '../shared/store/sedeStore.js';
 import { getApiUrl } from '../config/api.config.js';
 
 const apiClient = axios.create({
@@ -14,6 +15,13 @@ apiClient.interceptors.request.use(
         const token = useTokenStore.getState().token;
         if (token) {
             config.headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const sedeId = useSedeStore.getState().selectedSedeId;
+        if (sedeId) {
+            config.headers['X-Sede-Id'] = sedeId;
+        } else if (config.headers['X-Sede-Id']) {
+            delete config.headers['X-Sede-Id'];
         }
         return config;
     }

@@ -2,6 +2,7 @@ package com.dulcecontrol.bakery.config;
 
 import com.dulcecontrol.bakery.security.JwtAuthenticationEntryPoint;
 import com.dulcecontrol.bakery.security.JwtAuthenticationFilter;
+import com.dulcecontrol.bakery.shared.sede.SedeContextFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,7 +20,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -28,11 +31,17 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final SedeContextFilter sedeContextFilter;
+    private final AppHostProperties hostProperties;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
-            JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint) {
+            JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
+            SedeContextFilter sedeContextFilter,
+            AppHostProperties hostProperties) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
+        this.sedeContextFilter = sedeContextFilter;
+        this.hostProperties = hostProperties;
     }
 
     @Bean
@@ -64,7 +73,8 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-resources/**", "/webjars/**").permitAll()
                         // Todos los demás endpoints requieren autenticación
                         .anyRequest().authenticated())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(sedeContextFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }
@@ -78,20 +88,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Orígenes permitidos (desarrollo y producción)
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:5173",
-                "http://127.0.0.1:5173",
-                "http://localhost:5174",
-                "http://127.0.0.1:5174",
-                "http://localhost:5175",
-                "http://127.0.0.1:5175",
-                "https://sa-dulcecontrol.vercel.app",
-                "https://dulcecontrol-superadmin.vercel.app",
-                "https://dulcecontrol-admin.vercel.app",
-                "https://dulcecontrol-storefront.vercel.app",
-                "https://*.vercel.app"
-        ));
+        List<String> allowedOrigins = new ArrayList<>();
+        allowedOrigins.addAll(hostProperties.getDevelopmentOrigins());
+        allowedOrigins.addAll(hostProperties.getProductionOrigins());
+        configuration.setAllowedOrigins(allowedOrigins);
+        configuration.setAllowedOriginPatterns(hostProperties.getAllowedOriginPatterns());
 
         // Métodos HTTP permitidos
         configuration.setAllowedMethods(Arrays.asList(
@@ -99,11 +100,12 @@ public class SecurityConfig {
 
         // Headers permitidos
         configuration.setAllowedHeaders(Arrays.asList(
-                "Authorization",
-                "Content-Type",
-                "Accept",
-                "X-Requested-With",
-                "Cache-Control"));
+            "Authorization",
+            "Content-Type",
+            "Accept",
+            "X-Requested-With",
+            "Cache-Control",
+            SedeContextFilter.HEADER_SEDE_ID));
 
         // Headers expuestos (que el cliente puede leer)
         configuration.setExposedHeaders(Arrays.asList(

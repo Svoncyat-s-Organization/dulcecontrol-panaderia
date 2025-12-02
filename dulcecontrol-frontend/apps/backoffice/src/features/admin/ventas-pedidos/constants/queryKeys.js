@@ -1,16 +1,18 @@
+const cajaBase = (tiendaId, sedeId) => ['cajas', tiendaId ?? null, sedeId ?? null];
+
 export const CAJA_KEYS = {
-    all: ['cajas'],
-    lists: (tiendaId) => ['cajas', 'list', tiendaId],
-    sesiones: (tiendaId) => ['cajas', 'sesiones', tiendaId],
-    sesionActive: (tiendaId, usuarioId) => ['cajas', 'sesion-active', tiendaId, usuarioId],
-    movimientos: (tiendaId, sesionId) => ['cajas', 'movimientos', tiendaId, sesionId],
-    usuarioActual: (tiendaId, correo) => ['cajas', 'usuario-actual', tiendaId, correo],
+    base: cajaBase,
+    lists: (tiendaId, sedeId) => [...cajaBase(tiendaId, sedeId), 'list'],
+    sesiones: (tiendaId, sedeId) => [...cajaBase(tiendaId, sedeId), 'sesiones'],
+    sesionActive: (tiendaId, sedeId, usuarioId) => [...cajaBase(tiendaId, sedeId), 'sesion-active', usuarioId ?? null],
+    movimientos: (tiendaId, sedeId, sesionId) => [...cajaBase(tiendaId, sedeId), 'movimientos', sesionId ?? null],
+    usuarioActual: (tiendaId, correo) => ['cajas', 'usuario-actual', tiendaId ?? null, correo ?? null],
 };
 
 export const PEDIDO_KEYS = {
-    all: ['pedidos'],
-    lists: (tiendaId, filters) => ['pedidos', 'list', tiendaId, { ...filters }],
-    detail: (tiendaId, pedidoId) => ['pedidos', 'detail', tiendaId, pedidoId],
-    pagos: (tiendaId, pedidoId) => ['pedidos', 'pagos', tiendaId, pedidoId],
-    detalles: (tiendaId, pedidoId) => ['pedidos', 'detalles', tiendaId, pedidoId],
+    base: (tiendaId, sedeId) => ['pedidos', tiendaId ?? null, sedeId ?? null],
+    lists: (tiendaId, sedeId, filters) => ['pedidos', 'list', tiendaId ?? null, sedeId ?? null, { ...filters }],
+    detail: (tiendaId, sedeId, pedidoId) => ['pedidos', 'detail', tiendaId ?? null, sedeId ?? null, pedidoId],
+    pagos: (tiendaId, sedeId, pedidoId) => ['pedidos', 'pagos', tiendaId ?? null, sedeId ?? null, pedidoId],
+    detalles: (tiendaId, sedeId, pedidoId) => ['pedidos', 'detalles', tiendaId ?? null, sedeId ?? null, pedidoId],
 };

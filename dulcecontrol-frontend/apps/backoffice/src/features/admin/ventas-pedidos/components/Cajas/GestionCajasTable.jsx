@@ -7,6 +7,7 @@ import isBetween from 'dayjs/plugin/isBetween';
 dayjs.extend(isBetween);
 import { useQuery } from '@tanstack/react-query';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
+import { useSedeStore } from '../../../../../shared/store/sedeStore.js';
 import { getSesionesCaja, getCajas } from '../../api/cajas.api.js';
 import { getUsuariosAdmin } from '../../api/usuarios.api.js';
 import { CAJA_KEYS } from '../../constants/queryKeys.js';
@@ -22,6 +23,7 @@ const estadoOptions = [
 
 const GestionCajasTable = () => {
     const tiendaId = useTokenStore((state) => state.tiendaId);
+    const selectedSedeId = useSedeStore((state) => state.selectedSedeId);
     const { token } = theme.useToken();
     const [form] = Form.useForm();
     const [range, setRange] = useState([dayjs().startOf('month'), dayjs().endOf('month')]);
@@ -32,14 +34,16 @@ const GestionCajasTable = () => {
     });
 
     const sesionesQuery = useQuery({
-        queryKey: CAJA_KEYS.sesiones(tiendaId),
-        queryFn: () => getSesionesCaja(tiendaId),
-        enabled: !!tiendaId,
+        queryKey: CAJA_KEYS.sesiones(tiendaId, selectedSedeId),
+        queryFn: () => getSesionesCaja(tiendaId, {
+            sedeId: selectedSedeId ?? undefined,
+        }),
+        enabled: !!tiendaId && !!selectedSedeId,
         select: (response) => Array.isArray(response) ? response : [],
     });
 
     const cajasQuery = useQuery({
-        queryKey: ['cajas-map', tiendaId],
+        queryKey: ['cajas-map', tiendaId, selectedSedeId ?? null],
         queryFn: () => getCajas(tiendaId),
         enabled: !!tiendaId,
     });

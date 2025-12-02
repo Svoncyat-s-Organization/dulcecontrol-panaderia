@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -23,13 +24,23 @@ import java.util.List;
 @Configuration
 public class OpenApiConfig {
 
-    @Value("${server.port:2250}")
-    private int serverPort;
+    private final AppHostProperties hostProperties;
+    private final int serverPort;
+
+    public OpenApiConfig(AppHostProperties hostProperties, @Value("${server.port:2250}") int serverPort) {
+        this.hostProperties = hostProperties;
+        this.serverPort = serverPort;
+    }
 
     @Bean
     public OpenAPI customOpenAPI() {
         // Definir el esquema de seguridad JWT
         final String securitySchemeName = "Bearer Authentication";
+
+        List<Server> servers = new ArrayList<>();
+        hostProperties.getOpenApiServers().forEach(descriptor ->
+                servers.add(new Server().url(descriptor.getUrl()).description(descriptor.getDescription())));
+        servers.add(new Server().url("https://localhost:" + serverPort).description("Servidor de Desarrollo Local"));
 
         return new OpenAPI()
                 // Información general de la API
@@ -71,13 +82,7 @@ public class OpenApiConfig {
                                 .url("https://sa-dulcecontrol.vercel.app/token")))
 
                 // Servidores disponibles
-                .servers(List.of(
-                        new Server()
-                                .url("https://pasteleria.spring.informaticapp.com:2250")
-                                .description("Servidor de Producción (HTTPS)"),
-                        new Server()
-                                .url("https://localhost:" + serverPort)
-                                .description("Servidor de Desarrollo Local")))
+                .servers(servers)
 
                 // Configuración de seguridad JWT
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))

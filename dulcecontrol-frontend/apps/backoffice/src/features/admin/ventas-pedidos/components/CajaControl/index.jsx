@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import CajaControlView from './CajaControlView.jsx';
 import { useCajaSession } from '../../hooks/useCajaSession.js';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
+import { useSedeStore } from '../../../../../shared/store/sedeStore.js';
 import { abrirCaja, cerrarCaja } from '../../api/cajas.api.js';
 import { CAJA_KEYS } from '../../constants/queryKeys.js';
 import { useCartStore } from '../../hooks/useCartStore.js';
@@ -14,6 +15,7 @@ const CajaControl = ({ children }) => {
     const tiendaId = useTokenStore((state) => state.tiendaId);
     const user = useTokenStore((state) => state.user);
     const queryClient = useQueryClient();
+    const selectedSedeId = useSedeStore((state) => state.selectedSedeId);
     const clearCart = useCartStore((state) => state.clearCart);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -41,6 +43,10 @@ const CajaControl = ({ children }) => {
             message.error('No se pudo determinar la tienda activa.');
             return false;
         }
+        if (!selectedSedeId) {
+            message.error('Selecciona una sede para operar el punto de venta.');
+            return false;
+        }
         return true;
     };
 
@@ -55,8 +61,8 @@ const CajaControl = ({ children }) => {
             setIsModalOpen(false);
             refetchSession();
             setActionType(null);
-            queryClient.invalidateQueries(CAJA_KEYS.all);
-            queryClient.invalidateQueries(CAJA_KEYS.lists(tiendaId));
+            queryClient.invalidateQueries(CAJA_KEYS.base(tiendaId, selectedSedeId));
+            queryClient.invalidateQueries(CAJA_KEYS.lists(tiendaId, selectedSedeId));
         },
         onError: (err) => message.error(err?.response?.data?.message || err.message || 'Error al abrir caja')
     });
@@ -72,8 +78,8 @@ const CajaControl = ({ children }) => {
             setIsModalOpen(false);
             refetchSession();
             setActionType(null);
-            queryClient.invalidateQueries(CAJA_KEYS.all);
-            queryClient.invalidateQueries(CAJA_KEYS.lists(tiendaId));
+            queryClient.invalidateQueries(CAJA_KEYS.base(tiendaId, selectedSedeId));
+            queryClient.invalidateQueries(CAJA_KEYS.lists(tiendaId, selectedSedeId));
         },
         onError: (err) => message.error(err?.response?.data?.message || err.message || 'Error al cerrar caja')
     });
