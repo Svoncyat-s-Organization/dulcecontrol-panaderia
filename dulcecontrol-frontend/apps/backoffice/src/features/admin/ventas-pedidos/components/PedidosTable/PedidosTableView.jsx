@@ -225,7 +225,7 @@ const PedidosTableView = ({
                 background: token.colorBgContainer,
                 boxShadow: token.boxShadowTertiary,
             }}
-            bodyStyle={{ padding: 24 }}
+            styles={{ body: { padding: 24 } }}
         >
             <div
                 style={{

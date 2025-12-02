@@ -67,6 +67,14 @@ export const deleteReceta = async (tiendaId, recetaId) => {
   await apiClient.delete(buildRecetasUrl(tiendaId, `/${recetaId}`));
 };
 
+export const getConteoDiario = async (tiendaId, { fecha, sedeId } = {}) => {
+  const params = {};
+  if (fecha) params.fecha = fecha;
+  if (sedeId) params.sedeId = sedeId;
+  const { data } = await apiClient.get(buildConteosUrl(tiendaId), { params });
+  return data;
+};
+
 export const createConteoDiario = async (tiendaId, payload) => {
   const { data } = await apiClient.post(buildConteosUrl(tiendaId), payload);
   return data;

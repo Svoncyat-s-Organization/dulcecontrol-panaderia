@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { App } from 'antd';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import RecetasView from './RecetasView.jsx';
-import { getRecetas, createReceta, deleteReceta } from '../../api/productionApi.js';
+import { getRecetas, createReceta, updateReceta, deleteReceta } from '../../api/productionApi.js';
 import { getProductos } from '../../../catalogo/api/productos.api.js';
 import { getInsumos } from '../../../compras/api/insumos.api.js';
 import { PRODUCTION_KEYS } from '../../constants/queryKeys.js';
@@ -13,6 +13,7 @@ const RecetasManager = ({ tiendaId }) => {
   const queryClient = useQueryClient();
   const [selectedProductoId, setSelectedProductoId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingReceta, setEditingReceta] = useState(null);
 
   const recetasQuery = useQuery({
     queryKey: PRODUCTION_KEYS.recetas(tiendaId),
@@ -102,10 +103,24 @@ const RecetasManager = ({ tiendaId }) => {
     onSuccess: () => {
       message.success('Insumo agregado a la receta');
       setModalOpen(false);
+      setEditingReceta(null);
       queryClient.invalidateQueries(PRODUCTION_KEYS.recetas(tiendaId));
     },
     onError: (error) => {
       message.error(error?.response?.data?.message ?? 'No se pudo registrar la receta');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ recetaId, payload }) => updateReceta(tiendaId, recetaId, payload),
+    onSuccess: () => {
+      message.success('Receta actualizada correctamente');
+      setModalOpen(false);
+      setEditingReceta(null);
+      queryClient.invalidateQueries(PRODUCTION_KEYS.recetas(tiendaId));
+    },
+    onError: (error) => {
+      message.error(error?.response?.data?.message ?? 'No se pudo actualizar la receta');
     },
   });
 
@@ -122,14 +137,31 @@ const RecetasManager = ({ tiendaId }) => {
 
   const handleSubmitReceta = (values) => {
     if (!selectedProductoId) return;
-    createMutation.mutate({
-      ...values,
-      productoId: selectedProductoId,
-    });
+    if (editingReceta) {
+      updateMutation.mutate({
+        recetaId: editingReceta.id,
+        payload: values,
+      });
+    } else {
+      createMutation.mutate({
+        ...values,
+        productoId: selectedProductoId,
+      });
+    }
+  };
+
+  const handleEdit = (receta) => {
+    setEditingReceta(receta);
+    setModalOpen(true);
   };
 
   const handleDelete = (recetaId) => {
     deleteMutation.mutate(recetaId);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setEditingReceta(null);
   };
 
   return (
@@ -143,15 +175,17 @@ const RecetasManager = ({ tiendaId }) => {
       isError={recetasQuery.isError}
       onRetry={recetasQuery.refetch}
       onOpenModal={() => setModalOpen(true)}
+      onEditReceta={handleEdit}
       onDeleteReceta={handleDelete}
       deletingId={deleteMutation.isLoading ? deleteMutation.variables : null}
       modalProps={{
         open: modalOpen,
-        onCancel: () => setModalOpen(false),
+        onCancel: handleCloseModal,
         onSubmit: handleSubmitReceta,
-        loading: createMutation.isLoading,
+        loading: createMutation.isLoading || updateMutation.isLoading,
         insumoOptions,
         unidadOptions: RECETA_UNITS,
+        editingReceta,
       }}
       productosLoading={productosQuery.isLoading}
       insumosLoading={insumosQuery.isLoading}

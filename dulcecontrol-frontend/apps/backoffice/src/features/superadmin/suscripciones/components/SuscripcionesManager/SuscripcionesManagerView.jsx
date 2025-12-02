@@ -137,7 +137,7 @@ const SuscripcionesManagerView = ({
             key: 'planNombre',
             width: 220,
             render: (_, record) => (
-                <Space direction="vertical" size={0}>
+                <Space orientation="vertical" size={0}>
                     <Text strong>{record.planNombre || '-'}</Text>
                     <Text type="secondary">{record.planCodigo || 'Sin código'}</Text>
                 </Space>
@@ -225,7 +225,7 @@ const SuscripcionesManagerView = ({
                 background: token.colorBgContainer,
                 boxShadow: token.boxShadowTertiary,
             }}
-            bodyStyle={{ padding: 24 }}
+            styles={{ body: { padding: 24 } }}
         >
             <div
                 style={{

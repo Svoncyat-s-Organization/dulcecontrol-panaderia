@@ -1,5 +1,5 @@
 import { Button, Card, Empty, Popconfirm, Result, Select, Space, Table, Tag, Typography, theme } from 'antd';
-import { IconChefHat, IconPlus, IconRefresh, IconTrash } from '@tabler/icons-react';
+import { IconChefHat, IconEdit, IconPlus, IconRefresh, IconTrash } from '@tabler/icons-react';
 import RecetaModal from './RecetaModal.jsx';
 
 const RecetasView = ({
@@ -12,6 +12,7 @@ const RecetasView = ({
   isError,
   onRetry,
   onOpenModal,
+  onEditReceta,
   onDeleteReceta,
   deletingId,
   modalProps,
@@ -57,7 +58,7 @@ const RecetasView = ({
       render: (_, record) => {
         const insumo = insumoLookup[record.insumoId];
         return (
-          <Space direction="vertical" size={0}>
+          <Space orientation="vertical" size={0}>
             <Typography.Text strong>{insumo?.nombre ?? `Insumo #${record.insumoId}`}</Typography.Text>
             <Typography.Text type="secondary">Código: {insumo?.codigoInterno ?? '--'}</Typography.Text>
           </Space>
@@ -87,24 +88,33 @@ const RecetasView = ({
     {
       title: 'Acciones',
       key: 'actions',
-      width: 140,
+      width: 180,
       render: (_, record) => (
-        <Popconfirm
-          title="Eliminar insumo"
-          description="¿Confirma que desea quitar este insumo de la receta?"
-          okText="Sí, eliminar"
-          cancelText="Cancelar"
-          onConfirm={() => onDeleteReceta(record.id)}
-        >
+        <Space size="small">
           <Button
             type="link"
-            danger
-            icon={<IconTrash size={16} />}
-            loading={deletingId === record.id}
+            icon={<IconEdit size={16} />}
+            onClick={() => onEditReceta(record)}
           >
-            Quitar
+            Editar
           </Button>
-        </Popconfirm>
+          <Popconfirm
+            title="Eliminar insumo"
+            description="¿Confirma que desea quitar este insumo de la receta?"
+            okText="Sí, eliminar"
+            cancelText="Cancelar"
+            onConfirm={() => onDeleteReceta(record.id)}
+          >
+            <Button
+              type="link"
+              danger
+              icon={<IconTrash size={16} />}
+              loading={deletingId === record.id}
+            >
+              Quitar
+            </Button>
+          </Popconfirm>
+        </Space>
       ),
     },
   ];
@@ -115,7 +125,7 @@ const RecetasView = ({
   return (
     <Card
       style={{ borderRadius: token.borderRadiusLG, boxShadow: token.boxShadowTertiary }}
-      bodyStyle={{ padding: 24 }}
+      styles={{ body: { padding: 24 } }}
     >
       <div
         style={{

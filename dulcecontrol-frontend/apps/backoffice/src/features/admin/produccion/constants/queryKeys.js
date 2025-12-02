@@ -6,6 +6,7 @@ export const PRODUCTION_KEYS = {
   productos: (tiendaId) => [...baseKey(tiendaId), 'productos'],
   insumos: (tiendaId) => [...baseKey(tiendaId), 'insumos'],
   conteos: (tiendaId, sedeId = null) => [...baseKey(tiendaId), 'conteos', sedeId ?? null],
+  conteo: (tiendaId, sedeId = null, fecha = null) => [...baseKey(tiendaId), 'conteo', sedeId ?? null, fecha ?? null],
   planChecklist: (tiendaId, sedeId = null, fecha = null) => [
     ...baseKey(tiendaId),
     'planificacion',

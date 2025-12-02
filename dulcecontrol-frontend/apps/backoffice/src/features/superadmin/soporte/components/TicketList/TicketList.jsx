@@ -22,7 +22,7 @@ const TicketList = ({
             width: 260,
             ellipsis: true,
             render: (value, record) => (
-                <Space direction="vertical" size={0}>
+                <Space orientation="vertical" size={0}>
                     <Text strong>{value}</Text>
                     <Text type="secondary" style={{ fontSize: 12 }}>
                         Ticket #{record.id}
@@ -86,7 +86,7 @@ const TicketList = ({
     ]), []);
 
     return (
-        <Space direction="vertical" size={16} style={{ width: '100%' }}>
+        <Space orientation="vertical" size={16} style={{ width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <Title level={4} style={{ margin: 0 }}>Tickets registrados</Title>

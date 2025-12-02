@@ -29,6 +29,8 @@ import {
   IconRefresh,
   IconSparkles,
   IconUpload,
+  IconCalculator,
+  IconEye,
 } from '@tabler/icons-react';
 
 const { Text } = Typography;
@@ -219,12 +221,19 @@ const PlanificacionView = ({
       items={[
         {
           key: 'conteo',
-          label: 'Conteo matutino',
+          label: '① Conteo Matutino',
           children: (
             <Card styles={{ body: { padding: 24 } }} style={{ borderRadius: token.borderRadiusLG }}>
               <Alert
+                type="success"
+                message="Paso 1: ¿Qué sobró ayer?"
+                description="Antes de encender el horno, cuenta cuántos productos quedaron en las vitrinas del día anterior. Esto es tu INVENTARIO INICIAL para calcular cuánto producir hoy."
+                showIcon
+                style={{ marginBottom: 16 }}
+              />
+              <Alert
                 type="info"
-                title={`Sede seleccionada: ${sedeNombre ?? 'Sin seleccionar'}`}
+                message={`Sede: ${sedeNombre ?? 'Sin seleccionar'}`}
                 showIcon
                 style={{ marginBottom: 16 }}
               />
@@ -276,14 +285,15 @@ const PlanificacionView = ({
                           marginBottom: 12,
                         }}
                       >
-                        <Text strong>Detalle de productos</Text>
+                        <Text strong>Productos que sobraron de ayer</Text>
                         <Space>
                           <Button
                             type="default"
                             onClick={handlePrefillConteo}
                             disabled={!defaultConteoRows.length || stockLoading}
+                            icon={<IconSparkles size={16} />}
                           >
-                            Usar stock ideal
+                            Cargar productos del stock ideal
                           </Button>
                           <Button type="dashed" icon={<IconUpload size={16} />} onClick={() => add({})}>
                             Agregar producto
@@ -335,19 +345,34 @@ const PlanificacionView = ({
 
                 <Divider />
 
-                <Button type="primary" icon={<IconDeviceFloppy size={16} />} htmlType="submit" loading={conteoLoading}>
-                  Registrar conteo
+                <Button type="primary" icon={<IconDeviceFloppy size={16} />} htmlType="submit" loading={conteoLoading} size="large">
+                  Guardar inventario inicial
                 </Button>
+                <Text type="secondary" style={{ marginLeft: 12 }}>Después de guardar, ve al Paso 2 para generar el plan</Text>
               </Form>
             </Card>
           ),
         },
         {
           key: 'generacion',
-          label: 'Generación',
+          label: '② Generación Automática',
           forceRender: true,
           children: (
             <Card styles={{ body: { padding: 24 } }} style={{ borderRadius: token.borderRadiusLG }}>
+              <Alert
+                type="success"
+                message="Paso 2: La Fórmula Mágica"
+                description={
+                  <div>
+                    <div style={{ fontWeight: 'bold', marginBottom: 8 }}>
+                      (Stock Ideal - Lo que sobró) + Pedidos Especiales = A PRODUCIR HOY
+                    </div>
+                    <div>💡 El sistema calcula automáticamente cuánto hornear basándose en tu inventario inicial del Paso 1, tu stock ideal configurado, y los pedidos personalizados del día.</div>
+                  </div>
+                }
+                showIcon
+                style={{ marginBottom: 16 }}
+              />
               <Form
                 layout="vertical"
                 form={planForm}
@@ -374,9 +399,10 @@ const PlanificacionView = ({
                   <Input.TextArea rows={4} placeholder="Indicaciones para el turno" />
                 </Form.Item>
 
-                <Button type="primary" htmlType="submit" loading={planLoading} icon={<IconSparkles size={16} />}>
-                  Generar plan
+                <Button type="primary" htmlType="submit" loading={planLoading} icon={<IconCalculator size={16} />} size="large">
+                  Calcular y generar plan de producción
                 </Button>
+                <Text type="secondary" style={{ marginLeft: 12 }}>Después de generar, ve al Paso 3 para ver el checklist del panadero</Text>
               </Form>
 
               {planData.plan && (
@@ -397,9 +423,16 @@ const PlanificacionView = ({
         },
         {
           key: 'checklist',
-          label: 'Checklist del panadero',
+          label: '③ Checklist del Panadero',
           children: (
             <Card styles={{ body: { padding: 24 } }} style={{ borderRadius: token.borderRadiusLG }}>
+              <Alert
+                type="info"
+                message="Paso 3: Hoja de Ruta del Panadero"
+                description="Conforme saques productos del horno, marca 'Terminar'. El inventario se actualizará automáticamente para que el vendedor pueda empezar a vender."
+                showIcon
+                style={{ marginBottom: 16 }}
+              />
               <Space style={{ marginBottom: 16 }} wrap>
                 <DatePicker
                   value={selectedDate}

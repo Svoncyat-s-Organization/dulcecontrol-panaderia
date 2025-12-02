@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import PlanificacionView from './PlanificacionView.jsx';
 import {
   createConteoDiario,
+  getConteoDiario,
   generatePlanProduccion,
   getPlanChecklist,
   updatePlanDetalle,
@@ -51,6 +52,17 @@ const PlanificacionManager = ({ tiendaId, sedeId, sedeNombre }) => {
 
   const formattedDate = selectedDate.format('YYYY-MM-DD');
 
+  const conteoQuery = useQuery({
+    queryKey: PRODUCTION_KEYS.conteo(tiendaId, sedeId, formattedDate),
+    queryFn: () =>
+      getConteoDiario(tiendaId, { fecha: formattedDate, sedeId }).catch(() => {
+        // No mostrar error si no existe conteo (es normal al inicio del día)
+        return null;
+      }),
+    enabled: Boolean(tiendaId && sedeId),
+    staleTime: 2 * 60 * 1000,
+  });
+
   const planChecklistQuery = useQuery({
     queryKey: PRODUCTION_KEYS.planChecklist(tiendaId, sedeId, formattedDate),
     queryFn: () =>
@@ -83,10 +95,27 @@ const PlanificacionManager = ({ tiendaId, sedeId, sedeNombre }) => {
   const conteoMutation = useMutation({
     mutationFn: (payload) => createConteoDiario(tiendaId, payload),
     onSuccess: () => {
-      message.success('Conteo registrado');
+      message.success('Conteo registrado correctamente');
+      queryClient.invalidateQueries(PRODUCTION_KEYS.conteo(tiendaId, sedeId, formattedDate));
     },
     onError: (error) => {
-      message.error(error?.response?.data?.message ?? 'No se pudo registrar el conteo');
+      console.error('Error al crear conteo:', error?.response?.data);
+      
+      // Extraer mensajes de validación si existen
+      const data = error?.response?.data;
+      let errorMsg = 'No se pudo registrar el conteo';
+      
+      if (data?.message) {
+        errorMsg = data.message;
+      } else if (data?.errors && Array.isArray(data.errors)) {
+        errorMsg = data.errors.join(', ');
+      } else if (data?.error) {
+        errorMsg = data.error;
+      } else if (error?.response?.status === 400) {
+        errorMsg = 'Error de validación: revisa que todos los campos estén correctos';
+      }
+      
+      message.error(errorMsg);
     },
   });
 
@@ -124,6 +153,25 @@ const PlanificacionManager = ({ tiendaId, sedeId, sedeNombre }) => {
 
   const handleSubmitConteo = (values) => {
     if (!sedeId) return;
+    
+    console.log('Form values recibidos:', values);
+    
+    // Validar que haya detalles
+    if (!values.detalles || values.detalles.length === 0) {
+      message.error('Debes agregar al menos un producto al conteo');
+      return;
+    }
+    
+    // Filtrar detalles válidos (con productoId)
+    const detallesValidos = values.detalles.filter(detalle => 
+      detalle && detalle.productoId && detalle.cantidadFisica != null
+    );
+    
+    if (detallesValidos.length === 0) {
+      message.error('Todos los productos deben tener un productoId y cantidad física válidos');
+      return;
+    }
+    
     const payload = {
       sedeId,
       fechaConteo: values.fechaConteo
@@ -131,12 +179,14 @@ const PlanificacionManager = ({ tiendaId, sedeId, sedeNombre }) => {
         : formattedDate,
       responsableId: values.responsableId || null,
       observaciones: values.observaciones || null,
-      detalles: (values.detalles ?? []).map((detalle) => ({
+      detalles: detallesValidos.map((detalle) => ({
         productoId: detalle.productoId,
-        cantidadFisica: Number(detalle.cantidadFisica ?? 0),
-        cantidadSistema: detalle.cantidadSistema ?? null,
+        cantidadFisica: Number(detalle.cantidadFisica),
+        cantidadSistema: detalle.cantidadSistema != null ? Number(detalle.cantidadSistema) : null,
       })),
     };
+    
+    console.log('Enviando payload conteo:', JSON.stringify(payload, null, 2));
     conteoMutation.mutate(payload);
   };
 
@@ -173,6 +223,7 @@ const PlanificacionManager = ({ tiendaId, sedeId, sedeNombre }) => {
       defaultConteoRows={defaultConteoRows}
       onSubmitConteo={handleSubmitConteo}
       conteoLoading={conteoMutation.isLoading}
+      conteoExistente={Boolean(conteoQuery.data)}
       onGeneratePlan={handleGeneratePlan}
       planLoading={planMutation.isLoading}
       planData={normalizedPlan}

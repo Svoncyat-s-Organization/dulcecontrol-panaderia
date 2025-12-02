@@ -25,7 +25,7 @@ const InventarioInsumosTableView = ({ insumos, loading, isError, onRetry, onAdju
 
   if (!sedeId) {
     return (
-      <Card bodyStyle={{ padding: 24 }}>
+      <Card styles={{ body: { padding: 24 } }}>
         <Title level={4} style={{ marginBottom: 8 }}>
           Inventario de insumos
         </Title>
@@ -58,7 +58,7 @@ const InventarioInsumosTableView = ({ insumos, loading, isError, onRetry, onAdju
       dataIndex: 'nombreInsumo',
       key: 'insumo',
       render: (_, record) => (
-        <Space direction="vertical" size={0}>
+        <Space orientation="vertical" size={0}>
           <Text strong>{record.nombreInsumo}</Text>
           <Text type="secondary">Código: {record.codigoInterno ?? 'N/D'}</Text>
         </Space>
@@ -111,7 +111,7 @@ const InventarioInsumosTableView = ({ insumos, loading, isError, onRetry, onAdju
   ];
 
   return (
-    <Card bodyStyle={{ padding: 24 }}>
+    <Card styles={{ body: { padding: 24 } }}>
       <div
         style={{
           display: 'flex',

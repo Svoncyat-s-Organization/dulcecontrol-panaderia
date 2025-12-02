@@ -38,7 +38,7 @@ const ExistenciasTableView = ({ inventarios, loading, isError, onRetry, onAdjust
           <Avatar shape="square" size={56} src={record.imagenUrl}>
             {record.nombreProducto?.charAt(0) ?? '?'}
           </Avatar>
-          <Space direction="vertical" size={0}>
+          <Space orientation="vertical" size={0}>
             <Text strong>{record.nombreProducto}</Text>
             <Text type="secondary">SKU: {record.sku}</Text>
           </Space>
@@ -82,7 +82,7 @@ const ExistenciasTableView = ({ inventarios, loading, isError, onRetry, onAdjust
   ];
 
   return (
-    <Card bodyStyle={{ padding: 24 }}>
+    <Card styles={{ body: { padding: 24 } }}>
       <div
         style={{
           display: 'flex',

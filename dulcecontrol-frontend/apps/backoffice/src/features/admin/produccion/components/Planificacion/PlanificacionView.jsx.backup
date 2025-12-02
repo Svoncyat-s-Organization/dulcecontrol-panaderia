@@ -1,0 +1,982 @@
+import { useEffect, useState } from 'react';
+import dayjs from 'dayjs';
+import {
+  Alert,
+  Button,
+  Card,
+  Checkbox,
+  DatePicker,
+  Divider,
+  Empty,
+  Form,
+  Image,
+  Input,
+  InputNumber,
+  List,
+  Modal,
+  Popconfirm,
+  Result,
+  Select,
+  Space,
+  Spin,
+  Steps,
+  Table,
+  Tag,
+  Tooltip,
+  Typography,
+  message,
+  theme,
+} from 'antd';
+import {
+  IconCircleCheck,
+  IconCircleX,
+  IconDeviceFloppy,
+  IconEye,
+  IconRefresh,
+  IconSparkles,
+  IconUpload,
+  IconChevronRight,
+  IconChevronLeft,
+  IconCalculator,
+} from '@tabler/icons-react';
+
+const { Text } = Typography;
+
+const estadoColors = {
+  BORRADOR: 'default',
+  CONFIRMADO: 'warning',
+  EN_PROCESO: 'blue',
+  FINALIZADO: 'green',
+  CANCELADO: 'red',
+  PENDIENTE: 'default',
+  EN_HORNO: 'processing',
+  TERMINADO: 'success',
+  MERMA: 'error',
+};
+
+const origenConfig = {
+  STOCK_DIARIO: { label: 'Stock diario', color: 'blue' },
+  PEDIDO_CLIENTE: { label: 'Pedido personalizado', color: 'purple' },
+};
+
+const PlanificacionView = ({
+  selectedDate,
+  onDateChange,
+  sedeNombre,
+  productos,
+  defaultConteoRows,
+  onSubmitConteo,
+  conteoLoading,
+  onGeneratePlan,
+  planLoading,
+  planData,
+  checklistLoading,
+  checklistError,
+  onRefreshChecklist,
+  onDetalleAction,
+  updatingDetalleId,
+  stockLoading,
+  productosLoading,
+  conteoExistente, // Nuevo: para validar si hay conteo del día
+}) => {
+  const { token } = theme.useToken();
+  const [conteoForm] = Form.useForm();
+  const [planForm] = Form.useForm();
+  const [personalizadoModal, setPersonalizadoModal] = useState({ visible: false, detalle: null });
+  const [terminarModal, setTerminarModal] = useState({ visible: false, detalle: null, cantidad: 0 });
+  const [currentStep, setCurrentStep] = useState(0);
+  const [planCalculado, setPlanCalculado] = useState([]); // Plan previo antes de confirmar
+
+  useEffect(() => {
+    conteoForm.setFieldsValue({ fechaConteo: selectedDate });
+    planForm.setFieldsValue({ fechaProduccion: selectedDate });
+    
+    // Auto-avanzar a step 2 si ya hay conteo
+    if (conteoExistente && currentStep === 0) {
+      setCurrentStep(1);
+    }
+    
+    // Auto-avanzar a step 3 si ya hay plan confirmado
+    if (planData?.plan && planData.detalles.length > 0 && currentStep < 2) {
+      setCurrentStep(2);
+    }
+  }, [selectedDate, conteoForm, planForm, conteoExistente, planData]);
+
+  const productoOptions = Object.values(productos).map((producto) => ({
+    value: producto.id,
+    label: producto.nombre,
+  }));
+
+  const handlePrefillConteo = () => {
+    if (!defaultConteoRows.length) {
+      message.warning('No hay stock ideal configurado para esta sede');
+      return;
+    }
+    
+    const detalles = defaultConteoRows
+      .filter(row => row.productoId)
+      .map((row) => ({
+        productoId: row.productoId,
+        cantidadFisica: 0, // Usuario debe contar manualmente
+      }));
+    
+    if (detalles.length === 0) {
+      message.error('No hay productos válidos en el stock ideal');
+      return;
+    }
+    
+    conteoForm.setFieldsValue({ detalles });
+    message.info('Productos cargados. Ingresa las cantidades que quedaron ayer.');
+  };
+  
+  const calcularPlanAutomatico = () => {
+    // Calcular: Stock Ideal - Inventario Inicial + Pedidos = A PRODUCIR
+    const inventario = conteoForm.getFieldValue('detalles') || [];
+    const pedidosEspeciales = {}; // TODO: Obtener de API o estado
+    
+    const planPrevio = defaultConteoRows.map((row) => {
+      const inventarioItem = inventario.find(inv => inv.productoId === row.productoId);
+      const cantidadSobro = inventarioItem?.cantidadFisica || 0;
+      const pedidosQty = pedidosEspeciales[row.productoId] || 0;
+      const aProducir = Math.max(0, row.cantidadSistema - cantidadSobro + pedidosQty);
+      
+      return {
+        productoId: row.productoId,
+        productoNombre: row.productoNombre,
+        stockIdeal: row.cantidadSistema,
+        inventarioInicial: cantidadSobro,
+        pedidosEspeciales: pedidosQty,
+        cantidadAProducir: aProducir,
+      };
+    });
+    
+    setPlanCalculado(planPrevio.filter(p => p.cantidadAProducir > 0));
+    return planPrevio;
+  };
+
+  const detalleStats = planData.detalles.reduce(
+    (acc, detalle) => {
+      acc.total += 1;
+      acc[detalle.estado] = (acc[detalle.estado] ?? 0) + 1;
+      return acc;
+    },
+    { total: 0 }
+  );
+
+  const groupedDetalles = planData.detalles.reduce((acc, detalle) => {
+    const key = detalle.origen ?? 'STOCK_DIARIO';
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(detalle);
+    return acc;
+  }, {});
+
+  const checklistContent = () => {
+    if (checklistError) {
+      return (
+        <Result
+          status="error"
+          title="No se pudo obtener la lista de producción"
+          extra={
+            <Button icon={<IconRefresh size={16} />} onClick={onRefreshChecklist}>
+              Reintentar
+            </Button>
+          }
+        />
+      );
+    }
+
+    if (!checklistLoading && planData.detalles.length === 0) {
+      return (
+        <Empty
+          description="Aún no hay un plan confirmado para esta fecha"
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+        />
+      );
+    }
+
+    return Object.entries(groupedDetalles).map(([origen, detalles]) => {
+      const meta = origenConfig[origen] ?? { label: origen, color: 'default' };
+      return (
+        <Card key={origen} type="inner" title={
+          <Space>
+            <Tag color={meta.color}>{meta.label}</Tag>
+            <Text type="secondary">{detalles.length} items</Text>
+          </Space>
+        } style={{ marginBottom: 16 }}>
+          <List
+            dataSource={detalles}
+            renderItem={(detalle) => {
+              const producto = productos[detalle.productoId];
+              const estadoColor = estadoColors[detalle.estado] ?? 'default';
+              const isTerminado = detalle.estado === 'TERMINADO';
+              
+              const actions = [];
+              
+              if (detalle.esPersonalizado) {
+                actions.push(
+                  <Button
+                    key={`view-${detalle.id}`}
+                    type="link"
+                    icon={<IconEye size={18} />}
+                    onClick={() => setPersonalizadoModal({ visible: true, detalle })}
+                  >
+                    Ver Detalle
+                  </Button>
+                );
+              }
+              
+              actions.push(
+                <Button
+                  key={`done-${detalle.id}`}
+                  type="link"
+                  icon={<IconCircleCheck size={18} />}
+                  onClick={() => {
+                    setTerminarModal({
+                      visible: true,
+                      detalle,
+                      cantidad: detalle.cantidadPlanificada,
+                    });
+                  }}
+                  disabled={isTerminado}
+                  loading={updatingDetalleId === detalle.id}
+                >
+                  Terminar
+                </Button>
+              );
+              
+              actions.push(
+                <Popconfirm
+                  key={`merma-${detalle.id}`}
+                  title="Registrar merma"
+                  description="Marcar este lote como merma"
+                  okText="Confirmar"
+                  cancelText="Cancelar"
+                  onConfirm={() =>
+                    onDetalleAction(detalle, 'MERMA', {
+                      cantidadMerma: detalle.cantidadPlanificada,
+                    })
+                  }
+                >
+                  <Button
+                    type="link"
+                    danger
+                    icon={<IconCircleX size={18} />}
+                    disabled={detalle.estado === 'MERMA'}
+                  >
+                    Merma
+                  </Button>
+                </Popconfirm>
+              );
+              
+              return (
+                <List.Item actions={actions}
+                >
+                  <List.Item.Meta
+                    title={
+                      <Space size={8} wrap>
+                        <Text strong>{producto?.nombre ?? `Producto #${detalle.productoId}`}</Text>
+                        <Tag color={estadoColor}>{detalle.estado}</Tag>
+                        {detalle.esPersonalizado && <Tag color="orange">Personalizado</Tag>}
+                      </Space>
+                    }
+                    description={
+                      <Space orientation="vertical" size={2}>
+                        <Text type="secondary">Planificado: {detalle.cantidadPlanificada} · Producido: {detalle.cantidadProducida ?? 0}</Text>
+                        {detalle.observaciones && <Text type="secondary">Notas: {detalle.observaciones}</Text>}
+                      </Space>
+                    }
+                  />
+                </List.Item>
+              );
+            }}
+          />
+        </Card>
+      );
+    });
+  };
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 0:
+        return (
+          <Card styles={{ body: { padding: 24 } }} style={{ borderRadius: token.borderRadiusLG }}>
+            <Alert
+              type="info"
+              message="¿Qué sobró ayer?"
+              description="Antes de encender el horno, cuenta cuántos productos quedaron en las vitrinas del día anterior. Esto nos ayuda a calcular cuánto hornear hoy."
+              showIcon
+              style={{ marginBottom: 16 }}
+            />
+            
+            <Alert
+              type="warning"
+              message={`Sede: ${sedeNombre ?? 'Sin seleccionar'}`}
+              showIcon
+              style={{ marginBottom: 16 }}
+            />
+            
+            <Form
+              layout="vertical"
+              form={conteoForm}
+              onFinish={(values) => {
+                onSubmitConteo(values);
+                setCurrentStep(1); // Avanzar automáticamente después de guardar
+              }}
+              initialValues={{
+                fechaConteo: selectedDate,
+                detalles: [],
+              }}
+            >
+              <Space size={16} align="start" wrap>
+                <Form.Item
+                  name="fechaConteo"
+                  label="Fecha del conteo"
+                  rules={[{ required: true, message: 'Selecciona la fecha' }]}
+                >
+                  <DatePicker format="DD/MM/YYYY" disabled />
+                </Form.Item>
+              </Space>
+
+              <Form.List
+                name="detalles"
+                rules={[
+                  {
+                    validator: async (_, value) => {
+                      if (!value || value.length === 0) {
+                        throw new Error('Agrega al menos un producto al conteo');
+                      }
+                    },
+                  },
+                ]}
+              >
+                {(fields, { add, remove }, { errors }) => (
+                  <>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: 12,
+                      }}
+                    >
+                      <Typography.Text strong>Productos que sobraron</Typography.Text>
+                      <Space>
+                        <Button
+                          type="default"
+                          onClick={handlePrefillConteo}
+                          disabled={!defaultConteoRows.length || stockLoading}
+                          icon={<IconSparkles size={16} />}
+                        >
+                          Cargar productos del stock ideal
+                        </Button>
+                        <Button type="dashed" icon={<IconUpload size={16} />} onClick={() => add({})}>
+                          Agregar producto manual
+                        </Button>
+                      </Space>
+                    </div>
+
+                    {fields.map((field) => {
+                      const { key, ...fieldProps } = field;
+                      return (
+                        <Space key={key} align="baseline" style={{ display: 'flex', marginBottom: 12 }} wrap>
+                          <Form.Item
+                            name={[field.name, 'productoId']}
+                            fieldKey={[field.fieldKey, 'productoId']}
+                            rules={[{ required: true, message: 'Selecciona un producto' }]}
+                            {...fieldProps}
+                          >
+                            <Select
+                              showSearch
+                              placeholder="Producto"
+                              options={Object.values(productos).map((p) => ({
+                                value: p.id,
+                                label: p.nombre,
+                              }))}
+                              style={{ minWidth: 250 }}
+                              optionFilterProp="label"
+                              loading={productosLoading}
+                            />
+                          </Form.Item>
+                          <Form.Item
+                            name={[field.name, 'cantidadFisica']}
+                            fieldKey={[field.fieldKey, 'cantidadFisica']}
+                            rules={[{ required: true, message: 'Ingresa la cantidad' }]}
+                            {...fieldProps}
+                          >
+                            <InputNumber min={0} placeholder="Cantidad que sobró" style={{ width: 180 }} />
+                          </Form.Item>
+                          <Button type="link" danger onClick={() => remove(field.name)}>
+                            Quitar
+                          </Button>
+                        </Space>
+                      );
+                    })}
+                    <Form.ErrorList errors={errors} />
+                  </>
+                )}
+              </Form.List>
+
+              <Divider />
+
+              <Space>
+                <Button 
+                  type="primary" 
+                  icon={<IconDeviceFloppy size={16} />} 
+                  htmlType="submit" 
+                  loading={conteoLoading}
+                  size="large"
+                >
+                  Guardar conteo y continuar
+                </Button>
+                {conteoExistente && (
+                  <Button 
+                    type="default" 
+                    icon={<IconChevronRight size={16} />} 
+                    onClick={() => setCurrentStep(1)}
+                  >
+                    Ir al paso 2 (ya hay conteo)
+                  </Button>
+                )}
+              </Space>
+            </Form>
+          </Card>
+        );
+        
+      case 1:
+        return (
+          <Card styles={{ body: { padding: 24 } }} style={{ borderRadius: token.borderRadiusLG }}>
+            <Alert
+              type="success"
+              message="Cálculo automático del plan"
+              description={
+                <div>
+                  <div>El sistema calcula: <strong>(Stock Ideal - Lo que sobró) + Pedidos especiales = A PRODUCIR</strong></div>
+                  <div style={{ marginTop: 8, fontSize: 12 }}>
+                    💡 Si el resultado es negativo, no produzcas ese producto hoy (sobró demasiado ayer).
+                  </div>
+                </div>
+              }
+              showIcon
+              style={{ marginBottom: 16 }}
+            />
+            
+            {planCalculado.length === 0 ? (
+              <Button 
+                type="primary" 
+                icon={<IconCalculator size={16} />} 
+                onClick={calcularPlanAutomatico}
+                loading={planLoading}
+                size="large"
+              >
+                Calcular plan de producción
+              </Button>
+            ) : (
+              <>
+                <Table
+                  dataSource={planCalculado}
+                  rowKey="productoId"
+                  pagination={false}
+                  size="middle"
+                  columns={[
+                    {
+                      title: 'Producto',
+                      dataIndex: 'productoNombre',
+                      key: 'producto',
+                      width: 250,
+                    },
+                    {
+                      title: <Tooltip title="Meta configurada en tu catálogo">Stock Ideal</Tooltip>,
+                      dataIndex: 'stockIdeal',
+                      key: 'stockIdeal',
+                      align: 'center',
+                      render: (val) => <Tag color="blue">{val}</Tag>,
+                    },
+                    {
+                      title: <Tooltip title="Lo que contaste en el paso 1">Sobró ayer</Tooltip>,
+                      dataIndex: 'inventarioInicial',
+                      key: 'inventarioInicial',
+                      align: 'center',
+                      render: (val) => <Tag color="orange">{val}</Tag>,
+                    },
+                    {
+                      title: <Tooltip title="Tortas de cumpleaños y pedidos personalizados">Pedidos</Tooltip>,
+                      dataIndex: 'pedidosEspeciales',
+                      key: 'pedidos',
+                      align: 'center',
+                      render: (val) => <Tag color="purple">{val || 0}</Tag>,
+                    },
+                    {
+                      title: '= A PRODUCIR HOY',
+                      dataIndex: 'cantidadAProducir',
+                      key: 'aProducir',
+                      align: 'center',
+                      render: (val) => (
+                        <Tag color={val > 0 ? 'green' : 'red'} style={{ fontSize: 14, padding: '4px 12px' }}>
+                          {val > 0 ? val : 'No producir'}
+                        </Tag>
+                      ),
+                    },
+                  ]}
+                  style={{ marginBottom: 24 }}
+                />
+                
+                <Divider />
+                
+                <Form
+                  layout="vertical"
+                  form={planForm}
+                  onFinish={(values) => {
+                    onGeneratePlan(values);
+                    setCurrentStep(2); // Avanzar al checklist
+                  }}
+                  initialValues={{
+                    fechaProduccion: selectedDate,
+                    forzarRegeneracion: false,
+                  }}
+                >
+                  <Form.Item name="notasMaestro" label="Notas opcionales para el maestro panadero">
+                    <Input.TextArea rows={3} placeholder="Ej: Hoy hace calor, aumenta un 10% las baguettes" />
+                  </Form.Item>
+
+                  <Space>
+                    <Button 
+                      icon={<IconChevronLeft size={16} />} 
+                      onClick={() => setCurrentStep(0)}
+                    >
+                      Volver al conteo
+                    </Button>
+                    <Button 
+                      type="primary" 
+                      htmlType="submit" 
+                      loading={planLoading} 
+                      icon={<IconSparkles size={16} />}
+                      size="large"
+                    >
+                      Confirmar y generar plan
+                    </Button>
+                  </Space>
+                </Form>
+              </>
+            )}
+          </Card>
+        );
+        
+      case 2:
+        return (
+          <Card styles={{ body: { padding: 24 } }} style={{ borderRadius: token.borderRadiusLG }}>
+            <Alert
+              type="info"
+              message="Checklist del Panadero"
+              description="Conforme saques productos del horno, márcalos como 'Listos'. El inventario se actualizará automáticamente."
+              showIcon
+              style={{ marginBottom: 16 }}
+            />
+            
+            <Space style={{ marginBottom: 16 }} wrap>
+              <Button icon={<IconRefresh size={16} />} onClick={onRefreshChecklist}>
+                Actualizar lista
+              </Button>
+              <Button 
+                icon={<IconChevronLeft size={16} />} 
+                onClick={() => setCurrentStep(1)}
+              >
+                Volver al plan
+              </Button>
+            </Space>
+
+            {planData.detalles.length > 0 && (
+              <Card type="inner" style={{ marginBottom: 16 }}>
+                <Space size={24} wrap>
+                  <div>
+                    <Typography.Text strong>Total items</Typography.Text>
+                    <div style={{ fontSize: 24, fontWeight: 'bold' }}>{detalleStats.total}</div>
+                  </div>
+                  <div>
+                    <Typography.Text type="success">✓ Terminados</Typography.Text>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: token.colorSuccess }}>
+                      {detalleStats.TERMINADO ?? 0}
+                    </div>
+                  </div>
+                  <div>
+                    <Typography.Text>⏳ En progreso</Typography.Text>
+                    <div style={{ fontSize: 24, fontWeight: 'bold' }}>{detalleStats.EN_HORNO ?? 0}</div>
+                  </div>
+                  <div>
+                    <Typography.Text type="danger">✗ Merma</Typography.Text>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: token.colorError }}>
+                      {detalleStats.MERMA ?? 0}
+                    </div>
+                  </div>
+                </Space>
+              </Card>
+            )}
+
+            <Spin spinning={checklistLoading} tip="Cargando checklist">
+              {checklistContent()}
+            </Spin>
+          </Card>
+        );
+        
+      default:
+        return null;
+    }
+  };
+  
+  return (
+    <>
+      <Card style={{ marginBottom: 24 }}>
+        <Steps
+          current={currentStep}
+          onChange={setCurrentStep}
+          items={[
+            {
+              title: 'Paso 1: Conteo',
+              description: '¿Qué sobró ayer?',
+              icon: <IconDeviceFloppy size={20} />,
+              disabled: false,
+            },
+            {
+              title: 'Paso 2: Generar Plan',
+              description: 'Cálculo automático',
+              icon: <IconCalculator size={20} />,
+              disabled: !conteoExistente,
+            },
+            {
+              title: 'Paso 3: Producir',
+              description: 'Checklist del panadero',
+              icon: <IconCircleCheck size={20} />,
+              disabled: !planData?.plan || planData.detalles.length === 0,
+            },
+          ]}
+        />
+      </Card>
+      
+      {renderStepContent()}
+      
+      <Tabs
+      defaultActiveKey="conteo"
+      destroyOnHidden={false}
+      style={{ display: 'none' }} // Oculto temporalmente para no romper, eliminar después
+      items={[
+        {
+          key: 'conteo',
+          label: 'Conteo matutino (LEGACY)',
+          children: (
+              <Form
+                layout="vertical"
+                form={conteoForm}
+                onFinish={onSubmitConteo}
+                initialValues={{
+                  fechaConteo: selectedDate,
+                  detalles: [],
+                }}
+              >
+                <Space size={16} align="start" wrap>
+                  <Form.Item
+                    name="fechaConteo"
+                    label="Fecha del conteo"
+                    rules={[{ required: true, message: 'Selecciona la fecha' }]}
+                  >
+                    <DatePicker format="DD/MM/YYYY" />
+                  </Form.Item>
+                  <Form.Item name="responsableId" label="Responsable (ID opcional)">
+                    <InputNumber min={1} placeholder="Ej. 102" />
+                  </Form.Item>
+                </Space>
+
+                <Form.Item name="observaciones" label="Observaciones">
+                  <Input.TextArea rows={3} placeholder="Detalle hallazgos o incidencias" />
+                </Form.Item>
+
+                <Form.List
+                  name="detalles"
+                  rules={[
+                    {
+                      validator: async (_, value) => {
+                        if (!value || value.length === 0) {
+                          throw new Error('Agrega al menos un producto');
+                        }
+                      },
+                    },
+                  ]}
+                >
+                  {(fields, { add, remove }, { errors }) => (
+                    <>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: 12,
+                        }}
+                      >
+                        <Text strong>Detalle de productos</Text>
+                        <Space>
+                          <Button
+                            type="default"
+                            onClick={handlePrefillConteo}
+                            disabled={!defaultConteoRows.length || stockLoading}
+                          >
+                            Usar stock ideal
+                          </Button>
+                          <Button type="dashed" icon={<IconUpload size={16} />} onClick={() => add({})}>
+                            Agregar producto
+                          </Button>
+                        </Space>
+                      </div>
+
+                      {fields.map((field) => {
+                        const { key, ...fieldProps } = field;
+                        return (
+                          <Space key={key} align="baseline" style={{ display: 'flex', marginBottom: 12 }} wrap>
+                            <Form.Item
+                              name={[field.name, 'productoId']}
+                              fieldKey={[field.fieldKey, 'productoId']}
+                              rules={[{ required: true, message: 'Selecciona un producto' }]}
+                              {...fieldProps}
+                            >
+                              <Select
+                                showSearch
+                                placeholder="Producto"
+                                options={productoOptions}
+                                style={{ minWidth: 220 }}
+                                optionFilterProp="label"
+                                loading={productosLoading}
+                              />
+                            </Form.Item>
+                            <Form.Item
+                              name={[field.name, 'cantidadFisica']}
+                              fieldKey={[field.fieldKey, 'cantidadFisica']}
+                              rules={[{ required: true, message: 'Cantidad física' }]}
+                              {...fieldProps}
+                            >
+                              <InputNumber min={0} placeholder="Físico" />
+                            </Form.Item>
+                            <Form.Item
+                              name={[field.name, 'cantidadSistema']}
+                              fieldKey={[field.fieldKey, 'cantidadSistema']}
+                              {...fieldProps}
+                            >
+                              <InputNumber min={0} placeholder="Sistema" />
+                            </Form.Item>
+                            <Button type="link" danger onClick={() => remove(field.name)}>
+                              Quitar
+                            </Button>
+                          </Space>
+                        );
+                      })}
+                      <Form.ErrorList errors={errors} />
+                    </>
+                  )}
+                </Form.List>
+
+                <Divider />
+
+                <Button type="primary" icon={<IconDeviceFloppy size={16} />} htmlType="submit" loading={conteoLoading}>
+                  Registrar conteo
+                </Button>
+              </Form>
+            </Card>
+          ),
+        },
+        {
+          key: 'generacion',
+          label: 'Generación',
+          forceRender: true,
+          children: (
+            <Card styles={{ body: { padding: 24 } }} style={{ borderRadius: token.borderRadiusLG }}>
+              <Form
+                layout="vertical"
+                form={planForm}
+                onFinish={onGeneratePlan}
+                initialValues={{
+                  fechaProduccion: selectedDate,
+                  forzarRegeneracion: false,
+                }}
+              >
+                <Space size={16} wrap>
+                  <Form.Item
+                    name="fechaProduccion"
+                    label="Fecha"
+                    rules={[{ required: true, message: 'Selecciona la fecha' }]}
+                  >
+                    <DatePicker format="DD/MM/YYYY" />
+                  </Form.Item>
+                  <Form.Item name="forzarRegeneracion" label="Recalcular desde cero" valuePropName="checked">
+                    <Switch />
+                  </Form.Item>
+                </Space>
+
+                <Form.Item name="notasMaestro" label="Notas para el maestro panadero">
+                  <Input.TextArea rows={4} placeholder="Indicaciones para el turno" />
+                </Form.Item>
+
+                <Button type="primary" htmlType="submit" loading={planLoading} icon={<IconSparkles size={16} />}>
+                  Generar plan
+                </Button>
+              </Form>
+
+              {planData.plan && (
+                <Card type="inner" style={{ marginTop: 24 }}>
+                  <Space orientation="vertical" size={4}>
+                    <Space size={8} wrap>
+                      <Text strong>Estado actual:</Text>
+                      <Tag color={estadoColors[planData.plan.estado] ?? 'default'}>{planData.plan.estado}</Tag>
+                    </Space>
+                    <Text type="secondary">
+                      Inició: {planData.plan.horaInicioReal ?? 'Sin registrar'} · Finalizó: {planData.plan.horaFinReal ?? 'Pendiente'}
+                    </Text>
+                  </Space>
+                </Card>
+              )}
+            </Card>
+          ),
+        },
+        {
+          key: 'checklist',
+          label: 'Checklist del panadero',
+          children: (
+            <Card styles={{ body: { padding: 24 } }} style={{ borderRadius: token.borderRadiusLG }}>
+              <Space style={{ marginBottom: 16 }} wrap>
+                <DatePicker
+                  value={selectedDate}
+                  onChange={(value) => onDateChange(value ?? dayjs())}
+                  format="DD/MM/YYYY"
+                />
+                <Button icon={<IconRefresh size={16} />} onClick={onRefreshChecklist}>
+                  Actualizar
+                </Button>
+              </Space>
+
+              {planData.detalles.length > 0 && (
+                <Card type="inner" style={{ marginBottom: 16 }}>
+                  <Space size={24} wrap>
+                    <div>
+                      <Text strong>Total items</Text>
+                      <div>{detalleStats.total}</div>
+                    </div>
+                    <div>
+                      <Text>Terminados</Text>
+                      <div>{detalleStats.TERMINADO ?? 0}</div>
+                    </div>
+                    <div>
+                      <Text>En progreso</Text>
+                      <div>{detalleStats.EN_HORNO ?? 0}</div>
+                    </div>
+                    <div>
+                      <Text>Merma</Text>
+                      <div>{detalleStats.MERMA ?? 0}</div>
+                    </div>
+                  </Space>
+                </Card>
+              )}
+
+              <Spin spinning={checklistLoading} tip="Cargando lista">
+                {checklistContent()}
+              </Spin>
+            </Card>
+          ),
+        },
+      ]}
+    />
+
+    <Modal
+      title="Detalles del pedido personalizado"
+      open={personalizadoModal.visible}
+      onCancel={() => setPersonalizadoModal({ visible: false, detalle: null })}
+      footer={[
+        <Button key="close" onClick={() => setPersonalizadoModal({ visible: false, detalle: null })}>
+          Cerrar
+        </Button>,
+      ]}
+      width={600}
+    >
+      {personalizadoModal.detalle && (
+        <Space orientation="vertical" size={16} style={{ width: '100%' }}>
+          <div>
+            <Text strong>Cliente:</Text>
+            <div>
+              <Text>{personalizadoModal.detalle.nombreCliente ?? 'No especificado'}</Text>
+            </div>
+          </div>
+          <div>
+            <Text strong>Texto de dedicatoria:</Text>
+            <div>
+              <Text>{personalizadoModal.detalle.textoDedicatoria ?? 'Sin dedicatoria'}</Text>
+            </div>
+          </div>
+          <div>
+            <Text strong>Sabor de masa:</Text>
+            <div>
+              <Text>{personalizadoModal.detalle.saborMasa ?? 'No especificado'}</Text>
+            </div>
+          </div>
+          <div>
+            <Text strong>Sabor de relleno:</Text>
+            <div>
+              <Text>{personalizadoModal.detalle.saborRelleno ?? 'No especificado'}</Text>
+            </div>
+          </div>
+          {personalizadoModal.detalle.imagenesReferencia &&
+            personalizadoModal.detalle.imagenesReferencia.length > 0 && (
+              <div>
+                <Text strong>Imágenes de referencia:</Text>
+                <div style={{ marginTop: 8 }}>
+                  <Image.PreviewGroup>
+                    {personalizadoModal.detalle.imagenesReferencia.map((url, idx) => (
+                      <Image
+                        key={idx}
+                        src={url}
+                        alt={`Referencia ${idx + 1}`}
+                        width={120}
+                        style={{ marginRight: 8, marginBottom: 8 }}
+                      />
+                    ))}
+                  </Image.PreviewGroup>
+                </div>
+              </div>
+            )}
+        </Space>
+      )}
+    </Modal>
+
+    <Modal
+      title="Confirmar producción"
+      open={terminarModal.visible}
+      onCancel={() => setTerminarModal({ visible: false, detalle: null, cantidad: 0 })}
+      onOk={() => {
+        if (terminarModal.detalle) {
+          onDetalleAction(terminarModal.detalle, 'TERMINADO', {
+            cantidadProducida: terminarModal.cantidad,
+          });
+          setTerminarModal({ visible: false, detalle: null, cantidad: 0 });
+        }
+      }}
+      okText="Confirmar"
+      cancelText="Cancelar"
+      confirmLoading={updatingDetalleId === terminarModal.detalle?.id}
+    >
+      <Space orientation="vertical" size={16} style={{ width: '100%' }}>
+        <div>
+          <Text>Cantidad planificada: {terminarModal.detalle?.cantidadPlanificada ?? 0}</Text>
+        </div>
+        <div>
+          <Text strong>Cantidad real producida:</Text>
+          <InputNumber
+            min={0}
+            value={terminarModal.cantidad}
+            onChange={(val) => setTerminarModal({ ...terminarModal, cantidad: val ?? 0 })}
+            style={{ width: '100%', marginTop: 8 }}
+            placeholder="Cantidad real producida"
+          />
+          <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+            Si hubo merma o excedente, ajusta este número.
+          </Text>
+        </div>
+      </Space>
+    </Modal>
+  </>
+  );
+};
+
+export default PlanificacionView;

@@ -49,7 +49,7 @@ const StockIdealTableView = ({
       dataIndex: 'productoNombre',
       key: 'productoNombre',
       render: (_, record) => (
-        <Space direction="vertical" size={0}>
+        <Space orientation="vertical" size={0}>
           <Typography.Text strong>{record.productoNombre}</Typography.Text>
           <Typography.Text type="secondary">SKU: {record.productoSku}</Typography.Text>
         </Space>
@@ -123,7 +123,7 @@ const StockIdealTableView = ({
 
   return (
     <Card
-      bodyStyle={{ padding: 24 }}
+      styles={{ body: { padding: 24 } }}
       style={{ borderRadius: token.borderRadiusLG, boxShadow: token.boxShadowTertiary }}
     >
       <div

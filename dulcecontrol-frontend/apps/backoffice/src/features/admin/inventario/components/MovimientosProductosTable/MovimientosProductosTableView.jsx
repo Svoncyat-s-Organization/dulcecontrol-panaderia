@@ -27,7 +27,7 @@ const formatFecha = (value) => {
 const MovimientosProductosTableView = ({ movimientos, loading, isError, sedeId, onRetry }) => {
   if (!sedeId) {
     return (
-      <Card bodyStyle={{ padding: 24 }}>
+      <Card styles={{ body: { padding: 24 } }}>
         <Title level={4} style={{ marginBottom: 8 }}>
           Kardex de productos
         </Title>
@@ -66,7 +66,7 @@ const MovimientosProductosTableView = ({ movimientos, loading, isError, sedeId, 
       title: 'Producto',
       key: 'producto',
       render: (_, record) => (
-        <Space direction="vertical" size={0}>
+        <Space orientation="vertical" size={0}>
           <Text strong>{record.nombreProducto}</Text>
           <Text type="secondary">SKU: {record.sku ?? 'N/D'}</Text>
         </Space>
@@ -117,7 +117,7 @@ const MovimientosProductosTableView = ({ movimientos, loading, isError, sedeId, 
   ];
 
   return (
-    <Card bodyStyle={{ padding: 24 }}>
+    <Card styles={{ body: { padding: 24 } }}>
       <div
         style={{
           display: 'flex',

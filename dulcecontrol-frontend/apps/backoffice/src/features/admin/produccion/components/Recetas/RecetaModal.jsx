@@ -1,14 +1,21 @@
 import { useEffect } from 'react';
 import { Form, Input, InputNumber, Modal, Select } from 'antd';
 
-const RecetaModal = ({ open, onCancel, onSubmit, loading, insumoOptions = [], unidadOptions = [] }) => {
+const RecetaModal = ({ open, onCancel, onSubmit, loading, insumoOptions = [], unidadOptions = [], editingReceta = null }) => {
   const [form] = Form.useForm();
 
   useEffect(() => {
     if (!open) {
       form.resetFields();
+    } else if (editingReceta) {
+      form.setFieldsValue({
+        insumoId: editingReceta.insumoId,
+        cantidadRequerida: editingReceta.cantidadRequerida,
+        unidadMedida: editingReceta.unidadMedida,
+        notasPreparacion: editingReceta.notasPreparacion,
+      });
     }
-  }, [open, form]);
+  }, [open, editingReceta, form]);
 
   const handleFinish = (values) => {
     onSubmit(values);
@@ -16,7 +23,7 @@ const RecetaModal = ({ open, onCancel, onSubmit, loading, insumoOptions = [], un
 
   return (
     <Modal
-      title="Agregar insumo a la receta"
+      title={editingReceta ? 'Editar insumo de la receta' : 'Agregar insumo a la receta'}
       open={open}
       onCancel={onCancel}
       okText="Guardar"

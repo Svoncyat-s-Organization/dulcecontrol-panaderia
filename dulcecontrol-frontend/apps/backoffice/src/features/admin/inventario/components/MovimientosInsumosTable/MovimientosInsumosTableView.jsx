@@ -35,7 +35,7 @@ const formatCantidad = (cantidad, unidad) => {
 const MovimientosInsumosTableView = ({ movimientos, loading, isError, sedeId, onRetry }) => {
   if (!sedeId) {
     return (
-      <Card bodyStyle={{ padding: 24 }}>
+      <Card styles={{ body: { padding: 24 } }}>
         <Title level={4} style={{ marginBottom: 8 }}>
           Kardex de insumos
         </Title>
@@ -74,7 +74,7 @@ const MovimientosInsumosTableView = ({ movimientos, loading, isError, sedeId, on
       title: 'Insumo',
       key: 'insumo',
       render: (_, record) => (
-        <Space direction="vertical" size={0}>
+        <Space orientation="vertical" size={0}>
           <Text strong>{record.nombreInsumo}</Text>
           <Text type="secondary">Código: {record.codigoInterno ?? 'N/D'}</Text>
         </Space>
@@ -126,7 +126,7 @@ const MovimientosInsumosTableView = ({ movimientos, loading, isError, sedeId, on
   ];
 
   return (
-    <Card bodyStyle={{ padding: 24 }}>
+    <Card styles={{ body: { padding: 24 } }}>
       <div
         style={{
           display: 'flex',
