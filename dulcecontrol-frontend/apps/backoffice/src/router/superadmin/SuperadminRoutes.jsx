@@ -3,6 +3,7 @@ import ProtectedRoute from '../ProtectedRoute.jsx';
 import SuperadminLayout from '../../layout/superadmin/SuperadminLayout.jsx';
 import PlaceholderPage from '../../shared/components/PlaceholderPage.jsx';
 import { VerTableroPage as SuperadminDashboardPage } from '../../features/superadmin/tablero/index.js';
+import { PlanesManager, SuscripcionesManager, HistorialManager } from '../../features/superadmin/suscripciones/index.js';
 import NotFoundPage from '../../shared/components/NotFoundPage.jsx';
 import TiendasPage from '../../features/superadmin/tiendas/pages/TiendasPage.jsx';
 import SedesPage from '../../features/superadmin/tiendas/pages/SedesPage.jsx';
@@ -35,30 +36,15 @@ const superadminRoutes = (
     <Route path="tiendas/:tiendaId/usuarios" element={<UsuariosPage />} />
     <Route
       path="suscripciones/planes"
-      element={
-        <PlaceholderPage
-          title="Planes SaaS"
-          description="Estamos preparando el catálogo de planes y precios. Muy pronto podrás crear y versionar planes desde aquí."
-        />
-      }
+      element={<PlanesManager />}
     />
     <Route
       path="suscripciones/activas"
-      element={
-        <PlaceholderPage
-          title="Suscripciones activas"
-          description="Pronto verás métricas de adopción, renovaciones y cancelaciones de todas las tiendas."
-        />
-      }
+      element={<SuscripcionesManager />}
     />
     <Route
       path="suscripciones/historial"
-      element={
-        <PlaceholderPage
-          title="Historial de suscripciones"
-          description="El equipo está migrando el historial desde la versión monolítica. Tenlo listo en las próximas iteraciones."
-        />
-      }
+      element={<HistorialManager />}
     />
     <Route
       path="facturacion/comprobantes"

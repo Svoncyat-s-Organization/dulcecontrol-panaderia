@@ -7,6 +7,7 @@ import NotFoundPage from '../../shared/components/NotFoundPage.jsx';
 
 import { ProductosPage, CategoriasPage } from '../../features/admin/catalogo/index.js';
 import { ExistenciasPage, InsumosPage, MovimientosPage } from '../../features/admin/inventario/index.js';
+import { VentasPage, CajasPage } from '../../features/admin/ventas-pedidos/index.js';
 import { InsumosPage as ComprasInsumosPage, ProveedoresPage, OrdenesCompraPage } from '../../features/admin/compras/index.js';
 import { ClientesPage } from '../../features/admin/clientes/index.js';
 import { ConfiguracionPage } from '../../features/admin/configuracion/index.js';
@@ -22,6 +23,20 @@ const adminRoutes = (
   >
     <Route index element={<Navigate to="tablero" replace />} />
     <Route path="tablero" element={<AdminDashboardPage />} />
+    <Route
+      path="clientes"
+      element={
+        <PlaceholderPage
+          title="Clientes"
+          description="Aquí podrás buscar, crear y fidelizar a tus clientes corporativos y retail."
+        />
+      }
+    />
+    <Route path="ventas" element={<Navigate to="ventas/punto-de-venta" replace />} />
+    <Route path="ventas/punto-de-venta" element={<VentasPage />} />
+    <Route path="ventas/pedidos" element={<VentasPage />} />
+    <Route path="ventas/cajas" element={<CajasPage />} />
+    <Route path="ventas/historial" element={<VentasPage />} />
     <Route path="clientes" element={<ClientesPage />} />
     <Route
       path="ventas"

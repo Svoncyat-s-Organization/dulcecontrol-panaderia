@@ -14,6 +14,27 @@ export const getInventarioProductos = async (tiendaId, params = {}) => {
   return data;
 };
 
+export const getInventarioProductosPorSede = async (tiendaId, sedeId) => {
+  if (!sedeId) {
+    throw new Error('sedeId es requerido para consultar inventario por sede');
+  }
+  const { data } = await apiClient.get(
+    buildInventarioProductosUrl(tiendaId, `/sede/${sedeId}`)
+  );
+  return data;
+};
+
+export const getInventarioProductoPorSedeYProducto = async (
+  tiendaId,
+  sedeId,
+  productoId
+) => {
+  const inventarios = await getInventarioProductosPorSede(tiendaId, sedeId);
+  return inventarios.find(
+    (registro) => String(registro.productoId) === String(productoId)
+  );
+};
+
 export const updateInventarioProducto = async (tiendaId, inventarioId, payload) => {
   const { data } = await apiClient.put(
     buildInventarioProductosUrl(tiendaId, `/${inventarioId}`),

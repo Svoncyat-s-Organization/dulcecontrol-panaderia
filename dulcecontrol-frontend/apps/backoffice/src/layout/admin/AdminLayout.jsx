@@ -29,6 +29,7 @@ const menuItems = [
   getItem('Ventas & Pedidos', `${BASE_PATH}/ventas`, <IconShoppingBag size={18} />, [
     getItem('Punto de venta', `${BASE_PATH}/ventas/punto-de-venta`),
     getItem('Pedidos', `${BASE_PATH}/ventas/pedidos`),
+    getItem('Cajas', `${BASE_PATH}/ventas/cajas`),
     getItem('Historial de ventas', `${BASE_PATH}/ventas/historial`),
   ]),
   getItem('Facturación', `${BASE_PATH}/facturacion`, <IconInvoice size={18} />, [
