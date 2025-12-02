@@ -26,20 +26,21 @@ export const PROVEEDORES_KEYS = {
   ],
 };
 
+const ordenesBaseKey = (tiendaId, sedeId = null) => ['compras-ordenes', tiendaId ?? null, sedeId ?? null];
+
 export const ORDENES_COMPRA_KEYS = {
-  all: (tiendaId) => ['compras-ordenes', tiendaId],
-  lists: (tiendaId, filters = {}) => [
-    ...ORDENES_COMPRA_KEYS.all(tiendaId),
+  all: (tiendaId, sedeId = null) => ordenesBaseKey(tiendaId, sedeId),
+  lists: (tiendaId, sedeId = null, filters = {}) => [
+    ...ordenesBaseKey(tiendaId, sedeId),
     'list',
     filters,
   ],
   pendientes: (tiendaId, sedeId = null) => [
-    ...ORDENES_COMPRA_KEYS.all(tiendaId),
+    ...ordenesBaseKey(tiendaId, sedeId),
     'pendientes',
-    sedeId,
   ],
-  detail: (tiendaId, ordenId) => [
-    ...ORDENES_COMPRA_KEYS.all(tiendaId),
+  detail: (tiendaId, sedeId = null, ordenId) => [
+    ...ordenesBaseKey(tiendaId, sedeId),
     'detail',
     ordenId,
   ],

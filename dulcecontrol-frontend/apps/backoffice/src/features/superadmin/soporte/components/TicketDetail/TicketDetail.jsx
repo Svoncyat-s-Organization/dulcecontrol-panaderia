@@ -197,7 +197,7 @@ const TicketDetail = ({
                                 try {
                                     await onCreateMessage(values);
                                     messageForm.resetFields();
-                                } catch (error) {
+                                } catch {
                                     // La capa contenedora ya muestra el mensaje de error.
                                 }
                             }}

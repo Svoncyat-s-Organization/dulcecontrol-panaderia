@@ -188,7 +188,21 @@ const DashboardPage = () => {
         <Col xs={24} lg={16}>
           <Card title="Evolución de ventas (últimos 14 días)" styles={{ body: { height: 360 } }}>
             {tieneVentas ? (
-              <Area {...areaConfig} style={{ height: '100%' }} />
+              <>
+                <Area {...areaConfig} style={{ height: 260 }} />
+                <Flex justify="space-between" style={{ marginTop: 16 }}>
+                  <div>
+                    <Text type="secondary">Promedio diario</Text>
+                    <div style={{ fontWeight: 600 }}>{formatCurrency(promedioDiario)}</div>
+                  </div>
+                  <div>
+                    <Text type="secondary">Mejor día</Text>
+                    <div style={{ fontWeight: 600 }}>
+                      {mejorDia?.dia ?? '—'} · {mejorDia ? formatCurrency(mejorDia.monto) : 'S/ 0.00'}
+                    </div>
+                  </div>
+                </Flex>
+              </>
             ) : (
               <Empty description="Sin datos de ventas" image={Empty.PRESENTED_IMAGE_SIMPLE} />
             )}

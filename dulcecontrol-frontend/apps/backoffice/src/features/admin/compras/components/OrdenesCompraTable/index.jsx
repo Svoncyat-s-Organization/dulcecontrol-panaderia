@@ -8,7 +8,7 @@ import OrdenCompraModal from '../OrdenCompraModal/index.jsx';
 import OrdenCompraDetalleModal from '../OrdenCompraDetalleModal/index.jsx';
 import RecepcionParcialModal from '../RecepcionParcialModal/index.jsx';
 
-const OrdenesCompraTable = ({ tiendaId }) => {
+const OrdenesCompraTable = ({ tiendaId, sedeId }) => {
   const { message, modal } = App.useApp();
   const [modalOpen, setModalOpen] = useState(false);
   const [detalleModalOpen, setDetalleModalOpen] = useState(false);
@@ -25,15 +25,15 @@ const OrdenesCompraTable = ({ tiendaId }) => {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ORDENES_COMPRA_KEYS.lists(tiendaId, filters),
+    queryKey: ORDENES_COMPRA_KEYS.lists(tiendaId, sedeId, filters),
     queryFn: () =>
-      getOrdenes(tiendaId, filters).catch((error) => {
+      getOrdenes(tiendaId, sedeId, filters).catch((error) => {
         message.error(
           error?.response?.data?.message ?? 'No se pudo obtener las órdenes de compra'
         );
         throw error;
       }),
-    enabled: Boolean(tiendaId),
+    enabled: Boolean(tiendaId && sedeId),
   });
 
   const deleteMutation = useMutation({
@@ -43,7 +43,7 @@ const OrdenesCompraTable = ({ tiendaId }) => {
       
       // Actualizar cache inmediatamente
       queryClient.setQueryData(
-        ORDENES_COMPRA_KEYS.lists(tiendaId, filters),
+        ORDENES_COMPRA_KEYS.lists(tiendaId, sedeId, filters),
         (oldData) => oldData ? oldData.filter(o => o.id !== ordenId) : []
       );
     },
@@ -59,7 +59,7 @@ const OrdenesCompraTable = ({ tiendaId }) => {
       
       // Actualizar cache inmediatamente
       queryClient.setQueryData(
-        ORDENES_COMPRA_KEYS.lists(tiendaId, filters),
+        ORDENES_COMPRA_KEYS.lists(tiendaId, sedeId, filters),
         (oldData) => oldData ? oldData.map(o => o.id === ordenId ? { ...o, estado } : o) : []
       );
     },
@@ -73,8 +73,8 @@ const OrdenesCompraTable = ({ tiendaId }) => {
     onSuccess: async () => {
       message.success('Recepción total registrada exitosamente');
       // Invalidar cache
-      await queryClient.invalidateQueries(ORDENES_COMPRA_KEYS.all(tiendaId));
-      await queryClient.refetchQueries(ORDENES_COMPRA_KEYS.all(tiendaId));
+      await queryClient.invalidateQueries(ORDENES_COMPRA_KEYS.all(tiendaId, sedeId));
+      await queryClient.refetchQueries(ORDENES_COMPRA_KEYS.all(tiendaId, sedeId));
       // Forzar reload completo
       window.location.reload();
     },
@@ -162,6 +162,7 @@ const OrdenesCompraTable = ({ tiendaId }) => {
         open={modalOpen}
         onClose={handleCloseModal}
         tiendaId={tiendaId}
+        sedeId={sedeId}
         orden={selectedOrden}
       />
 
@@ -176,6 +177,7 @@ const OrdenesCompraTable = ({ tiendaId }) => {
         onClose={handleCloseRecepcionModal}
         orden={ordenRecepcion}
         tiendaId={tiendaId}
+        sedeId={sedeId}
       />
     </>
   );

@@ -99,7 +99,7 @@ const PlanesManager = () => {
             } else {
                 createMutation.mutate(payload);
             }
-        } catch (error) {
+        } catch {
             message.error('Error al procesar el formulario');
         }
     };

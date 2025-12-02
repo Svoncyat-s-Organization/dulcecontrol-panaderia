@@ -14,7 +14,7 @@ const normalizeSlug = (value) => {
 
     const asciiOnly = trimmed
         .normalize('NFD')
-        .replace(/[^\x00-\x7F]/g, '')
+        .replace(/[^\p{ASCII}]/gu, '')
         .toLowerCase();
 
     return asciiOnly

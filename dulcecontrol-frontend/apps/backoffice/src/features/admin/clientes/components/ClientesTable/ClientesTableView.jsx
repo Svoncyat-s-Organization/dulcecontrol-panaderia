@@ -1,4 +1,4 @@
-import { Button, Card, Input, Result, Space, Table, Tag, Typography, theme } from 'antd';
+import { Button, Card, Input, Result, Space, Table, Tag, Typography } from 'antd';
 import { IconPlus, IconRefresh, IconEdit, IconEye, IconTrash, IconSearch } from '@tabler/icons-react';
 
 const { Text, Title } = Typography;
@@ -18,8 +18,6 @@ const ClientesTableView = ({
   pagination,
   onPaginate,
 }) => {
-  const { token } = theme.useToken();
-
   if (isError) {
     return (
       <Result

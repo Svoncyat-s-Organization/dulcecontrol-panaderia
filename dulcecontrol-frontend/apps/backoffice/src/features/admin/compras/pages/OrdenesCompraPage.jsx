@@ -1,9 +1,11 @@
 import { Result } from 'antd';
 import { useTokenStore } from '../../../../shared/store/tokenStore.js';
+import { useSedeStore } from '../../../../shared/store/sedeStore.js';
 import OrdenesCompraTable from '../components/OrdenesCompraTable/index.jsx';
 
 const OrdenesCompraPage = () => {
   const tiendaId = useTokenStore((state) => state.tiendaId);
+  const sedeId = useSedeStore((state) => state.selectedSedeId);
 
   if (!tiendaId) {
     return (
@@ -15,7 +17,17 @@ const OrdenesCompraPage = () => {
     );
   }
 
-  return <OrdenesCompraTable tiendaId={tiendaId} />;
+  if (!sedeId) {
+    return (
+      <Result
+        status="info"
+        title="Selecciona una sede para gestionar compras"
+        subTitle="Las órdenes se crean y filtran por sede. Usa el selector en el encabezado para continuar."
+      />
+    );
+  }
+
+  return <OrdenesCompraTable tiendaId={tiendaId} sedeId={sedeId} />;
 };
 
 export default OrdenesCompraPage;

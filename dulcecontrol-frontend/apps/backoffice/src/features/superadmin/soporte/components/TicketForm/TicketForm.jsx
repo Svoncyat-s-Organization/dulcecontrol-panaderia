@@ -15,7 +15,7 @@ const TicketForm = ({ open, onCancel, onSubmit, submitting, tiendaOptions }) => 
         try {
             const values = await form.validateFields();
             onSubmit(values);
-        } catch (error) {
+        } catch {
             // La validación de Ant Design mostrará los errores en el formulario.
         }
     };

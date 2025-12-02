@@ -6,7 +6,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { UNIDADES_MEDIDA } from '../../constants/enums';
 import { ORDENES_COMPRA_KEYS } from '../../constants/queryKeys';
 
-const RecepcionParcialModal = ({ open, onClose, orden, tiendaId }) => {
+const RecepcionParcialModal = ({ open, onClose, orden, tiendaId, sedeId }) => {
   const [items, setItems] = useState({});
   const queryClient = useQueryClient();
   const { message } = App.useApp();
@@ -18,8 +18,8 @@ const RecepcionParcialModal = ({ open, onClose, orden, tiendaId }) => {
       setItems({});
       onClose();
       // Invalidar y refetch después de cerrar modal
-      await queryClient.invalidateQueries(ORDENES_COMPRA_KEYS.all(tiendaId));
-      await queryClient.refetchQueries(ORDENES_COMPRA_KEYS.all(tiendaId));
+      await queryClient.invalidateQueries(ORDENES_COMPRA_KEYS.all(tiendaId, sedeId));
+      await queryClient.refetchQueries(ORDENES_COMPRA_KEYS.all(tiendaId, sedeId));
       // Forzar re-render completo
       window.location.reload();
     },
@@ -38,7 +38,7 @@ const RecepcionParcialModal = ({ open, onClose, orden, tiendaId }) => {
   const handleSubmit = () => {
     // Filtrar solo los items con cantidad mayor a 0
     const itemsToReceive = Object.entries(items)
-      .filter(([_, cantidad]) => cantidad > 0)
+      .filter(([, cantidad]) => cantidad > 0)
       .map(([detalleId, cantidad]) => ({
         detalleOrdenCompraId: parseInt(detalleId),
         cantidadRecibida: cantidad

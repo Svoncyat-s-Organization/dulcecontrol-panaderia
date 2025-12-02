@@ -53,7 +53,7 @@ const ConfiguracionTableView = ({
       dataIndex: 'status',
       key: 'status',
       width: 120,
-      render: (status, record) => (
+      render: (status) => (
         <Tag color={status === 'Activa' || status === 'Activo' ? 'green' : 'orange'}>
           {status}
         </Tag>

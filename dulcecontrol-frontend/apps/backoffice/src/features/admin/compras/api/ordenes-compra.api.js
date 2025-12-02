@@ -7,17 +7,23 @@ const buildOrdenesUrl = (tiendaId, suffix = '') => {
   return `/api/admin/tiendas/${tiendaId}/compras/ordenes${suffix}`;
 };
 
-export const getOrdenes = async (tiendaId, filters = {}) => {
+const cleanParams = (params = {}) =>
+  Object.entries(params).reduce((acc, [key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      acc[key] = value;
+    }
+    return acc;
+  }, {});
+
+export const getOrdenes = async (tiendaId, sedeId = null, filters = {}) => {
   if (!tiendaId) {
     throw new Error('tiendaId es requerido para listar órdenes de compra');
   }
   
-  const params = {};
-  if (filters.estado) params.estado = filters.estado;
-  if (filters.sedeId) params.sedeId = filters.sedeId;
-  if (filters.proveedorId) params.proveedorId = filters.proveedorId;
-  if (filters.fechaInicio) params.fechaInicio = filters.fechaInicio;
-  if (filters.fechaFin) params.fechaFin = filters.fechaFin;
+  const params = cleanParams(filters);
+  if (sedeId) {
+    params.sedeId = sedeId;
+  }
   
   const { data } = await apiClient.get(buildOrdenesUrl(tiendaId), { params });
   return data;

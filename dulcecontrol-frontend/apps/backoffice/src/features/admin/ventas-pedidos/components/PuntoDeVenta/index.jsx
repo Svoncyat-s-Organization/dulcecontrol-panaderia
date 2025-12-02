@@ -25,7 +25,7 @@ const persistReceiptPayload = (payload) => {
             RECEIPT_STORAGE_KEY,
             JSON.stringify({ createdAt: Date.now(), data: payload })
         );
-    } catch (error) {
+    } catch {
         // Ignoramos errores de almacenamiento en navegadores con cuotas estrictas
     }
 };
@@ -46,7 +46,7 @@ const readPersistedReceipt = () => {
             return null;
         }
         return parsed.data;
-    } catch (error) {
+    } catch {
         return null;
     }
 };
@@ -57,7 +57,7 @@ const clearPersistedReceipt = () => {
     }
     try {
         window.sessionStorage.removeItem(RECEIPT_STORAGE_KEY);
-    } catch (error) {
+    } catch {
         // Ignoramos errores al limpiar almacenamiento
     }
 };

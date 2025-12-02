@@ -121,18 +121,6 @@ const OrdenCompraModalView = ({
     forceUpdate(); // Forzar re-render
   };
 
-  // Calcular el total directamente, sin useMemo, para que siempre use los valores más recientes
-  const calcularTotalActual = () => {
-    const total = detalles.reduce((suma, item) => {
-      // Recalcular el total de cada línea en tiempo real
-      const cantidad = parseFloat(item.cantidadSolicitada) || 0;
-      const precio = parseFloat(item.costoUnitarioPactado) || 0;
-      const lineTotal = cantidad * precio;
-      return suma + lineTotal;
-    }, 0);
-    return total;
-  };
-
   return (
     <Modal
       title={isEditing ? 'Editar Orden de Compra' : 'Nueva Orden de Compra'}

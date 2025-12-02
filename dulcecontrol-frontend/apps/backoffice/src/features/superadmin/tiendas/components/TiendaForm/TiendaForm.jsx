@@ -41,7 +41,7 @@ const TiendaForm = ({ visible, onCancel, onSubmit, initialValues, form, loading 
                                 value
                                     ? value
                                         .normalize('NFD')
-                                        .replace(/[^\x00-\x7F]/g, '')
+                                        .replace(/[^\p{ASCII}]/gu, '')
                                         .toLowerCase()
                                         .replace(/[^a-z0-9]+/g, '-')
                                         .replace(/^-+|-+$/g, '')

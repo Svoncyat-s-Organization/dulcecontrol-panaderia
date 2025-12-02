@@ -10,7 +10,7 @@ import { getSedes } from '../../api/sedes.api.js';
 import { ORDENES_COMPRA_KEYS, PROVEEDORES_KEYS, INSUMOS_KEYS, SEDES_KEYS } from '../../constants/queryKeys.js';
 import { decimalToCentimos } from '../../utils/formatters.js';
 
-const OrdenCompraModal = ({ open, onClose, tiendaId, orden }) => {
+const OrdenCompraModal = ({ open, onClose, tiendaId, sedeId, orden }) => {
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const queryClient = useQueryClient();
@@ -72,10 +72,11 @@ const OrdenCompraModal = ({ open, onClose, tiendaId, orden }) => {
         fechaEmision: today, // Fecha actual automática
         estado: 'borrador', // Backend usa minúsculas
         moneda: 'PEN',
+        sedeDestinoId: sedeId ?? undefined,
       });
       setDetalles([]);
     }
-  }, [open, orden, form]);
+  }, [open, orden, form, sedeId]);
 
   const mutation = useMutation({
     mutationFn: (values) => {
@@ -89,6 +90,10 @@ const OrdenCompraModal = ({ open, onClose, tiendaId, orden }) => {
           totalLineaCentimos: decimalToCentimos(d.totalLinea),
         })),
       };
+
+      if (!payload.sedeDestinoId && sedeId) {
+        payload.sedeDestinoId = sedeId;
+      }
 
       if (isEditing) {
         return updateOrden(tiendaId, orden.id, payload);
@@ -112,7 +117,7 @@ const OrdenCompraModal = ({ open, onClose, tiendaId, orden }) => {
       
       allFilters.forEach((filter) => {
         queryClient.setQueryData(
-          ORDENES_COMPRA_KEYS.lists(tiendaId, filter),
+          ORDENES_COMPRA_KEYS.lists(tiendaId, sedeId, filter),
           (oldData) => {
             if (!oldData) return isEditing ? oldData : [data];
             
