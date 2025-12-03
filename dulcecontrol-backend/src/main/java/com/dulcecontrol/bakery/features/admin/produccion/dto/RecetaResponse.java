@@ -13,7 +13,11 @@ public class RecetaResponse {
     private final Long id;
     private final Long tiendaId;
     private final Long productoId;
+    private final String productoNombre;
+    private final String productoSku;
     private final Long insumoId;
+    private final String insumoNombre;
+    private final String insumoCodigoInterno;
     private final BigDecimal cantidadRequerida;
     private final UnidadMedidaReceta unidadMedida;
     private final String notasPreparacion;

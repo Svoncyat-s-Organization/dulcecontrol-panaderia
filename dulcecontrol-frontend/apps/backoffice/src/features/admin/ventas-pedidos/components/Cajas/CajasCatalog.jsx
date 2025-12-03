@@ -44,7 +44,7 @@ const CajasCatalog = () => {
     const [drawerState, setDrawerState] = useState({ open: false, editing: null });
 
     const cajasQuery = useQuery({
-        queryKey: CAJA_KEYS.lists(tiendaId),
+        queryKey: CAJA_KEYS.lists(tiendaId, null),
         queryFn: () => getCajas(tiendaId),
         enabled: !!tiendaId,
         select: (response) => Array.isArray(response) ? response : [],
@@ -60,14 +60,14 @@ const CajasCatalog = () => {
         mutationFn: ({ mode, cajaId, payload }) =>
             mode === 'edit' ? updateCaja(tiendaId, cajaId, payload) : createCaja(tiendaId, payload),
         onSuccess: () => {
-            queryClient.invalidateQueries(CAJA_KEYS.lists(tiendaId));
+            queryClient.invalidateQueries(CAJA_KEYS.lists(tiendaId, null));
             handleCloseDrawer();
         },
     });
 
     const deleteMutation = useMutation({
         mutationFn: (cajaId) => deleteCaja(tiendaId, cajaId),
-        onSuccess: () => queryClient.invalidateQueries(CAJA_KEYS.lists(tiendaId)),
+        onSuccess: () => queryClient.invalidateQueries(CAJA_KEYS.lists(tiendaId, null)),
     });
 
     const sedesMap = useMemo(() => {
@@ -210,7 +210,7 @@ const CajasCatalog = () => {
                 background: token.colorBgContainer,
                 boxShadow: token.boxShadowTertiary,
             }}
-            bodyStyle={{ padding: 24 }}
+            styles={{ body: { padding: 24 } }}
         >
             <div
                 style={{

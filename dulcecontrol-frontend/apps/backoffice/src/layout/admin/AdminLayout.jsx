@@ -37,6 +37,7 @@ const menuItems = [
     getItem('Comprobantes', `${BASE_PATH}/facturacion/comprobantes`),
   ]),
   getItem('Producción', `${BASE_PATH}/produccion`, <IconCakeRoll size={18} />, [
+    getItem('Stock ideal', `${BASE_PATH}/produccion/stock-ideal`),
     getItem('Planificación', `${BASE_PATH}/produccion/planificacion`),
     getItem('Recetas', `${BASE_PATH}/produccion/recetas`),
   ]),
@@ -46,7 +47,7 @@ const menuItems = [
   ]),
   getItem('Compras y Proveedores', `${BASE_PATH}/compras`, <IconBasketDollar size={18} />, [
     getItem('Proveedores', `${BASE_PATH}/compras/proveedores`),
-    getItem('Ordenes de Compra', `${BASE_PATH}/compras/ordenes-compra`),
+    getItem('Órdenes de Compra', `${BASE_PATH}/compras/ordenes`),
   ]),
   getItem('Inventario', `${BASE_PATH}/inventario`, <IconBuildingWarehouse size={18} />, [
     getItem('Existencias', `${BASE_PATH}/inventario/existencias`),

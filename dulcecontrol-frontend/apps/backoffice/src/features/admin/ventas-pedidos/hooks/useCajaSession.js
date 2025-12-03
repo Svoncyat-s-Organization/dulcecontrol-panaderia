@@ -12,7 +12,7 @@ export const useCajaSession = () => {
     const { usuarioId, isResolvingUsuario } = useCurrentUsuarioTienda();
 
     const { data: cajas = [], isLoading: isCajasLoading } = useQuery({
-        queryKey: CAJA_KEYS.lists(tiendaId),
+        queryKey: CAJA_KEYS.lists(tiendaId, selectedSedeId),
         queryFn: () => getCajas(tiendaId),
         enabled: !!tiendaId,
         staleTime: 5 * 60 * 1000,
@@ -20,9 +20,10 @@ export const useCajaSession = () => {
 
     // Buscar sesiones abiertas para este usuario en esta tienda
     const { data: sesiones = [], isLoading, refetch } = useQuery({
-        queryKey: CAJA_KEYS.sesionActive(tiendaId, usuarioId),
+        queryKey: CAJA_KEYS.sesionActive(tiendaId, selectedSedeId, usuarioId),
         queryFn: () => getSesionesCaja(tiendaId, {
             estaAbierta: true,
+            sedeId: selectedSedeId ?? undefined,
         }),
         enabled: !!tiendaId && !!usuarioId,
         select: (data) => data.filter((s) => s.estaAbierta && String(s.usuarioAperturaId) === String(usuarioId))

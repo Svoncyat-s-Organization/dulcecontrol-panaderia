@@ -58,7 +58,7 @@ const ProductosTableView = ({
       dataIndex: 'nombre',
       key: 'nombre',
       render: (_, record) => (
-        <Space direction="vertical" size={2}>
+        <Space orientation="vertical" size={2}>
           <Text strong>{record.nombre}</Text>
           <Text type="secondary">SKU: {record.sku}</Text>
         </Space>
@@ -124,7 +124,7 @@ const ProductosTableView = ({
         background: token.colorBgContainer,
         boxShadow: token.boxShadowTertiary,
       }}
-      bodyStyle={{ padding: 24 }}
+      styles={{ body: { padding: 24 } }}
     >
       <div
         style={{

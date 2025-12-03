@@ -18,7 +18,11 @@ public interface ProveedorRepository extends JpaRepository<Proveedor, Long> {
 
     boolean existsByTiendaIdAndNombreComercial(Long tiendaId, String nombreComercial);
 
+    boolean existsByTiendaIdAndNombreComercialAndActivoTrue(Long tiendaId, String nombreComercial);
+
     boolean existsByTiendaIdAndNombreComercialAndIdNot(Long tiendaId, String nombreComercial, Long id);
+
+    boolean existsByTiendaIdAndNombreComercialAndActivoTrueAndIdNot(Long tiendaId, String nombreComercial, Long id);
 
     @Query("SELECT p FROM Proveedor p WHERE p.tiendaId = :tiendaId AND p.esGenerico = true")
     Optional<Proveedor> findProveedorGenerico(@Param("tiendaId") Long tiendaId);

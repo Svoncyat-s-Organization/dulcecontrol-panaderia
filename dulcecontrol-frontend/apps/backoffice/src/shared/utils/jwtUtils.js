@@ -7,8 +7,8 @@ const decodeBase64 = (value) => {
   if (typeof atob === 'function') {
     return atob(value);
   }
-  if (typeof Buffer !== 'undefined') {
-    return Buffer.from(value, 'base64').toString('binary');
+  if (typeof globalThis !== 'undefined' && typeof globalThis.Buffer !== 'undefined') {
+    return globalThis.Buffer.from(value, 'base64').toString('binary');
   }
   throw new Error('Base64 decoding is not supported in this environment');
 };

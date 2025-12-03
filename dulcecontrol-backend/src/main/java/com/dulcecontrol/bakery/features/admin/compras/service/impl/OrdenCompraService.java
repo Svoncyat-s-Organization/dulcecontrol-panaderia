@@ -24,6 +24,10 @@ public class OrdenCompraService implements IOrdenCompraService {
 
     private final OrdenCompraRepository ordenCompraRepository;
     private final DetalleOrdenCompraRepository detalleOrdenCompraRepository;
+    private final com.dulcecontrol.bakery.features.admin.compras.repository.ProveedorRepository proveedorRepository;
+    private final com.dulcecontrol.bakery.features.superadmin.tiendas.repository.SedeRepository sedeRepository;
+    private final com.dulcecontrol.bakery.features.admin.compras.repository.InsumoRepository insumoRepository;
+    private final com.dulcecontrol.bakery.features.admin.inventario.repository.InventarioInsumoSedeRepository inventarioInsumoSedeRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -267,12 +271,24 @@ public class OrdenCompraService implements IOrdenCompraService {
 
     private OrdenCompraResponse toResponse(OrdenCompra orden) {
         List<DetalleOrdenCompra> detalles = detalleOrdenCompraRepository.findByOrdenCompraId(orden.getId());
+        
+        // Obtener nombre del proveedor
+        String nombreProveedor = proveedorRepository.findById(orden.getProveedorId())
+                .map(p -> p.getNombreComercial())
+                .orElse("Proveedor no encontrado");
+        
+        // Obtener nombre de la sede
+        String nombreSede = sedeRepository.findById(orden.getSedeDestinoId())
+                .map(s -> s.getNombre())
+                .orElse("Sede no encontrada");
 
         return OrdenCompraResponse.builder()
                 .id(orden.getId())
                 .tiendaId(orden.getTiendaId())
                 .sedeDestinoId(orden.getSedeDestinoId())
+                .nombreSede(nombreSede)
                 .proveedorId(orden.getProveedorId())
+                .nombreProveedor(nombreProveedor)
                 .fechaEmision(orden.getFechaEmision())
                 .fechaRecepcionEsperada(orden.getFechaRecepcionEsperada())
                 .fechaRecepcionReal(orden.getFechaRecepcionReal())
@@ -294,10 +310,16 @@ public class OrdenCompraService implements IOrdenCompraService {
     }
 
     private DetalleOrdenCompraResponse toDetalleResponse(DetalleOrdenCompra detalle) {
+        // Obtener nombre del insumo
+        String nombreInsumo = insumoRepository.findById(detalle.getInsumoId())
+                .map(i -> i.getNombre())
+                .orElse("Insumo no encontrado");
+        
         return DetalleOrdenCompraResponse.builder()
                 .id(detalle.getId())
                 .ordenCompraId(detalle.getOrdenCompraId())
                 .insumoId(detalle.getInsumoId())
+                .nombreInsumo(nombreInsumo)
                 .cantidadSolicitada(detalle.getCantidadSolicitada())
                 .unidadCompra(detalle.getUnidadCompra())
                 .costoUnitarioPactadoCentimos(detalle.getCostoUnitarioPactadoCentimos())
@@ -305,5 +327,123 @@ public class OrdenCompraService implements IOrdenCompraService {
                 .cantidadRecibida(detalle.getCantidadRecibida())
                 .recibidoCompleto(detalle.getRecibidoCompleto())
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public OrdenCompraResponse recibirParcial(Long tiendaId, RecepcionParcialRequest request) {
+        // Obtener la orden
+        OrdenCompra orden = ordenCompraRepository.findByIdAndTiendaId(request.getOrdenCompraId(), tiendaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Orden de compra no encontrada"));
+
+        // Validar que la orden esté en estado ENVIADA
+        if (orden.getEstado() != EstadoOrdenCompra.ENVIADA) {
+            throw new BadRequestException("Solo se pueden recibir órdenes en estado ENVIADA");
+        }
+
+        // Procesar cada item recibido
+        for (RecepcionParcialRequest.ItemRecepcionParcial item : request.getItems()) {
+            DetalleOrdenCompra detalle = detalleOrdenCompraRepository.findById(item.getDetalleOrdenCompraId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Detalle de orden no encontrado"));
+
+            // Validar que el detalle pertenece a la orden
+            if (!detalle.getOrdenCompraId().equals(orden.getId())) {
+                throw new BadRequestException("El detalle no pertenece a esta orden");
+            }
+
+            // Actualizar cantidad recibida
+            BigDecimal cantidadAnterior = detalle.getCantidadRecibida() != null ? detalle.getCantidadRecibida() : BigDecimal.ZERO;
+            BigDecimal cantidadRecibidaAhora = BigDecimal.valueOf(item.getCantidadRecibida());
+            BigDecimal nuevaCantidadRecibida = cantidadAnterior.add(cantidadRecibidaAhora);
+            
+            detalle.setCantidadRecibida(nuevaCantidadRecibida);
+            
+            // Marcar como completo si se recibió todo
+            if (nuevaCantidadRecibida.compareTo(detalle.getCantidadSolicitada()) >= 0) {
+                detalle.setRecibidoCompleto(true);
+            }
+            
+            detalleOrdenCompraRepository.save(detalle);
+
+            // Actualizar inventario en la sede destino
+            actualizarInventario(orden.getTiendaId(), orden.getSedeDestinoId(), detalle.getInsumoId(), cantidadRecibidaAhora);
+        }
+
+        // Verificar si todos los detalles están completos
+        List<DetalleOrdenCompra> todosDetalles = detalleOrdenCompraRepository.findByOrdenCompraId(orden.getId());
+        boolean todosCompletos = todosDetalles.stream()
+                .allMatch(d -> d.getRecibidoCompleto() != null && d.getRecibidoCompleto());
+
+        // Actualizar estado de la orden
+        if (todosCompletos) {
+            orden.setEstado(EstadoOrdenCompra.RECIBIDA_TOTAL);
+        } else {
+            orden.setEstado(EstadoOrdenCompra.RECIBIDA_PARCIAL);
+        }
+        
+        orden.setFechaRecepcionReal(LocalDate.now());
+        OrdenCompra ordenActualizada = ordenCompraRepository.save(orden);
+
+        return toResponse(ordenActualizada);
+    }
+
+    @Override
+    @Transactional
+    public OrdenCompraResponse recibirTotal(Long tiendaId, Long ordenCompraId) {
+        // Obtener la orden
+        OrdenCompra orden = ordenCompraRepository.findByIdAndTiendaId(ordenCompraId, tiendaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Orden de compra no encontrada"));
+
+        // Validar que la orden esté en estado ENVIADA o RECIBIDA_PARCIAL
+        if (orden.getEstado() != EstadoOrdenCompra.ENVIADA && 
+            orden.getEstado() != EstadoOrdenCompra.RECIBIDA_PARCIAL) {
+            throw new BadRequestException("Solo se pueden recibir totalmente órdenes en estado ENVIADA o RECIBIDA_PARCIAL");
+        }
+
+        // Obtener todos los detalles
+        List<DetalleOrdenCompra> detalles = detalleOrdenCompraRepository.findByOrdenCompraId(ordenCompraId);
+
+        // Recibir todo lo que falta de cada detalle
+        for (DetalleOrdenCompra detalle : detalles) {
+            BigDecimal cantidadRecibida = detalle.getCantidadRecibida() != null ? detalle.getCantidadRecibida() : BigDecimal.ZERO;
+            BigDecimal cantidadFaltante = detalle.getCantidadSolicitada().subtract(cantidadRecibida);
+
+            if (cantidadFaltante.compareTo(BigDecimal.ZERO) > 0) {
+                // Actualizar detalle
+                detalle.setCantidadRecibida(detalle.getCantidadSolicitada());
+                detalle.setRecibidoCompleto(true);
+                detalleOrdenCompraRepository.save(detalle);
+
+                // Actualizar inventario
+                actualizarInventario(orden.getTiendaId(), orden.getSedeDestinoId(), detalle.getInsumoId(), cantidadFaltante);
+            }
+        }
+
+        // Actualizar estado de la orden a RECIBIDA_TOTAL
+        orden.setEstado(EstadoOrdenCompra.RECIBIDA_TOTAL);
+        orden.setFechaRecepcionReal(LocalDate.now());
+        OrdenCompra ordenActualizada = ordenCompraRepository.save(orden);
+
+        return toResponse(ordenActualizada);
+    }
+
+    private void actualizarInventario(Long tiendaId, Long sedeId, Long insumoId, BigDecimal cantidadASumar) {
+        // Buscar el registro de inventario
+        var inventarioOpt = inventarioInsumoSedeRepository.findBySedeIdAndInsumoId(sedeId, insumoId);
+
+        if (inventarioOpt.isPresent()) {
+            // Si existe, sumar a la cantidad actual
+            var inventario = inventarioOpt.get();
+            inventario.setCantidadActual(inventario.getCantidadActual().add(cantidadASumar));
+            inventarioInsumoSedeRepository.save(inventario);
+        } else {
+            // Si no existe, crear nuevo registro
+            var nuevoInventario = new com.dulcecontrol.bakery.features.admin.inventario.entity.InventarioInsumoSede();
+            nuevoInventario.setTiendaId(tiendaId);
+            nuevoInventario.setSedeId(sedeId);
+            nuevoInventario.setInsumoId(insumoId);
+            nuevoInventario.setCantidadActual(cantidadASumar);
+            inventarioInsumoSedeRepository.save(nuevoInventario);
+        }
     }
 }

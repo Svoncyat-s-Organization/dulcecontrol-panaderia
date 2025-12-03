@@ -30,6 +30,9 @@ const MainLayout = ({
     menuItems,
     basePath
   );
+  const sidebarWidth = siderStyle?.width ?? 264;
+  const collapsedSidebarWidth = siderStyle?.collapsedWidth ?? 80;
+  const headerHeight = headerStyle?.height ?? 64;
 
   const combinedLayoutStyle = {
     minHeight: '100vh',
@@ -47,7 +50,7 @@ const MainLayout = ({
   };
 
   const combinedBrandStyle = {
-    height: 56,
+    height: headerHeight,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -60,7 +63,7 @@ const MainLayout = ({
   };
 
   const combinedHeaderStyle = {
-    height: 56,
+    height: headerHeight,
     padding: '0 16px',
     background: themeToken.colorBgElevated,
     display: 'flex',
@@ -98,6 +101,8 @@ const MainLayout = ({
         collapsed={collapsed}
         onCollapse={setCollapsed}
         theme="light"
+        width={sidebarWidth}
+        collapsedWidth={collapsedSidebarWidth}
         style={combinedSiderStyle}
       >
         <div style={combinedBrandStyle}>{collapsed ? brandCollapsedLabel : brandLabel}</div>

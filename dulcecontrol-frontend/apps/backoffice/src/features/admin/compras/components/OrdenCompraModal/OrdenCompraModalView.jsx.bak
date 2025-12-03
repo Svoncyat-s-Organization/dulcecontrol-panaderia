@@ -1,0 +1,360 @@
+import { Modal, Form, Input, Select, DatePicker, Row, Col, Button, InputNumber, Popconfirm } from 'antd';
+import { IconPlus, IconTrash } from '@tabler/icons-react';
+import dayjs from 'dayjs';
+import { ESTADO_ORDEN_COMPRA_VALUES, METODO_PAGO, TIPO_COMPROBANTE, UNIDADES_MEDIDA } from '../../constants/enums.js';
+import { formatCurrency } from '../../utils/formatters.js';
+
+const { TextArea } = Input;
+
+const OrdenCompraModalView = ({
+  open,
+  onClose,
+  onSubmit,
+  form,
+  loading,
+  isEditing,
+  proveedores,
+  insumos,
+  sedes,
+  detalles,
+  setDetalles,
+}) => {
+  const estadoOptions = Object.entries(ESTADO_ORDEN_COMPRA_VALUES).map(([key, value]) => ({
+    value: value,
+    label: key.replace(/_/g, ' '),
+  }));
+
+  const metodoPagoOptions = Object.entries(METODO_PAGO).map(([key, label]) => ({
+    value: key,
+    label: label,
+  }));
+
+  const tipoComprobanteOptions = Object.entries(TIPO_COMPROBANTE).map(([key, label]) => ({
+    value: key,
+    label: label,
+  }));
+
+  const proveedoresOptions = proveedores.map((p) => ({
+    value: p.id,
+    label: p.nombreComercial,
+  }));
+
+  const sedesOptions = sedes.map((s) => ({
+    value: s.id,
+    label: s.nombre || `Sede ${s.codigoInterno}`,
+  }));
+
+  const insumosOptions = insumos.map((i) => ({
+    value: i.id,
+    label: `${i.nombre} (${i.codigoInterno || 'N/D'})`,
+  }));
+
+  const unidadesOptions = Object.entries(UNIDADES_MEDIDA).map(([key, label]) => ({
+    value: key,
+    label: label,
+  }));
+
+  const handleAddDetalle = () => {
+    const timestamp = new Date().getTime();
+    const random = Math.random().toString(36).substr(2, 9);
+    const nuevoDetalle = {
+      key: `${timestamp}-${random}`,
+      insumoId: null,
+      nombreInsumo: '',
+      cantidadSolicitada: 1,
+      unidadCompra: 'kg',
+      costoUnitarioPactado: 0,
+      totalLinea: 0,
+    };
+    setDetalles([...detalles, nuevoDetalle]);
+  };
+
+  const handleRemoveDetalle = (key) => {
+    setDetalles(detalles.filter((d) => d.key !== key));
+  };
+
+  const handleDetalleChange = (key, field, value) => {
+    const nuevosDetalles = detalles.map((d) => {
+      if (d.key !== key) return d;
+
+      const actualizado = { ...d, [field]: value };
+
+      // Si cambia el insumo, actualizar nombre y unidad
+      if (field === 'insumoId' && value) {
+        const insumo = insumos.find((i) => i.id === value);
+        if (insumo) {
+          actualizado.nombreInsumo = insumo.nombre;
+          actualizado.unidadCompra = insumo.unidadCompraHabitual;
+        }
+      }
+
+      // SIEMPRE recalcular el total
+      const cant = parseFloat(actualizado.cantidadSolicitada) || 0;
+      const cost = parseFloat(actualizado.costoUnitarioPactado) || 0;
+      actualizado.totalLinea = cant * cost;
+
+      return actualizado;
+    });
+
+    setDetalles(nuevosDetalles);
+  };
+
+  // Calcular total de la orden
+  const totalOrden = detalles.reduce((sum, d) => sum + (parseFloat(d.totalLinea) || 0), 0);
+
+  return (
+    <Modal
+      title={isEditing ? 'Editar Orden de Compra' : 'Nueva Orden de Compra'}
+      open={open}
+      onCancel={onClose}
+      onOk={onSubmit}
+      confirmLoading={loading}
+      width={1000}
+      okText={isEditing ? 'Actualizar' : 'Crear'}
+      cancelText="Cancelar"
+    >
+      <Form form={form} layout="vertical" style={{ marginTop: 24 }}>
+        <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Información General</div>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              name="proveedorId"
+              label="Proveedor"
+              rules={[{ required: true, message: 'El proveedor es requerido' }]}
+            >
+              <Select
+                placeholder="Selecciona proveedor"
+                options={proveedoresOptions}
+                showSearch
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              name="sedeDestinoId"
+              label="Sede Destino"
+              rules={[{ required: true, message: 'La sede destino es requerida' }]}
+            >
+              <Select
+                placeholder="Selecciona sede"
+                options={sedesOptions}
+                showSearch
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().includes(input.toLowerCase())
+                }
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        {/* Campo oculto para fecha de emisión (se establece automáticamente) */}
+        <Form.Item name="fechaEmision" hidden>
+          <Input />
+        </Form.Item>
+
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              name="fechaRecepcionEsperada"
+              label="Fecha Recepción Esperada"
+              getValueProps={(value) => ({
+                value: value ? dayjs(value) : null,
+              })}
+              normalize={(value) => (value ? value.format('YYYY-MM-DD') : null)}
+            >
+              <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              name="estado"
+              label="Estado"
+              rules={[{ required: true, message: 'El estado es requerido' }]}
+            >
+              <Select options={estadoOptions} />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <div style={{ fontSize: 16, fontWeight: 600, marginTop: 16, marginBottom: 16 }}>
+          Pago y Comprobante
+        </div>
+        <Row gutter={16}>
+          <Col span={8}>
+            <Form.Item name="metodoPago" label="Método de Pago">
+              <Select placeholder="Selecciona método" options={metodoPagoOptions} />
+            </Form.Item>
+          </Col>
+          <Col span={8}>
+            <Form.Item name="referenciaPago" label="Referencia de Pago">
+              <Input placeholder="Ej: TRANS-20241028-001" />
+            </Form.Item>
+          </Col>
+          <Col span={8}>
+            <Form.Item name="tipoComprobanteProveedor" label="Tipo Comprobante">
+              <Select placeholder="Selecciona tipo" options={tipoComprobanteOptions} />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={8}>
+            <Form.Item name="serieComprobanteProveedor" label="Serie Comprobante">
+              <Input placeholder="Ej: F001" />
+            </Form.Item>
+          </Col>
+          <Col span={8}>
+            <Form.Item name="numeroComprobanteProveedor" label="Número Comprobante">
+              <Input placeholder="Ej: 00012345" />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Form.Item name="observaciones" label="Observaciones">
+          <TextArea rows={2} placeholder="Notas adicionales sobre la orden" />
+        </Form.Item>
+
+        <div style={{ fontSize: 16, fontWeight: 600, marginTop: 24, marginBottom: 16 }}>
+          Detalles de la Orden
+        </div>
+        
+        <Button type="dashed" icon={<IconPlus size={16} />} onClick={handleAddDetalle} block>
+          Agregar Insumo
+        </Button>
+
+        {detalles.length === 0 && (
+          <div style={{ textAlign: 'center', padding: 20, color: '#999', marginTop: 16 }}>
+            No hay insumos agregados. Haz clic en "Agregar Insumo" para comenzar.
+          </div>
+        )}
+
+        {detalles.map((detalle, index) => (
+          <div key={detalle.key} style={{ 
+            border: '1px solid #d9d9d9', 
+            borderRadius: 8, 
+            padding: 16, 
+            marginTop: 16,
+            backgroundColor: '#fafafa'
+          }}>
+            <div style={{ marginBottom: 8, fontWeight: 500, color: '#666' }}>
+              Insumo #{index + 1}
+            </div>
+            
+            <Row gutter={16}>
+              <Col span={12}>
+                <div style={{ marginBottom: 8 }}>
+                  <label style={{ display: 'block', marginBottom: 4 }}>Insumo *</label>
+                  <Select
+                    style={{ width: '100%' }}
+                    placeholder="Selecciona insumo"
+                    value={detalle.insumoId}
+                    onChange={(val) => handleDetalleChange(detalle.key, 'insumoId', val)}
+                    options={insumosOptions}
+                    showSearch
+                    filterOption={(input, option) =>
+                      option.label.toLowerCase().includes(input.toLowerCase())
+                    }
+                  />
+                </div>
+              </Col>
+              
+              <Col span={6}>
+                <div style={{ marginBottom: 8 }}>
+                  <label style={{ display: 'block', marginBottom: 4 }}>Cantidad *</label>
+                  <InputNumber
+                    style={{ width: '100%' }}
+                    min={0.01}
+                    step={0.1}
+                    value={detalle.cantidadSolicitada}
+                    onChange={(val) => handleDetalleChange(detalle.key, 'cantidadSolicitada', val)}
+                  />
+                </div>
+              </Col>
+              
+              <Col span={6}>
+                <div style={{ marginBottom: 8 }}>
+                  <label style={{ display: 'block', marginBottom: 4 }}>Unidad *</label>
+                  <Select
+                    style={{ width: '100%' }}
+                    value={detalle.unidadCompra || undefined}
+                    placeholder="Unidad"
+                    onChange={(val) => handleDetalleChange(detalle.key, 'unidadCompra', val)}
+                    options={unidadesOptions}
+                  />
+                </div>
+              </Col>
+            </Row>
+            
+            <Row gutter={16}>
+              <Col span={12}>
+                <div style={{ marginBottom: 8 }}>
+                  <label style={{ display: 'block', marginBottom: 4 }}>Costo Unitario (S/) *</label>
+                  <InputNumber
+                    style={{ width: '100%' }}
+                    min={0}
+                    step={0.01}
+                    precision={2}
+                    value={detalle.costoUnitarioPactado}
+                    onChange={(val) => handleDetalleChange(detalle.key, 'costoUnitarioPactado', val)}
+                  />
+                </div>
+              </Col>
+              
+              <Col span={10}>
+                <div style={{ marginBottom: 8 }}>
+                  <label style={{ display: 'block', marginBottom: 4 }}>Total</label>
+                  <div style={{ 
+                    padding: '4px 11px', 
+                    backgroundColor: '#fff', 
+                    border: '1px solid #d9d9d9',
+                    borderRadius: 6,
+                    height: 32,
+                    lineHeight: '24px',
+                    fontWeight: 600
+                  }}>
+                    {formatCurrency(Math.round((detalle.totalLinea || 0) * 100))}
+                  </div>
+                </div>
+              </Col>
+              
+              <Col span={2}>
+                <div style={{ marginTop: 28 }}>
+                  <Popconfirm
+                    title="¿Eliminar este insumo?"
+                    onConfirm={() => handleRemoveDetalle(detalle.key)}
+                    okText="Sí"
+                    cancelText="No"
+                  >
+                    <Button danger icon={<IconTrash size={16} />} />
+                  </Popconfirm>
+                </div>
+              </Col>
+            </Row>
+          </div>
+        ))}
+
+        {detalles.length > 0 && (
+          <div style={{ 
+            textAlign: 'right', 
+            marginTop: 16, 
+            padding: 16, 
+            backgroundColor: '#f5f5f5', 
+            borderRadius: 8 
+          }}>
+            <div style={{ fontSize: 16, fontWeight: 600 }}>
+              Total: {formatCurrency(Math.round(totalOrden * 100))}
+            </div>
+            <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
+              ({detalles.length} insumo{detalles.length !== 1 ? 's' : ''})
+            </div>
+          </div>
+        )}
+      </Form>
+    </Modal>
+  );
+};
+
+export default OrdenCompraModalView;

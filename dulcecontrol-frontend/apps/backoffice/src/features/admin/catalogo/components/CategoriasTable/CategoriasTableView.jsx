@@ -53,7 +53,7 @@ const CategoriasTableView = ({
       dataIndex: 'nombre',
       key: 'nombre',
       render: (_, record) => (
-        <Space direction="vertical" size={0}>
+        <Space orientation="vertical" size={0}>
           <Text strong>{record.nombre}</Text>
           <Text type="secondary">Slug: {record.slug}</Text>
         </Space>
@@ -99,7 +99,7 @@ const CategoriasTableView = ({
   ];
 
   return (
-    <Card bodyStyle={{ padding: 24 }}>
+    <Card styles={{ body: { padding: 24 } }}>
       <div
         style={{
           display: 'flex',

@@ -66,7 +66,7 @@ const SedeSelector = () => {
     if (preferred) {
       setSelectedSede({ sedeId: preferred.id, sedeNombre: preferred.nombre, tiendaId });
     }
-  }, [clearSelection, isLoading, sedes, selectedSedeId, selectedSedeNombre, setSelectedSede, tiendaId]);
+  }, [clearSelection, isLoading, sedes, selectedSedeId, selectedSedeNombre, selectionTiendaId, setSelectedSede, tiendaId]);
 
   const options = useMemo(
     () =>
@@ -98,7 +98,11 @@ const SedeSelector = () => {
     />
   );
 
-  const showDisabledState = !tiendaId || !sedes.length;
+  const hasSingleSede = sedes.length === 1;
+  const showDisabledState = !tiendaId || !sedes.length || hasSingleSede;
+  const helperText = hasSingleSede
+    ? 'Solo cuentas con una sede asignada'
+    : null;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -129,6 +133,11 @@ const SedeSelector = () => {
           <Button type="link" size="small" onClick={() => refetch()} style={{ padding: 0 }}>
             Reintentar
           </Button>
+        </Typography.Text>
+      )}
+      {!isError && helperText && (
+        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+          {helperText}
         </Typography.Text>
       )}
     </div>
