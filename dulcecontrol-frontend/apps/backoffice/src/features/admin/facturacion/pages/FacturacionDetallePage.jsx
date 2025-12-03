@@ -8,6 +8,8 @@ import dayjs from 'dayjs';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import JSZip from 'jszip';
+import { getDetallesPedido } from '../../ventas-pedidos/api/pedidos.api';
+import { getProductoById } from '../../catalogo/api/productos.api';
 
 const FacturacionDetallePage = () => {
     const { id } = useParams();
@@ -24,6 +26,39 @@ const FacturacionDetallePage = () => {
         setLoading(true);
         try {
             const data = await facturacionApi.obtenerComprobante(tiendaId, id);
+
+            // Si el comprobante no tiene detalles pero tiene un pedidoId, buscamos los detalles del pedido
+            if ((!data.detalles || data.detalles.length === 0) && data.pedidoId) {
+                try {
+                    const detallesPedido = await getDetallesPedido(tiendaId, data.pedidoId);
+
+                    // Enriquecer con nombres de productos
+                    const detallesConProducto = await Promise.all(detallesPedido.map(async (d) => {
+                        let nombreProducto = 'Producto';
+                        try {
+                            if (d.productoId) {
+                                const producto = await getProductoById(tiendaId, d.productoId);
+                                nombreProducto = producto.nombre;
+                            }
+                        } catch (e) {
+                            console.warn('No se pudo cargar nombre del producto', d.productoId);
+                        }
+
+                        return {
+                            cantidad: d.cantidad,
+                            descripcion: nombreProducto,
+                            precioUnitario: d.precioUnitarioCentimos,
+                            subtotal: d.subtotalLineaCentimos
+                        };
+                    }));
+
+                    data.detalles = detallesConProducto;
+                } catch (err) {
+                    console.error('Error cargando detalles del pedido:', err);
+                    message.warning('No se pudieron cargar los detalles del pedido asociado.');
+                }
+            }
+
             setComprobante(data);
         } catch (error) {
             console.error('Error cargando detalle:', error);
@@ -153,11 +188,15 @@ const FacturacionDetallePage = () => {
 
         if (comprobante.detalles) {
             comprobante.detalles.forEach(detail => {
+                const precioUnitario = detail.precioUnitario ?? detail.precioUnitarioCentimos ?? 0;
+                const subtotal = detail.subtotal ?? detail.totalItemCentimos ?? detail.subtotalLineaCentimos ?? 0;
+                const descripcion = detail.descripcion || detail.productoNombre || detail.nombre || 'Producto';
+
                 const detailData = [
                     detail.cantidad,
-                    detail.descripcion,
-                    (detail.precioUnitario / 100).toFixed(2),
-                    (detail.subtotal / 100).toFixed(2)
+                    descripcion,
+                    (precioUnitario / 100).toFixed(2),
+                    (subtotal / 100).toFixed(2)
                 ];
                 tableRows.push(detailData);
             });
@@ -304,22 +343,27 @@ const FacturacionDetallePage = () => {
         <cbc:TaxInclusiveAmount currencyID="${comprobante.moneda}">${(comprobante.totalImporteCentimos / 100).toFixed(2)}</cbc:TaxInclusiveAmount>
         <cbc:PayableAmount currencyID="${comprobante.moneda}">${(comprobante.totalImporteCentimos / 100).toFixed(2)}</cbc:PayableAmount>
     </cac:LegalMonetaryTotal>
-    ${comprobante.detalles ? comprobante.detalles.map((detalle, index) => `
+    ${comprobante.detalles ? comprobante.detalles.map((detalle, index) => {
+                const precioUnitario = detalle.precioUnitario ?? detalle.precioUnitarioCentimos ?? 0;
+                const subtotal = detalle.subtotal ?? detalle.totalItemCentimos ?? detalle.subtotalLineaCentimos ?? 0;
+                const descripcion = detalle.descripcion || detalle.productoNombre || detalle.nombre || 'Producto';
+
+                return `
     <cac:InvoiceLine>
         <cbc:ID>${index + 1}</cbc:ID>
         <cbc:InvoicedQuantity unitCode="NIU">${detalle.cantidad}</cbc:InvoicedQuantity>
-        <cbc:LineExtensionAmount currencyID="${comprobante.moneda}">${(detalle.subtotal / 100).toFixed(2)}</cbc:LineExtensionAmount>
+        <cbc:LineExtensionAmount currencyID="${comprobante.moneda}">${(subtotal / 100).toFixed(2)}</cbc:LineExtensionAmount>
         <cac:PricingReference>
             <cac:AlternativeConditionPrice>
-                <cbc:PriceAmount currencyID="${comprobante.moneda}">${(detalle.precioUnitario / 100).toFixed(2)}</cbc:PriceAmount>
+                <cbc:PriceAmount currencyID="${comprobante.moneda}">${(precioUnitario / 100).toFixed(2)}</cbc:PriceAmount>
                 <cbc:PriceTypeCode>01</cbc:PriceTypeCode>
             </cac:AlternativeConditionPrice>
         </cac:PricingReference>
         <cac:TaxTotal>
-            <cbc:TaxAmount currencyID="${comprobante.moneda}">${((detalle.subtotal * 0.18) / 100).toFixed(2)}</cbc:TaxAmount>
+            <cbc:TaxAmount currencyID="${comprobante.moneda}">${((subtotal * 0.18) / 100).toFixed(2)}</cbc:TaxAmount>
             <cac:TaxSubtotal>
-                <cbc:TaxableAmount currencyID="${comprobante.moneda}">${(detalle.subtotal / 100).toFixed(2)}</cbc:TaxableAmount>
-                <cbc:TaxAmount currencyID="${comprobante.moneda}">${((detalle.subtotal * 0.18) / 100).toFixed(2)}</cbc:TaxAmount>
+                <cbc:TaxableAmount currencyID="${comprobante.moneda}">${(subtotal / 100).toFixed(2)}</cbc:TaxableAmount>
+                <cbc:TaxAmount currencyID="${comprobante.moneda}">${((subtotal * 0.18) / 100).toFixed(2)}</cbc:TaxAmount>
                 <cac:TaxCategory>
                     <cbc:Percent>18.00</cbc:Percent>
                     <cbc:TaxExemptionReasonCode>10</cbc:TaxExemptionReasonCode>
@@ -332,12 +376,13 @@ const FacturacionDetallePage = () => {
             </cac:TaxSubtotal>
         </cac:TaxTotal>
         <cac:Item>
-            <cbc:Description><![CDATA[${detalle.descripcion}]]></cbc:Description>
+            <cbc:Description><![CDATA[${descripcion}]]></cbc:Description>
         </cac:Item>
         <cac:Price>
-            <cbc:PriceAmount currencyID="${comprobante.moneda}">${(detalle.precioUnitario / 1.18 / 100).toFixed(2)}</cbc:PriceAmount>
+            <cbc:PriceAmount currencyID="${comprobante.moneda}">${(precioUnitario / 1.18 / 100).toFixed(2)}</cbc:PriceAmount>
         </cac:Price>
-    </cac:InvoiceLine>`).join('') : ''}
+    </cac:InvoiceLine>`;
+            }).join('') : ''}
 </Invoice>`;
 
             const blob = new Blob([xmlContent], { type: 'text/xml' });
@@ -615,14 +660,20 @@ const FacturacionDetallePage = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {comprobante.detalles && comprobante.detalles.map((item, idx) => (
-                            <tr key={idx}>
-                                <td className="text-center">{item.cantidad}</td>
-                                <td>{item.descripcion}</td>
-                                <td className="text-right">{(item.precioUnitario / 100).toFixed(2)}</td>
-                                <td className="text-right">{(item.subtotal / 100).toFixed(2)}</td>
-                            </tr>
-                        ))}
+                        {comprobante.detalles && comprobante.detalles.map((item, idx) => {
+                            const precioUnitario = item.precioUnitario ?? item.precioUnitarioCentimos ?? 0;
+                            const subtotal = item.subtotal ?? item.totalItemCentimos ?? item.subtotalLineaCentimos ?? 0;
+                            const descripcion = item.descripcion || item.productoNombre || item.nombre || 'Producto';
+
+                            return (
+                                <tr key={idx}>
+                                    <td className="text-center">{item.cantidad}</td>
+                                    <td>{descripcion}</td>
+                                    <td className="text-right">{(precioUnitario / 100).toFixed(2)}</td>
+                                    <td className="text-right">{(subtotal / 100).toFixed(2)}</td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
 
