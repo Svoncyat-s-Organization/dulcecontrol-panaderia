@@ -15,7 +15,16 @@ public class InventarioInsumoSedeResponse {
     private Long id;
     private Long sedeId;
     private Long insumoId;
+    
+    // Datos enriquecidos del insumo
+    private String nombreInsumo;
+    private String codigoInterno;
+    private String unidadMedida;
+    private BigDecimal stockMinimo;
+    
+    // Datos del inventario
     private BigDecimal cantidadActual;
+    private String estadoStock;  // OK, BAJO_STOCK, CRITICO, SIN_CONFIGURAR
     private String ubicacionFisica;
     private LocalDateTime actualizadoEn;
 }

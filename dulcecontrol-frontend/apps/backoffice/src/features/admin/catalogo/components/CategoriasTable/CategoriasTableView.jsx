@@ -1,5 +1,5 @@
-import { Avatar, Button, Card, Result, Space, Table, Tag, Typography, theme, Modal } from 'antd';
-import { IconPhoto, IconPlus, IconRefresh, IconEdit, IconTrash } from '@tabler/icons-react';
+import { Avatar, Badge, Button, Card, Result, Space, Table, Tag, Typography, theme } from 'antd';
+import { IconPhoto, IconPlus, IconRefresh, IconEdit, IconTrash, IconPackage } from '@tabler/icons-react';
 
 const { Text, Title } = Typography;
 
@@ -37,25 +37,50 @@ const CategoriasTableView = ({
       title: 'Imagen',
       dataIndex: 'urlImagen',
       key: 'imagen',
-      width: 90,
+      width: 80,
+      align: 'center',
+      fixed: 'left',
       render: (_, record) => (
         <Avatar
           shape="square"
           size={56}
           src={record.urlImagen}
-          icon={<IconPhoto size={24} />}
-          style={{ backgroundColor: token.colorFillAlter }}
+          icon={<IconPhoto size={18} />}
+          style={{ 
+            backgroundColor: token.colorFillQuaternary,
+            border: `1px solid ${token.colorBorderSecondary}`,
+          }}
         />
       ),
     },
     {
-      title: 'Nombre',
+      title: 'Categoría',
       dataIndex: 'nombre',
       key: 'nombre',
+      width: 280,
+      fixed: 'left',
+      ellipsis: true,
       render: (_, record) => (
-        <Space orientation="vertical" size={0}>
-          <Text strong>{record.nombre}</Text>
-          <Text type="secondary">Slug: {record.slug}</Text>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <Text strong style={{ fontSize: 14 }}>{record.nombre}</Text>
+          <Text type="secondary" style={{ fontSize: 12, fontFamily: 'monospace' }}>
+            /{record.slug}
+          </Text>
+        </div>
+      ),
+    },
+    {
+      title: 'Productos',
+      dataIndex: 'productosCount',
+      key: 'productosCount',
+      width: 120,
+      align: 'center',
+      render: (count) => (
+        <Space size={4}>
+          <IconPackage size={16} style={{ color: token.colorTextTertiary }} />
+          <Text strong style={{ fontSize: 14 }}>
+            {count || 0}
+          </Text>
         </Space>
       ),
     },
@@ -63,33 +88,52 @@ const CategoriasTableView = ({
       title: 'Orden',
       dataIndex: 'ordenVisual',
       key: 'ordenVisual',
-      width: 120,
-      render: (orden) => <Tag color="blue">#{orden}</Tag>,
+      width: 90,
+      align: 'center',
+      render: (orden) => (
+        <Tag color="blue" style={{ margin: 0 }}>
+          #{orden}
+        </Tag>
+      ),
     },
     {
       title: 'Estado',
       dataIndex: 'activa',
       key: 'activa',
-      width: 140,
+      width: 100,
+      align: 'center',
       render: (activa) => (
-        <Tag color={activa ? 'green' : 'red'}>{activa ? 'Activa' : 'Inactiva'}</Tag>
+        <Badge 
+          status={activa ? 'success' : 'default'} 
+          text={activa ? 'Activa' : 'Inactiva'}
+          style={{ fontSize: 12 }}
+        />
       ),
     },
     {
       title: 'Acciones',
       key: 'acciones',
-      width: 200,
+      width: 160,
+      align: 'center',
+      fixed: 'right',
       render: (_, record) => (
-        <Space>
-          <Button type="link" icon={<IconEdit size={16} />} onClick={() => onEdit(record)}>
+        <Space size={0}>
+          <Button
+            type="text"
+            icon={<IconEdit size={16} />}
+            onClick={() => onEdit(record)}
+            style={{ color: token.colorPrimary }}
+          >
             Editar
           </Button>
           <Button
-            type="link"
+            type="text"
             danger
             icon={<IconTrash size={16} />}
             onClick={() => onDelete(record)}
             loading={deletingId === record.id}
+            disabled={record.productosCount > 0}
+            title={record.productosCount > 0 ? 'No se puede eliminar una categoría con productos' : ''}
           >
             Eliminar
           </Button>
@@ -99,38 +143,63 @@ const CategoriasTableView = ({
   ];
 
   return (
-    <Card styles={{ body: { padding: 24 } }}>
+    <Card
+      style={{
+        borderRadius: token.borderRadiusLG,
+        background: token.colorBgContainer,
+        boxShadow: token.boxShadow,
+      }}
+      styles={{ body: { padding: 0 } }}
+    >
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 12,
-          marginBottom: 16,
+          alignItems: 'flex-start',
+          padding: '20px 24px',
+          borderBottom: `1px solid ${token.colorBorderSecondary}`,
+          background: token.colorBgLayout,
         }}
       >
         <div>
-          <Title level={4} style={{ margin: 0 }}>
+          <Title level={4} style={{ margin: '0 0 4px 0', fontSize: 18 }}>
             Categorías de productos
           </Title>
-          <Text type="secondary">Gestiona las familias visibles en tus canales.</Text>
+          <Text type="secondary" style={{ fontSize: 13 }}>
+            Organiza tu catálogo para POS y Tienda Virtual
+          </Text>
         </div>
-        <Button type="primary" icon={<IconPlus size={16} />} onClick={onCreate}>
+        <Button 
+          type="primary" 
+          icon={<IconPlus size={16} />} 
+          onClick={onCreate}
+          size="large"
+        >
           Nueva categoría
         </Button>
       </div>
 
-      <Table
-        rowKey="id"
-        columns={columns}
-        dataSource={categorias}
-        loading={loading}
-        pagination={pagination}
-        onChange={(nextPagination) =>
-          onPaginate?.(nextPagination.current, nextPagination.pageSize)
-        }
-      />
+      <div style={{ padding: '0 24px 24px' }}>
+        <Table
+          rowKey="id"
+          columns={columns}
+          dataSource={categorias}
+          loading={loading}
+          scroll={{ x: 1000 }}
+          size="middle"
+          pagination={{
+            ...pagination,
+            position: ['bottomCenter'],
+            style: { marginTop: 16 },
+          }}
+          onChange={(nextPagination) =>
+            onPaginate?.(nextPagination.current, nextPagination.pageSize)
+          }
+          style={{
+            marginTop: 24,
+          }}
+        />
+      </div>
     </Card>
   );
 };

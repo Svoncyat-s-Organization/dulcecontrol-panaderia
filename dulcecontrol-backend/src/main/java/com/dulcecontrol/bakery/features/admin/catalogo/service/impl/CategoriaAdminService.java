@@ -5,6 +5,7 @@ import com.dulcecontrol.bakery.features.admin.catalogo.dto.CategoriaResponse;
 import com.dulcecontrol.bakery.features.admin.catalogo.dto.CategoriaUpdateRequest;
 import com.dulcecontrol.bakery.features.admin.catalogo.entity.Categoria;
 import com.dulcecontrol.bakery.features.admin.catalogo.repository.CategoriaRepository;
+import com.dulcecontrol.bakery.features.admin.catalogo.repository.ProductoRepository;
 import com.dulcecontrol.bakery.features.admin.catalogo.service.ICategoriaAdminService;
 import com.dulcecontrol.bakery.shared.exception.BadRequestException;
 import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
@@ -19,13 +20,14 @@ import java.util.List;
 public class CategoriaAdminService implements ICategoriaAdminService {
 
     private final CategoriaRepository categoriaRepository;
+    private final ProductoRepository productoRepository;
 
     @Override
     @Transactional(readOnly = true)
     public List<CategoriaResponse> listar(Long tiendaId) {
         return categoriaRepository.findByTiendaIdOrderByOrdenVisualAscNombreAsc(tiendaId)
                 .stream()
-                .map(this::toResponse)
+                .map(categoria -> toResponseWithCount(categoria))
                 .toList();
     }
 
@@ -91,6 +93,16 @@ public class CategoriaAdminService implements ICategoriaAdminService {
     public void eliminar(Long tiendaId, Long categoriaId) {
         Categoria categoria = categoriaRepository.findByIdAndTiendaId(categoriaId, tiendaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada"));
+        
+        // Validar que no tenga productos asignados
+        long productosCount = productoRepository.countByCategoriaId(categoriaId);
+        if (productosCount > 0) {
+            throw new BadRequestException(
+                String.format("No se puede eliminar la categoría porque tiene %d producto(s) asignado(s). " +
+                    "Primero debes reasignar o eliminar estos productos.", productosCount)
+            );
+        }
+        
         categoriaRepository.delete(categoria);
     }
 
@@ -114,6 +126,23 @@ public class CategoriaAdminService implements ICategoriaAdminService {
                 .icono(categoria.getIcono())
                 .activa(categoria.getActiva())
                 .ordenVisual(categoria.getOrdenVisual())
+                .creadoEn(categoria.getCreadoEn())
+                .build();
+    }
+
+    private CategoriaResponse toResponseWithCount(Categoria categoria) {
+        long productosCount = productoRepository.countByCategoriaId(categoria.getId());
+        return CategoriaResponse.builder()
+                .id(categoria.getId())
+                .tiendaId(categoria.getTiendaId())
+                .nombre(categoria.getNombre())
+                .slug(categoria.getSlug())
+                .descripcion(categoria.getDescripcion())
+                .urlImagen(categoria.getUrlImagen())
+                .icono(categoria.getIcono())
+                .activa(categoria.getActiva())
+                .ordenVisual(categoria.getOrdenVisual())
+                .productosCount(productosCount)
                 .creadoEn(categoria.getCreadoEn())
                 .build();
     }

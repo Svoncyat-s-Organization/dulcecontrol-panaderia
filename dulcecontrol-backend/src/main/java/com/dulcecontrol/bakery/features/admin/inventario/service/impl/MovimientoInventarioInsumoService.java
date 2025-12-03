@@ -7,6 +7,10 @@ import com.dulcecontrol.bakery.features.admin.inventario.entity.MovimientoInvent
 import com.dulcecontrol.bakery.features.admin.inventario.repository.InventarioInsumoSedeRepository;
 import com.dulcecontrol.bakery.features.admin.inventario.repository.MovimientoInventarioInsumoRepository;
 import com.dulcecontrol.bakery.features.admin.inventario.service.IMovimientoInventarioInsumoService;
+import com.dulcecontrol.bakery.features.admin.compras.entity.Insumo;
+import com.dulcecontrol.bakery.features.admin.compras.repository.InsumoRepository;
+import com.dulcecontrol.bakery.features.admin.seguridad.entity.UsuarioTienda;
+import com.dulcecontrol.bakery.features.admin.seguridad.repository.UsuarioTiendaRepository;
 import com.dulcecontrol.bakery.shared.exception.BadRequestException;
 import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +29,8 @@ public class MovimientoInventarioInsumoService implements IMovimientoInventarioI
 
     private final MovimientoInventarioInsumoRepository repository;
     private final InventarioInsumoSedeRepository inventarioRepository;
+    private final InsumoRepository insumoRepository;
+    private final UsuarioTiendaRepository usuarioRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -152,10 +158,24 @@ public class MovimientoInventarioInsumoService implements IMovimientoInventarioI
     }
 
     private MovimientoInventarioInsumoResponse toResponse(MovimientoInventarioInsumo entity) {
+        // Enriquecer con datos del insumo
+        Insumo insumo = insumoRepository.findById(entity.getInsumoId()).orElse(null);
+        
+        // Enriquecer con datos del usuario responsable
+        String usuarioResponsable = null;
+        if (entity.getResponsableId() != null) {
+            usuarioResponsable = usuarioRepository.findById(entity.getResponsableId())
+                    .map(UsuarioTienda::getNombres)
+                    .orElse(null);
+        }
+        
         return MovimientoInventarioInsumoResponse.builder()
                 .id(entity.getId())
                 .sedeId(entity.getSedeId())
                 .insumoId(entity.getInsumoId())
+                .nombreInsumo(insumo != null ? insumo.getNombre() : null)
+                .codigoInterno(insumo != null ? insumo.getCodigoInterno() : null)
+                .unidadMedida(insumo != null && insumo.getUnidadBase() != null ? insumo.getUnidadBase().name() : null)
                 .tipoMovimiento(entity.getTipoMovimiento())
                 .cantidad(entity.getCantidad())
                 .cantidadAnterior(entity.getCantidadAnterior())
@@ -165,6 +185,7 @@ public class MovimientoInventarioInsumoService implements IMovimientoInventarioI
                 .transferenciaId(entity.getTransferenciaId())
                 .motivo(entity.getMotivo())
                 .responsableId(entity.getResponsableId())
+                .usuarioResponsable(usuarioResponsable)
                 .creadoEn(entity.getCreadoEn())
                 .build();
     }

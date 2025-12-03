@@ -1,8 +1,18 @@
 import { Modal, Form, Input, InputNumber, Switch, theme } from 'antd';
 import { IconLink } from '@tabler/icons-react';
+import { slugify } from '../../utils/slugUtils.js';
 
 const CategoriaFormView = ({ open, onClose, form, onSubmit, loading, isEditing }) => {
   const { token } = theme.useToken();
+
+  const handleNombreChange = (e) => {
+    const nombre = e.target.value;
+    if (!isEditing) {
+      // Solo autogenerar slug al crear (no al editar)
+      const slug = slugify(nombre);
+      form.setFieldValue('slug', slug);
+    }
+  };
 
   return (
     <Modal
@@ -13,6 +23,7 @@ const CategoriaFormView = ({ open, onClose, form, onSubmit, loading, isEditing }
       okText={isEditing ? 'Guardar cambios' : 'Crear categoría'}
       confirmLoading={loading}
       destroyOnClose
+      width={520}
     >
       <Form
         layout="vertical"
@@ -26,7 +37,27 @@ const CategoriaFormView = ({ open, onClose, form, onSubmit, loading, isEditing }
           name="nombre"
           rules={[{ required: true, message: 'Ingresa el nombre de la categoría' }]}
         >
-          <Input placeholder="Ej. Tortas" allowClear />
+          <Input 
+            placeholder="Ej. Tortas" 
+            allowClear 
+            onChange={handleNombreChange}
+          />
+        </Form.Item>
+
+        <Form.Item
+          label="Slug (URL)"
+          name="slug"
+          rules={[
+            { required: true, message: 'Ingresa el slug' },
+            { pattern: /^[a-z0-9-]+$/, message: 'Solo minúsculas, números y guiones' },
+          ]}
+          tooltip="Se usa para la URL en la tienda virtual. Ej: /categoria/tortas"
+        >
+          <Input 
+            placeholder="tortas" 
+            allowClear 
+            style={{ fontFamily: 'monospace' }}
+          />
         </Form.Item>
 
         <Form.Item label="Descripción" name="descripcion">

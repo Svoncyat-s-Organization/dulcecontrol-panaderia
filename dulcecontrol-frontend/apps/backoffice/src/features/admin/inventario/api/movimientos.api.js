@@ -34,3 +34,15 @@ export const crearMovimientoInventarioProducto = async (tiendaId, payload) => {
   );
   return data;
 };
+
+export const crearMovimientoInventarioInsumo = async (tiendaId, payload) => {
+  const { data } = await apiClient.post(
+    buildMovimientosUrl(tiendaId, 'insumos'),
+    payload
+  );
+  return data;
+};
+
+// Alias para compatibilidad
+export const crearMovimientoProducto = crearMovimientoInventarioProducto;
+export const crearMovimientoInsumo = crearMovimientoInventarioInsumo;
