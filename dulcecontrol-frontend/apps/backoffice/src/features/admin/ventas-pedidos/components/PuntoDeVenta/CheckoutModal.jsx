@@ -5,14 +5,21 @@ import dayjs from 'dayjs';
 import { useQuery } from '@tanstack/react-query';
 import { createDireccionCliente, getClientes, getDireccionesCliente } from '../../api/clientes.api.js';
 import { getSeriesPorSede } from '../../api/facturacion.api.js';
+import { getUbigeoDepartamentos, getUbigeoDistritos, getUbigeoProvincias, getUbigeoRutaPorDistrito } from '../../api/ubigeo.api.js';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 import { POS_MODES, useCartStore } from '../../hooks/useCartStore.js';
 import { TIPOS_ENTREGA } from '../../constants/ventaConstants.js';
-import { FACTURACION_KEYS } from '../../constants/queryKeys.js';
+import { FACTURACION_KEYS, UBIGEO_KEYS } from '../../constants/queryKeys.js';
 import MoneyInput from '../../../../../shared/components/MoneyInput.jsx';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+const EMPTY_UBIGEO_LABELS = {
+    departamentoNombre: null,
+    provinciaNombre: null,
+    distritoNombre: null,
+    codigo: null,
+};
 
 const CheckoutModal = ({
     open,
@@ -35,6 +42,8 @@ const CheckoutModal = ({
     const [metodoPago, setMetodoPago] = useState(CASH_METHOD);
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
     const [savingAddress, setSavingAddress] = useState(false);
+    const [isUbigeoPrefilling, setIsUbigeoPrefilling] = useState(false);
+    const [shippingUbigeoLabels, setShippingUbigeoLabels] = useState(EMPTY_UBIGEO_LABELS);
     const previousMode = useRef(posMode);
     const clienteId = cliente?.id;
     const clienteEsGenerico = useMemo(() => {
@@ -65,6 +74,11 @@ const CheckoutModal = ({
     const montoPagadoValue = Number(Form.useWatch('montoPagado', form) || 0);
     const showDeliveryFields = isPedido && tipoEntregaValue === TIPOS_ENTREGA.DELIVERY;
     const puedeEditarCliente = clienteEsGenerico || !clienteId;
+    const shippingDepartamentoId = Form.useWatch('shippingDepartamentoId', form);
+    const shippingProvinciaId = Form.useWatch('shippingProvinciaId', form);
+    const shippingDistritoId = Form.useWatch('shippingDistritoId', form);
+    const newAddressDepartamentoId = Form.useWatch('departamentoId', addressForm);
+    const newAddressProvinciaId = Form.useWatch('provinciaId', addressForm);
 
     const { data: clientes = [] } = useQuery({
         queryKey: ['clientes', tiendaId],
@@ -88,6 +102,59 @@ const CheckoutModal = ({
         enabled: open && !!tiendaId && !!sedeId,
         select: (data) => (Array.isArray(data) ? data.filter((serie) => serie.activa) : []),
     });
+
+    const {
+        data: departamentos = [],
+        isLoading: departamentosLoading,
+    } = useQuery({
+        queryKey: UBIGEO_KEYS.departamentos(),
+        queryFn: () => getUbigeoDepartamentos(),
+        enabled: open,
+        staleTime: 1000 * 60 * 60,
+    });
+
+    const {
+        data: shippingProvinciasData = [],
+        isFetching: shippingProvinciasFetching,
+    } = useQuery({
+        queryKey: UBIGEO_KEYS.provincias(shippingDepartamentoId),
+        queryFn: () => getUbigeoProvincias(shippingDepartamentoId),
+        enabled: open && !!shippingDepartamentoId,
+        staleTime: 1000 * 60 * 10,
+    });
+
+    const {
+        data: shippingDistritosData = [],
+        isFetching: shippingDistritosFetching,
+    } = useQuery({
+        queryKey: UBIGEO_KEYS.distritos(shippingProvinciaId),
+        queryFn: () => getUbigeoDistritos(shippingProvinciaId),
+        enabled: open && !!shippingProvinciaId,
+        staleTime: 1000 * 60 * 10,
+    });
+
+    const {
+        data: addressProvinciasData = [],
+        isFetching: addressProvinciasFetching,
+    } = useQuery({
+        queryKey: UBIGEO_KEYS.provincias(newAddressDepartamentoId),
+        queryFn: () => getUbigeoProvincias(newAddressDepartamentoId),
+        enabled: open && isAddressModalOpen && !!newAddressDepartamentoId,
+    });
+
+    const {
+        data: addressDistritosData = [],
+        isFetching: addressDistritosFetching,
+    } = useQuery({
+        queryKey: UBIGEO_KEYS.distritos(newAddressProvinciaId),
+        queryFn: () => getUbigeoDistritos(newAddressProvinciaId),
+        enabled: open && isAddressModalOpen && !!newAddressProvinciaId,
+    });
+
+    const shippingProvincias = shippingDepartamentoId ? shippingProvinciasData : [];
+    const shippingDistritos = shippingProvinciaId ? shippingDistritosData : [];
+    const addressProvincias = newAddressDepartamentoId ? addressProvinciasData : [];
+    const addressDistritos = newAddressProvinciaId ? addressDistritosData : [];
 
     const series = useMemo(() => (
         [...seriesRaw].sort((a, b) => (a?.serie || '').localeCompare(b?.serie || '', 'es', { sensitivity: 'base' }))
@@ -175,8 +242,12 @@ const CheckoutModal = ({
             shippingContactoNombre: cliente?.nombreDoc || '',
             shippingContactoTelefono: cliente?.telefono || '',
             serieId: null,
+            shippingDepartamentoId: null,
+            shippingProvinciaId: null,
+            shippingDistritoId: null,
         });
         setMetodoPago(isPedido ? 'yape' : CASH_METHOD);
+        setShippingUbigeoLabels(EMPTY_UBIGEO_LABELS);
     }, [open, cliente, posMode, total, isPedido, form]);
 
     useEffect(() => {
@@ -191,6 +262,7 @@ const CheckoutModal = ({
                 shippingContactoNombre: '',
                 shippingContactoTelefono: '',
             });
+            clearShippingUbigeoFields();
         } else {
             form.setFieldsValue({
                 shippingContactoNombre: cliente?.nombreDoc || '',
@@ -262,6 +334,11 @@ const CheckoutModal = ({
                 shippingDireccion: unica.direccionCompleta || '',
                 shippingReferencia: unica.referencia || '',
             });
+            if (unica.distritoId) {
+                handlePrefillUbigeoFromDistrito(unica.distritoId);
+            } else {
+                clearShippingUbigeoFields();
+            }
         }
     }, [open, clienteId, direccionesCliente, form, showDeliveryFields]);
 
@@ -299,8 +376,6 @@ const CheckoutModal = ({
         }
         form.setFields([{ name: 'serieId', errors: [] }]);
     }, [open, tipoComprobanteValue, seriesPorTipo, form]);
-
-    // Ubigeo logic removed - using simple text fields for address
 
     const handleOk = () => {
         form.validateFields().then((values) => {
@@ -347,6 +422,27 @@ const CheckoutModal = ({
                 || (showDeliveryFields ? values.shippingDireccion?.trim() : null)
                 || cliente?.direccion
                 || null;
+            const resolvedShippingDepartamento = values.shippingDepartamentoId
+                ? departamentos.find((item) => String(item.id) === String(values.shippingDepartamentoId))
+                : null;
+            const resolvedShippingProvincia = values.shippingProvinciaId
+                ? shippingProvincias.find((item) => String(item.id) === String(values.shippingProvinciaId))
+                : null;
+            const resolvedShippingDistrito = values.shippingDistritoId
+                ? shippingDistritos.find((item) => String(item.id) === String(values.shippingDistritoId))
+                : null;
+            const shippingDepartamentoNombre = shippingUbigeoLabels.departamentoNombre
+                || resolvedShippingDepartamento?.nombre
+                || null;
+            const shippingProvinciaNombre = shippingUbigeoLabels.provinciaNombre
+                || resolvedShippingProvincia?.nombre
+                || null;
+            const shippingDistritoNombre = shippingUbigeoLabels.distritoNombre
+                || resolvedShippingDistrito?.nombre
+                || null;
+            const shippingCodigoUbigeo = shippingUbigeoLabels.codigo
+                || resolvedShippingDistrito?.codigoUbigeo
+                || null;
 
             const normalizedPayload = {
                 ...values,
@@ -357,10 +453,10 @@ const CheckoutModal = ({
                 costoDelivery: showDeliveryFields ? Number(values.costoDelivery || 0) : 0,
                 shippingDireccion: showDeliveryFields ? values.shippingDireccion?.trim() || '' : null,
                 shippingReferencia: showDeliveryFields ? values.shippingReferencia?.trim() || null : null,
-                shippingDepartamento: null,
-                shippingProvincia: null,
-                shippingDistrito: null,
-                shippingCodigoUbigeo: null,
+                shippingDepartamento: showDeliveryFields ? shippingDepartamentoNombre : null,
+                shippingProvincia: showDeliveryFields ? shippingProvinciaNombre : null,
+                shippingDistrito: showDeliveryFields ? shippingDistritoNombre : null,
+                shippingCodigoUbigeo: showDeliveryFields ? shippingCodigoUbigeo : null,
                 shippingContactoNombre: showDeliveryFields ? values.shippingContactoNombre?.trim() || cliente?.nombreDoc || '' : null,
                 shippingContactoTelefono: showDeliveryFields ? values.shippingContactoTelefono?.trim() || cliente?.telefono || '' : null,
                 fechaEntrega: values.fechaEntrega ? dayjs(values.fechaEntrega).format('YYYY-MM-DDTHH:mm:ss') : null,
@@ -389,6 +485,7 @@ const CheckoutModal = ({
                 shippingDireccion: '',
                 shippingReferencia: '',
             });
+            clearShippingUbigeoFields();
             return;
         }
         const selected = direccionesCliente.find((dir) => dir.id === value);
@@ -397,6 +494,13 @@ const CheckoutModal = ({
             shippingDireccion: selected?.direccionCompleta || '',
             shippingReferencia: selected?.referencia || '',
         });
+        if (showDeliveryFields) {
+            if (selected?.distritoId) {
+                handlePrefillUbigeoFromDistrito(selected.distritoId);
+            } else {
+                clearShippingUbigeoFields();
+            }
+        }
     };
 
     const openAddressModal = () => {
@@ -414,10 +518,15 @@ const CheckoutModal = ({
         try {
             const values = await addressForm.validateFields();
             setSavingAddress(true);
+            const departamentoOption = departamentos.find((item) => String(item.id) === String(values.departamentoId));
+            const provinciaOption = addressProvincias.find((item) => String(item.id) === String(values.provinciaId));
+            const distritoOption = addressDistritos.find((item) => String(item.id) === String(values.distritoId));
             const direccionParts = [values.direccion?.trim()].filter(Boolean);
-            const extraParts = [values.distrito, values.provincia, values.departamento]
-                .map((item) => item?.trim())
-                .filter(Boolean);
+            const extraParts = [
+                distritoOption?.nombre,
+                provinciaOption?.nombre,
+                departamentoOption?.nombre,
+            ].filter(Boolean);
             if (extraParts.length) {
                 direccionParts.push(extraParts.join(', '));
             }
@@ -427,6 +536,7 @@ const CheckoutModal = ({
                 direccionCompleta,
                 referencia: values.referencia?.trim() || null,
                 esEntrega: true,
+                distritoId: values.distritoId || null,
             };
             const nuevaDireccion = await createDireccionCliente(tiendaId, clienteId, payload);
             await refetchDirecciones();
@@ -434,6 +544,15 @@ const CheckoutModal = ({
                 direccionClienteId: nuevaDireccion.id,
                 shippingDireccion: direccionCompleta,
                 shippingReferencia: values.referencia?.trim() || '',
+                shippingDepartamentoId: values.departamentoId || null,
+                shippingProvinciaId: values.provinciaId || null,
+                shippingDistritoId: values.distritoId || null,
+            });
+            setShippingUbigeoLabels({
+                departamentoNombre: departamentoOption?.nombre || null,
+                provinciaNombre: provinciaOption?.nombre || null,
+                distritoNombre: distritoOption?.nombre || null,
+                codigo: distritoOption?.codigoUbigeo || null,
             });
             setIsAddressModalOpen(false);
             addressForm.resetFields();
@@ -443,6 +562,111 @@ const CheckoutModal = ({
             setSavingAddress(false);
         }
     };
+
+    function clearShippingUbigeoFields() {
+        form.setFieldsValue({
+            shippingDepartamentoId: null,
+            shippingProvinciaId: null,
+            shippingDistritoId: null,
+        });
+        setShippingUbigeoLabels(EMPTY_UBIGEO_LABELS);
+    }
+
+    async function handlePrefillUbigeoFromDistrito(distritoId) {
+        if (!distritoId) {
+            clearShippingUbigeoFields();
+            return;
+        }
+        try {
+            setIsUbigeoPrefilling(true);
+            const ruta = await getUbigeoRutaPorDistrito(distritoId);
+            if (!ruta) {
+                clearShippingUbigeoFields();
+                return;
+            }
+            form.setFieldsValue({
+                shippingDepartamentoId: ruta.departamento?.id || null,
+                shippingProvinciaId: ruta.provincia?.id || null,
+                shippingDistritoId: ruta.distrito?.id || null,
+            });
+            setShippingUbigeoLabels({
+                departamentoNombre: ruta.departamento?.nombre || null,
+                provinciaNombre: ruta.provincia?.nombre || null,
+                distritoNombre: ruta.distrito?.nombre || null,
+                codigo: ruta.distrito?.codigoUbigeo || null,
+            });
+            return;
+        } catch (error) {
+            console.error('No se pudo prellenar el ubigeo del cliente', error);
+        } finally {
+            setIsUbigeoPrefilling(false);
+        }
+    }
+
+    function handleShippingDepartamentoChange(value) {
+        const selected = departamentos.find((item) => String(item.id) === String(value));
+        setShippingUbigeoLabels({
+            departamentoNombre: selected?.nombre || null,
+            provinciaNombre: null,
+            distritoNombre: null,
+            codigo: null,
+        });
+        form.setFieldsValue({
+            shippingDepartamentoId: value || null,
+            shippingProvinciaId: null,
+            shippingDistritoId: null,
+        });
+    }
+
+    function handleShippingProvinciaChange(value) {
+        const selected = shippingProvincias.find((item) => String(item.id) === String(value));
+        setShippingUbigeoLabels((prev) => ({
+            ...prev,
+            provinciaNombre: selected?.nombre || null,
+            distritoNombre: null,
+            codigo: null,
+        }));
+        form.setFieldsValue({
+            shippingProvinciaId: value || null,
+            shippingDistritoId: null,
+        });
+    }
+
+    function handleShippingDistritoChange(value) {
+        const selected = shippingDistritos.find((item) => String(item.id) === String(value));
+        setShippingUbigeoLabels((prev) => ({
+            ...prev,
+            distritoNombre: selected?.nombre || null,
+            codigo: selected?.codigoUbigeo || null,
+        }));
+        form.setFieldsValue({
+            shippingDistritoId: value || null,
+        });
+    }
+
+    function handleAddressDepartamentoChange(value) {
+        addressForm.setFieldsValue({
+            departamentoId: value || null,
+            provinciaId: null,
+            distritoId: null,
+        });
+    }
+
+    function handleAddressProvinciaChange(value) {
+        addressForm.setFieldsValue({
+            provinciaId: value || null,
+            distritoId: null,
+        });
+    }
+
+    useEffect(() => {
+        if (!open) {
+            return;
+        }
+        if (!showDeliveryFields) {
+            clearShippingUbigeoFields();
+        }
+    }, [showDeliveryFields, open]);
 
     const entregaOptions = [
         { value: TIPOS_ENTREGA.CONSUMO_LOCAL, label: 'Consumo en local' },
@@ -750,6 +974,70 @@ const CheckoutModal = ({
                             <Input placeholder="Punto de referencia" />
                         </Form.Item>
                         <Row gutter={12}>
+                            <Col span={8}>
+                                <Form.Item
+                                    name="shippingDepartamentoId"
+                                    label="Departamento"
+                                    rules={[{ required: true, message: 'Selecciona el departamento' }]}
+                                >
+                                    <Select
+                                        showSearch
+                                        placeholder="Departamento"
+                                        loading={departamentosLoading || isUbigeoPrefilling}
+                                        onChange={handleShippingDepartamentoChange}
+                                        allowClear
+                                        filterOption={(input, option) => (option?.children ?? '').toLowerCase().includes(input.toLowerCase())}
+                                    >
+                                        {departamentos.map((dep) => (
+                                            <Option key={dep.id} value={dep.id}>{dep.nombre}</Option>
+                                        ))}
+                                    </Select>
+                                </Form.Item>
+                            </Col>
+                            <Col span={8}>
+                                <Form.Item
+                                    name="shippingProvinciaId"
+                                    label="Provincia"
+                                    rules={[{ required: true, message: 'Selecciona la provincia' }]}
+                                >
+                                    <Select
+                                        showSearch
+                                        placeholder="Provincia"
+                                        disabled={!shippingDepartamentoId}
+                                        loading={shippingProvinciasFetching || isUbigeoPrefilling}
+                                        onChange={handleShippingProvinciaChange}
+                                        allowClear
+                                        filterOption={(input, option) => (option?.children ?? '').toLowerCase().includes(input.toLowerCase())}
+                                    >
+                                        {shippingProvincias.map((prov) => (
+                                            <Option key={prov.id} value={prov.id}>{prov.nombre}</Option>
+                                        ))}
+                                    </Select>
+                                </Form.Item>
+                            </Col>
+                            <Col span={8}>
+                                <Form.Item
+                                    name="shippingDistritoId"
+                                    label="Distrito"
+                                    rules={[{ required: true, message: 'Selecciona el distrito' }]}
+                                >
+                                    <Select
+                                        showSearch
+                                        placeholder="Distrito"
+                                        disabled={!shippingProvinciaId}
+                                        loading={shippingDistritosFetching || isUbigeoPrefilling}
+                                        onChange={handleShippingDistritoChange}
+                                        allowClear
+                                        filterOption={(input, option) => (option?.children ?? '').toLowerCase().includes(input.toLowerCase())}
+                                    >
+                                        {shippingDistritos.map((dist) => (
+                                            <Option key={dist.id} value={dist.id}>{dist.nombre}</Option>
+                                        ))}
+                                    </Select>
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                        <Row gutter={12}>
                             <Col span={12}>
                                 <Form.Item
                                     name="shippingContactoNombre"
@@ -869,14 +1157,57 @@ const CheckoutModal = ({
                         <Form.Item name="referencia" label="Referencia">
                             <Input />
                         </Form.Item>
-                        <Form.Item name="distrito" label="Distrito">
-                            <Input />
+                        <Form.Item
+                            name="departamentoId"
+                            label="Departamento"
+                            rules={[{ required: true, message: 'Selecciona el departamento' }]}
+                        >
+                            <Select
+                                placeholder="Departamento"
+                                showSearch
+                                loading={departamentosLoading}
+                                onChange={handleAddressDepartamentoChange}
+                                filterOption={(input, option) => (option?.children ?? '').toLowerCase().includes(input.toLowerCase())}
+                            >
+                                {departamentos.map((dep) => (
+                                    <Option key={dep.id} value={dep.id}>{dep.nombre}</Option>
+                                ))}
+                            </Select>
                         </Form.Item>
-                        <Form.Item name="provincia" label="Provincia">
-                            <Input />
+                        <Form.Item
+                            name="provinciaId"
+                            label="Provincia"
+                            rules={[{ required: true, message: 'Selecciona la provincia' }]}
+                        >
+                            <Select
+                                placeholder="Provincia"
+                                showSearch
+                                disabled={!newAddressDepartamentoId}
+                                loading={addressProvinciasFetching}
+                                onChange={handleAddressProvinciaChange}
+                                filterOption={(input, option) => (option?.children ?? '').toLowerCase().includes(input.toLowerCase())}
+                            >
+                                {addressProvincias.map((prov) => (
+                                    <Option key={prov.id} value={prov.id}>{prov.nombre}</Option>
+                                ))}
+                            </Select>
                         </Form.Item>
-                        <Form.Item name="departamento" label="Departamento">
-                            <Input />
+                        <Form.Item
+                            name="distritoId"
+                            label="Distrito"
+                            rules={[{ required: true, message: 'Selecciona el distrito' }]}
+                        >
+                            <Select
+                                placeholder="Distrito"
+                                showSearch
+                                disabled={!newAddressProvinciaId}
+                                loading={addressDistritosFetching}
+                                filterOption={(input, option) => (option?.children ?? '').toLowerCase().includes(input.toLowerCase())}
+                            >
+                                {addressDistritos.map((dist) => (
+                                    <Option key={dist.id} value={dist.id}>{dist.nombre}</Option>
+                                ))}
+                            </Select>
                         </Form.Item>
                     </Form>
                 )}

@@ -21,3 +21,10 @@ export const FACTURACION_KEYS = {
     configuracion: (tiendaId) => ['facturacion', 'configuracion', tiendaId],
     series: (tiendaId, sedeId) => ['facturacion', 'series', tiendaId, sedeId],
 };
+
+export const UBIGEO_KEYS = {
+    departamentos: () => ['ubigeo', 'departamentos'],
+    provincias: (departamentoId) => ['ubigeo', 'provincias', departamentoId ?? null],
+    distritos: (provinciaId) => ['ubigeo', 'distritos', provinciaId ?? null],
+    rutaDistrito: (distritoId) => ['ubigeo', 'ruta-distrito', distritoId ?? null],
+};
