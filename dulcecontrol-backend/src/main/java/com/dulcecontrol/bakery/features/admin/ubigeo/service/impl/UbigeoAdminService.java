@@ -4,12 +4,12 @@ import com.dulcecontrol.bakery.features.admin.ubigeo.dto.UbigeoDepartamentoRespo
 import com.dulcecontrol.bakery.features.admin.ubigeo.dto.UbigeoDistritoResponse;
 import com.dulcecontrol.bakery.features.admin.ubigeo.dto.UbigeoProvinciaResponse;
 import com.dulcecontrol.bakery.features.admin.ubigeo.dto.UbigeoRutaResponse;
-import com.dulcecontrol.bakery.features.admin.ubigeo.entity.UbigeoDepartamento;
-import com.dulcecontrol.bakery.features.admin.ubigeo.entity.UbigeoDistrito;
-import com.dulcecontrol.bakery.features.admin.ubigeo.entity.UbigeoProvincia;
-import com.dulcecontrol.bakery.features.admin.ubigeo.repository.UbigeoDepartamentoRepository;
-import com.dulcecontrol.bakery.features.admin.ubigeo.repository.UbigeoDistritoRepository;
-import com.dulcecontrol.bakery.features.admin.ubigeo.repository.UbigeoProvinciaRepository;
+import com.dulcecontrol.bakery.features.shared.ubigeo.entity.UbigeoDepartamento;
+import com.dulcecontrol.bakery.features.shared.ubigeo.entity.UbigeoDistrito;
+import com.dulcecontrol.bakery.features.shared.ubigeo.entity.UbigeoProvincia;
+import com.dulcecontrol.bakery.features.shared.ubigeo.repository.UbigeoDepartamentoRepository;
+import com.dulcecontrol.bakery.features.shared.ubigeo.repository.UbigeoDistritoRepository;
+import com.dulcecontrol.bakery.features.shared.ubigeo.repository.UbigeoProvinciaRepository;
 import com.dulcecontrol.bakery.features.admin.ubigeo.service.IUbigeoAdminService;
 import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -56,10 +56,10 @@ public class UbigeoAdminService implements IUbigeoAdminService {
         UbigeoDistrito distrito = distritoRepository.findById(distritoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Distrito no encontrado"));
 
-        UbigeoProvincia provincia = provinciaRepository.findById(distrito.getProvinciaId())
+        UbigeoProvincia provincia = provinciaRepository.findById(distrito.getProvincia().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Provincia no encontrada para el distrito"));
 
-        UbigeoDepartamento departamento = departamentoRepository.findById(provincia.getDepartamentoId())
+        UbigeoDepartamento departamento = departamentoRepository.findById(provincia.getDepartamento().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Departamento no encontrado para la provincia"));
 
         return UbigeoRutaResponse.builder()

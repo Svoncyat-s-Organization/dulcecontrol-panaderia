@@ -1,6 +1,6 @@
 package com.dulcecontrol.bakery.features.admin.ubigeo.dto;
 
-import com.dulcecontrol.bakery.features.admin.ubigeo.entity.UbigeoDistrito;
+import com.dulcecontrol.bakery.features.shared.ubigeo.entity.UbigeoDistrito;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -16,7 +16,7 @@ public class UbigeoDistritoResponse {
     public static UbigeoDistritoResponse fromEntity(UbigeoDistrito entity) {
         return UbigeoDistritoResponse.builder()
                 .id(entity.getId())
-                .provinciaId(entity.getProvinciaId())
+                .provinciaId(entity.getProvincia().getId())
                 .nombre(entity.getNombre())
                 .codigoUbigeo(entity.getCodigoUbigeo())
                 .build();

@@ -1,6 +1,6 @@
 package com.dulcecontrol.bakery.features.admin.ubigeo.dto;
 
-import com.dulcecontrol.bakery.features.admin.ubigeo.entity.UbigeoDepartamento;
+import com.dulcecontrol.bakery.features.shared.ubigeo.entity.UbigeoDepartamento;
 import lombok.Builder;
 import lombok.Getter;
 
