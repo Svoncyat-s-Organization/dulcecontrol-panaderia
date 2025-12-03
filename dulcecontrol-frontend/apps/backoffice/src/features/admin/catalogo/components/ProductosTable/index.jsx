@@ -4,7 +4,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import ProductosTableView from './ProductosTableView.jsx';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 import { getProductos, deleteProducto } from '../../api/productos.api.js';
-import { PRODUCTO_KEYS } from '../../constants/queryKeys.js';
+import { getCategorias } from '../../api/categorias.api.js';
+import { PRODUCTO_KEYS, CATEGORIA_KEYS } from '../../constants/queryKeys.js';
 import { mapProductosResponse } from '../../utils/productoMappers.js';
 import ProductoForm from '../ProductoForm/index.jsx';
 
@@ -19,6 +20,12 @@ const ProductosTable = () => {
     queryFn: () => getProductos(tiendaId),
     enabled: Boolean(tiendaId),
     select: (response) => mapProductosResponse(response ?? []),
+  });
+
+  const { data: categorias = [] } = useQuery({
+    queryKey: CATEGORIA_KEYS.lists(tiendaId),
+    queryFn: () => getCategorias(tiendaId),
+    enabled: Boolean(tiendaId),
   });
 
   const deleteMutation = useMutation({
@@ -70,7 +77,16 @@ const ProductosTable = () => {
     });
   };
 
-  const productos = useMemo(() => data, [data]);
+  const productos = useMemo(() => {
+    // Enriquecer productos con el nombre de la categoría
+    return data.map((producto) => {
+      const categoria = categorias.find((cat) => cat.id === producto.categoriaId);
+      return {
+        ...producto,
+        categoriaNombre: categoria?.nombre || null,
+      };
+    });
+  }, [data, categorias]);
 
   return (
     <>
@@ -83,6 +99,7 @@ const ProductosTable = () => {
         onEdit={handleEdit}
         onDelete={handleDelete}
         deletingId={deletingId}
+        categorias={categorias}
       />
 
       <ProductoForm

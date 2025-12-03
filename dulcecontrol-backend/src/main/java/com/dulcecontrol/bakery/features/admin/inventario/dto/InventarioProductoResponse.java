@@ -17,4 +17,15 @@ public class InventarioProductoResponse {
     private Integer cantidadActual;
     private String ubicacionFisica;
     private LocalDateTime actualizadoEn;
+    
+    // Datos del producto
+    private String nombreProducto;
+    private String sku;
+    
+    // Stock ideal y estado
+    private Integer stockIdeal;
+    private String estadoStock; // "OK", "BAJO_STOCK", "CRITICO"
+    
+    // Categoría
+    private String categoriaNombre;
 }

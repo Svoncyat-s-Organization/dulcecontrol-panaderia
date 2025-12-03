@@ -18,5 +18,6 @@ public class CategoriaResponse {
     private final String icono;
     private final Boolean activa;
     private final Integer ordenVisual;
+    private final Long productosCount;
     private final LocalDateTime creadoEn;
 }

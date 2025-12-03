@@ -32,6 +32,7 @@ export const PRODUCTO_FORM_DEFAULTS = {
   descripcion: '',
   tipo: 'PRODUCTO_TERMINADO',
   precioBase: 0,
+  precioOferta: null,
   categoriaId: null,
   urlImagenPrincipal: '',
   esPersonalizable: false,
@@ -49,6 +50,7 @@ export const mapProductoResponse = (producto) => {
   return {
     ...producto,
     precioBase: toDecimalFromCentimos(producto.precioBase, producto.precioBaseCentimos),
+    precioOferta: toDecimalFromCentimos(producto.precioOferta, producto.precioOfertaCentimos),
   };
 };
 
@@ -63,6 +65,8 @@ export const getProductoFormInitialValues = (producto) => ({
   tipo: producto?.tipo ?? PRODUCTO_FORM_DEFAULTS.tipo,
   precioBase:
     producto?.precioBase ?? toDecimalFromCentimos(undefined, producto?.precioBaseCentimos),
+  precioOferta:
+    producto?.precioOferta ?? toDecimalFromCentimos(undefined, producto?.precioOfertaCentimos),
   categoriaId: producto?.categoriaId ?? PRODUCTO_FORM_DEFAULTS.categoriaId,
   urlImagenPrincipal:
     producto?.urlImagenPrincipal ?? PRODUCTO_FORM_DEFAULTS.urlImagenPrincipal,

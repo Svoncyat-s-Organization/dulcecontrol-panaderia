@@ -270,16 +270,16 @@ ON DUPLICATE KEY UPDATE
 INSERT INTO inventario_productos (tienda_id, sede_id, producto_id, cantidad_actual, ubicacion_fisica)
 SELECT new.tienda_id, new.sede_id, new.producto_id, new.cantidad_actual, new.ubicacion_fisica
 FROM (
-  -- Inventario Dulce Manjar - Sede Miraflores
+  -- Inventario Dulce Manjar - Sede Miraflores (Todos los productos)
   SELECT
     p.tienda_id,
     s.id AS sede_id,
     p.id AS producto_id,
     45 AS cantidad_actual,
-    'Vitrina 1' AS ubicacion_fisica
+    'Vitrina Principal' AS ubicacion_fisica
   FROM productos p
   INNER JOIN sedes s ON s.tienda_id = p.tienda_id
-  WHERE p.sku = 'PAN-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+  WHERE p.sku = 'DM-PAN-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
     AND s.codigo_interno = 'DM-001'
   
   UNION ALL
@@ -292,7 +292,59 @@ FROM (
     'Vitrina Refrigerada' AS ubicacion_fisica
   FROM productos p
   INNER JOIN sedes s ON s.tienda_id = p.tienda_id
-  WHERE p.sku = 'TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+  WHERE p.sku = 'DM-TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+    AND s.codigo_interno = 'DM-001'
+  
+  UNION ALL
+  
+  SELECT
+    p.tienda_id,
+    s.id AS sede_id,
+    p.id AS producto_id,
+    8 AS cantidad_actual,
+    'Vitrina Refrigerada' AS ubicacion_fisica
+  FROM productos p
+  INNER JOIN sedes s ON s.tienda_id = p.tienda_id
+  WHERE p.sku = 'DM-TORTA-002' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+    AND s.codigo_interno = 'DM-001'
+  
+  UNION ALL
+  
+  SELECT
+    p.tienda_id,
+    s.id AS sede_id,
+    p.id AS producto_id,
+    22 AS cantidad_actual,
+    'Vitrina Postres' AS ubicacion_fisica
+  FROM productos p
+  INNER JOIN sedes s ON s.tienda_id = p.tienda_id
+  WHERE p.sku = 'DM-POST-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+    AND s.codigo_interno = 'DM-001'
+  
+  UNION ALL
+  
+  SELECT
+    p.tienda_id,
+    s.id AS sede_id,
+    p.id AS producto_id,
+    18 AS cantidad_actual,
+    'Vitrina Postres' AS ubicacion_fisica
+  FROM productos p
+  INNER JOIN sedes s ON s.tienda_id = p.tienda_id
+  WHERE p.sku = 'DM-POST-002' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+    AND s.codigo_interno = 'DM-001'
+  
+  UNION ALL
+  
+  SELECT
+    p.tienda_id,
+    s.id AS sede_id,
+    p.id AS producto_id,
+    50 AS cantidad_actual,
+    'Barra de Bebidas' AS ubicacion_fisica
+  FROM productos p
+  INNER JOIN sedes s ON s.tienda_id = p.tienda_id
+  WHERE p.sku = 'DM-BEB-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
     AND s.codigo_interno = 'DM-001'
   
   UNION ALL
@@ -306,7 +358,7 @@ FROM (
     'Vitrina Principal' AS ubicacion_fisica
   FROM productos p
   INNER JOIN sedes s ON s.tienda_id = p.tienda_id
-  WHERE p.sku = 'PAN-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+  WHERE p.sku = 'DM-PAN-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
     AND s.codigo_interno = 'DM-002'
   
   UNION ALL
@@ -319,8 +371,146 @@ FROM (
     'Vitrina Refrigerada' AS ubicacion_fisica
   FROM productos p
   INNER JOIN sedes s ON s.tienda_id = p.tienda_id
-  WHERE p.sku = 'TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+  WHERE p.sku = 'DM-TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
     AND s.codigo_interno = 'DM-002'
+  
+  UNION ALL
+  
+  SELECT
+    p.tienda_id,
+    s.id AS sede_id,
+    p.id AS producto_id,
+    6 AS cantidad_actual,
+    'Vitrina Refrigerada' AS ubicacion_fisica
+  FROM productos p
+  INNER JOIN sedes s ON s.tienda_id = p.tienda_id
+  WHERE p.sku = 'DM-TORTA-002' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+    AND s.codigo_interno = 'DM-002'
+  
+  UNION ALL
+  
+  SELECT
+    p.tienda_id,
+    s.id AS sede_id,
+    p.id AS producto_id,
+    15 AS cantidad_actual,
+    'Vitrina Lateral' AS ubicacion_fisica
+  FROM productos p
+  INNER JOIN sedes s ON s.tienda_id = p.tienda_id
+  WHERE p.sku = 'DM-POST-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+    AND s.codigo_interno = 'DM-002'
+  
+  UNION ALL
+  
+  -- ========================================
+  -- PANADERÍA EL SOL - Sede Única Surco
+  -- ========================================
+  
+  SELECT
+    p.tienda_id,
+    s.id AS sede_id,
+    p.id AS producto_id,
+    60 AS cantidad_actual,
+    'Vitrina Principal' AS ubicacion_fisica
+  FROM productos p
+  INNER JOIN sedes s ON s.tienda_id = p.tienda_id
+  WHERE p.sku = 'PS-PAN-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234568')
+    AND s.codigo_interno = 'PS-001'
+  
+  UNION ALL
+  
+  SELECT
+    p.tienda_id,
+    s.id AS sede_id,
+    p.id AS producto_id,
+    40 AS cantidad_actual,
+    'Vitrina Principal' AS ubicacion_fisica
+  FROM productos p
+  INNER JOIN sedes s ON s.tienda_id = p.tienda_id
+  WHERE p.sku = 'PS-PAN-002' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234568')
+    AND s.codigo_interno = 'PS-001'
+  
+  UNION ALL
+  
+  SELECT
+    p.tienda_id,
+    s.id AS sede_id,
+    p.id AS producto_id,
+    25 AS cantidad_actual,
+    'Vitrina Bocaditos' AS ubicacion_fisica
+  FROM productos p
+  INNER JOIN sedes s ON s.tienda_id = p.tienda_id
+  WHERE p.sku = 'PS-BOC-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234568')
+    AND s.codigo_interno = 'PS-001'
+  
+  UNION ALL
+  
+  SELECT
+    p.tienda_id,
+    s.id AS sede_id,
+    p.id AS producto_id,
+    10 AS cantidad_actual,
+    'Vitrina Refrigerada' AS ubicacion_fisica
+  FROM productos p
+  INNER JOIN sedes s ON s.tienda_id = p.tienda_id
+  WHERE p.sku = 'PS-TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234568')
+    AND s.codigo_interno = 'PS-001'
+  
+  UNION ALL
+  
+  -- ========================================
+  -- TORTAS & DELICIAS - Local San Borja
+  -- ========================================
+  
+  SELECT
+    p.tienda_id,
+    s.id AS sede_id,
+    p.id AS producto_id,
+    8 AS cantidad_actual,
+    'Vitrina Premium' AS ubicacion_fisica
+  FROM productos p
+  INNER JOIN sedes s ON s.tienda_id = p.tienda_id
+  WHERE p.sku = 'TD-TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234569')
+    AND s.codigo_interno = 'TD-001'
+  
+  UNION ALL
+  
+  SELECT
+    p.tienda_id,
+    s.id AS sede_id,
+    p.id AS producto_id,
+    6 AS cantidad_actual,
+    'Vitrina Premium' AS ubicacion_fisica
+  FROM productos p
+  INNER JOIN sedes s ON s.tienda_id = p.tienda_id
+  WHERE p.sku = 'TD-TORTA-002' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234569')
+    AND s.codigo_interno = 'TD-001'
+  
+  UNION ALL
+  
+  SELECT
+    p.tienda_id,
+    s.id AS sede_id,
+    p.id AS producto_id,
+    30 AS cantidad_actual,
+    'Vitrina Gourmet' AS ubicacion_fisica
+  FROM productos p
+  INNER JOIN sedes s ON s.tienda_id = p.tienda_id
+  WHERE p.sku = 'TD-POST-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234569')
+    AND s.codigo_interno = 'TD-001'
+  
+  UNION ALL
+  
+  SELECT
+    p.tienda_id,
+    s.id AS sede_id,
+    p.id AS producto_id,
+    20 AS cantidad_actual,
+    'Vitrina Panadería' AS ubicacion_fisica
+  FROM productos p
+  INNER JOIN sedes s ON s.tienda_id = p.tienda_id
+  WHERE p.sku = 'TD-PAN-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234569')
+    AND s.codigo_interno = 'TD-001'
 ) AS new
 ON DUPLICATE KEY UPDATE
   cantidad_actual = VALUES(cantidad_actual),
@@ -707,3 +897,94 @@ ON DUPLICATE KEY UPDATE
   cantidad = VALUES(cantidad),
   cantidad_anterior = VALUES(cantidad_anterior),
   cantidad_posterior = VALUES(cantidad_posterior);
+
+-- =================================
+-- MOVIMIENTOS SIMPLIFICADOS PARA DEMO
+-- (sin dependencias de planes/ordenes)
+-- =================================
+
+-- Movimientos de Productos
+INSERT IGNORE INTO movimientos_inventario_productos (
+  tienda_id, sede_id, producto_id, tipo_movimiento, cantidad,
+  cantidad_anterior, cantidad_posterior, motivo, responsable_id, creado_en
+)
+SELECT
+  t.id, s.id, p.id, 'entrada', 100,
+  0, 100, 'PRODUCCION',
+  (SELECT id FROM usuarios_tienda WHERE tienda_id = t.id AND correo = 'panadero@dulcemanjar.pe' LIMIT 1),
+  DATE_SUB(NOW(), INTERVAL 2 DAY)
+FROM tiendas t
+INNER JOIN sedes s ON s.tienda_id = t.id AND s.codigo_interno = 'DM-001'
+INNER JOIN productos p ON p.tienda_id = t.id AND p.sku = 'DM-PAN-001'
+WHERE t.numero_doc = '20601234567' LIMIT 1;
+
+INSERT IGNORE INTO movimientos_inventario_productos (
+  tienda_id, sede_id, producto_id, tipo_movimiento, cantidad,
+  cantidad_anterior, cantidad_posterior, motivo, responsable_id, creado_en
+)
+SELECT
+  t.id, s.id, p.id, 'salida', 35,
+  100, 65, 'VENTA',
+  (SELECT id FROM usuarios_tienda WHERE tienda_id = t.id AND correo = 'vendedor1@dulcemanjar.pe' LIMIT 1),
+  DATE_SUB(NOW(), INTERVAL 1 DAY)
+FROM tiendas t
+INNER JOIN sedes s ON s.tienda_id = t.id AND s.codigo_interno = 'DM-001'
+INNER JOIN productos p ON p.tienda_id = t.id AND p.sku = 'DM-PAN-001'
+WHERE t.numero_doc = '20601234567' LIMIT 1;
+
+INSERT IGNORE INTO movimientos_inventario_productos (
+  tienda_id, sede_id, producto_id, tipo_movimiento, cantidad,
+  cantidad_anterior, cantidad_posterior, motivo, responsable_id, creado_en
+)
+SELECT
+  t.id, s.id, p.id, 'salida', 3,
+  65, 62, 'MERMA',
+  (SELECT id FROM usuarios_tienda WHERE tienda_id = t.id AND correo = 'almacen@dulcemanjar.pe' LIMIT 1),
+  NOW()
+FROM tiendas t
+INNER JOIN sedes s ON s.tienda_id = t.id AND s.codigo_interno = 'DM-001'
+INNER JOIN productos p ON p.tienda_id = t.id AND p.sku = 'DM-PAN-001'
+WHERE t.numero_doc = '20601234567' LIMIT 1;
+
+-- Movimientos de Insumos
+INSERT IGNORE INTO movimientos_inventario_insumos (
+  tienda_id, sede_id, insumo_id, tipo_movimiento, cantidad,
+  cantidad_anterior, cantidad_posterior, motivo, responsable_id, creado_en
+)
+SELECT
+  t.id, s.id, i.id, 'entrada', 250.0000,
+  0.0000, 250.0000, 'COMPRA',
+  (SELECT id FROM usuarios_tienda WHERE tienda_id = t.id AND correo = 'almacen@dulcemanjar.pe' LIMIT 1),
+  DATE_SUB(NOW(), INTERVAL 3 DAY)
+FROM tiendas t
+INNER JOIN sedes s ON s.tienda_id = t.id AND s.codigo_interno = 'DM-001'
+INNER JOIN insumos i ON i.tienda_id = t.id AND i.codigo_interno = 'INS-001'
+WHERE t.numero_doc = '20601234567' LIMIT 1;
+
+INSERT IGNORE INTO movimientos_inventario_insumos (
+  tienda_id, sede_id, insumo_id, tipo_movimiento, cantidad,
+  cantidad_anterior, cantidad_posterior, motivo, responsable_id, creado_en
+)
+SELECT
+  t.id, s.id, i.id, 'salida', 50.0000,
+  250.0000, 200.0000, 'Consumo en producción',
+  (SELECT id FROM usuarios_tienda WHERE tienda_id = t.id AND correo = 'panadero@dulcemanjar.pe' LIMIT 1),
+  DATE_SUB(NOW(), INTERVAL 2 DAY)
+FROM tiendas t
+INNER JOIN sedes s ON s.tienda_id = t.id AND s.codigo_interno = 'DM-001'
+INNER JOIN insumos i ON i.tienda_id = t.id AND i.codigo_interno = 'INS-001'
+WHERE t.numero_doc = '20601234567' LIMIT 1;
+
+INSERT IGNORE INTO movimientos_inventario_insumos (
+  tienda_id, sede_id, insumo_id, tipo_movimiento, cantidad,
+  cantidad_anterior, cantidad_posterior, motivo, responsable_id, creado_en
+)
+SELECT
+  t.id, s.id, i.id, 'salida', 50.0000,
+  200.0000, 150.0000, 'Transferencia a San Isidro',
+  (SELECT id FROM usuarios_tienda WHERE tienda_id = t.id AND correo = 'admin@dulcemanjar.pe' LIMIT 1),
+  DATE_SUB(NOW(), INTERVAL 1 DAY)
+FROM tiendas t
+INNER JOIN sedes s ON s.tienda_id = t.id AND s.codigo_interno = 'DM-001'
+INNER JOIN insumos i ON i.tienda_id = t.id AND i.codigo_interno = 'INS-001'
+WHERE t.numero_doc = '20601234567' LIMIT 1;

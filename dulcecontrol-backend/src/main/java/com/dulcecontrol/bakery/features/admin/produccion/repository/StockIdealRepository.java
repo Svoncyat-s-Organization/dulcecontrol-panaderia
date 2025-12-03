@@ -14,6 +14,8 @@ public interface StockIdealRepository extends JpaRepository<StockIdeal, Long> {
     List<StockIdeal> findByTiendaIdAndSedeId(Long tiendaId, Long sedeId);
 
     Optional<StockIdeal> findByIdAndTiendaId(Long id, Long tiendaId);
+    
+    Optional<StockIdeal> findByTiendaIdAndSedeIdAndProductoId(Long tiendaId, Long sedeId, Long productoId);
 
     boolean existsByTiendaIdAndSedeIdAndProductoId(Long tiendaId, Long sedeId, Long productoId);
 
