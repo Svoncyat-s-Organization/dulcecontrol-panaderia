@@ -1,16 +1,34 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { IconArrowRight } from '@tabler/icons-react';
 import ProductCard from '@/components/ProductCard';
+import { useTiendaConfig } from '../../context/TiendaConfigContext';
+import { getProductos, formatPrecio } from '@/api/catalogo.api';
 
 const HomePage = () => {
-  const featuredProducts = [
-    { id: 1, name: 'Torta de Chocolate', price: 45.00, category: 'Pastelería', image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=1000' },
-    { id: 2, name: 'Croissant de Mantequilla', price: 5.50, category: 'Panadería', image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&q=80&w=1000' },
-    { id: 3, name: 'Cheesecake de Fresa', price: 12.00, category: 'Pastelería', image: 'https://images.unsplash.com/photo-1524351199678-941a58a3df26?auto=format&fit=crop&q=80&w=1000' },
-    { id: 4, name: 'Pan Campesino', price: 8.00, category: 'Panadería', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=1000' },
-  ];
+  const { config } = useTiendaConfig();
+  
+  // Fetch productos destacados desde la API (4 productos)
+  const { data: productosData, isLoading: loadingProductos } = useQuery({
+    queryKey: ['productos-destacados'],
+    queryFn: () => getProductos({ destacado: true, size: 4 })
+  });
+
+  // Banner y mensaje dinámicos desde el backend
+  const bannerUrl = config?.bannerPrincipalUrl || 'https://images.unsplash.com/photo-1535141192574-5d4897c12636?auto=format&fit=crop&q=80&w=1000';
+  const mensajeBienvenida = config?.mensajeBienvenida || 'Descubre la magia de la repostería artesanal. Sabores que te harán sonreír en cada bocado.';
+
+  // Transformar productos de la API al formato esperado por ProductCard
+  const featuredProducts = productosData?.content?.map(producto => ({
+    id: producto.id,
+    name: producto.nombre,
+    price: parseFloat(formatPrecio(producto.precioEfectivoCentimos || producto.precioBaseCentimos)),
+    category: producto.nombreCategoria || 'General',
+    image: producto.urlImagenPrincipal || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=1000',
+    badge: producto.tieneOferta ? 'OFERTA' : (producto.destacadoStorefront ? 'BEST SELLER' : null)
+  })) || [];
 
   return (
     <div className="flex flex-col w-full">
@@ -23,7 +41,7 @@ const HomePage = () => {
               <span className="italic font-serif text-primary-foreground/80">Momentos</span>
             </h1>
             <p className="text-xl text-foreground/80 max-w-lg mx-auto md:mx-0 font-medium leading-relaxed">
-              Descubre la magia de la repostería artesanal. Sabores que te harán sonreír en cada bocado.
+              {mensajeBienvenida}
             </p>
             <div className="pt-4">
               <Button size="lg" asChild className="rounded-full px-10 py-7 text-sm font-bold uppercase tracking-widest bg-foreground text-white hover:bg-foreground/90 shadow-lg">
@@ -36,8 +54,8 @@ const HomePage = () => {
           <div className="flex-1 relative w-full max-w-lg md:max-w-none">
              <div className="relative z-10 rounded-[2rem] overflow-hidden shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-700 border-4 border-white">
                 <img 
-                  src="https://images.unsplash.com/photo-1535141192574-5d4897c12636?auto=format&fit=crop&q=80&w=1000" 
-                  alt="Pastel de Celebración" 
+                  src={bannerUrl} 
+                  alt="Banner Principal" 
                   className="w-full h-auto object-cover aspect-square"
                 />
              </div>
@@ -59,9 +77,24 @@ const HomePage = () => {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-12">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+            {loadingProductos ? (
+              // Loading skeleton
+              Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="space-y-4 animate-pulse">
+                  <div className="aspect-square bg-muted rounded-xl"></div>
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                  <div className="h-4 bg-muted rounded w-1/2"></div>
+                </div>
+              ))
+            ) : featuredProducts.length > 0 ? (
+              featuredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))
+            ) : (
+              <div className="col-span-4 text-center py-12 text-muted-foreground">
+                No hay productos destacados disponibles
+              </div>
+            )}
           </div>
           
           <div className="flex justify-center mt-16">

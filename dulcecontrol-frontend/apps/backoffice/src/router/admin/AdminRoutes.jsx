@@ -10,9 +10,14 @@ import { ExistenciasPage, InsumosPage, MovimientosPage } from '../../features/ad
 import { VentasPage, CajasPage } from '../../features/admin/ventas-pedidos/index.js';
 import { InsumosPage as ComprasInsumosPage, ProveedoresPage, OrdenesCompraPage } from '../../features/admin/compras/index.js';
 import { ClientesPage } from '../../features/admin/clientes/index.js';
-import { ConfiguracionPage } from '../../features/admin/configuracion/index.js';
+import { lazy } from 'react';
 import { StockIdealPage, RecetasPage, PlanificacionPage } from '../../features/admin/produccion/index.js';
 import { FacturacionPage, FacturacionDetallePage, SeriesPage } from '../../features/admin/facturacion/index.js';
+
+// Lazy loading para configuración
+const DatosEmpresaPage = lazy(() => import('../../features/admin/configuracion/pages/DatosEmpresaPage.jsx'));
+const SedesPage = lazy(() => import('../../features/admin/configuracion/pages/SedesPage.jsx'));
+const TiendaVirtualPage = lazy(() => import('../../features/admin/configuracion/pages/TiendaVirtualPage.jsx'));
 
 const PLACEHOLDER_ROUTES = [
   {
@@ -46,9 +51,9 @@ const PLACEHOLDER_ROUTES = [
     description: 'Gestiona roles, permisos y accesos del personal administrativo.',
   },
   {
-    path: 'configuracion',
-    title: 'Configuración',
-    description: 'Centralizará ajustes de tienda, branding y preferencias generales.',
+    path: 'configuracion/tienda-virtual',
+    title: 'Tienda Virtual',
+    description: 'Configura la apariencia, contenido y branding de tu tienda online.',
   },
   {
     path: 'configuracion/preferencias',
@@ -86,7 +91,10 @@ const adminRoutes = (
     <Route path="produccion/recetas" element={<RecetasPage />} />
     <Route path="catalogo/productos" element={<ProductosPage />} />
     <Route path="catalogo/categorias" element={<CategoriasPage />} />
-    <Route path="configuracion/sedes" element={<ConfiguracionPage />} />
+    <Route path="configuracion" element={<Navigate to="datos-empresa" replace />} />
+    <Route path="configuracion/datos-empresa" element={<DatosEmpresaPage />} />
+    <Route path="configuracion/sedes" element={<SedesPage />} />
+    <Route path="configuracion/tienda-virtual" element={<TiendaVirtualPage />} />
 
     <Route path="facturacion/comprobantes" element={<FacturacionPage />} />
     <Route path="facturacion/comprobantes/:id" element={<FacturacionDetallePage />} />

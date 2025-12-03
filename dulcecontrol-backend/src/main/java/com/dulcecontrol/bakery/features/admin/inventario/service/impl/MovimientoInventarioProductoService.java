@@ -8,7 +8,7 @@ import com.dulcecontrol.bakery.features.admin.inventario.repository.InventarioPr
 import com.dulcecontrol.bakery.features.admin.inventario.repository.MovimientoInventarioProductoRepository;
 import com.dulcecontrol.bakery.features.admin.inventario.service.IMovimientoInventarioProductoService;
 import com.dulcecontrol.bakery.features.admin.catalogo.entity.Producto;
-import com.dulcecontrol.bakery.features.admin.catalogo.repository.ProductoRepository;
+import com.dulcecontrol.bakery.features.shared.catalogo.repository.ProductoRepository;
 import com.dulcecontrol.bakery.features.admin.seguridad.entity.UsuarioTienda;
 import com.dulcecontrol.bakery.features.admin.seguridad.repository.UsuarioTiendaRepository;
 import com.dulcecontrol.bakery.shared.exception.BadRequestException;

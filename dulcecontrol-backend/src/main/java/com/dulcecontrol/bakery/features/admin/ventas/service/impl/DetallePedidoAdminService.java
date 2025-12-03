@@ -1,6 +1,6 @@
 package com.dulcecontrol.bakery.features.admin.ventas.service.impl;
 
-import com.dulcecontrol.bakery.features.admin.catalogo.repository.ProductoRepository;
+import com.dulcecontrol.bakery.features.shared.catalogo.repository.ProductoRepository;
 import com.dulcecontrol.bakery.features.admin.ventas.dto.DetallePedidoCreateRequest;
 import com.dulcecontrol.bakery.features.admin.ventas.dto.DetallePedidoResponse;
 import com.dulcecontrol.bakery.features.admin.ventas.dto.DetallePedidoUpdateRequest;

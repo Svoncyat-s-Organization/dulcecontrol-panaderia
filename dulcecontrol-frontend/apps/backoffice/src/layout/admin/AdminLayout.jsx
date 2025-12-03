@@ -57,8 +57,9 @@ const menuItems = [
   getItem('Reportes', `${BASE_PATH}/reportes`, <IconReport size={18} />),
   getItem('Seguridad', `${BASE_PATH}/seguridad`, <IconShieldLock size={18} />),
   getItem('Configuración', `${BASE_PATH}/configuracion`, <IconSettings size={18} />, [
-    getItem('Preferencias', `${BASE_PATH}/configuracion/preferencias`),
+    getItem('Datos de Empresa', `${BASE_PATH}/configuracion/datos-empresa`),
     getItem('Sedes', `${BASE_PATH}/configuracion/sedes`),
+    getItem('Tienda Virtual', `${BASE_PATH}/configuracion/tienda-virtual`),
   ]),
 ];
 

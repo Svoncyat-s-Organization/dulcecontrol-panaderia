@@ -5,23 +5,41 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import CartSheet from '@/components/CartSheet';
+import { useTiendaConfig } from '../context/TiendaConfigContext';
 
 const MainLayout = () => {
+  const { config, loading } = useTiendaConfig();
+
+  // Mostrar loader mientras carga la configuración
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+          <p className="mt-4 text-gray-600">Cargando tienda...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans antialiased">
-      {/* Top Bar - Mint Background */}
-      {/* <div className="bg-primary text-primary-foreground py-2 text-center text-xs font-bold tracking-widest uppercase">
-        Envíos a todo Lima | Pedidos con 24h de anticipación
-      </div>
- */}
       {/* Header - White Background */}
       <header className="sticky top-0 z-50 w-full border-b bg-white">
         <div className="container flex h-24 items-center justify-between">
-          {/* Logo - Serif 32px */}
+          {/* Logo dinámico desde backend */}
           <Link to="/" className="flex items-center">
-            <span className="font-serif text-[32px] font-bold text-foreground tracking-tight leading-none">
-              DulceControl
-            </span>
+            {config?.urlLogo ? (
+              <img 
+                src={config.urlLogo} 
+                alt="Logo" 
+                className="h-16 w-auto object-contain"
+              />
+            ) : (
+              <span className="font-serif text-[32px] font-bold text-foreground tracking-tight leading-none">
+                DulceControl
+              </span>
+            )}
           </Link>
 
           {/* Desktop Nav - Centered */}

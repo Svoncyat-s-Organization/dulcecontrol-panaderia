@@ -14,6 +14,8 @@ public interface IPaginaStorefrontService {
 
     PaginaStorefrontResponse obtenerPorId(Long tiendaId, Long paginaId);
 
+    PaginaStorefrontResponse obtenerPorSlug(Long tiendaId, String slug);
+
     PaginaStorefrontResponse crear(Long tiendaId, PaginaStorefrontCreateRequest request);
 
     PaginaStorefrontResponse actualizar(Long tiendaId, Long paginaId, PaginaStorefrontUpdateRequest request);

@@ -1,7 +1,7 @@
 package com.dulcecontrol.bakery.features.admin.produccion.service;
 
 import com.dulcecontrol.bakery.features.admin.catalogo.entity.Producto;
-import com.dulcecontrol.bakery.features.admin.catalogo.repository.ProductoRepository;
+import com.dulcecontrol.bakery.features.shared.catalogo.repository.ProductoRepository;
 import com.dulcecontrol.bakery.features.admin.produccion.dto.DetallePlanProduccionResponse;
 import com.dulcecontrol.bakery.features.admin.produccion.dto.DetallePlanProduccionUpdateRequest;
 import com.dulcecontrol.bakery.features.admin.produccion.dto.PlanProduccionCreateRequest;
