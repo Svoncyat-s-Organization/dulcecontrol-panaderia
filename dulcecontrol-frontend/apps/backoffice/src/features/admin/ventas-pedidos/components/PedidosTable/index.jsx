@@ -7,6 +7,7 @@ import PedidoDetailDrawer from './PedidoDetailDrawer.jsx';
 import ReceiptModal from '../PuntoDeVenta/ReceiptModal.jsx';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 import { getPedidos, updatePedido, getDetallesPedido, addPagoPedido, getPagosPedido } from '../../api/pedidos.api.js';
+import { registrarMovimientoCaja } from '../../api/cajas.api.js';
 import { getClientes } from '../../api/clientes.api.js';
 import { getUsuariosAdmin } from '../../api/usuarios.api.js';
 import { getProductos } from '../../../catalogo/api/productos.api.js';
@@ -173,13 +174,33 @@ const PedidosTable = () => {
             const montoPagadoCentimos = Math.round(paymentData.montoPagado * 100);
 
             await addPagoPedido(tiendaId, pedido.id, {
-                sesionCajaId: pedido.raw.sesionCajaId,
+                sesionCajaId: paymentData.sesionCajaId || pedido.raw.sesionCajaId,
                 montoPagadoCentimos,
                 metodoPago: paymentData.metodoPago,
                 referenciaExterna: null,
                 fechaPago: new Date().toISOString().split('.')[0],
                 registradoPor: usuarioId || pedido.raw.vendedorId,
             });
+
+            // Registrar movimiento de caja
+            if (paymentData.sesionCajaId) {
+                const comprobanteRef = [
+                    pedido.raw.tipoComprobante,
+                    pedido.raw.serieComprobante,
+                    pedido.raw.numeroComprobante
+                ].filter(Boolean).join(' ');
+
+                await registrarMovimientoCaja(tiendaId, paymentData.sesionCajaId, {
+                    tipoMovimiento: 'venta',
+                    montoCentimos: montoPagadoCentimos,
+                    concepto: `Pago de pedido ${pedido.raw.codigoPedido}`,
+                    comprobanteAsociado: pedido.raw.codigoPedido,
+                    pedidoId: pedido.raw.id, // Also sending pedidoId as it is in the DTO
+                    metodoPago: paymentData.metodoPago,
+                    fechaMovimiento: new Date().toISOString(),
+                    usuarioId: usuarioId || pedido.raw.vendedorId,
+                });
+            }
 
             const totalCentimos = pedido.raw.totalFinalCentimos;
             const montoPagadoActual = pedido.raw.montoPagadoCentimos || 0;

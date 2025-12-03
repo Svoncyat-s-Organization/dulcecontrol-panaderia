@@ -334,9 +334,14 @@ const CheckoutModal = ({
             }
 
             const normalizedDocTipo = (values.clienteDocTipo || (isRuc ? 'RUC' : 'DNI')).toUpperCase();
-            const normalizedDocNumero = values.clienteDocNumero
+            let normalizedDocNumero = values.clienteDocNumero
                 ? values.clienteDocNumero.replace(/\D/g, '').trim()
                 : '';
+
+            // If DNI and empty, send 00000000
+            if (normalizedDocTipo === 'DNI' && !normalizedDocNumero) {
+                normalizedDocNumero = '00000000';
+            }
             const clienteNombre = values.clienteNombre?.trim() || cliente?.nombreDoc || 'Cliente POS';
             const clienteDireccion = values.clienteDireccion?.trim()
                 || (showDeliveryFields ? values.shippingDireccion?.trim() : null)
@@ -570,9 +575,7 @@ const CheckoutModal = ({
                     <Select
                         placeholder={seriesLoading ? 'Cargando series...' : 'Selecciona la serie'}
                         loading={seriesLoading || isSeriesFetching}
-                        disabled={true} // Always disabled as per request
-                        className="opaque-disabled-select" // We might need to inject CSS or just rely on disabled style
-                        style={{ opacity: 0.8 }} // Make it look a bit more "opaque"/readable
+                        disabled={seriesLoading || isSeriesFetching || !tipoComprobanteValue}
                     >
                         {seriesDisponibles.map((serie) => (
                             <Option key={serie.id} value={serie.id}>
@@ -614,17 +617,34 @@ const CheckoutModal = ({
                                     { required: !isGenericAndSmallAmount, message: 'Ingresa el documento del cliente' },
                                     () => ({
                                         validator(_, value) {
-                                            if (!value && isGenericAndSmallAmount) return Promise.resolve();
+                                            // If empty, we will default to 00000000 for DNI later, so it is valid if it's DNI.
+                                            // If it's RUC, it might be required depending on logic, but user said "si no se llena se mande 8 ceros" for DNI.
                                             const tipo = (form.getFieldValue('clienteDocTipo') || 'DNI').toUpperCase();
                                             const sanitized = (value || '').replace(/\D/g, '');
+
                                             if (!sanitized) {
+                                                // If empty:
+                                                // For DNI: Valid (will be 00000000)
+                                                // For RUC: Required if Factura (handled by other rules? or just let it be empty?)
+                                                // User only mentioned DNI behavior for empty.
+                                                // Let's assume RUC needs to be typed if selected.
+                                                if (tipo === 'DNI') return Promise.resolve();
                                                 return isGenericAndSmallAmount ? Promise.resolve() : Promise.reject(new Error('Ingresa el documento del cliente'));
                                             }
+
                                             if (tipo === 'RUC') {
+                                                // User asked for max 20 chars input, but RUC is 11. 
+                                                // "en ruc no deje escribir mas de 20" -> maxLength=20.
+                                                // Validation? Usually 11. I will keep 11 validation but allow 20 input length as requested?
+                                                // Or maybe they want to allow foreign RUCs? 
+                                                // "en ruc no deje escribir mas de 20".
+                                                // I will relax the exact 11 check if they want up to 20, or just check it's not too long.
+                                                // Let's keep 11 digits validation for standard RUC but allow input up to 20.
                                                 return /^\d{11}$/.test(sanitized)
                                                     ? Promise.resolve()
                                                     : Promise.reject(new Error('El RUC debe tener 11 dígitos'));
                                             }
+                                            // DNI validation: 8 digits
                                             return /^\d{8}$/.test(sanitized)
                                                 ? Promise.resolve()
                                                 : Promise.reject(new Error('El DNI debe tener 8 dígitos'));
@@ -632,7 +652,11 @@ const CheckoutModal = ({
                                     }),
                                 ]}
                             >
-                                <Input maxLength={11} disabled={!puedeEditarCliente} placeholder="00000000" />
+                                <Input
+                                    maxLength={form.getFieldValue('clienteDocTipo') === 'RUC' ? 20 : 8}
+                                    disabled={!puedeEditarCliente}
+                                    placeholder={form.getFieldValue('clienteDocTipo') === 'RUC' ? "RUC del cliente" : "00000000"}
+                                />
                             </Form.Item>
                         </Col>
                     </Row>
@@ -645,7 +669,7 @@ const CheckoutModal = ({
                     </Form.Item>
                     <Form.Item
                         name="clienteDireccion"
-                        label="Dirección fiscal"
+                        label="Dirección"
                     >
                         <Input
                             disabled={!puedeEditarCliente && !showDeliveryFields}
@@ -857,7 +881,7 @@ const CheckoutModal = ({
                     </Form>
                 )}
             </Modal>
-        </Drawer>
+        </Drawer >
     );
 };
 

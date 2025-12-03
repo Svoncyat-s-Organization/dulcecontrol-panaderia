@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, Input, Button, Typography, Spin, Empty, Tag } from 'antd';
+import { Card, Input, Button, Typography, Spin, Empty, Tag, message } from 'antd';
 import { SearchOutlined, PlusOutlined, ShopOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
@@ -111,7 +111,20 @@ const ProductGrid = () => {
                                     </div>
                                 }
                                 actions={[
-                                    <Button key="add" type="primary" block icon={<PlusOutlined />} onClick={() => addItem(item)}>
+                                    <Button
+                                        key="add"
+                                        type="primary"
+                                        block
+                                        icon={<PlusOutlined />}
+                                        onClick={() => {
+                                            const currentStock = stockMap.get(item.id) ?? 0;
+                                            if (currentStock <= 0) {
+                                                message.warning('Este producto no tiene stock disponible');
+                                                return;
+                                            }
+                                            addItem(item);
+                                        }}
+                                    >
                                         Agregar
                                     </Button>
                                 ]}
