@@ -4,8 +4,8 @@ import com.dulcecontrol.bakery.features.admin.catalogo.dto.ProductoCreateRequest
 import com.dulcecontrol.bakery.features.admin.catalogo.dto.ProductoResponse;
 import com.dulcecontrol.bakery.features.admin.catalogo.dto.ProductoUpdateRequest;
 import com.dulcecontrol.bakery.features.admin.catalogo.entity.Producto;
-import com.dulcecontrol.bakery.features.admin.catalogo.repository.CategoriaRepository;
-import com.dulcecontrol.bakery.features.admin.catalogo.repository.ProductoRepository;
+import com.dulcecontrol.bakery.features.shared.catalogo.repository.CategoriaRepository;
+import com.dulcecontrol.bakery.features.shared.catalogo.repository.ProductoRepository;
 import com.dulcecontrol.bakery.features.admin.catalogo.service.IProductoAdminService;
 import com.dulcecontrol.bakery.shared.exception.BadRequestException;
 import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;

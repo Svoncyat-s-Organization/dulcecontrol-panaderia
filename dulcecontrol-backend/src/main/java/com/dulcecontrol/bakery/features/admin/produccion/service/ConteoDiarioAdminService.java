@@ -5,7 +5,7 @@ import com.dulcecontrol.bakery.features.admin.produccion.entity.ConteoDiario;
 import com.dulcecontrol.bakery.features.admin.produccion.entity.DetalleConteoDiario;
 import com.dulcecontrol.bakery.features.admin.produccion.repository.ConteoDiarioRepository;
 import com.dulcecontrol.bakery.features.admin.produccion.repository.DetalleConteoDiarioRepository;
-import com.dulcecontrol.bakery.features.admin.catalogo.repository.ProductoRepository;
+import com.dulcecontrol.bakery.features.shared.catalogo.repository.ProductoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

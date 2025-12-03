@@ -1,6 +1,6 @@
 package com.dulcecontrol.bakery.features.shared.catalogo.repository;
 
-import com.dulcecontrol.bakery.features.shared.catalogo.model.Categoria;
+import com.dulcecontrol.bakery.features.admin.catalogo.entity.Categoria;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,12 +10,14 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Repositorio para Categoria.
- * Incluye queries para el catálogo público del storefront.
+ * Repositorio unificado para Categoria.
+ * Incluye queries para catálogo público Y gestión admin.
  */
 @Repository
 public interface CategoriaRepository extends JpaRepository<Categoria, Long> {
 
+    // ========== QUERIES PÚBLICAS (Storefront) ==========
+    
     /**
      * Busca categorías activas de una tienda, ordenadas por orden_visual.
      * Usado en el storefront para el carrusel de categorías.
@@ -32,9 +34,35 @@ public interface CategoriaRepository extends JpaRepository<Categoria, Long> {
      */
     Optional<Categoria> findByTiendaIdAndSlugAndActivaTrue(Long tiendaId, String slug);
 
+    // ========== QUERIES ADMIN (Backoffice) ==========
+    
     /**
-     * Busca todas las categorías de una tienda (incluye inactivas).
-     * Usado en el admin para gestión.
+     * Busca todas las categorías de una tienda ordenadas (incluye inactivas).
      */
-    List<Categoria> findByTiendaIdOrderByOrdenVisualAsc(Long tiendaId);
+    List<Categoria> findByTiendaIdOrderByOrdenVisualAscNombreAsc(Long tiendaId);
+
+    /**
+     * Busca una categoría por ID y tienda.
+     */
+    Optional<Categoria> findByIdAndTiendaId(Long id, Long tiendaId);
+
+    /**
+     * Verifica si existe una categoría con el nombre dado en la tienda.
+     */
+    boolean existsByTiendaIdAndNombreIgnoreCase(Long tiendaId, String nombre);
+
+    /**
+     * Verifica si existe una categoría con el slug dado en la tienda.
+     */
+    boolean existsByTiendaIdAndSlugIgnoreCase(Long tiendaId, String slug);
+
+    /**
+     * Verifica si existe una categoría con el nombre dado, excluyendo un ID específico.
+     */
+    boolean existsByTiendaIdAndNombreIgnoreCaseAndIdNot(Long tiendaId, String nombre, Long id);
+
+    /**
+     * Verifica si existe una categoría con el slug dado, excluyendo un ID específico.
+     */
+    boolean existsByTiendaIdAndSlugIgnoreCaseAndIdNot(Long tiendaId, String slug, Long id);
 }
