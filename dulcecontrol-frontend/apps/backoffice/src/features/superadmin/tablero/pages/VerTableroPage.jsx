@@ -1,19 +1,14 @@
 import { Alert, Card, Col, Empty, Flex, Row, Space, Statistic, Table, Tag, Typography } from 'antd';
 import { Area, Pie } from '@ant-design/plots';
+import { useQuery } from '@tanstack/react-query';
 import {
   IconAlertTriangle,
   IconBuildingStore,
   IconCash,
   IconRocket,
 } from '@tabler/icons-react';
-import {
-  actividadSeguridad,
-  distribucionPlanes,
-  facturacionMensual,
-  renovacionesProximas,
-  resumenMetrics,
-  ticketsCriticos,
-} from '../constants/dashboardMocks.js';
+import { getEstadisticasTableroSuperadmin } from '../api/tablero.api.js';
+import { TABLERO_SUPERADMIN_KEYS } from '../constants/queryKeys.js';
 
 const { Title, Text } = Typography;
 
@@ -38,12 +33,24 @@ const estadoTagMap = {
 };
 
 const VerTableroPage = () => {
+  const { data: estadisticas, isLoading, isError } = useQuery({
+    queryKey: TABLERO_SUPERADMIN_KEYS.estadisticas(),
+    queryFn: getEstadisticasTableroSuperadmin,
+  });
+
+  const resumenMetrics = estadisticas?.resumenMetrics || [];
+  const facturacionMensual = estadisticas?.facturacionMensual || [];
+  const distribucionPlanes = estadisticas?.distribucionPlanes || [];
+  const ticketsCriticos = estadisticas?.ticketsCriticos || [];
+  const renovacionesProximas = estadisticas?.renovacionesProximas || [];
+  const actividadSeguridad = estadisticas?.actividadSeguridad || [];
+
   const tieneFacturacion = facturacionMensual.length > 0;
   const tienePlanes = distribucionPlanes.length > 0;
-  const totalTiendasConPlan = distribucionPlanes.reduce((acc, item) => acc + item.tiendas, 0);
+  const totalTiendasConPlan = distribucionPlanes.reduce((acc, item) => acc + (Number(item?.tiendas) || 0), 0);
 
   const areaConfig = {
-    data: facturacionMensual,
+    data: facturacionMensual.map(f => ({ ...f, total: Number(f.total) })),
     height: 280,
     autoFit: true,
     appendPadding: 16,
@@ -82,33 +89,36 @@ const VerTableroPage = () => {
     },
   };
 
+  const pieData = distribucionPlanes.map(p => ({ 
+    plan: p.plan || 'Sin plan', 
+    tiendas: Number(p.tiendas) || 0,
+    ticket: p.ticket || 'S/ 0'
+  }));
+
   const pieConfig = {
-    data: distribucionPlanes,
+    data: pieData,
     appendPadding: 12,
     angleField: 'tiendas',
     colorField: 'plan',
     radius: 0.85,
     innerRadius: 0.6,
-    label: {
-      type: 'inner',
-      offset: '-30%',
-      formatter: (datum) =>
-        totalTiendasConPlan
-          ? `${((datum.tiendas / totalTiendasConPlan) * 100).toFixed(1)}%`
-          : '0%',
-    },
+    label: false,
     legend: { position: 'bottom' },
     statistic: {
-      title: { formatter: () => 'Tiendas' },
+      title: false,
       content: {
-        formatter: () => (totalTiendasConPlan ? `${totalTiendasConPlan}` : 'Sin datos'),
+        style: { fontSize: '16px', fontWeight: '600' },
+        content: totalTiendasConPlan ? `${totalTiendasConPlan}` : '0',
       },
     },
     tooltip: {
-      formatter: (datum) => ({
-        name: datum.plan,
-        value: `${datum.tiendas} tiendas · Ticket ${datum.ticket}`,
-      }),
+      formatter: (datum) => {
+        if (!datum) return { name: 'Plan', value: 'Sin datos' };
+        return {
+          name: datum.plan || 'Sin plan',
+          value: `${datum.tiendas || 0} tiendas · Ticket ${datum.ticket || 'S/ 0'}`,
+        };
+      },
     },
     interactions: [
       { type: 'element-active' },
@@ -134,6 +144,21 @@ const VerTableroPage = () => {
     },
   ];
 
+  if (isLoading) {
+    return <div style={{ padding: '24px', textAlign: 'center' }}>Cargando estadísticas...</div>;
+  }
+
+  if (isError) {
+    return (
+      <Alert
+        type="error"
+        showIcon
+        title="Error al cargar estadísticas"
+        description="No se pudieron obtener los datos del tablero. Por favor, intenta nuevamente."
+      />
+    );
+  }
+
   return (
     <Space orientation="vertical" size="large" style={{ width: '100%' }}>
       <div>
@@ -144,13 +169,6 @@ const VerTableroPage = () => {
           Supervisa la salud del ecosistema: seguridad, tiendas, suscripciones y soporte.
         </Text>
       </div>
-
-      <Alert
-        type="info"
-        showIcon
-        title="Datos de referencia"
-        description="Estos insights utilizan datos simulados basados en las migraciones V2-V6 mientras se conectan los endpoints del core superadmin."
-      />
 
       <Row gutter={[16, 16]}>
         {resumenMetrics.map((metric) => (
@@ -175,17 +193,8 @@ const VerTableroPage = () => {
       </Row>
 
       <Row gutter={[16, 16]}>
-        <Col xs={24} lg={16}>
-          <Card title="Facturación mensual confirmada" styles={{ body: { height: 360 } }}>
-            {tieneFacturacion ? (
-              <Area {...areaConfig} style={{ height: '100%' }} />
-            ) : (
-              <Empty description="Sin datos de facturación" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-            )}
-          </Card>
-        </Col>
-        <Col xs={24} lg={8}>
-          <Card title="Distribución por planes" styles={{ body: { height: 360 } }}>
+        <Col xs={24} lg={12}>
+          <Card title="Distribución por planes" styles={{ body: { height: 400 } }}>
             {tienePlanes ? (
               <Pie {...pieConfig} />
             ) : (
@@ -193,11 +202,8 @@ const VerTableroPage = () => {
             )}
           </Card>
         </Col>
-      </Row>
-
-      <Row gutter={[16, 16]}>
         <Col xs={24} lg={12}>
-          <Card title="Tickets críticos en soporte">
+          <Card title="Tickets críticos en soporte" styles={{ body: { height: 400, overflowY: 'auto' } }}>
             {ticketsCriticos.length ? (
               <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
                 {ticketsCriticos.map((ticket) => (
@@ -227,51 +233,7 @@ const VerTableroPage = () => {
             )}
           </Card>
         </Col>
-        <Col xs={24} lg={12}>
-          <Card title="Actividad sensible de seguridad">
-            {actividadSeguridad.length ? (
-              <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
-                {actividadSeguridad.map((evento, index) => (
-                  <Flex
-                    key={`${evento.evento}-${index}`}
-                    align="flex-start"
-                    justify="space-between"
-                    style={{ width: '100%' }}
-                  >
-                    <div>
-                      <Text strong>{evento.evento}</Text>
-                      <div>
-                        <Text type="secondary">{evento.detalle}</Text>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <Text>{evento.fecha}</Text>
-                      <div>
-                        <Tag color={evento.impacto === 'Alto' ? 'red' : evento.impacto === 'Medio' ? 'orange' : 'blue'}>
-                          {evento.impacto}
-                        </Tag>
-                      </div>
-                    </div>
-                  </Flex>
-                ))}
-              </Space>
-            ) : (
-              <Empty description="Sin actividad reciente" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-            )}
-          </Card>
-        </Col>
       </Row>
-
-      <Card title="Renovaciones de suscripción (próximos 30 días)">
-        <Table
-          rowKey={(record) => `${record.tienda}-${record.fechaRenovacion}`}
-          dataSource={renovacionesProximas}
-          columns={renovacionesColumns}
-          pagination={false}
-        />
-      </Card>
-
-      {/* Para cambiar a datos reales, reemplaza los mocks importados desde dashboardMocks con hooks useQuery que apunten a los endpoints de superadmin (tiendas, planes, comprobantes y soporte). */}
     </Space>
   );
 };
