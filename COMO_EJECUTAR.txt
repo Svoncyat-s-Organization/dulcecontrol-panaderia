@@ -3,6 +3,11 @@
   Sistema de Gestión para Panaderías y Pastelerías
 ================================================================================
 
+Para una build en vivo visitar:
+- https://sa-dulcecontrol.vercel.app/admin/login - Administrador
+- https://sa-dulcecontrol.vercel.app/superadmin/login - Superadministrador
+- https://sa-dulcecontrol.vercel.app/token - Generador de tokens
+
 REQUISITOS PREVIOS
 ------------------
 - Java 17 o superior
