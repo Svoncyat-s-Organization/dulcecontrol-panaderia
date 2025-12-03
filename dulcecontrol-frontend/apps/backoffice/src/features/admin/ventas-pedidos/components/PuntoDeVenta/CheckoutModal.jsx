@@ -4,30 +4,67 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import dayjs from 'dayjs';
 import { useQuery } from '@tanstack/react-query';
 import { createDireccionCliente, getClientes, getDireccionesCliente } from '../../api/clientes.api.js';
+import { getSeriesPorSede } from '../../api/facturacion.api.js';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 import { POS_MODES, useCartStore } from '../../hooks/useCartStore.js';
 import { TIPOS_ENTREGA } from '../../constants/ventaConstants.js';
+import { FACTURACION_KEYS } from '../../constants/queryKeys.js';
 import MoneyInput from '../../../../../shared/components/MoneyInput.jsx';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-const CheckoutModal = ({ open, onCancel, onConfirm, total, loading }) => {
+const CheckoutModal = ({
+    open,
+    onCancel,
+    onConfirm,
+    total,
+    loading,
+    sedeId,
+    facturacionConfig,
+    facturacionConfigLoading,
+    facturacionConfigError,
+}) => {
     const [form] = Form.useForm();
     const [addressForm] = Form.useForm();
     const tiendaId = useTokenStore((state) => state.tiendaId);
     const { cliente, setCliente, posMode } = useCartStore();
+    const formDocTipo = Form.useWatch('clienteDocTipo', form);
+    const isRuc = formDocTipo === 'RUC';
     const CASH_METHOD = 'efectivo';
     const [metodoPago, setMetodoPago] = useState(CASH_METHOD);
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
     const [savingAddress, setSavingAddress] = useState(false);
     const previousMode = useRef(posMode);
     const clienteId = cliente?.id;
+    const clienteEsGenerico = useMemo(() => {
+        if (!cliente) {
+            return true;
+        }
+        if (cliente?.esGenerico) {
+            return true;
+        }
+        const nombre = (cliente?.nombreDoc || cliente?.nombre_doc || '').toLowerCase();
+        if (nombre.includes('genérico') || nombre.includes('generico')) {
+            return true;
+        }
+        const numero = (cliente?.numeroDoc || cliente?.numero_doc || '').replace(/[^0-9]/g, '');
+        return numero === '00000000' || numero === '00000000000';
+    }, [cliente]);
+
+    const isGenericAndSmallAmount = clienteEsGenerico && total <= 700;
+
+    const facturacionReady = useMemo(() => (
+        !!(facturacionConfig?.ruc && facturacionConfig?.razonSocial && facturacionConfig?.direccionFiscal)
+    ), [facturacionConfig]);
 
     const isPedido = posMode === POS_MODES.PEDIDO;
+    const tipoComprobanteValue = Form.useWatch('tipoComprobante', form) || (isRuc ? 'factura' : 'boleta');
+    const serieIdValue = Form.useWatch('serieId', form);
     const tipoEntregaValue = Form.useWatch('tipoEntrega', form) || (isPedido ? TIPOS_ENTREGA.RECOJO_TIENDA : TIPOS_ENTREGA.CONSUMO_LOCAL);
     const montoPagadoValue = Number(Form.useWatch('montoPagado', form) || 0);
     const showDeliveryFields = isPedido && tipoEntregaValue === TIPOS_ENTREGA.DELIVERY;
+    const puedeEditarCliente = clienteEsGenerico || !clienteId;
 
     const { data: clientes = [] } = useQuery({
         queryKey: ['clientes', tiendaId],
@@ -41,14 +78,89 @@ const CheckoutModal = ({ open, onCancel, onConfirm, total, loading }) => {
         enabled: !!tiendaId && !!clienteId && open
     });
 
+    const {
+        data: seriesRaw = [],
+        isLoading: seriesLoading,
+        isFetching: isSeriesFetching,
+    } = useQuery({
+        queryKey: FACTURACION_KEYS.series(tiendaId, sedeId || null),
+        queryFn: () => getSeriesPorSede(tiendaId, sedeId),
+        enabled: open && !!tiendaId && !!sedeId,
+        select: (data) => (Array.isArray(data) ? data.filter((serie) => serie.activa) : []),
+    });
+
+    const series = useMemo(() => (
+        [...seriesRaw].sort((a, b) => (a?.serie || '').localeCompare(b?.serie || '', 'es', { sensitivity: 'base' }))
+    ), [seriesRaw]);
+
+    const seriesPorTipo = useMemo(() => (
+        series.reduce((acc, serie) => {
+            const tipo = (serie?.tipoComprobante || '').toLowerCase();
+            if (!tipo) {
+                return acc;
+            }
+            if (!acc[tipo]) {
+                acc[tipo] = [];
+            }
+            acc[tipo].push(serie);
+            return acc;
+        }, {})
+    ), [series]);
+
+    const seriesDisponibles = tipoComprobanteValue ? (seriesPorTipo[tipoComprobanteValue] || []) : [];
+
+    const selectedSerie = useMemo(() => {
+        if (!serieIdValue) {
+            return null;
+        }
+        return series.find((serie) => String(serie.id) === String(serieIdValue)) || null;
+    }, [series, serieIdValue]);
+
+    const correlativoPreview = selectedSerie ? Number(selectedSerie.correlativoActual ?? 0) + 1 : null;
+    const correlativoFormatted = correlativoPreview ? correlativoPreview.toString().padStart(8, '0') : '';
+    const canEmitirComprobante = Boolean(
+        selectedSerie
+        && correlativoPreview
+        && facturacionReady
+        && !facturacionConfigLoading
+        && !seriesLoading
+        && !isSeriesFetching
+        && !!sedeId
+    );
+    const docTipoLocked = false; // Allow changing doc type for generic clients
+    const docTipoOptions = ['DNI', 'RUC'];
+    const facturacionBlockingMessage = useMemo(() => {
+        if (!sedeId) {
+            return 'No se pudo determinar la sede activa de la caja. Selecciona una caja vinculada a una sede para emitir comprobantes.';
+        }
+        if (facturacionConfigError) {
+            return 'No se pudo cargar la configuración fiscal. Revisa Configuración > Facturación e inténtalo nuevamente.';
+        }
+        if (!facturacionReady) {
+            return 'Completa la configuración fiscal de la tienda antes de emitir comprobantes.';
+        }
+        return null;
+    }, [sedeId, facturacionConfigError, facturacionReady]);
+    const seriesWarningMessage = useMemo(() => {
+        if (!tipoComprobanteValue || seriesLoading || isSeriesFetching) {
+            return null;
+        }
+        if (!seriesDisponibles.length) {
+            return `No hay series activas configuradas para ${tipoComprobanteValue.toUpperCase()}.`;
+        }
+        return null;
+    }, [tipoComprobanteValue, seriesDisponibles.length, seriesLoading, isSeriesFetching]);
+
     useEffect(() => {
         if (!open) {
             return;
         }
         previousMode.current = posMode;
         form.resetFields();
-        const isRuc = cliente?.tipoDoc === 'RUC';
-        const defaultComprobante = isRuc ? 'factura' : 'boleta';
+        // Default to DNI if generic, otherwise use client's doc type
+        const initialDocTipo = cliente?.tipoDoc || 'DNI';
+        const initialIsRuc = initialDocTipo === 'RUC';
+        const defaultComprobante = initialIsRuc ? 'factura' : 'boleta';
         const defaultMonto = isPedido ? 0 : total;
         form.setFieldsValue({
             tipoComprobante: defaultComprobante,
@@ -62,6 +174,7 @@ const CheckoutModal = ({ open, onCancel, onConfirm, total, loading }) => {
             shippingReferencia: '',
             shippingContactoNombre: cliente?.nombreDoc || '',
             shippingContactoTelefono: cliente?.telefono || '',
+            serieId: null,
         });
         setMetodoPago(isPedido ? 'yape' : CASH_METHOD);
     }, [open, cliente, posMode, total, isPedido, form]);
@@ -85,6 +198,27 @@ const CheckoutModal = ({ open, onCancel, onConfirm, total, loading }) => {
             });
         }
     }, [clienteId, cliente, form, open]);
+
+    useEffect(() => {
+        if (!open) {
+            return;
+        }
+        const defaultDocTipo = (cliente?.tipoDoc || cliente?.tipo_doc || (isRuc ? 'RUC' : 'DNI')).toUpperCase();
+        const defaultDocNumero = clienteEsGenerico ? '' : (cliente?.numeroDoc || cliente?.numero_doc || '');
+        form.setFieldsValue({
+            clienteDocTipo: defaultDocTipo,
+            clienteDocNumero: defaultDocNumero,
+            clienteNombre: cliente?.nombreDoc || cliente?.nombre_doc || '',
+            clienteDireccion: cliente?.direccion || '',
+        });
+    }, [open, cliente, clienteEsGenerico, form]); // Removed isRuc dependency to avoid loop
+
+    // Update correlative when series changes
+    useEffect(() => {
+        if (selectedSerie && correlativoFormatted) {
+            form.setFieldsValue({ comprobanteCorrelativo: correlativoFormatted });
+        }
+    }, [selectedSerie, correlativoFormatted, form]);
 
     useEffect(() => {
         if (!open) {
@@ -131,6 +265,41 @@ const CheckoutModal = ({ open, onCancel, onConfirm, total, loading }) => {
         }
     }, [open, clienteId, direccionesCliente, form, showDeliveryFields]);
 
+    useEffect(() => {
+        if (!open) {
+            return;
+        }
+        // If Factura is selected, ensure RUC is selected
+        if (tipoComprobanteValue === 'factura' && formDocTipo !== 'RUC') {
+            form.setFieldsValue({ clienteDocTipo: 'RUC' });
+        }
+        // If Boleta is selected, we don't necessarily force DNI anymore, as RUCs can also have Boletas in some cases,
+        // but usually RUC -> Factura. Let's keep it flexible or default to DNI if switching from Factura?
+        // User asked: "si es ruc si factura si no no".
+        // Logic: If RUC is selected, Factura is allowed. If DNI, Factura is disabled.
+    }, [open, tipoComprobanteValue, formDocTipo, form]);
+
+    useEffect(() => {
+        if (!open) {
+            return;
+        }
+        if (!tipoComprobanteValue) {
+            form.setFieldsValue({ serieId: null });
+            return;
+        }
+        const disponibles = seriesPorTipo[tipoComprobanteValue] || [];
+        if (!disponibles.length) {
+            form.setFieldsValue({ serieId: null });
+            form.setFields([{ name: 'serieId', errors: ['No hay series activas para este tipo de comprobante'] }]);
+            return;
+        }
+        const current = form.getFieldValue('serieId');
+        if (!disponibles.some((serie) => String(serie.id) === String(current))) {
+            form.setFieldsValue({ serieId: disponibles[0].id });
+        }
+        form.setFields([{ name: 'serieId', errors: [] }]);
+    }, [open, tipoComprobanteValue, seriesPorTipo, form]);
+
     // Ubigeo logic removed - using simple text fields for address
 
     const handleOk = () => {
@@ -147,6 +316,32 @@ const CheckoutModal = ({ open, onCancel, onConfirm, total, loading }) => {
                 ]);
                 return;
             }
+            if (!selectedSerie || !correlativoPreview) {
+                form.setFields([
+                    { name: 'serieId', errors: ['Selecciona una serie válida'] },
+                ]);
+                return;
+            }
+            if (facturacionConfigLoading) {
+                return;
+            }
+            if (!facturacionReady) {
+                Modal.error({
+                    title: 'Configuración fiscal incompleta',
+                    content: 'Debes registrar el RUC, razón social y dirección fiscal en Configuración > Facturación antes de emitir comprobantes.',
+                });
+                return;
+            }
+
+            const normalizedDocTipo = (values.clienteDocTipo || (isRuc ? 'RUC' : 'DNI')).toUpperCase();
+            const normalizedDocNumero = values.clienteDocNumero
+                ? values.clienteDocNumero.replace(/\D/g, '').trim()
+                : '';
+            const clienteNombre = values.clienteNombre?.trim() || cliente?.nombreDoc || 'Cliente POS';
+            const clienteDireccion = values.clienteDireccion?.trim()
+                || (showDeliveryFields ? values.shippingDireccion?.trim() : null)
+                || cliente?.direccion
+                || null;
 
             const normalizedPayload = {
                 ...values,
@@ -164,13 +359,20 @@ const CheckoutModal = ({ open, onCancel, onConfirm, total, loading }) => {
                 shippingContactoNombre: showDeliveryFields ? values.shippingContactoNombre?.trim() || cliente?.nombreDoc || '' : null,
                 shippingContactoTelefono: showDeliveryFields ? values.shippingContactoTelefono?.trim() || cliente?.telefono || '' : null,
                 fechaEntrega: values.fechaEntrega ? dayjs(values.fechaEntrega).format('YYYY-MM-DDTHH:mm:ss') : null,
+                comprobanteSerieId: selectedSerie.id,
+                comprobanteSerieCodigo: selectedSerie.serie,
+                comprobanteCorrelativo: Number(values.comprobanteCorrelativo),
+                clienteDocTipo: normalizedDocTipo,
+                clienteDocNumero: normalizedDocNumero,
+                clienteNombre,
+                clienteDireccion,
             };
 
             onConfirm(normalizedPayload);
         });
     };
 
-    const isRuc = cliente?.tipoDoc === 'RUC';
+
     const cambio = Math.max(0, montoPagadoValue - total);
     const saldoPendiente = Math.max(0, total - montoPagadoValue);
     const actionLabel = isPedido ? 'Registrar pedido' : 'Confirmar pago';
@@ -259,7 +461,12 @@ const CheckoutModal = ({ open, onCancel, onConfirm, total, loading }) => {
             footer={
                 <Space style={{ justifyContent: 'flex-end', width: '100%' }}>
                     <Button onClick={onCancel} disabled={loading}>Cancelar</Button>
-                    <Button type="primary" loading={loading} onClick={handleOk}>
+                    <Button
+                        type="primary"
+                        loading={loading}
+                        onClick={handleOk}
+                        disabled={loading || !canEmitirComprobante}
+                    >
                         {actionLabel}
                     </Button>
                 </Space>
@@ -296,6 +503,15 @@ const CheckoutModal = ({ open, onCancel, onConfirm, total, loading }) => {
                         ))}
                     </Select>
                 </Form.Item>
+
+                {facturacionBlockingMessage && (
+                    <Alert
+                        type="warning"
+                        showIcon
+                        message={facturacionBlockingMessage}
+                        style={{ marginBottom: 16 }}
+                    />
+                )}
 
                 <Form.Item
                     name="tipoEntrega"
@@ -336,6 +552,107 @@ const CheckoutModal = ({ open, onCancel, onConfirm, total, loading }) => {
                         </Radio.Button>
                     </Radio.Group>
                 </Form.Item>
+
+                {seriesWarningMessage && (
+                    <Alert
+                        type="warning"
+                        showIcon
+                        style={{ marginBottom: 12 }}
+                        message={seriesWarningMessage}
+                    />
+                )}
+
+                <Form.Item
+                    name="serieId"
+                    label="Serie de comprobante"
+                    rules={[{ required: true, message: 'Seleccione una serie' }]}
+                >
+                    <Select
+                        placeholder={seriesLoading ? 'Cargando series...' : 'Selecciona la serie'}
+                        loading={seriesLoading || isSeriesFetching}
+                        disabled={true} // Always disabled as per request
+                        className="opaque-disabled-select" // We might need to inject CSS or just rely on disabled style
+                        style={{ opacity: 0.8 }} // Make it look a bit more "opaque"/readable
+                    >
+                        {seriesDisponibles.map((serie) => (
+                            <Option key={serie.id} value={serie.id}>
+                                {serie.serie}
+                            </Option>
+                        ))}
+                    </Select>
+                </Form.Item>
+
+                <Form.Item
+                    name="comprobanteCorrelativo"
+                    label="Correlativo"
+                    rules={[{ required: true, message: 'El correlativo es requerido' }]}
+                >
+                    <Input />
+                </Form.Item>
+
+                <div style={{ border: '1px solid #f0f0f0', borderRadius: 12, padding: 16, marginBottom: 24 }}>
+                    <Text strong>Datos del cliente para el comprobante</Text>
+                    <Row gutter={12} style={{ marginTop: 12 }}>
+                        <Col span={8}>
+                            <Form.Item
+                                name="clienteDocTipo"
+                                label="Tipo"
+                                rules={[{ required: true, message: 'Selecciona el tipo de documento' }]}
+                            >
+                                <Select disabled={!puedeEditarCliente}>
+                                    {docTipoOptions.map((tipo) => (
+                                        <Option key={tipo} value={tipo}>{tipo}</Option>
+                                    ))}
+                                </Select>
+                            </Form.Item>
+                        </Col>
+                        <Col span={16}>
+                            <Form.Item
+                                name="clienteDocNumero"
+                                label="Número"
+                                rules={[
+                                    { required: !isGenericAndSmallAmount, message: 'Ingresa el documento del cliente' },
+                                    () => ({
+                                        validator(_, value) {
+                                            if (!value && isGenericAndSmallAmount) return Promise.resolve();
+                                            const tipo = (form.getFieldValue('clienteDocTipo') || 'DNI').toUpperCase();
+                                            const sanitized = (value || '').replace(/\D/g, '');
+                                            if (!sanitized) {
+                                                return isGenericAndSmallAmount ? Promise.resolve() : Promise.reject(new Error('Ingresa el documento del cliente'));
+                                            }
+                                            if (tipo === 'RUC') {
+                                                return /^\d{11}$/.test(sanitized)
+                                                    ? Promise.resolve()
+                                                    : Promise.reject(new Error('El RUC debe tener 11 dígitos'));
+                                            }
+                                            return /^\d{8}$/.test(sanitized)
+                                                ? Promise.resolve()
+                                                : Promise.reject(new Error('El DNI debe tener 8 dígitos'));
+                                        },
+                                    }),
+                                ]}
+                            >
+                                <Input maxLength={11} disabled={!puedeEditarCliente} placeholder="00000000" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Form.Item
+                        name="clienteNombre"
+                        label="Nombre o razón social"
+                        rules={[{ required: !isGenericAndSmallAmount, message: 'Ingresa el nombre del cliente' }]}
+                    >
+                        <Input disabled={!puedeEditarCliente} placeholder="Nombre del cliente" />
+                    </Form.Item>
+                    <Form.Item
+                        name="clienteDireccion"
+                        label="Dirección fiscal"
+                    >
+                        <Input
+                            disabled={!puedeEditarCliente && !showDeliveryFields}
+                            placeholder={showDeliveryFields ? 'Se usará la dirección de envío si la dejas vacía' : 'Opcional'}
+                        />
+                    </Form.Item>
+                </div>
 
                 <Form.Item
                     name="metodoPago"

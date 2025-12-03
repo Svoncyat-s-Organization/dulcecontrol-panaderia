@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import PosView from './PosView.jsx';
 import CheckoutModal from './CheckoutModal.jsx';
 import ReceiptModal from './ReceiptModal.jsx';
@@ -8,7 +8,9 @@ import { useCajaSession } from '../../hooks/useCajaSession.js';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 import { createPedido, addDetallePedido, addPagoPedido, addDireccionPedido } from '../../api/pedidos.api.js';
 import { registrarMovimientoCaja } from '../../api/cajas.api.js';
-import { CAJA_KEYS, PEDIDO_KEYS } from '../../constants/queryKeys.js';
+import { getConfiguracionTienda } from '../../api/configuracion.api.js';
+import { createComprobante, incrementarCorrelativoSerie } from '../../api/facturacion.api.js';
+import { CAJA_KEYS, PEDIDO_KEYS, FACTURACION_KEYS } from '../../constants/queryKeys.js';
 import { getInventarioProductosPorSede } from '../../../inventario/api/existencias.api.js';
 import { crearMovimientoInventarioProducto } from '../../../inventario/api/movimientos.api.js';
 import { INVENTARIO_PRODUCTO_KEYS, INVENTARIO_MOVIMIENTO_KEYS } from '../../../inventario/constants/queryKeys.js';
@@ -78,6 +80,27 @@ const PuntoDeVenta = () => {
     const { session, usuarioId, currentCaja, isLoading: isCajaDataLoading } = useCajaSession();
     const tiendaId = useTokenStore((state) => state.tiendaId);
     const queryClient = useQueryClient();
+    const {
+        data: facturacionConfig,
+        isLoading: isFacturacionConfigLoading,
+        error: facturacionConfigError,
+    } = useQuery({
+        queryKey: FACTURACION_KEYS.configuracion(tiendaId || null),
+        queryFn: () => getConfiguracionTienda(tiendaId),
+        enabled: !!tiendaId,
+        retry: false,
+    });
+
+    const calcularTotalesComprobante = (importeCentimos) => {
+        const tasaIgvValor = Number(facturacionConfig?.tasaIgv ?? 18);
+        if (!tasaIgvValor || Number.isNaN(tasaIgvValor) || tasaIgvValor <= 0) {
+            return { gravado: importeCentimos, igv: 0 };
+        }
+        const rate = tasaIgvValor / 100;
+        const gravado = Math.round(importeCentimos / (1 + rate));
+        const igv = importeCentimos - gravado;
+        return { gravado, igv };
+    };
 
     useEffect(() => {
         const cachedReceipt = readPersistedReceipt();
@@ -152,6 +175,10 @@ const PuntoDeVenta = () => {
             if (!ensureContextReady()) {
                 throw new Error('Contexto de caja incompleto');
             }
+            const facturacionReady = !!(facturacionConfig?.ruc && facturacionConfig?.razonSocial && facturacionConfig?.direccionFiscal);
+            if (!facturacionReady) {
+                throw new Error('Configuración de facturación incompleta. Completa tus datos fiscales antes de registrar ventas.');
+            }
 
             const total = getTotal();
             const itemsSnapshot = items.map((item) => ({ ...item }));
@@ -201,6 +228,17 @@ const PuntoDeVenta = () => {
             const contactoDocTipo = normalizeDocumentoContacto(cliente?.tipoDoc ?? cliente?.tipo_doc);
             const contactoDocNumero = cliente?.numeroDoc ?? cliente?.numero_doc ?? null;
             const contactoEmail = cliente?.correo ?? cliente?.email ?? null;
+            const serieIdSeleccionada = checkoutData.comprobanteSerieId;
+            const serieCodigoSeleccionada = checkoutData.comprobanteSerieCodigo;
+            const correlativoSeleccionado = checkoutData.comprobanteCorrelativo;
+            if (!serieIdSeleccionada || !correlativoSeleccionado) {
+                throw new Error('No se pudo determinar la serie y correlativo del comprobante. Refresca las series e inténtalo nuevamente.');
+            }
+            const clienteDocTipo = (checkoutData.clienteDocTipo || 'DNI').toUpperCase();
+            const clienteDocNumero = checkoutData.clienteDocNumero || '';
+            const clienteNombre = checkoutData.clienteNombre || cliente?.nombreDoc || 'Cliente POS';
+            const clienteDireccion = checkoutData.clienteDireccion || (isDelivery ? shippingDireccion : null) || cliente?.direccion || null;
+            const { gravado: totalGravadoCentimos, igv: totalIgvCentimos } = calcularTotalesComprobante(totalCentimos);
 
             const pedidoPayload = {
                 codigoPedido,
@@ -223,8 +261,8 @@ const PuntoDeVenta = () => {
                 montoPagadoCentimos,
                 requiereComprobante: true,
                 tipoComprobante: checkoutData.tipoComprobante,
-                serieComprobante: null,
-                numeroComprobante: null,
+                serieComprobante: serieCodigoSeleccionada || null,
+                numeroComprobante: correlativoSeleccionado || null,
                 notasPedido: checkoutData.notasPedido?.trim() || null,
             };
 
@@ -300,6 +338,46 @@ const PuntoDeVenta = () => {
                 await syncInventarioTrasVenta({ pedidoId, itemsVendidos: itemsSnapshot });
             }
 
+            let comprobanteRegistrado = null;
+            try {
+                comprobanteRegistrado = await createComprobante(tiendaId, {
+                    tiendaId,
+                    pedidoId,
+                    serieId: serieIdSeleccionada,
+                    emisorRazonSocial: facturacionConfig.razonSocial,
+                    emisorRuc: facturacionConfig.ruc,
+                    emisorDireccion: facturacionConfig.direccionFiscal,
+                    clienteTipoDoc: clienteDocTipo,
+                    clienteNumeroDoc: clienteDocNumero,
+                    clienteNombre,
+                    clienteDireccion,
+                    tipoComprobante: checkoutData.tipoComprobante,
+                    correlativo: correlativoSeleccionado,
+                    moneda: 'PEN',
+                    totalGravadoCentimos,
+                    totalInafectoCentimos: 0,
+                    totalExoneradoCentimos: 0,
+                    totalIgvCentimos,
+                    totalImpuestosBolsaCentimos: 0,
+                    totalImporteCentimos: totalCentimos,
+                });
+                await incrementarCorrelativoSerie(tiendaId, serieIdSeleccionada);
+            } catch (error) {
+                console.error('No se pudo registrar el comprobante electrónico', error);
+                throw new Error(error?.response?.data?.message || 'No se pudo registrar el comprobante electrónico');
+            }
+
+            const clienteResumen = {
+                ...(cliente || {}),
+                nombreDoc: clienteNombre,
+                numeroDoc: clienteDocNumero,
+                tipoDoc: clienteDocTipo,
+                direccion: clienteDireccion,
+            };
+            const comprobanteResumen = comprobanteRegistrado
+                ? { ...comprobanteRegistrado, serieCodigo: serieCodigoSeleccionada }
+                : null;
+
             // Retornar objeto completo para el recibo
             return {
                 ...pedidoCreado,
@@ -327,7 +405,10 @@ const PuntoDeVenta = () => {
                     contactoNombre: shippingContactoNombre,
                     contactoTelefono: shippingContactoTelefono,
                 } : null,
-                cliente,
+                serieComprobante: serieCodigoSeleccionada,
+                numeroComprobante: correlativoSeleccionado,
+                comprobante: comprobanteResumen,
+                cliente: clienteResumen,
             };
         },
         onSuccess: (data) => {
@@ -376,6 +457,10 @@ const PuntoDeVenta = () => {
                 onConfirm={handleConfirmCheckout}
                 total={getTotal()}
                 loading={createPedidoMutation.isPending}
+                sedeId={currentCaja?.sedeId || null}
+                facturacionConfig={facturacionConfig}
+                facturacionConfigLoading={isFacturacionConfigLoading}
+                facturacionConfigError={facturacionConfigError}
             />
             <ReceiptModal
                 open={!!receiptData}

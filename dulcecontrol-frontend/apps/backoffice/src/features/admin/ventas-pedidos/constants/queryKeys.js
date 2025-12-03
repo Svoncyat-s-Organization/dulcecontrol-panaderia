@@ -14,3 +14,8 @@ export const PEDIDO_KEYS = {
     pagos: (tiendaId, pedidoId) => ['pedidos', 'pagos', tiendaId, pedidoId],
     detalles: (tiendaId, pedidoId) => ['pedidos', 'detalles', tiendaId, pedidoId],
 };
+
+export const FACTURACION_KEYS = {
+    configuracion: (tiendaId) => ['facturacion', 'configuracion', tiendaId],
+    series: (tiendaId, sedeId) => ['facturacion', 'series', tiendaId, sedeId],
+};
