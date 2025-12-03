@@ -39,7 +39,12 @@ const UsuariosTable = () => {
     if (!searchText.trim()) return usuarios;
     const normalized = searchText.trim().toLowerCase();
     return usuarios.filter((usuario) =>
-      [usuario.nombres, usuario.correo, usuario.numeroDoc]
+      [
+        usuario.nombres,
+        usuario.correo,
+        usuario.numeroDoc,
+        ...((usuario.roles ?? []).map((rol) => rol.nombre) ?? []),
+      ]
         .filter(Boolean)
         .some((value) => value.toLowerCase().includes(normalized)),
     );

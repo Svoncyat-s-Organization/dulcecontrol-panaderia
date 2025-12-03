@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Getter
 @Builder
@@ -19,4 +20,5 @@ public class UsuarioSuperadminResponse {
     private final Boolean activo;
     private final LocalDateTime creadoEn;
     private final LocalDateTime actualizadoEn;
+    private final Set<RolSuperadminSummaryResponse> roles;
 }

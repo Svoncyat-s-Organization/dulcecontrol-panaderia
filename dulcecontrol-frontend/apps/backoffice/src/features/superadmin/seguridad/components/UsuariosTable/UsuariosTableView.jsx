@@ -55,6 +55,26 @@ const UsuariosTableView = ({
       ),
     },
     {
+      title: 'Roles',
+      dataIndex: 'roles',
+      key: 'roles',
+      width: 220,
+      render: (roles) => {
+        if (!roles || roles.length === 0) {
+          return <Text type="secondary">Sin roles asignados</Text>;
+        }
+        return (
+          <Space size={[4, 4]} wrap>
+            {roles.map((rol) => (
+              <Tag key={rol.id} color={rol.esSistema ? 'purple' : 'blue'}>
+                {rol.nombre}
+              </Tag>
+            ))}
+          </Space>
+        );
+      },
+    },
+    {
       title: 'Teléfono',
       dataIndex: 'telefono',
       key: 'telefono',

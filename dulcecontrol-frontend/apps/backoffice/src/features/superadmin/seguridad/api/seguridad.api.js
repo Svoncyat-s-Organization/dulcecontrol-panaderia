@@ -1,6 +1,8 @@
 import apiClient from '../../../../api/apiClient.js';
 
 const USUARIOS_URL = '/api/superadmin/seguridad/usuarios';
+const ROLES_URL = '/api/superadmin/seguridad/roles';
+const PERMISOS_URL = '/api/superadmin/seguridad/permisos';
 const ACTIVIDADES_URL = '/api/superadmin/seguridad/actividades';
 
 // Usuarios Superadmin
@@ -26,6 +28,37 @@ export const updateSuperadminUsuario = async (usuarioId, payload) => {
 
 export const deleteSuperadminUsuario = async (usuarioId) => {
   await apiClient.delete(`${USUARIOS_URL}/${usuarioId}`);
+};
+
+// Roles Superadmin
+export const getSuperadminRoles = async () => {
+  const { data } = await apiClient.get(ROLES_URL);
+  return data ?? [];
+};
+
+export const getSuperadminRol = async (rolId) => {
+  const { data } = await apiClient.get(`${ROLES_URL}/${rolId}`);
+  return data;
+};
+
+export const createSuperadminRol = async (payload) => {
+  const { data } = await apiClient.post(ROLES_URL, payload);
+  return data;
+};
+
+export const updateSuperadminRol = async (rolId, payload) => {
+  const { data } = await apiClient.put(`${ROLES_URL}/${rolId}`, payload);
+  return data;
+};
+
+export const deleteSuperadminRol = async (rolId) => {
+  await apiClient.delete(`${ROLES_URL}/${rolId}`);
+};
+
+// Permisos Superadmin
+export const getSuperadminPermisos = async () => {
+  const { data } = await apiClient.get(PERMISOS_URL);
+  return data ?? [];
 };
 
 // Actividades

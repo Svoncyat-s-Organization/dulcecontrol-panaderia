@@ -10,6 +10,8 @@ const UsuarioFormView = ({
   loading,
   isEditing,
   tipoDocumentoOptions,
+  roleOptions,
+  rolesLoading,
 }) => {
   const handleFinish = (values) => {
     onSubmit(values);
@@ -58,6 +60,31 @@ const UsuarioFormView = ({
           rules={[{ required: true, message: 'Ingresa el nombre completo' }]}
         >
           <Input placeholder="Ej. Ana Torres" />
+        </Form.Item>
+
+        <Form.Item
+          label="Roles asignados"
+          name="roles"
+          rules={[
+            { required: true, message: 'Selecciona al menos un rol' },
+            {
+              validator: (_, value) => {
+                if (!value || value.length === 0) {
+                  return Promise.reject(new Error('Selecciona al menos un rol'));
+                }
+                return Promise.resolve();
+              },
+            },
+          ]}
+        >
+          <Select
+            mode="multiple"
+            placeholder="Selecciona uno o más roles"
+            options={roleOptions}
+            loading={rolesLoading}
+            optionFilterProp="label"
+            showSearch
+          />
         </Form.Item>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>

@@ -18,4 +18,8 @@ public interface UsuarioSuperadminRepository extends JpaRepository<UsuarioSupera
     boolean existsByCorreoAndIdNot(String correo, Long id);
 
     boolean existsByNumeroDocAndIdNot(String numeroDoc, Long id);
+
+    boolean existsByRoles_Id(Long rolId);
+
+    long countByRoles_Id(Long rolId);
 }
