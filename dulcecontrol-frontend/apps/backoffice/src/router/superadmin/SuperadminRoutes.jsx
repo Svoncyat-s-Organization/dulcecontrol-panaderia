@@ -3,6 +3,7 @@ import ProtectedRoute from '../ProtectedRoute.jsx';
 import SuperadminLayout from '../../layout/superadmin/SuperadminLayout.jsx';
 import PlaceholderPage from '../../shared/components/PlaceholderPage.jsx';
 import { VerTableroPage as SuperadminDashboardPage } from '../../features/superadmin/tablero/index.js';
+import { FacturacionPage, SeriesPage } from '../../features/superadmin/facturacion/index.js';
 import NotFoundPage from '../../shared/components/NotFoundPage.jsx';
 
 const superadminRoutes = (
@@ -22,29 +23,29 @@ const superadminRoutes = (
       }
     />
     <Route path="tiendas/directorio" element={
-        <PlaceholderPage
-          title="Tiendas"
-          description="Este será el directorio de tiendas donde podrás gestionar todas las tiendas registradas en la plataforma."
-        />
-      } />
+      <PlaceholderPage
+        title="Tiendas"
+        description="Este será el directorio de tiendas donde podrás gestionar todas las tiendas registradas en la plataforma."
+      />
+    } />
     <Route path="tiendas/sedes" element={
-        <PlaceholderPage
-          title="Sedes"
-          description="Aquí podrás administrar las sedes de cada tienda registrada."
-        />
-      } />
+      <PlaceholderPage
+        title="Sedes"
+        description="Aquí podrás administrar las sedes de cada tienda registrada."
+      />
+    } />
     <Route path="tiendas/dominios" element={
-        <PlaceholderPage
-          title="Dominios"
-          description="Se planea integrar la gestión de dominios próximamente."
-        />
-      } />
+      <PlaceholderPage
+        title="Dominios"
+        description="Se planea integrar la gestión de dominios próximamente."
+      />
+    } />
     <Route path="tiendas/usuarios" element={
-        <PlaceholderPage
-          title="Usuarios"
-          description="Muy pronto aquí estará la gestión de titulares de las tiendas registradas en la plataforma."
-        />
-      } />
+      <PlaceholderPage
+        title="Usuarios"
+        description="Muy pronto aquí estará la gestión de titulares de las tiendas registradas en la plataforma."
+      />
+    } />
     <Route
       path="suscripciones/planes"
       element={
@@ -74,12 +75,7 @@ const superadminRoutes = (
     />
     <Route
       path="facturacion/comprobantes"
-      element={
-        <PlaceholderPage
-          title="Comprobantes"
-          description="Estamos integrando Sunat y los proveedores de facturación electrónica para listar todos los comprobantes."
-        />
-      }
+      element={<FacturacionPage />}
     />
     <Route
       path="facturacion/metodos-pago"
@@ -92,12 +88,7 @@ const superadminRoutes = (
     />
     <Route
       path="facturacion/configuracion-fiscal"
-      element={
-        <PlaceholderPage
-          title="Configuración fiscal"
-          description="Configuraciones tributarias y series de comprobantes estarán disponibles en breve."
-        />
-      }
+      element={<SeriesPage />}
     />
     <Route
       path="soporte"

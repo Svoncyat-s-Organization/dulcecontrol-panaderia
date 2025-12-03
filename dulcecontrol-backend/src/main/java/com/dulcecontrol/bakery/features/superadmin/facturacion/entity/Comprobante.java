@@ -31,7 +31,7 @@ public class Comprobante {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "estado_pago", nullable = false, columnDefinition = "ENUM('borrador','pendiente','pagado','anulado','reembolsado')")
-    private EstadoPago estadoPago = EstadoPago.pendiente;
+    private EstadoPago estadoPago = EstadoPago.PENDIENTE;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipos_comprobante", nullable = false, columnDefinition = "ENUM('factura','boleta','nota_credito','nota_debito')")
@@ -70,7 +70,7 @@ public class Comprobante {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "estados_sunat", nullable = false, columnDefinition = "ENUM('pendiente','enviado','aceptado','observado','rechazado','anulado')")
-    private EstadoSunat estadosSunat = EstadoSunat.pendiente;
+    private EstadoSunat estadosSunat = EstadoSunat.PENDIENTE;
 
     @Column(name = "codigo_error_sunat", length = 50)
     private String codigoErrorSunat;
@@ -97,11 +97,16 @@ public class Comprobante {
     void onCreate() {
         creadoEn = LocalDateTime.now();
         actualizadoEn = LocalDateTime.now();
-        if (moneda == null) moneda = "PEN";
-        if (estadoPago == null) estadoPago = EstadoPago.pendiente;
-        if (estadosSunat == null) estadosSunat = EstadoSunat.pendiente;
-        if (totalGravadoCentimos == null) totalGravadoCentimos = 0L;
-        if (totalIgvCentimos == null) totalIgvCentimos = 0L;
+        if (moneda == null)
+            moneda = "PEN";
+        if (estadoPago == null)
+            estadoPago = EstadoPago.PENDIENTE;
+        if (estadosSunat == null)
+            estadosSunat = EstadoSunat.PENDIENTE;
+        if (totalGravadoCentimos == null)
+            totalGravadoCentimos = 0L;
+        if (totalIgvCentimos == null)
+            totalIgvCentimos = 0L;
     }
 
     @PreUpdate

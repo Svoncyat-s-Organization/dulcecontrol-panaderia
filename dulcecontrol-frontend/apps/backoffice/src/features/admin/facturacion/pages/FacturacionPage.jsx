@@ -117,6 +117,27 @@ const FacturacionPage = () => {
         }
     };
 
+    const [seriesList, setSeriesList] = useState([]);
+
+    const fetchSeries = async () => {
+        if (!tiendaId) return;
+        try {
+            const data = await facturacionApi.listarSeries(tiendaId);
+            setSeriesList(data);
+        } catch (error) {
+            console.error('Error cargando series:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchSeries();
+    }, [tiendaId]);
+
+    const getSerieCode = (serieId) => {
+        const serie = seriesList.find(s => s.id === serieId);
+        return serie ? serie.serie : '';
+    };
+
     const columns = [
         {
             title: 'Fecha Emisión',
@@ -134,7 +155,9 @@ const FacturacionPage = () => {
                     <Tag color={record.tipoComprobante === 'FACTURA' ? 'blue' : (record.tipoComprobante === 'BOLETA' ? 'green' : 'orange')}>
                         {record.tipoComprobante}
                     </Tag>
-                    <span style={{ fontWeight: 'bold' }}>{record.serie}-{record.correlativo}</span>
+                    <span style={{ fontWeight: 'bold' }}>
+                        {getSerieCode(record.serieId)}-{String(record.correlativo).padStart(8, '0')}
+                    </span>
                 </Space>
             )
         },
@@ -310,7 +333,7 @@ const FacturacionPage = () => {
         },
         {
             title: 'Comprobante',
-            render: (_, record) => `${record.tipoComprobante} ${record.serie}-${record.correlativo}`
+            render: (_, record) => `${record.tipoComprobante} ${getSerieCode(record.serieId)}-${String(record.correlativo).padStart(8, '0')}`
         },
         {
             title: 'Cliente',

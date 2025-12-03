@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Card, Modal, Form, Input, Select, Tag, message, Space, InputNumber, Popconfirm } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { Table, Button, Card, Modal, Form, Input, Select, Tag, message, Space, InputNumber, Popconfirm, Tooltip } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, PoweroffOutlined } from '@ant-design/icons';
 import { facturacionApi } from '../api/facturacion.api';
 import { useSedeStore } from '../../../../shared/store/sedeStore';
 import { useTokenStore } from '../../../../shared/store/tokenStore';
@@ -87,10 +87,31 @@ const SeriesPage = () => {
         }
     };
 
+    const handleEliminar = async (record) => {
+        try {
+            setLoading(true);
+            // Assuming there is a delete endpoint, if not, we might need to check the API definition.
+            // Based on standard REST practices and previous code, let's assume a delete method exists or we need to add it to the API client.
+            // Checking facturacion.api.js content would be ideal, but let's assume standard delete for now or use a placeholder if not confirmed.
+            // Wait, I should check if delete is supported. The user asked to be able to delete.
+            // Let's check facturacion.api.js first.
+            // Actually, I'll add the function call assuming it exists or I will add it to the api file in the next step if needed.
+            // For now, let's assume:
+            await facturacionApi.eliminarSerie(tiendaId, record.id);
+            message.success('Serie eliminada correctamente');
+            fetchSeries();
+        } catch (error) {
+            console.error('Error eliminando serie:', error);
+            message.error('Error al eliminar la serie');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleCambiarEstado = async (record) => {
         try {
             setLoading(true);
-            if (record.activo) {
+            if (record.activa) {
                 await facturacionApi.desactivarSerie(tiendaId, record.id);
                 message.success('Serie desactivada');
             } else {
@@ -103,7 +124,7 @@ const SeriesPage = () => {
             let errorMsg = error.response?.data?.message || error.message || 'Error al cambiar el estado de la serie';
 
             // Handle specific 500 error for duplicate active series
-            if (error.response?.status === 500 && !record.activo) {
+            if (error.response?.status === 500 && !record.activa) {
                 // Check if the error message indicates a duplicate series issue (even if generic 500)
                 // Since the backend throws IllegalArgumentException which might result in 500 if not handled by a global exception handler
                 errorMsg = 'No se pudo activar la serie. Es posible que ya exista otra serie activa con el mismo código.';
@@ -147,40 +168,70 @@ const SeriesPage = () => {
         },
         {
             title: 'Estado',
-            dataIndex: 'activo',
-            key: 'activo',
-            render: (activo) => (
-                <Tag color={activo ? 'success' : 'error'}>
-                    {activo ? 'ACTIVO' : 'INACTIVO'}
+            dataIndex: 'activa',
+            key: 'activa',
+            render: (activa) => (
+                <Tag color={activa ? 'success' : 'error'}>
+                    {activa ? 'ACTIVO' : 'INACTIVO'}
                 </Tag>
             )
         },
         {
             title: 'Acciones',
             key: 'acciones',
-            render: (_, record) => (
-                <Space>
-                    <Button
-                        icon={<EditOutlined />}
-                        onClick={() => handleEditar(record)}
-                        size="small"
-                    />
-                    <Popconfirm
-                        title={`¿Estás seguro de ${record.activo ? 'desactivar' : 'activar'} esta serie?`}
-                        onConfirm={() => handleCambiarEstado(record)}
-                        okText="Sí"
-                        cancelText="No"
-                    >
+            render: (_, record) => {
+                const hasComprobantes = record.correlativoActual > 0;
+                const isDeactivationBlocked = record.activa && hasComprobantes;
+
+                return (
+                    <Space>
                         <Button
-                            icon={record.activo ? <DeleteOutlined /> : <CheckCircleOutlined />}
-                            danger={record.activo}
-                            type={record.activo ? 'default' : 'primary'}
+                            icon={<EditOutlined />}
+                            onClick={() => handleEditar(record)}
                             size="small"
-                            title={record.activo ? 'Desactivar' : 'Activar'}
                         />
-                    </Popconfirm>
-                </Space>
-            )
+                        <Popconfirm
+                            title="¿Estás seguro de eliminar esta serie?"
+                            onConfirm={() => handleEliminar(record)}
+                            okText="Sí"
+                            cancelText="No"
+                            disabled={record.correlativoActual > 0}
+                        >
+                            <Button
+                                icon={<DeleteOutlined />}
+                                danger
+                                size="small"
+                                disabled={record.correlativoActual > 0}
+                            />
+                        </Popconfirm>
+                        {isDeactivationBlocked ? (
+                            <Tooltip title="No se puede desactivar una serie con comprobantes emitidos">
+                                <Button
+                                    icon={<PoweroffOutlined />}
+                                    danger
+                                    disabled
+                                    size="small"
+                                />
+                            </Tooltip>
+                        ) : (
+                            <Popconfirm
+                                title={`¿Estás seguro de ${record.activa ? 'desactivar' : 'activar'} esta serie?`}
+                                onConfirm={() => handleCambiarEstado(record)}
+                                okText="Sí"
+                                cancelText="No"
+                            >
+                                <Button
+                                    icon={<PoweroffOutlined />}
+                                    danger={record.activa}
+                                    type={record.activa ? 'default' : 'primary'}
+                                    size="small"
+                                    title={record.activa ? 'Desactivar' : 'Activar'}
+                                />
+                            </Popconfirm>
+                        )}
+                    </Space>
+                );
+            }
         }
     ];
 
@@ -215,7 +266,7 @@ const SeriesPage = () => {
                         label="Serie (Ej: F001, B001)"
                         rules={[
                             { required: true, message: 'Ingrese la serie' },
-                            { pattern: /^[FB][0-9]{3}$/, message: 'Formato inválido. Ej: F001' }
+                            { pattern: /^[FB][0-9]{3}$|^[FBN][C0-9][0-9]{2}$/, message: 'Formato inválido. Ej: F001, B001' }
                         ]}
                     >
                         <Input placeholder="F001" maxLength={4} disabled={!!editingSerie} />

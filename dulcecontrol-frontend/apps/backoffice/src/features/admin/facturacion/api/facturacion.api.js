@@ -119,8 +119,12 @@ export const facturacionApi = {
         return data;
     },
 
-    desactivarSerie: async (tiendaId, serieId) => {
+    eliminarSerie: async (tiendaId, serieId) => {
         await apiClient.delete(`${BASE_URL}/${tiendaId}/facturacion/series/${serieId}`);
+    },
+
+    desactivarSerie: async (tiendaId, serieId) => {
+        await apiClient.put(`${BASE_URL}/${tiendaId}/facturacion/series/${serieId}/desactivar`);
     },
 
     activarSerie: async (tiendaId, serieId) => {
