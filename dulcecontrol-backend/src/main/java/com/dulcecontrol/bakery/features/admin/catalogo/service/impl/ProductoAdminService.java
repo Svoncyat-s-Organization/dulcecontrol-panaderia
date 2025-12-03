@@ -156,10 +156,18 @@ public class ProductoAdminService implements IProductoAdminService {
     }
 
     private ProductoResponse toResponse(Producto producto) {
+        String categoriaNombre = null;
+        if (producto.getCategoriaId() != null) {
+            categoriaNombre = categoriaRepository.findById(producto.getCategoriaId())
+                    .map(c -> c.getNombre())
+                    .orElse(null);
+        }
+        
         return ProductoResponse.builder()
                 .id(producto.getId())
                 .tiendaId(producto.getTiendaId())
                 .categoriaId(producto.getCategoriaId())
+                .categoriaNombre(categoriaNombre)
                 .nombre(producto.getNombre())
                 .slug(producto.getSlug())
                 .sku(producto.getSku())

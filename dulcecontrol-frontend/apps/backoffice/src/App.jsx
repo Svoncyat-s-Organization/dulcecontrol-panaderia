@@ -1,11 +1,12 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { BrowserRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { ConfigProvider, App as AntdApp } from 'antd';
 import esES from 'antd/locale/es_ES';
 import AppRouter from './router/AppRouter.jsx';
 import { useTokenStore } from './shared/store/tokenStore.js';
 import { ROLE_THEMES } from './themeConfig.js';
+import { useSedeStore } from './shared/store/sedeStore.js';
 
 const ROLE_THEME_MAP = {
   SUPERADMIN: 'SUPERADMIN',
@@ -20,6 +21,24 @@ const baseTheme = {
 };
 
 const queryClient = new QueryClient();
+
+const SedeAwareQueryInvalidator = () => {
+  const queryClient = useQueryClient();
+  const selectedSedeId = useSedeStore((state) => state.selectedSedeId);
+  const selectedTiendaId = useSedeStore((state) => state.selectedTiendaId);
+  const previousRef = useRef({ sedeId: null, tiendaId: null });
+
+  useEffect(() => {
+    const prev = previousRef.current;
+    if (prev.sedeId === selectedSedeId && prev.tiendaId === selectedTiendaId) {
+      return;
+    }
+    previousRef.current = { sedeId: selectedSedeId, tiendaId: selectedTiendaId };
+    queryClient.invalidateQueries();
+  }, [queryClient, selectedSedeId, selectedTiendaId]);
+
+  return null;
+};
 
 const AntThemeProvider = ({ children }) => {
   const userType = useTokenStore((state) => state.userType);
@@ -56,6 +75,7 @@ const App = () => {
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <AntThemeProvider>
+          <SedeAwareQueryInvalidator />
           <AppRouter />
         </AntThemeProvider>
       </QueryClientProvider>

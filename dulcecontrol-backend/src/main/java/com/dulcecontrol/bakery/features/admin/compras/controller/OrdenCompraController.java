@@ -3,6 +3,7 @@ package com.dulcecontrol.bakery.features.admin.compras.controller;
 import com.dulcecontrol.bakery.features.admin.compras.dto.OrdenCompraCreateRequest;
 import com.dulcecontrol.bakery.features.admin.compras.dto.OrdenCompraResponse;
 import com.dulcecontrol.bakery.features.admin.compras.dto.OrdenCompraUpdateRequest;
+import com.dulcecontrol.bakery.features.admin.compras.dto.RecepcionParcialRequest;
 import com.dulcecontrol.bakery.features.admin.compras.entity.enums.EstadoOrdenCompra;
 import com.dulcecontrol.bakery.features.admin.compras.service.IOrdenCompraService;
 import jakarta.validation.Valid;
@@ -116,5 +117,21 @@ public class OrdenCompraController {
             @PathVariable Long ordenId) {
         ordenCompraService.eliminar(tiendaId, ordenId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/recepcion-parcial")
+    public ResponseEntity<OrdenCompraResponse> recibirParcial(
+            @PathVariable Long tiendaId,
+            @Valid @RequestBody RecepcionParcialRequest request) {
+        OrdenCompraResponse response = ordenCompraService.recibirParcial(tiendaId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{ordenId}/recepcion-total")
+    public ResponseEntity<OrdenCompraResponse> recibirTotal(
+            @PathVariable Long tiendaId,
+            @PathVariable Long ordenId) {
+        OrdenCompraResponse response = ordenCompraService.recibirTotal(tiendaId, ordenId);
+        return ResponseEntity.ok(response);
     }
 }
