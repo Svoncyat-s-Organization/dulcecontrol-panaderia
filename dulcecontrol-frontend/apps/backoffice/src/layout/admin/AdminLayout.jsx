@@ -54,7 +54,7 @@ const menuItems = [
     getItem('Insumos', `${BASE_PATH}/inventario/insumos`),
     getItem('Movimientos', `${BASE_PATH}/inventario/movimientos`),
   ]),
-  getItem('Reportes', `${BASE_PATH}/reportes`, <IconReport size={18} />),
+  // getItem('Reportes', `${BASE_PATH}/reportes`, <IconReport size={18} />),
   getItem('Seguridad', `${BASE_PATH}/seguridad`, <IconShieldLock size={18} />),
   getItem('Configuración', `${BASE_PATH}/configuracion`, <IconSettings size={18} />, [
     getItem('Datos de Empresa', `${BASE_PATH}/configuracion/datos-empresa`),
