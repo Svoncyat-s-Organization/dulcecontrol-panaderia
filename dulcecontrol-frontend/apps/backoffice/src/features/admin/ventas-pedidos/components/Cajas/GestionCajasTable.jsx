@@ -5,12 +5,13 @@ import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 
 dayjs.extend(isBetween);
-import { useQuery } from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
-import { getSesionesCaja, getCajas } from '../../api/cajas.api.js';
+import { getSesionesCaja, getCajas, getMovimientosCaja } from '../../api/cajas.api.js';
 import { getUsuariosAdmin } from '../../api/usuarios.api.js';
 import { CAJA_KEYS } from '../../constants/queryKeys.js';
 import StatusDot from './StatusDot.jsx';
+import { computeExpectedFinalCentimos } from '../../utils/cajaCalculations.js';
 
 const { RangePicker } = DatePicker;
 const { Text } = Typography;
@@ -24,7 +25,7 @@ const GestionCajasTable = () => {
     const tiendaId = useTokenStore((state) => state.tiendaId);
     const { token } = theme.useToken();
     const [form] = Form.useForm();
-    const [range, setRange] = useState([dayjs().startOf('month'), dayjs().endOf('month')]);
+    const [range, setRange] = useState(null);
     const [filters, setFilters] = useState({
         cajaId: null,
         usuarioId: null,
@@ -90,12 +91,12 @@ const GestionCajasTable = () => {
         });
     }, [usuariosQuery.data]);
 
-    const filteredData = useMemo(() => {
+    const filteredSesiones = useMemo(() => {
         const base = sesionesQuery.data || [];
         return base
             .filter((sesion) => {
                 // Filtro por rango de fechas
-                if (range[0] && range[1] && sesion.fechaApertura) {
+                if (range && range[0] && range[1] && sesion.fechaApertura) {
                     const fecha = dayjs(sesion.fechaApertura);
                     if (!fecha.isBetween(range[0].startOf('day'), range[1].endOf('day'), null, '[]')) {
                         return false;
@@ -128,6 +129,42 @@ const GestionCajasTable = () => {
             }));
     }, [sesionesQuery.data, range, filters, cajasMap, usuariosMap]);
 
+    const movimientosQueries = useQueries({
+        queries: filteredSesiones.map((sesion) => ({
+            queryKey: CAJA_KEYS.movimientos(tiendaId, sesion.id),
+            queryFn: () => getMovimientosCaja(tiendaId, sesion.id),
+            enabled: !!tiendaId && !!sesion.id,
+            select: (response) => Array.isArray(response) ? response : [],
+            staleTime: 60 * 1000,
+        })),
+    });
+
+    const movimientosLoading = movimientosQueries.some((query) => query.isLoading || query.isFetching);
+
+    const tableData = filteredSesiones.map((sesion, index) => {
+        const movimientos = movimientosQueries[index]?.data;
+        const hasMovimientos = Array.isArray(movimientos);
+        const montoFinalEsperadoCalculado = hasMovimientos
+            ? computeExpectedFinalCentimos(sesion, movimientos)
+            : (sesion.montoFinalEsperadoCentimos ?? null);
+        const diferenciaCalculada = sesion.montoFinalRealCentimos != null && montoFinalEsperadoCalculado != null
+            ? sesion.montoFinalRealCentimos - montoFinalEsperadoCalculado
+            : (sesion.diferenciaCentimos ?? null);
+
+        return {
+            ...sesion,
+            montoFinalEsperadoCalculado,
+            diferenciaCalculada,
+        };
+    });
+
+    const formatCurrency = (centimos) => {
+        if (centimos == null) {
+            return '-';
+        }
+        return `S/ ${(centimos / 100).toFixed(2)}`;
+    };
+
     const handleFilterChange = (_, allValues) => {
         setFilters({
             cajaId: allValues.cajaId || null,
@@ -143,6 +180,7 @@ const GestionCajasTable = () => {
             usuarioId: null,
             estaAbierta: null,
         });
+        setRange(null);
     };
 
     const columns = [
@@ -177,6 +215,41 @@ const GestionCajasTable = () => {
                     label={estaAbierta ? 'Abierta' : 'Cerrada'}
                 />
             ),
+        },
+        {
+            title: 'Monto Inicial',
+            dataIndex: 'montoInicialCentimos',
+            key: 'montoInicialCentimos',
+            align: 'right',
+            render: (value) => <Text>{formatCurrency(value)}</Text>,
+        },
+        {
+            title: 'Final Esperado',
+            dataIndex: 'montoFinalEsperadoCalculado',
+            key: 'montoFinalEsperadoCalculado',
+            align: 'right',
+            render: (value) => <Text type="secondary">{formatCurrency(value)}</Text>,
+        },
+        {
+            title: 'Final Real',
+            dataIndex: 'montoFinalRealCentimos',
+            key: 'montoFinalRealCentimos',
+            align: 'right',
+            render: (value) => <Text>{formatCurrency(value)}</Text>,
+        },
+        {
+            title: 'Diferencia',
+            dataIndex: 'diferenciaCalculada',
+            key: 'diferenciaCalculada',
+            align: 'right',
+            render: (value) => {
+                if (value == null) {
+                    return '-';
+                }
+                const amount = value / 100;
+                const color = amount === 0 ? undefined : amount < 0 ? '#fa541c' : '#52c41a';
+                return <Text style={{ color }}>{formatCurrency(value)}</Text>;
+            },
         },
     ];
 
@@ -248,9 +321,9 @@ const GestionCajasTable = () => {
 
             <Table
                 rowKey="id"
-                dataSource={filteredData}
+                dataSource={tableData}
                 columns={columns}
-                loading={sesionesQuery.isLoading}
+                loading={sesionesQuery.isLoading || movimientosLoading}
                 pagination={{
                     pageSizeOptions: ['10', '20', '50', '100'],
                     showSizeChanger: true,

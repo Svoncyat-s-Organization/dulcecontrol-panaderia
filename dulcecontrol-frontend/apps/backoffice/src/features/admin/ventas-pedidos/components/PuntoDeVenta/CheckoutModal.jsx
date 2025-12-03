@@ -1,4 +1,4 @@
-import { Drawer, Form, Select, Input, Radio, Typography, InputNumber, Row, Col, Button, Space, DatePicker, Alert, Modal } from 'antd';
+import { Drawer, Form, Select, Input, Radio, Typography, Row, Col, Button, Space, DatePicker, Alert, Modal } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import dayjs from 'dayjs';
@@ -7,6 +7,7 @@ import { createDireccionCliente, getClientes, getDireccionesCliente } from '../.
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 import { POS_MODES, useCartStore } from '../../hooks/useCartStore.js';
 import { TIPOS_ENTREGA } from '../../constants/ventaConstants.js';
+import MoneyInput from '../../../../../shared/components/MoneyInput.jsx';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -51,7 +52,7 @@ const CheckoutModal = ({ open, onCancel, onConfirm, total, loading }) => {
         const defaultMonto = isPedido ? 0 : total;
         form.setFieldsValue({
             tipoComprobante: defaultComprobante,
-            metodoPago: isPedido ? null : CASH_METHOD,
+            metodoPago: isPedido ? 'yape' : CASH_METHOD,
             tipoEntrega: isPedido ? TIPOS_ENTREGA.RECOJO_TIENDA : TIPOS_ENTREGA.CONSUMO_LOCAL,
             montoPagado: defaultMonto,
             fechaEntrega: isPedido ? dayjs().add(1, 'day').hour(12).minute(0) : dayjs(),
@@ -62,7 +63,7 @@ const CheckoutModal = ({ open, onCancel, onConfirm, total, loading }) => {
             shippingContactoNombre: cliente?.nombreDoc || '',
             shippingContactoTelefono: cliente?.telefono || '',
         });
-        setMetodoPago(isPedido ? null : CASH_METHOD);
+        setMetodoPago(isPedido ? 'yape' : CASH_METHOD);
     }, [open, cliente, posMode, total, isPedido, form]);
 
     useEffect(() => {
@@ -95,12 +96,12 @@ const CheckoutModal = ({ open, onCancel, onConfirm, total, loading }) => {
         previousMode.current = posMode;
         const defaultMonto = posMode === POS_MODES.PEDIDO ? 0 : total;
         form.setFieldsValue({
-            metodoPago: posMode === POS_MODES.PEDIDO ? null : CASH_METHOD,
+            metodoPago: posMode === POS_MODES.PEDIDO ? 'yape' : CASH_METHOD,
             tipoEntrega: posMode === POS_MODES.PEDIDO ? TIPOS_ENTREGA.RECOJO_TIENDA : TIPOS_ENTREGA.CONSUMO_LOCAL,
             montoPagado: defaultMonto,
             fechaEntrega: posMode === POS_MODES.PEDIDO ? dayjs().add(1, 'day').hour(12).minute(0) : dayjs(),
         });
-        setMetodoPago(posMode === POS_MODES.PEDIDO ? null : CASH_METHOD);
+        setMetodoPago(posMode === POS_MODES.PEDIDO ? 'yape' : CASH_METHOD);
     }, [posMode, open, total, form]);
 
     useEffect(() => {
@@ -432,12 +433,8 @@ const CheckoutModal = ({ open, onCancel, onConfirm, total, loading }) => {
                             label="Costo de delivery"
                             rules={[{ type: 'number', min: 0, message: 'Ingrese un monto válido' }]}
                         >
-                            <InputNumber
+                            <MoneyInput
                                 style={{ width: '100%' }}
-                                min={0}
-                                step={0.5}
-                                formatter={(value) => `S/ ${value ?? 0}`}
-                                parser={(value = '') => value.replace(/S\/\s?|(,*)/g, '')}
                                 placeholder="0.00"
                             />
                         </Form.Item>
@@ -454,12 +451,9 @@ const CheckoutModal = ({ open, onCancel, onConfirm, total, loading }) => {
                                     rules={[{ required: true, message: 'Ingrese monto' }]}
                                     style={{ marginBottom: 0 }}
                                 >
-                                    <InputNumber
+                                    <MoneyInput
                                         style={{ width: '100%' }}
                                         size="large"
-                                        min={0}
-                                        formatter={(value) => `S/ ${value ?? 0}`}
-                                        parser={(value = '') => value.replace(/S\/\s?|(,*)/g, '')}
                                     />
                                 </Form.Item>
                             </Col>
@@ -483,11 +477,8 @@ const CheckoutModal = ({ open, onCancel, onConfirm, total, loading }) => {
                                     style={{ marginBottom: 0 }}
                                     rules={[{ type: 'number', min: 0, message: 'El adelanto no puede ser negativo' }]}
                                 >
-                                    <InputNumber
+                                    <MoneyInput
                                         style={{ width: '100%' }}
-                                        min={0}
-                                        formatter={(value) => `S/ ${value ?? 0}`}
-                                        parser={(value = '') => value.replace(/S\/\s?|(,*)/g, '')}
                                         placeholder="0.00"
                                     />
                                 </Form.Item>

@@ -8,7 +8,7 @@ import { useCajaSession } from '../../hooks/useCajaSession.js';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 import { createPedido, addDetallePedido, addPagoPedido, addDireccionPedido } from '../../api/pedidos.api.js';
 import { registrarMovimientoCaja } from '../../api/cajas.api.js';
-import { PEDIDO_KEYS } from '../../constants/queryKeys.js';
+import { CAJA_KEYS, PEDIDO_KEYS } from '../../constants/queryKeys.js';
 import { getInventarioProductosPorSede } from '../../../inventario/api/existencias.api.js';
 import { crearMovimientoInventarioProducto } from '../../../inventario/api/movimientos.api.js';
 import { INVENTARIO_PRODUCTO_KEYS, INVENTARIO_MOVIMIENTO_KEYS } from '../../../inventario/constants/queryKeys.js';
@@ -339,6 +339,9 @@ const PuntoDeVenta = () => {
             if (currentCaja?.sedeId) {
                 queryClient.invalidateQueries(INVENTARIO_PRODUCTO_KEYS.lists(tiendaId, currentCaja.sedeId));
                 queryClient.invalidateQueries(INVENTARIO_MOVIMIENTO_KEYS.productos.lists(tiendaId, currentCaja.sedeId));
+            }
+            if (session?.id) {
+                queryClient.invalidateQueries(CAJA_KEYS.movimientos(tiendaId, session.id));
             }
         },
         onError: (err) => console.error(err?.response?.data?.message || err.message || 'Error al procesar venta')
