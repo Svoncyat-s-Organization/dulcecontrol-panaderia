@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { facturacionApi } from '../api/facturacion.api';
 import { useTokenStore } from '../../../../shared/store/tokenStore';
 import dayjs from 'dayjs';
+import { fetchComprobanteFullDetails, generateComprobantePDF, generateComprobanteXML } from '../utils/comprobanteUtils';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -138,6 +139,28 @@ const FacturacionPage = () => {
         return serie ? serie.serie : '';
     };
 
+    const handleDownloadPDF = async (record) => {
+        try {
+            message.loading({ content: 'Generando PDF...', key: 'pdfGen' });
+            const fullComprobante = await fetchComprobanteFullDetails(tiendaId, record.id);
+            generateComprobantePDF(fullComprobante);
+            message.success({ content: 'PDF descargado', key: 'pdfGen' });
+        } catch (error) {
+            message.error({ content: 'Error al generar PDF', key: 'pdfGen' });
+        }
+    };
+
+    const handleDownloadXML = async (record) => {
+        try {
+            message.loading({ content: 'Generando XML...', key: 'xmlGen' });
+            const fullComprobante = await fetchComprobanteFullDetails(tiendaId, record.id);
+            generateComprobanteXML(fullComprobante);
+            message.success({ content: 'XML descargado', key: 'xmlGen' });
+        } catch (error) {
+            message.error({ content: 'Error al generar XML', key: 'xmlGen' });
+        }
+    };
+
     const columns = [
         {
             title: 'Fecha Emisión',
@@ -194,11 +217,12 @@ const FacturacionPage = () => {
             dataIndex: 'estadoSunat',
             key: 'estadoSunat',
             render: (estado) => {
+                const status = (estado || '').toUpperCase();
                 let color = 'default';
-                if (estado === 'ACEPTADO') color = 'success';
-                if (estado === 'RECHAZADO') color = 'error';
-                if (estado === 'PENDIENTE') color = 'warning';
-                if (estado === 'ANULADO') color = 'red';
+                if (status === 'ACEPTADO') color = 'success';
+                if (status === 'RECHAZADO') color = 'error';
+                if (status === 'PENDIENTE') color = 'warning';
+                if (status === 'ANULADO') color = 'red';
 
                 return <Tag color={color}>{estado}</Tag>;
             }
@@ -216,7 +240,7 @@ const FacturacionPage = () => {
                         />
                     </Tooltip>
 
-                    {record.estadoSunat === 'PENDIENTE' && (
+                    {record.estadoSunat?.toUpperCase() === 'PENDIENTE' && (
                         <Tooltip title="Validar con SUNAT">
                             <Button
                                 type="primary"
@@ -229,28 +253,25 @@ const FacturacionPage = () => {
                         </Tooltip>
                     )}
 
-                    {record.representacionImpresaUrl && (
-                        <Tooltip title="Descargar PDF">
-                            <Button
-                                type="text"
-                                icon={<FilePdfOutlined style={{ color: '#f5222d' }} />}
-                                href={record.representacionImpresaUrl}
-                                target="_blank"
-                                size="small"
-                            />
-                        </Tooltip>
-                    )}
-                    {record.xmlFirmadoUrl && (
-                        <Tooltip title="Descargar XML">
-                            <Button
-                                type="text"
-                                icon={<FileTextOutlined style={{ color: '#1890ff' }} />}
-                                href={record.xmlFirmadoUrl}
-                                target="_blank"
-                                size="small"
-                            />
-                        </Tooltip>
-                    )}
+                    <Tooltip title={record.estadoSunat?.toUpperCase() === 'PENDIENTE' ? "Pendiente de envío a SUNAT" : "Descargar PDF"}>
+                        <Button
+                            type="text"
+                            icon={<FilePdfOutlined style={{ color: record.estadoSunat?.toUpperCase() === 'PENDIENTE' ? 'rgba(0, 0, 0, 0.25)' : '#f5222d' }} />}
+                            onClick={() => handleDownloadPDF(record)}
+                            size="small"
+                            disabled={record.estadoSunat?.toUpperCase() === 'PENDIENTE'}
+                        />
+                    </Tooltip>
+
+                    <Tooltip title={record.estadoSunat?.toUpperCase() === 'PENDIENTE' ? "Pendiente de envío a SUNAT" : "Descargar XML"}>
+                        <Button
+                            type="text"
+                            icon={<FileTextOutlined style={{ color: record.estadoSunat?.toUpperCase() === 'PENDIENTE' ? 'rgba(0, 0, 0, 0.25)' : '#1890ff' }} />}
+                            onClick={() => handleDownloadXML(record)}
+                            size="small"
+                            disabled={record.estadoSunat?.toUpperCase() === 'PENDIENTE'}
+                        />
+                    </Tooltip>
                 </Space>
             )
         }
@@ -266,19 +287,29 @@ const FacturacionPage = () => {
         if (!tiendaId || !resumenDate) return;
         setLoadingResumen(true);
         try {
-            // Buscamos boletas pendientes del día seleccionado
-            const startOfDay = resumenDate.startOf('day').toISOString();
-            const endOfDay = resumenDate.endOf('day').toISOString();
+            // Solicitamos TODOS los comprobantes de la tienda para filtrar localmente
+            // Esto evita problemas de zona horaria o case-sensitivity en el backend
+            const data = await facturacionApi.listarComprobantes(tiendaId, {});
 
-            const data = await facturacionApi.listarComprobantes(tiendaId, {
-                tipo: 'BOLETA',
-                estado: 'PENDIENTE',
-                fechaInicio: startOfDay,
-                fechaFin: endOfDay
+            // Filtramos localmente por:
+            // 1. Tipo: BOLETA
+            // 2. Estado: PENDIENTE
+            // 3. Fecha: Coincide con el día seleccionado
+            const pendientes = data.filter(item => {
+                const tipo = (item.tipoComprobante || '').toUpperCase();
+                const estado = (item.estadoSunat || '').toUpperCase();
+                const fechaItem = dayjs(item.fechaEmision);
+
+                const esBoleta = tipo === 'BOLETA';
+                // Mostramos todas las boletas del día (Pendientes y Aceptadas) para que el usuario vea el resumen completo
+                const esMismaFecha = fechaItem.isSame(resumenDate, 'day');
+
+                return esBoleta && esMismaFecha;
             });
-            setBoletasPendientes(data);
-            if (data.length === 0) {
-                message.info('No se encontraron boletas pendientes para la fecha seleccionada.');
+
+            setBoletasPendientes(pendientes);
+            if (pendientes.length === 0) {
+                message.info('No se encontraron boletas para la fecha seleccionada.');
             }
         } catch (error) {
             console.error('Error buscando boletas:', error);
@@ -289,15 +320,20 @@ const FacturacionPage = () => {
     };
 
     const handleEnviarResumen = async () => {
-        if (boletasPendientes.length === 0) return;
+        const boletasAEnviar = boletasPendientes.filter(b => b.estadoSunat?.toUpperCase() === 'PENDIENTE');
+
+        if (boletasAEnviar.length === 0) {
+            message.warning('No hay boletas pendientes para enviar en este resumen.');
+            return;
+        }
+
         setProcessingResumen(true);
         try {
             // Simulamos el envío del resumen (RC-YYYYMMDD-NNN)
             const resumenId = `RC-${resumenDate.format('YYYYMMDD')}-001`;
 
             // Procesamos cada boleta individualmente para simular el procesamiento por lotes del resumen
-            // En un backend real, esto sería una sola llamada que genera el resumen.
-            for (const boleta of boletasPendientes) {
+            for (const boleta of boletasAEnviar) {
                 const payload = {
                     codigoHash: 'HASH-RESUMEN-' + Date.now(),
                     xmlUrl: `https://cdn.dulcecontrol.pe/cpe/resumen-${resumenId}.xml`,
@@ -314,9 +350,9 @@ const FacturacionPage = () => {
                 });
             }
 
-            message.success(`Resumen Diario ${resumenId} enviado y aceptado correctamente. ${boletasPendientes.length} boletas procesadas.`);
-            setBoletasPendientes([]); // Limpiar lista
-            fetchComprobantes(); // Actualizar lista principal si se cambia de tab
+            message.success(`Resumen Diario ${resumenId} enviado y aceptado correctamente. ${boletasAEnviar.length} boletas procesadas.`);
+            fetchBoletasPendientes(); // Recargar la lista para actualizar estados
+            fetchComprobantes(); // Actualizar lista principal
         } catch (error) {
             console.error('Error enviando resumen:', error);
             message.error('Error al enviar el resumen de boletas');
@@ -431,8 +467,8 @@ const FacturacionPage = () => {
                     <div style={{ marginBottom: 24, background: '#f6ffed', border: '1px solid #b7eb8f', padding: '16px', borderRadius: '4px' }}>
                         <h4 style={{ margin: 0, color: '#389e0d' }}>Generación de Resumen Diario</h4>
                         <p style={{ margin: '8px 0 0' }}>
-                            Seleccione una fecha para buscar todas las <b>Boletas de Venta</b> que se encuentren en estado <b>PENDIENTE</b>.
-                            Al enviar el resumen, se generará un lote (RC) y se enviará a SUNAT para su validación en bloque.
+                            Seleccione una fecha para ver todas las <b>Boletas de Venta</b> del día.
+                            Se enviarán a SUNAT solo aquellas que se encuentren en estado <b>PENDIENTE</b>.
                         </p>
                     </div>
 
@@ -449,7 +485,7 @@ const FacturacionPage = () => {
                             onClick={fetchBoletasPendientes}
                             loading={loadingResumen}
                         >
-                            Buscar Pendientes
+                            Buscar Boletas
                         </Button>
                     </Space>
 
@@ -460,23 +496,27 @@ const FacturacionPage = () => {
                         loading={loadingResumen}
                         pagination={false}
                         locale={{ emptyText: 'No hay boletas pendientes para esta fecha' }}
-                        footer={() => (
-                            <div style={{ textAlign: 'right' }}>
-                                <Space>
-                                    <span>Total Boletas: {boletasPendientes.length}</span>
-                                    <Button
-                                        type="primary"
-                                        size="large"
-                                        disabled={boletasPendientes.length === 0}
-                                        loading={processingResumen}
-                                        onClick={handleEnviarResumen}
-                                        style={{ background: '#fa8c16', borderColor: '#fa8c16' }}
-                                    >
-                                        Enviar Resumen a SUNAT
-                                    </Button>
-                                </Space>
-                            </div>
-                        )}
+                        footer={() => {
+                            const pendientesCount = boletasPendientes.filter(b => b.estadoSunat?.toUpperCase() === 'PENDIENTE').length;
+                            return (
+                                <div style={{ textAlign: 'right' }}>
+                                    <Space>
+                                        <span>Total Boletas: {boletasPendientes.length}</span>
+                                        <span>(Pendientes: {pendientesCount})</span>
+                                        <Button
+                                            type="primary"
+                                            size="large"
+                                            disabled={pendientesCount === 0}
+                                            loading={processingResumen}
+                                            onClick={handleEnviarResumen}
+                                            style={{ background: '#fa8c16', borderColor: '#fa8c16' }}
+                                        >
+                                            Enviar Resumen a SUNAT
+                                        </Button>
+                                    </Space>
+                                </div>
+                            );
+                        }}
                     />
                 </div>
             )

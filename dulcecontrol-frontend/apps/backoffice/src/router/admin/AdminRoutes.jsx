@@ -12,22 +12,13 @@ import { InsumosPage as ComprasInsumosPage, ProveedoresPage, OrdenesCompraPage }
 import { ClientesPage } from '../../features/admin/clientes/index.js';
 import { ConfiguracionPage } from '../../features/admin/configuracion/index.js';
 import { StockIdealPage, RecetasPage, PlanificacionPage } from '../../features/admin/produccion/index.js';
+import { FacturacionPage, FacturacionDetallePage, SeriesPage } from '../../features/admin/facturacion/index.js';
 
 const PLACEHOLDER_ROUTES = [
   {
     path: 'facturacion',
     title: 'Facturación',
     description: 'Configura tus comprobantes electrónicos, series y formatos oficiales.',
-  },
-  {
-    path: 'facturacion/series-correlativos',
-    title: 'Series y correlativos',
-    description: 'Enlazaremos tus series con SUNAT para mantener la numeración bajo control.',
-  },
-  {
-    path: 'facturacion/comprobantes',
-    title: 'Comprobantes',
-    description: 'Revisa, descarga o anula los comprobantes emitidos por la tienda.',
   },
   {
     path: 'compras',
@@ -96,6 +87,11 @@ const adminRoutes = (
     <Route path="catalogo/productos" element={<ProductosPage />} />
     <Route path="catalogo/categorias" element={<CategoriasPage />} />
     <Route path="configuracion/sedes" element={<ConfiguracionPage />} />
+
+    <Route path="facturacion/comprobantes" element={<FacturacionPage />} />
+    <Route path="facturacion/comprobantes/:id" element={<FacturacionDetallePage />} />
+    <Route path="facturacion/series-correlativos" element={<SeriesPage />} />
+
     {PLACEHOLDER_ROUTES.map(({ path, title, description }) => (
       <Route
         key={path}

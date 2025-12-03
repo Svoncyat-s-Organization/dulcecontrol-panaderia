@@ -45,5 +45,25 @@ export const facturacionApi = {
 
     eliminarSerie: async (id) => {
         await apiClient.delete(`/api/superadmin/facturacion/series/${id}`);
+    },
+
+    // --- Métodos de Pago ---
+    listarMetodosPago: async () => {
+        const response = await apiClient.get('/api/superadmin/facturacion/metodos-pago');
+        return response.data;
+    },
+
+    crearMetodoPago: async (payload) => {
+        const response = await apiClient.post('/api/superadmin/facturacion/metodos-pago', payload);
+        return response.data;
+    },
+
+    actualizarMetodoPago: async (id, payload) => {
+        const response = await apiClient.put(`/api/superadmin/facturacion/metodos-pago/${id}`, payload);
+        return response.data;
+    },
+
+    eliminarMetodoPago: async (id) => {
+        await apiClient.delete(`/api/superadmin/facturacion/metodos-pago/${id}`);
     }
 };
