@@ -63,6 +63,30 @@ const ReceiptModal = ({ open, onClose, pedido }) => {
 	const totalPagado = pagos.reduce((acc, pago) => acc + (pago.montoPagadoCentimos ?? pago.monto_pagado_centimos ?? 0), 0);
 	const cambioCentimos = Math.max(0, totalPagado - totalCentimos);
 	const notasPedido = pedido?.notasPedido ?? pedido?.notas_pedido ?? null;
+	const comprobante = pedido?.comprobante || null;
+	const emisorNombre = comprobante?.emisorRazonSocial || pedido?.emisorRazonSocial || 'DulceControl';
+	const emisorDireccion = comprobante?.emisorDireccion || pedido?.emisorDireccion || 'Av. Principal 123, Tarapoto';
+	const emisorRuc = comprobante?.emisorRuc || pedido?.emisorRuc || '20123456789';
+	const tipoComprobante = (comprobante?.tipoComprobante || pedido?.tipoComprobante || pedido?.tipo_comprobante || 'pedido').toString().toLowerCase();
+	const serieCodigo = comprobante?.serieCodigo || pedido?.serieComprobante || pedido?.serie_comprobante || null;
+	const correlativoNumero = comprobante?.correlativo || pedido?.numeroComprobante || pedido?.numero_comprobante || null;
+	const correlativoTexto = correlativoNumero ? String(correlativoNumero).padStart(8, '0') : null;
+	const clienteNombre = comprobante?.clienteNombre
+		|| pedido?.cliente?.nombreDoc
+		|| pedido?.cliente?.nombre_doc
+		|| null;
+	const clienteDocTipo = comprobante?.clienteTipoDoc
+		|| pedido?.cliente?.tipoDoc
+		|| pedido?.cliente?.tipo_doc
+		|| null;
+	const clienteDocNumero = comprobante?.clienteNumeroDoc
+		|| pedido?.cliente?.numeroDoc
+		|| pedido?.cliente?.numero_doc
+		|| null;
+	const clienteDireccion = comprobante?.clienteDireccion
+		|| pedido?.cliente?.direccion
+		|| (pedido?.shipping?.direccion ?? null);
+	const mostrarCliente = clienteNombre || clienteDocNumero || pedido?.cliente;
 
 	const handlePrint = () => {
 		if (!printAreaRef.current) {
@@ -94,10 +118,10 @@ const ReceiptModal = ({ open, onClose, pedido }) => {
 						}}
 					>
 						<div style={{ textAlign: 'center', marginBottom: 16 }}>
-							<Title level={4} style={{ marginBottom: 4 }}>DulceControl</Title>
-							<Text style={{ display: 'block' }}>Av. Principal 123, Tarapoto</Text>
-							<Text style={{ display: 'block' }}>RUC: 20123456789</Text>
-							{pedido.tipoComprobante && (
+							<Title level={4} style={{ marginBottom: 4 }}>{emisorNombre}</Title>
+							<Text style={{ display: 'block' }}>{emisorDireccion}</Text>
+							<Text style={{ display: 'block' }}>RUC: {emisorRuc}</Text>
+							{tipoComprobante && (
 								<div
 									style={{
 										marginTop: 12,
@@ -107,7 +131,13 @@ const ReceiptModal = ({ open, onClose, pedido }) => {
 										fontWeight: 600,
 									}}
 								>
-									{(pedido.tipoComprobante || pedido.tipo_comprobante || '').toUpperCase()} ELECTRÓNICA
+									{tipoComprobante === 'pedido' ? 'NOTA DE PEDIDO' : `${tipoComprobante.toUpperCase()} ELECTRÓNICA`}
+									<br />
+									{serieCodigo && correlativoTexto && (
+										<span style={{ fontSize: 12, fontWeight: 500 }}>
+											Serie {serieCodigo} · Nº {correlativoTexto}
+										</span>
+									)}
 								</div>
 							)}
 						</div>
@@ -126,14 +156,16 @@ const ReceiptModal = ({ open, onClose, pedido }) => {
 							</div>
 						</div>
 
-						{pedido.cliente && (
+						{mostrarCliente && (
 							<div style={{ borderBottom: '1px dashed #cbd5f5', paddingBottom: 8, marginBottom: 8 }}>
 								<Text strong style={{ display: 'block', marginBottom: 4 }}>Cliente</Text>
-								<div>{pedido.cliente.nombreDoc ?? pedido.cliente.nombre_doc ?? 'Consumidor final'}</div>
-								<div>
-									{(pedido.cliente.tipoDoc ?? pedido.cliente.tipo_doc ?? 'DOC')}: {pedido.cliente.numeroDoc ?? pedido.cliente.numero_doc ?? '---'}
-								</div>
-								{pedido.cliente.direccion && <div>Dir: {pedido.cliente.direccion}</div>}
+								<div>{clienteNombre || pedido?.cliente?.nombreDoc || pedido?.cliente?.nombre_doc || 'Consumidor final'}</div>
+								{(clienteDocTipo || clienteDocNumero) && (
+									<div>
+										{(clienteDocTipo || 'DOC').toUpperCase()}: {clienteDocNumero || '---'}
+									</div>
+								)}
+								{clienteDireccion && <div>Dir: {clienteDireccion}</div>}
 							</div>
 						)}
 

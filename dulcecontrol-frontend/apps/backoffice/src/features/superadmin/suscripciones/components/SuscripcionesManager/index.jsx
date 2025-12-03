@@ -1,15 +1,19 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { message } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import SuscripcionesManagerView from './SuscripcionesManagerView.jsx';
-import { getPlanes, getSuscripciones, updateSuscripcion } from '../../api/suscripciones.api.js';
+import { getPlanes, getSuscripciones, updateSuscripcion, createSuscripcion } from '../../api/suscripciones.api.js';
 import { PENToCentimos } from '../../utils/currencyFormatter.js';
+import { getTiendas } from '../../../tiendas/api/tiendas.api.js';
+import { useAuthStore } from '../../../../../shared/hooks/useAuth.js';
 
 const SUSCRIPCIONES_QUERY_KEY = ['superadmin', 'suscripciones'];
 const PLANES_QUERY_KEY = ['superadmin', 'planes', 'activos'];
+const TIENDAS_QUERY_KEY = ['superadmin', 'tiendas'];
 
 const SuscripcionesManager = () => {
     const queryClient = useQueryClient();
+    const { user } = useAuthStore();
     const [filters, setFilters] = useState({
         estado: undefined,
         fechaInicio: undefined,
@@ -17,6 +21,7 @@ const SuscripcionesManager = () => {
     });
     const [detailSuscripcion, setDetailSuscripcion] = useState(null);
     const [editSuscripcion, setEditSuscripcion] = useState(null);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     const apiFilters = useMemo(() => (
         filters.estado ? { estado: filters.estado } : {}
@@ -32,6 +37,42 @@ const SuscripcionesManager = () => {
         queryKey: PLANES_QUERY_KEY,
         queryFn: () => getPlanes({ soloActivos: true }),
     });
+
+    const { data: tiendas = [] } = useQuery({
+        queryKey: TIENDAS_QUERY_KEY,
+        queryFn: getTiendas,
+    });
+
+    const tiendasMap = useMemo(() => {
+        const map = new Map();
+        tiendas.forEach((tienda) => {
+            const label = tienda.nombreComercial || tienda.nombreDoc || `Tienda #${tienda.id}`;
+            map.set(tienda.id, label);
+        });
+        return map;
+    }, [tiendas]);
+
+    const getTiendaLabel = useCallback((tiendaId) => {
+        if (!tiendaId) return 'Sin tienda';
+        return tiendasMap.get(tiendaId) || `Tienda #${tiendaId}`;
+    }, [tiendasMap]);
+
+    const suscripcionesConNombre = useMemo(() => (
+        suscripciones.map((suscripcion) => ({
+            ...suscripcion,
+            tiendaNombre: getTiendaLabel(suscripcion.tiendaId),
+        }))
+    ), [suscripciones, getTiendaLabel]);
+
+    const tiendasConSuscripcion = useMemo(() => {
+        const set = new Set();
+        suscripciones.forEach((suscripcion) => {
+            if (suscripcion?.tiendaId) {
+                set.add(suscripcion.tiendaId);
+            }
+        });
+        return set;
+    }, [suscripciones]);
 
     const handleFilterChange = (key, value) => {
         setFilters((prev) => ({
@@ -62,6 +103,14 @@ const SuscripcionesManager = () => {
 
     const handleCloseEdit = () => {
         setEditSuscripcion(null);
+    };
+
+    const handleOpenCreate = () => {
+        setIsCreateModalOpen(true);
+    };
+
+    const handleCloseCreate = () => {
+        setIsCreateModalOpen(false);
     };
 
     const updateMutation = useMutation({
@@ -102,9 +151,46 @@ const SuscripcionesManager = () => {
         updateMutation.mutate({ id: editSuscripcion.id, payload });
     };
 
+    const createMutation = useMutation({
+        mutationFn: createSuscripcion,
+        onSuccess: () => {
+            message.success('Suscripción creada');
+            queryClient.invalidateQueries({ queryKey: SUSCRIPCIONES_QUERY_KEY });
+            handleCloseCreate();
+        },
+        onError: (error) => {
+            const detail = error?.response?.data?.message ?? 'Error al crear suscripción';
+            message.error(detail);
+        },
+    });
+
+    const handleCreate = (values) => {
+        if (tiendasConSuscripcion.has(values.tiendaId)) {
+            message.warning('La tienda seleccionada ya cuenta con una suscripción.');
+            return;
+        }
+
+        const payload = {
+            tiendaId: values.tiendaId,
+            planId: values.planId,
+            ciclo: values.ciclo,
+            precioPactadoCentimos: PENToCentimos(values.precioPactadoSoles),
+            fechaInicio: values.fechaInicio ? values.fechaInicio.toISOString() : null,
+            fechaFin: values.fechaFin ? values.fechaFin.toISOString() : null,
+            estado: values.estado,
+            autorenovar: values.autorenovar,
+        };
+
+        if (user?.id) {
+            payload.usuarioResponsableId = user.id;
+        }
+
+        createMutation.mutate(payload);
+    };
+
     return (
         <SuscripcionesManagerView
-            suscripciones={suscripciones}
+            suscripciones={suscripcionesConNombre}
             loading={isLoading}
             isError={isError}
             onRetry={refetch}
@@ -120,6 +206,14 @@ const SuscripcionesManager = () => {
             onSaveEdit={handleSaveEdit}
             isSavingEdit={updateMutation.isPending}
             planes={planes}
+            tiendas={tiendas}
+            tiendasMap={tiendasMap}
+            tiendasConSuscripcion={tiendasConSuscripcion}
+            isCreateModalOpen={isCreateModalOpen}
+            onOpenCreate={handleOpenCreate}
+            onCloseCreate={handleCloseCreate}
+            onCreate={handleCreate}
+            isCreating={createMutation.isPending}
         />
     );
 };

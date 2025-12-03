@@ -1,6 +1,7 @@
 import { Modal, Form, Select, Alert, Divider, Row, Col, Radio, Typography, Button, Input } from 'antd';
 import { CheckCircleOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
+import MoneyInput from '../../../../../shared/components/MoneyInput.jsx';
 
 const { Option } = Select;
 const { Title, Text } = Typography;
@@ -8,7 +9,7 @@ const { Title, Text } = Typography;
 const UnifiedStatusModal = ({ open, onClose, pedido, onConfirmPayment, onConfirmStatus, loadingPayment, loadingStatus }) => {
     const [form] = Form.useForm();
     const [selectedOrderStatus, setSelectedOrderStatus] = useState(null);
-    const [centavosInput, setCentavosInput] = useState('000');
+    const [montoPagar, setMontoPagar] = useState(0);
     const [localSaldoPendiente, setLocalSaldoPendiente] = useState(0);
     const [localIsPaymentComplete, setLocalIsPaymentComplete] = useState(false);
 
@@ -22,7 +23,7 @@ const UnifiedStatusModal = ({ open, onClose, pedido, onConfirmPayment, onConfirm
 
             setLocalSaldoPendiente(saldoInicial);
             setLocalIsPaymentComplete(pedido.estadoPago?.toLowerCase() === 'pagado_total');
-            setCentavosInput('000');
+            setMontoPagar(0);
 
             form.setFieldsValue({
                 estadoPedido: pedido.raw?.estadoPedido,
@@ -39,7 +40,7 @@ const UnifiedStatusModal = ({ open, onClose, pedido, onConfirmPayment, onConfirm
     const handleCancel = () => {
         form.resetFields();
         setSelectedOrderStatus(null);
-        setCentavosInput('000');
+        setMontoPagar(0);
         setLocalSaldoPendiente(0);
         setLocalIsPaymentComplete(false);
         onClose();
@@ -49,32 +50,11 @@ const UnifiedStatusModal = ({ open, onClose, pedido, onConfirmPayment, onConfirm
         setSelectedOrderStatus(value);
     };
 
-    const handleCentavosKeyDown = (e) => {
-        if (e.key >= '0' && e.key <= '9') {
-            e.preventDefault();
-            const newValue = (centavosInput + e.key).slice(-10);
-            setCentavosInput(newValue.padStart(3, '0'));
-        } else if (e.key === 'Backspace') {
-            e.preventDefault();
-            const newValue = ('0' + centavosInput).slice(0, -1);
-            setCentavosInput(newValue.padStart(3, '0'));
-        }
-    };
 
-    const formatCentavosDisplay = (centavos) => {
-        const paddedValue = centavos.padStart(3, '0');
-        const integerPart = paddedValue.slice(0, -2) || '0';
-        const decimalPart = paddedValue.slice(-2);
-        return `${parseInt(integerPart).toLocaleString('es-PE')}.${decimalPart}`;
-    };
-
-    const getCentavosValue = () => {
-        return parseInt(centavosInput) / 100;
-    };
 
     const handlePayment = () => {
         const metodoPago = form.getFieldValue('metodoPago');
-        const montoPagado = getCentavosValue();
+        const montoPagado = montoPagar;
 
         if (!metodoPago || montoPagado <= 0) {
             return;
@@ -99,7 +79,7 @@ const UnifiedStatusModal = ({ open, onClose, pedido, onConfirmPayment, onConfirm
         setLocalIsPaymentComplete(esPagoCompleto);
 
         // Reset inputs
-        setCentavosInput('000');
+        setMontoPagar(0);
         form.setFieldsValue({
             metodoPago: 'efectivo',
         });
@@ -174,11 +154,10 @@ const UnifiedStatusModal = ({ open, onClose, pedido, onConfirmPayment, onConfirm
                                 <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
                                     Monto a Pagar
                                 </label>
-                                <Input
+                                <MoneyInput
                                     size="large"
-                                    value={`S/ ${formatCentavosDisplay(centavosInput)}`}
-                                    onKeyDown={handleCentavosKeyDown}
-                                    readOnly
+                                    value={montoPagar}
+                                    onChange={setMontoPagar}
                                     style={{
                                         fontSize: '24px',
                                         fontWeight: 'bold',
@@ -186,9 +165,9 @@ const UnifiedStatusModal = ({ open, onClose, pedido, onConfirmPayment, onConfirm
                                         color: '#1890ff',
                                         cursor: 'text'
                                     }}
-                                    placeholder="S/ 0.00"
+                                    placeholder="0.00"
                                 />
-                                {getCentavosValue() > localSaldoPendiente && (
+                                {montoPagar > localSaldoPendiente && (
                                     <Text type="danger" style={{ fontSize: 12 }}>
                                         El monto excede el saldo pendiente
                                     </Text>
@@ -201,7 +180,7 @@ const UnifiedStatusModal = ({ open, onClose, pedido, onConfirmPayment, onConfirm
                                 size="large"
                                 onClick={handlePayment}
                                 loading={loadingPayment}
-                                disabled={getCentavosValue() <= 0 || getCentavosValue() > localSaldoPendiente}
+                                disabled={montoPagar <= 0 || montoPagar > localSaldoPendiente}
                             >
                                 Registrar Pago
                             </Button>

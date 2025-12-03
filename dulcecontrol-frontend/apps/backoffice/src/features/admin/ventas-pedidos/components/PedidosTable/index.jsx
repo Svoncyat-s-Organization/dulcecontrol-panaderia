@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import PedidosTableView from './PedidosTableView.jsx';
 import UnifiedStatusModal from './UnifiedStatusModal.jsx';
 import PedidoDetailDrawer from './PedidoDetailDrawer.jsx';
-import PedidoReceiptModal from './PedidoReceiptModal.jsx';
+import ReceiptModal from '../PuntoDeVenta/ReceiptModal.jsx';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 import { getPedidos, updatePedido, getDetallesPedido, addPagoPedido, getPagosPedido } from '../../api/pedidos.api.js';
 import { getClientes } from '../../api/clientes.api.js';
@@ -24,7 +24,8 @@ const PedidosTable = () => {
 
     const [statusModal, setStatusModal] = useState({ open: false, pedido: null });
     const [detailDrawer, setDetailDrawer] = useState({ open: false, pedido: null });
-    const [printModal, setPrintModal] = useState({ open: false, pedido: null });
+    const [receiptData, setReceiptData] = useState(null);
+    const [printingId, setPrintingId] = useState(null);
     const [filters, setFilters] = useState({
         codigoPedido: null,
         clienteId: null,
@@ -310,12 +311,57 @@ const PedidosTable = () => {
         statusMutation.mutate({ pedido, nuevoEstado });
     };
 
-    const handlePrint = (pedido) => {
-        setPrintModal({ open: true, pedido });
+    const buildReceiptPayload = (pedido, detalles = [], pagos = []) => {
+        const clienteInfo = clientesMap.get(pedido.clienteId);
+        const normalizedDetalles = detalles.map((detalle) => ({
+            id: detalle.id,
+            nombre: productosMap.get(detalle.productoId)?.nombre || `Producto ${detalle.productoId}`,
+            quantity: detalle.cantidad,
+            precioBaseCentimos: detalle.precioUnitarioCentimos,
+            subtotalLineaCentimos: detalle.subtotalLineaCentimos,
+        }));
+        const normalizedPagos = pagos.map((pago) => ({
+            id: pago.id,
+            metodoPago: pago.metodoPago,
+            montoPagadoCentimos: pago.montoPagadoCentimos,
+            fechaPago: pago.fechaPago,
+        }));
+
+        return {
+            ...pedido,
+            items: normalizedDetalles,
+            pagos: normalizedPagos,
+            metodoPago: normalizedPagos[0]?.metodoPago,
+            cliente: clienteInfo
+                ? {
+                    nombreDoc: clienteInfo.nombreDoc || clienteInfo.nombre,
+                    tipoDoc: clienteInfo.tipoDoc,
+                    numeroDoc: clienteInfo.numeroDoc,
+                    direccion: clienteInfo.direccion,
+                }
+                : null,
+        };
+    };
+
+    const handlePrint = async (pedido) => {
+        if (!tiendaId || !pedido?.raw?.id) return;
+        setPrintingId(pedido.id);
+        try {
+            const pedidoId = pedido.raw.id;
+            const [detalles, pagos] = await Promise.all([
+                getDetallesPedido(tiendaId, pedidoId),
+                getPagosPedido(tiendaId, pedidoId),
+            ]);
+            setReceiptData(buildReceiptPayload(pedido.raw, detalles, pagos));
+        } catch (error) {
+            console.error('Error al preparar el recibo', error);
+        } finally {
+            setPrintingId(null);
+        }
     };
 
     const handleClosePrintModal = () => {
-        setPrintModal({ open: false, pedido: null });
+        setReceiptData(null);
     };
 
     const handleFiltersChange = (newFilters) => {
@@ -342,6 +388,7 @@ const PedidosTable = () => {
                 onManageStatus={handleManageStatus}
                 onViewDetail={handleViewDetail}
                 onPrint={handlePrint}
+                printingId={printingId}
                 filters={filters}
                 onFiltersChange={handleFiltersChange}
                 onResetFilters={handleResetFilters}
@@ -370,10 +417,10 @@ const PedidosTable = () => {
                 loading={detailDetallesQuery.isLoading || detailPagosQuery.isLoading}
             />
 
-            <PedidoReceiptModal
-                open={printModal.open}
+            <ReceiptModal
+                open={!!receiptData}
                 onClose={handleClosePrintModal}
-                pedido={printModal.pedido}
+                pedido={receiptData}
             />
         </>
     );
