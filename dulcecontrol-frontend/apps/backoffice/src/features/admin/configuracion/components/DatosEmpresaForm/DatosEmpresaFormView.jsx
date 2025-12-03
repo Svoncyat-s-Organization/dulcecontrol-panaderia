@@ -1,0 +1,284 @@
+import { Alert, Button, Card, Col, Divider, Form, Input, InputNumber, Row, Select, Spin, Upload } from 'antd';
+import { SaveOutlined, UploadOutlined } from '@ant-design/icons';
+
+const { TextArea } = Input;
+const { Option } = Select;
+
+const DatosEmpresaFormView = ({ datosEmpresa, isLoading, isError, error, isSubmitting, onSubmit }) => {
+  const [form] = Form.useForm();
+
+  // Cuando los datos cargan, setear valores iniciales
+  if (datosEmpresa && !form.isFieldsTouched()) {
+    form.setFieldsValue({
+      numeroDoc: datosEmpresa.numeroDoc,
+      nombreDoc: datosEmpresa.nombreDoc,
+      nombreComercial: datosEmpresa.nombreComercial,
+      correoContacto: datosEmpresa.correoContacto,
+      telefonoContacto: datosEmpresa.telefonoContacto,
+      direccionFiscal: datosEmpresa.direccionFiscal,
+      ubigeoFiscal: datosEmpresa.ubigeoFiscal,
+      usuarioSunatSol: datosEmpresa.usuarioSunatSol,
+      claveSunatSol: '', // Nunca se muestra la clave actual
+      certificadoDigitalUrl: datosEmpresa.certificadoDigitalUrl,
+      modoSunat: datosEmpresa.modoSunat || 'PRUEBAS',
+      tasaIgv: datosEmpresa.tasaIgv || 18.0,
+      logoUrl: datosEmpresa.logoUrl,
+    });
+  }
+
+  const handleFinish = (values) => {
+    // Solo enviar claveSunatSol si el usuario escribió algo
+    const payload = { ...values };
+    if (!payload.claveSunatSol || payload.claveSunatSol.trim() === '') {
+      delete payload.claveSunatSol;
+    }
+    onSubmit(payload);
+  };
+
+  if (isLoading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '50px' }}>
+        <Spin size="large" tip="Cargando datos de empresa..." />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Alert
+        message="Error al cargar datos"
+        description={error?.message || 'No se pudieron cargar los datos de la empresa'}
+        type="error"
+        showIcon
+      />
+    );
+  }
+
+  return (
+    <Form form={form} layout="vertical" onFinish={handleFinish}>
+      {/* SECCIÓN 1: IDENTIDAD LEGAL */}
+      <Card title="📋 Identidad Legal" style={{ marginBottom: 16 }}>
+        <Row gutter={16}>
+          <Col xs={24} md={8}>
+            <Form.Item
+              label="RUC"
+              name="numeroDoc"
+              rules={[
+                { required: true, message: 'El RUC es obligatorio' },
+                { pattern: /^\d{11}$/, message: 'El RUC debe tener exactamente 11 dígitos' },
+              ]}
+              tooltip="El RUC de la empresa (11 dígitos numéricos)"
+            >
+              <Input placeholder="20123456789" maxLength={11} />
+            </Form.Item>
+          </Col>
+
+          <Col xs={24} md={16}>
+            <Form.Item
+              label="Razón Social"
+              name="nombreDoc"
+              rules={[{ required: true, message: 'La razón social es obligatoria' }]}
+              tooltip="Nombre legal de la empresa ante la SUNAT"
+            >
+              <Input placeholder="Ej: Inversiones Dulce Manjar S.A.C." />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col xs={24} md={12}>
+            <Form.Item
+              label="Nombre Comercial"
+              name="nombreComercial"
+              rules={[{ required: true, message: 'El nombre comercial es obligatorio' }]}
+              tooltip="Nombre público de la empresa"
+            >
+              <Input placeholder="Ej: Pastelería Dulce Manjar" />
+            </Form.Item>
+          </Col>
+
+          <Col xs={24} md={12}>
+            <Form.Item
+              label="Correo de Contacto"
+              name="correoContacto"
+              rules={[
+                { required: true, message: 'El correo es obligatorio' },
+                { type: 'email', message: 'Ingrese un correo válido' },
+              ]}
+            >
+              <Input placeholder="contacto@empresa.com" />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col xs={24} md={12}>
+            <Form.Item label="Teléfono de Contacto" name="telefonoContacto">
+              <Input placeholder="+51 999 999 999" />
+            </Form.Item>
+          </Col>
+        </Row>
+      </Card>
+
+      {/* SECCIÓN 2: DATOS FISCALES */}
+      <Card title="🏢 Datos Fiscales" style={{ marginBottom: 16 }}>
+        <Row gutter={16}>
+          <Col xs={24} md={16}>
+            <Form.Item
+              label="Dirección Fiscal"
+              name="direccionFiscal"
+              rules={[{ required: true, message: 'La dirección fiscal es obligatoria' }]}
+              tooltip="Dirección legal registrada en la SUNAT"
+            >
+              <TextArea rows={2} placeholder="Av. Principal 123, Distrito, Provincia" />
+            </Form.Item>
+          </Col>
+
+          <Col xs={24} md={8}>
+            <Form.Item
+              label="Ubigeo Fiscal"
+              name="ubigeoFiscal"
+              rules={[
+                { required: true, message: 'El ubigeo es obligatorio' },
+                { pattern: /^\d{6}$/, message: 'El ubigeo debe tener 6 dígitos' },
+              ]}
+              tooltip="Código de 6 dígitos del distrito fiscal (ej: 150101 para Lima - Lima - Lima)"
+            >
+              <Input placeholder="150101" maxLength={6} />
+            </Form.Item>
+          </Col>
+        </Row>
+      </Card>
+
+      {/* SECCIÓN 3: CONFIGURACIÓN SUNAT */}
+      <Card title="🔐 Configuración SUNAT (Facturación Electrónica)" style={{ marginBottom: 16 }}>
+        <Alert
+          message="Importante"
+          description="Las credenciales SOL son necesarias para emitir comprobantes electrónicos (facturas y boletas)."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+
+        <Row gutter={16}>
+          <Col xs={24} md={12}>
+            <Form.Item
+              label="Usuario SOL"
+              name="usuarioSunatSol"
+              tooltip="Usuario secundario creado en el portal SOL de SUNAT"
+            >
+              <Input placeholder="MODDATOS" />
+            </Form.Item>
+          </Col>
+
+          <Col xs={24} md={12}>
+            <Form.Item
+              label="Clave SOL"
+              name="claveSunatSol"
+              tooltip="Solo completa este campo si deseas cambiar la contraseña. Por seguridad, no se muestra la actual."
+            >
+              <Input.Password placeholder="********" autoComplete="new-password" />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col xs={24} md={12}>
+            <Form.Item
+              label="Certificado Digital"
+              name="certificadoDigitalUrl"
+              tooltip="URL del certificado .p12 o .pfx para firmar facturas"
+            >
+              <Input
+                placeholder="URL del certificado"
+                addonAfter={
+                  <Upload showUploadList={false}>
+                    <Button icon={<UploadOutlined />} size="small">
+                      Subir
+                    </Button>
+                  </Upload>
+                }
+              />
+            </Form.Item>
+          </Col>
+
+          <Col xs={24} md={12}>
+            <Form.Item
+              label="Modo SUNAT"
+              name="modoSunat"
+              rules={[{ required: true, message: 'Seleccione el modo SUNAT' }]}
+              tooltip="PRUEBAS: Para desarrollo. PRODUCCION: Para operación real."
+            >
+              <Select>
+                <Option value="PRUEBAS">🧪 PRUEBAS</Option>
+                <Option value="PRODUCCION">✅ PRODUCCION</Option>
+              </Select>
+            </Form.Item>
+          </Col>
+        </Row>
+      </Card>
+
+      {/* SECCIÓN 4: PARÁMETROS GLOBALES */}
+      <Card title="⚙️ Parámetros Globales" style={{ marginBottom: 16 }}>
+        <Row gutter={16}>
+          <Col xs={24} md={8}>
+            <Form.Item
+              label="Tasa IGV (%)"
+              name="tasaIgv"
+              rules={[
+                { required: true, message: 'La tasa IGV es obligatoria' },
+                { type: 'number', min: 0, max: 100, message: 'Debe estar entre 0 y 100' },
+              ]}
+              tooltip="Porcentaje de IGV aplicado (Perú: 18%)"
+            >
+              <InputNumber
+                style={{ width: '100%' }}
+                min={0}
+                max={100}
+                precision={2}
+                step={0.01}
+                addonAfter="%"
+              />
+            </Form.Item>
+          </Col>
+
+          <Col xs={24} md={16}>
+            <Form.Item
+              label="Logo de la Empresa (URL)"
+              name="logoUrl"
+              tooltip="URL del logo que aparecerá en los comprobantes"
+            >
+              <Input
+                placeholder="https://..."
+                addonAfter={
+                  <Upload showUploadList={false}>
+                    <Button icon={<UploadOutlined />} size="small">
+                      Subir
+                    </Button>
+                  </Upload>
+                }
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+      </Card>
+
+      <Divider />
+
+      {/* BOTÓN SUBMIT */}
+      <Form.Item>
+        <Button type="primary" htmlType="submit" icon={<SaveOutlined />} size="large" loading={isSubmitting} block>
+          Guardar Cambios
+        </Button>
+      </Form.Item>
+
+      {datosEmpresa?.actualizadoEn && (
+        <div style={{ textAlign: 'center', color: '#999', fontSize: '12px', marginTop: '8px' }}>
+          Última actualización: {new Date(datosEmpresa.actualizadoEn).toLocaleString('es-PE')}
+        </div>
+      )}
+    </Form>
+  );
+};
+
+export default DatosEmpresaFormView;

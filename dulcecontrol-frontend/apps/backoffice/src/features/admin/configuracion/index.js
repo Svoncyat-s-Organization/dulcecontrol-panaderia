@@ -1,1 +1,2 @@
-export { default as ConfiguracionPage } from './pages/ConfiguracionPage.jsx';
+export { default as DatosEmpresaPage } from './pages/DatosEmpresaPage.jsx';
+export { default as SedesPage } from './pages/SedesPage.jsx';

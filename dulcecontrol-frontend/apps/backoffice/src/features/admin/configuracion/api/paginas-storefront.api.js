@@ -1,39 +1,36 @@
-import apiClient from '../../../../api/apiClient.js';
+import apiClient from '../../../../api/apiClient';
 
-const buildPaginasStorefrontUrl = (tiendaId, suffix = '') => {
-  if (!tiendaId) {
-    throw new Error('tiendaId es requerido para consultar páginas storefront');
-  }
-  return `/api/admin/tiendas/${tiendaId}/paginas-storefront${suffix}`;
-};
+/**
+ * API para gestionar las páginas del storefront (CMS)
+ */
 
 export const getPaginasStorefront = async (tiendaId) => {
-  const { data } = await apiClient.get(buildPaginasStorefrontUrl(tiendaId));
-  return data;
-};
-
-export const searchPaginasStorefront = async (tiendaId, busqueda) => {
-  const params = busqueda ? { q: busqueda } : {};
-  const { data } = await apiClient.get(buildPaginasStorefrontUrl(tiendaId, '/buscar'), { params });
-  return data;
+  const response = await apiClient.get(`/api/admin/tiendas/${tiendaId}/paginas-storefront`);
+  return response.data;
 };
 
 export const getPaginaStorefront = async (tiendaId, paginaId) => {
-  const { data } = await apiClient.get(buildPaginasStorefrontUrl(tiendaId, `/${paginaId}`));
-  return data;
+  const response = await apiClient.get(`/api/admin/tiendas/${tiendaId}/paginas-storefront/${paginaId}`);
+  return response.data;
 };
 
-export const createPaginaStorefront = async (tiendaId, payload) => {
-  const { data } = await apiClient.post(buildPaginasStorefrontUrl(tiendaId), payload);
-  return data;
+export const createPaginaStorefront = async (tiendaId, data) => {
+  const response = await apiClient.post(`/api/admin/tiendas/${tiendaId}/paginas-storefront`, data);
+  return response.data;
 };
 
-export const updatePaginaStorefront = async (tiendaId, paginaId, payload) => {
-  const { data } = await apiClient.put(buildPaginasStorefrontUrl(tiendaId, `/${paginaId}`), payload);
-  return data;
+export const updatePaginaStorefront = async (tiendaId, paginaId, data) => {
+  const response = await apiClient.put(`/api/admin/tiendas/${tiendaId}/paginas-storefront/${paginaId}`, data);
+  return response.data;
 };
 
 export const deletePaginaStorefront = async (tiendaId, paginaId) => {
-  const { data } = await apiClient.delete(buildPaginasStorefrontUrl(tiendaId, `/${paginaId}`));
-  return data;
+  await apiClient.delete(`/api/admin/tiendas/${tiendaId}/paginas-storefront/${paginaId}`);
+};
+
+export const searchPaginasStorefront = async (tiendaId, query) => {
+  const response = await apiClient.get(`/api/admin/tiendas/${tiendaId}/paginas-storefront/buscar`, {
+    params: { q: query }
+  });
+  return response.data;
 };
