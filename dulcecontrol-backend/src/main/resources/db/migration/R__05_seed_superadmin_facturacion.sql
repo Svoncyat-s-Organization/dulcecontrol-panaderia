@@ -14,10 +14,10 @@ INSERT INTO series (
   es_predeterminada
 )
 VALUES
-  ('FACTURA', 'F001', 15, TRUE, TRUE),
-  ('BOLETA', 'B001', 8, TRUE, TRUE),
-  ('NOTA_CREDITO', 'FC01', 2, TRUE, FALSE),
-  ('NOTA_DEBITO', 'FD01', 0, TRUE, FALSE)
+  ('factura', 'F001', 15, TRUE, TRUE),
+  ('boleta', 'B001', 8, TRUE, TRUE),
+  ('nota_credito', 'FC01', 2, TRUE, FALSE),
+  ('nota_debito', 'FD01', 0, TRUE, FALSE)
 ON DUPLICATE KEY UPDATE
   ultimo_correlativo = VALUES(ultimo_correlativo),
   activo = VALUES(activo),
@@ -54,8 +54,8 @@ VALUES
     (SELECT id FROM tiendas WHERE numero_doc = '20601234567'),
     (SELECT id FROM suscripciones WHERE tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567') LIMIT 1),
     (SELECT id FROM series WHERE serie = 'F001'),
-    'PAGADO',
-    'FACTURA',
+    'pagado',
+    'factura',
     13,
     DATE_SUB(CURDATE(), INTERVAL 15 DAY),
     'RUC',
@@ -66,7 +66,7 @@ VALUES
     12712,
     2288,
     15000,
-    'ACEPTADO',
+    'aceptado',
     'https://cdn.dulcecontrol.pe/facturas/F001-00000013.pdf'
   ),
   -- Factura Panadería El Sol (RUC 20601234568) - Suscripción Básico
@@ -75,8 +75,8 @@ VALUES
     (SELECT id FROM tiendas WHERE numero_doc = '20601234568'),
     (SELECT id FROM suscripciones WHERE tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234568') LIMIT 1),
     (SELECT id FROM series WHERE serie = 'F001'),
-    'PAGADO',
-    'FACTURA',
+    'pagado',
+    'factura',
     14,
     DATE_SUB(CURDATE(), INTERVAL 10 DAY),
     'RUC',
@@ -87,7 +87,7 @@ VALUES
     8475,
     1525,
     10000,
-    'ACEPTADO',
+    'aceptado',
     'https://cdn.dulcecontrol.pe/facturas/F001-00000014.pdf'
   ),
   -- Factura Tortas & Delicias (RUC 20601234569) - Suscripción Premium
@@ -96,8 +96,8 @@ VALUES
     (SELECT id FROM tiendas WHERE numero_doc = '20601234569'),
     (SELECT id FROM suscripciones WHERE tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234569') LIMIT 1),
     (SELECT id FROM series WHERE serie = 'F001'),
-    'PAGADO',
-    'FACTURA',
+    'pagado',
+    'factura',
     15,
     DATE_SUB(CURDATE(), INTERVAL 5 DAY),
     'RUC',
@@ -108,7 +108,7 @@ VALUES
     16950,
     3050,
     20000,
-    'ACEPTADO',
+    'aceptado',
     'https://cdn.dulcecontrol.pe/facturas/F001-00000015.pdf'
   )
 ON DUPLICATE KEY UPDATE
@@ -131,7 +131,7 @@ INSERT INTO detalles_comprobante (
 VALUES
   -- Detalle Dulce Manjar - Plan Profesional
   (
-    (SELECT id FROM comprobantes WHERE tipos_comprobante = 'FACTURA' AND correlativo = 13),
+    (SELECT id FROM comprobantes WHERE tipos_comprobante = 'factura' AND correlativo = 13),
     'Suscripción Plan Profesional - Mes de Noviembre 2024',
     1,
     12712,
@@ -141,7 +141,7 @@ VALUES
   ),
   -- Detalle Panadería El Sol - Plan Básico
   (
-    (SELECT id FROM comprobantes WHERE tipos_comprobante = 'FACTURA' AND correlativo = 14),
+    (SELECT id FROM comprobantes WHERE tipos_comprobante = 'factura' AND correlativo = 14),
     'Suscripción Plan Básico - Mes de Noviembre 2024',
     1,
     8475,
@@ -151,7 +151,7 @@ VALUES
   ),
   -- Detalle Tortas & Delicias - Plan Premium
   (
-    (SELECT id FROM comprobantes WHERE tipos_comprobante = 'FACTURA' AND correlativo = 15),
+    (SELECT id FROM comprobantes WHERE tipos_comprobante = 'factura' AND correlativo = 15),
     'Suscripción Plan Premium - Mes de Noviembre 2024',
     1,
     16950,
@@ -181,12 +181,12 @@ VALUES
   -- Pago Dulce Manjar
   (
     (SELECT id FROM tiendas WHERE numero_doc = '20601234567'),
-    (SELECT id FROM comprobantes WHERE tipos_comprobante = 'FACTURA' AND correlativo = 13),
+    (SELECT id FROM comprobantes WHERE tipos_comprobante = 'factura' AND correlativo = 13),
     'niubiz',
     'NIUBIZ-20241028-567890',
     15000,
     'PEN',
-    'EXITOSO',
+    'exitoso',
     JSON_OBJECT(
       'tarjeta_marca', 'Visa',
       'tarjeta_ultimos4', '4532',
@@ -198,12 +198,12 @@ VALUES
   -- Pago Panadería El Sol
   (
     (SELECT id FROM tiendas WHERE numero_doc = '20601234568'),
-    (SELECT id FROM comprobantes WHERE tipos_comprobante = 'FACTURA' AND correlativo = 14),
+    (SELECT id FROM comprobantes WHERE tipos_comprobante = 'factura' AND correlativo = 14),
     'niubiz',
     'NIUBIZ-20241102-234567',
     10000,
     'PEN',
-    'EXITOSO',
+    'exitoso',
     JSON_OBJECT(
       'tarjeta_marca', 'Mastercard',
       'tarjeta_ultimos4', '5412',
@@ -215,12 +215,12 @@ VALUES
   -- Pago Tortas & Delicias
   (
     (SELECT id FROM tiendas WHERE numero_doc = '20601234569'),
-    (SELECT id FROM comprobantes WHERE tipos_comprobante = 'FACTURA' AND correlativo = 15),
+    (SELECT id FROM comprobantes WHERE tipos_comprobante = 'factura' AND correlativo = 15),
     'niubiz',
     'NIUBIZ-20241107-890123',
     20000,
     'PEN',
-    'EXITOSO',
+    'exitoso',
     JSON_OBJECT(
       'tarjeta_marca', 'Visa',
       'tarjeta_ultimos4', '4916',

@@ -9,6 +9,8 @@ import java.util.List;
 
 public interface IComprobanteService {
     List<ComprobanteResponse> listar(Long tiendaId, EstadoSunat estadoSunat, TipoComprobante tipo);
+
     ComprobanteResponse obtener(Long id);
+
     List<DetalleComprobanteResponse> listarDetalles(Long comprobanteId);
 }
