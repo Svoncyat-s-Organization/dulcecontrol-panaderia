@@ -1,6 +1,11 @@
-import { Modal, Typography, Divider, Empty, Button } from 'antd';
+import { Modal, Typography, Divider, Empty, Button, Spin } from 'antd';
 import { PrinterOutlined, CloseOutlined } from '@ant-design/icons';
 import { useMemo, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
+import { getTiendaById } from '../../../../superadmin/tiendas/api/tiendas.api.js';
+import { getSedesAsignadas } from '../../../configuracion/api/sedes.api.js';
+import { getConfiguracionTienda } from '../../api/configuracion.api.js';
 
 const { Title, Text } = Typography;
 
@@ -38,6 +43,9 @@ const printTicket = (html) => {
 			table { width: 100%; border-collapse: collapse; }
 			th, td { padding: 4px 0; font-size: 12px; }
 			th { text-align: left; border-bottom: 1px solid #cbd5f5; }
+            .text-center { text-align: center; }
+            .header-info { margin-bottom: 12px; }
+            .header-info div { margin-bottom: 2px; }
 		</style>
 	</head><body>${html}</body></html>`);
 	printDocument.close();
@@ -56,6 +64,47 @@ const printTicket = (html) => {
 
 const ReceiptModal = ({ open, onClose, pedido }) => {
 	const printAreaRef = useRef(null);
+	const tiendaId = useTokenStore((state) => state.tiendaId);
+	const sedeId = pedido?.sedeOrigenId || pedido?.sede_origen_id;
+
+	// Fetch Store Details
+	const {
+		data: tienda,
+		isLoading: isTiendaLoading,
+	} = useQuery({
+		queryKey: ['tienda', tiendaId],
+		queryFn: () => getTiendaById(tiendaId),
+		enabled: !!tiendaId && open,
+		retry: 1,
+	});
+
+	// Fetch Configuration (RUC, Razon Social)
+	const {
+		data: config,
+		isLoading: isConfigLoading,
+	} = useQuery({
+		queryKey: ['configuracion-tienda', tiendaId],
+		queryFn: () => getConfiguracionTienda(tiendaId),
+		enabled: !!tiendaId && open,
+		retry: 1,
+	});
+
+	// Fetch Sedes to find the specific one
+	const {
+		data: sedes = [],
+		isLoading: isSedesLoading,
+	} = useQuery({
+		queryKey: ['sedes-asignadas', tiendaId],
+		queryFn: () => getSedesAsignadas(tiendaId),
+		enabled: !!tiendaId && open,
+		retry: 1,
+	});
+
+	const currentSede = useMemo(() => {
+		if (!sedes.length || !sedeId) return null;
+		return sedes.find(s => s.id === sedeId);
+	}, [sedes, sedeId]);
+
 	const items = useMemo(() => (Array.isArray(pedido?.items) ? pedido.items : []), [pedido]);
 	const pagos = useMemo(() => (Array.isArray(pedido?.pagos) ? pedido.pagos : []), [pedido]);
 
@@ -63,6 +112,52 @@ const ReceiptModal = ({ open, onClose, pedido }) => {
 	const totalPagado = pagos.reduce((acc, pago) => acc + (pago.montoPagadoCentimos ?? pago.monto_pagado_centimos ?? 0), 0);
 	const cambioCentimos = Math.max(0, totalPagado - totalCentimos);
 	const notasPedido = pedido?.notasPedido ?? pedido?.notas_pedido ?? null;
+	const comprobante = pedido?.comprobante || null;
+
+	// Header Data
+	const tiendaNombre = useMemo(() => {
+		if (tienda?.nombreComercial) return tienda.nombreComercial;
+		if (tienda?.nombreDoc) return tienda.nombreDoc;
+		if (tienda?.nombre) return tienda.nombre;
+		const pedidoTiendaNombre =
+			pedido?.tiendaNombre
+			|| pedido?.tienda?.nombreComercial
+			|| pedido?.tienda?.nombre
+			|| pedido?.tienda_nombre
+			|| null;
+		if (pedidoTiendaNombre) return pedidoTiendaNombre;
+		if (config?.razonSocial) return config.razonSocial;
+		if (comprobante?.emisorRazonSocial) return comprobante.emisorRazonSocial;
+		if (pedido?.emisorRazonSocial) return pedido.emisorRazonSocial;
+		return 'Tienda';
+	}, [tienda, pedido, config, comprobante]);
+	const razonSocial = config?.razonSocial || comprobante?.emisorRazonSocial || pedido?.emisorRazonSocial || '';
+	const sedeNombre = currentSede?.nombre || '';
+	const sedeDireccion = currentSede?.direccion || comprobante?.emisorDireccion || pedido?.emisorDireccion || '';
+	const ruc = config?.ruc || comprobante?.emisorRuc || pedido?.emisorRuc || '';
+
+	const tipoComprobante = (comprobante?.tipoComprobante || pedido?.tipoComprobante || pedido?.tipo_comprobante || 'pedido').toString().toLowerCase();
+	const serieCodigo = comprobante?.serieCodigo || pedido?.serieComprobante || pedido?.serie_comprobante || null;
+	const correlativoNumero = comprobante?.correlativo || pedido?.numeroComprobante || pedido?.numero_comprobante || null;
+	const correlativoTexto = correlativoNumero ? String(correlativoNumero).padStart(8, '0') : null;
+
+	const clienteNombre = comprobante?.clienteNombre
+		|| pedido?.cliente?.nombreDoc
+		|| pedido?.cliente?.nombre_doc
+		|| null;
+	const clienteDocTipo = comprobante?.clienteTipoDoc
+		|| pedido?.cliente?.tipoDoc
+		|| pedido?.cliente?.tipo_doc
+		|| null;
+	const clienteDocNumero = comprobante?.clienteNumeroDoc
+		|| pedido?.cliente?.numeroDoc
+		|| pedido?.cliente?.numero_doc
+		|| null;
+	const clienteDireccion = comprobante?.clienteDireccion
+		|| pedido?.cliente?.direccion
+		|| (pedido?.shipping?.direccion ?? null);
+
+	const mostrarCliente = clienteNombre || clienteDocNumero || pedido?.cliente;
 
 	const handlePrint = () => {
 		if (!printAreaRef.current) {
@@ -70,6 +165,8 @@ const ReceiptModal = ({ open, onClose, pedido }) => {
 		}
 		printTicket(printAreaRef.current.innerHTML);
 	};
+
+	const loadingData = isTiendaLoading || isConfigLoading || (sedeId ? isSedesLoading : false);
 
 	return (
 		<Modal open={open} onCancel={onClose} footer={null} width={420} closable={false} destroyOnClose>
@@ -82,137 +179,155 @@ const ReceiptModal = ({ open, onClose, pedido }) => {
 						<Button type="text" icon={<CloseOutlined />} onClick={onClose} aria-label="Cerrar" />
 					</div>
 
-					<div
-						ref={printAreaRef}
-						id="ticket-print-area"
-						style={{
-							border: '1px solid #e2e8f0',
-							borderRadius: 12,
-							padding: 24,
-							fontFamily: 'Fira Mono, SFMono-Regular, Consolas, monospace',
-							background: '#fff',
-						}}
-					>
-						<div style={{ textAlign: 'center', marginBottom: 16 }}>
-							<Title level={4} style={{ marginBottom: 4 }}>DulceControl</Title>
-							<Text style={{ display: 'block' }}>Av. Principal 123, Tarapoto</Text>
-							<Text style={{ display: 'block' }}>RUC: 20123456789</Text>
-							{pedido.tipoComprobante && (
-								<div
-									style={{
-										marginTop: 12,
-										display: 'inline-block',
-										border: '1px solid #0f172a',
-										padding: '4px 12px',
-										fontWeight: 600,
-									}}
-								>
-									{(pedido.tipoComprobante || pedido.tipo_comprobante || '').toUpperCase()} ELECTRÓNICA
-								</div>
-							)}
+					{loadingData ? (
+						<div style={{ textAlign: 'center', padding: 40 }}>
+							<Spin tip="Cargando datos del comprobante..." />
 						</div>
+					) : (
+						<>
+							<div
+								ref={printAreaRef}
+								id="ticket-print-area"
+								style={{
+									border: '1px solid #e2e8f0',
+									borderRadius: 12,
+									padding: 24,
+									fontFamily: 'Fira Mono, SFMono-Regular, Consolas, monospace',
+									background: '#fff',
+								}}
+							>
+								<div className="text-center header-info" style={{ textAlign: 'center', marginBottom: 16 }}>
+									<Title level={4} style={{ margin: 0, marginBottom: 4 }}>{tiendaNombre}</Title>
+									{sedeNombre && <Text style={{ display: 'block', fontSize: 12 }}>{sedeNombre}</Text>}
+									{sedeDireccion && <Text style={{ display: 'block', fontSize: 12 }}>{sedeDireccion}</Text>}
+									{ruc && <Text style={{ display: 'block', fontWeight: 600, marginTop: 4 }}>RUC: {ruc}</Text>}
 
-						<div style={{ borderBottom: '1px dashed #cbd5f5', paddingBottom: 8, marginBottom: 8 }}>
-							<div style={{ display: 'flex', justifyContent: 'space-between' }}>
-								<span>Ticket:</span>
-								<span>{pedido.codigoPedido ?? pedido.codigo_pedido ?? 'POS'}</span>
-							</div>
-							<div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-								<span>Fecha:</span>
-								<span>
-									{new Date(pedido.fechaCreacion || pedido.fecha_creacion || Date.now()).toLocaleDateString()}{' '}
-									{new Date(pedido.fechaCreacion || pedido.fecha_creacion || Date.now()).toLocaleTimeString()}
-								</span>
-							</div>
-						</div>
-
-						{pedido.cliente && (
-							<div style={{ borderBottom: '1px dashed #cbd5f5', paddingBottom: 8, marginBottom: 8 }}>
-								<Text strong style={{ display: 'block', marginBottom: 4 }}>Cliente</Text>
-								<div>{pedido.cliente.nombreDoc ?? pedido.cliente.nombre_doc ?? 'Consumidor final'}</div>
-								<div>
-									{(pedido.cliente.tipoDoc ?? pedido.cliente.tipo_doc ?? 'DOC')}: {pedido.cliente.numeroDoc ?? pedido.cliente.numero_doc ?? '---'}
-								</div>
-								{pedido.cliente.direccion && <div>Dir: {pedido.cliente.direccion}</div>}
-							</div>
-						)}
-
-						<table style={{ width: '100%', marginBottom: 12 }}>
-							<thead>
-								<tr style={{ borderBottom: '1px solid #cbd5f5' }}>
-									<th style={{ paddingBottom: 4 }}>Cant.</th>
-									<th style={{ paddingBottom: 4 }}>Descripción</th>
-									<th style={{ paddingBottom: 4, textAlign: 'right' }}>Total</th>
-								</tr>
-							</thead>
-							<tbody>
-								{items.map((item, idx) => (
-									<tr key={item.id || idx}>
-										<td style={{ padding: '4px 0' }}>{item.quantity ?? item.cantidad ?? 0}</td>
-										<td style={{ padding: '4px 0' }}>
-											<div>{item.nombre || item.descripcion || 'Producto'}</div>
-											{(item.customNotes || item.notasItem || item.notas_item) && (
-												<div style={{ fontSize: 10, color: '#64748b' }}>
-													{item.customNotes || item.notasItem || item.notas_item}
-												</div>
+									{tipoComprobante && (
+										<div
+											style={{
+												marginTop: 12,
+												display: 'inline-block',
+												border: '1px solid #0f172a',
+												padding: '4px 12px',
+												fontWeight: 600,
+											}}
+										>
+											{tipoComprobante === 'pedido' ? 'NOTA DE PEDIDO' : `${tipoComprobante.toUpperCase()} ELECTRÓNICA`}
+											<br />
+											{serieCodigo && correlativoTexto && (
+												<span style={{ fontSize: 12, fontWeight: 500 }}>
+													Serie {serieCodigo} · Nº {correlativoTexto}
+												</span>
 											)}
-										</td>
-										<td style={{ padding: '4px 0', textAlign: 'right' }}>
-											{formatMoney(item.subtotalLineaCentimos ?? item.subtotal_linea_centimos ?? 0)}
-										</td>
-									</tr>
-								))}
-								{items.length === 0 && (
-									<tr>
-										<td colSpan={3} style={{ textAlign: 'center', padding: 12 }}>
-											Sin productos registrados
-										</td>
-									</tr>
-								)}
-							</tbody>
-						</table>
-						{notasPedido && (
-							<div style={{ borderTop: '1px dashed #cbd5f5', padding: '8px 0', fontSize: 12 }}>
-								<Text strong style={{ display: 'block', marginBottom: 4 }}>Notas del pedido</Text>
-								<div>{notasPedido}</div>
-							</div>
-						)}
-
-						<div style={{ borderTop: '1px dashed #cbd5f5', paddingTop: 8 }}>
-							<div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
-								<span>Total</span>
-								<span>{formatMoney(totalCentimos)}</span>
-							</div>
-							<Divider style={{ margin: '12px 0' }} />
-							<div>
-								<Text strong>Pagos</Text>
-								<div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
-									{pagos.map((pago) => (
-										<div key={pago.id || pago.metodoPago} style={{ display: 'flex', justifyContent: 'space-between' }}>
-											<span>{(pago.metodoPago ?? pago.metodo_pago ?? 's/d').toUpperCase()}</span>
-											<span>{formatMoney(pago.montoPagadoCentimos ?? pago.monto_pagado_centimos ?? 0)}</span>
-										</div>
-									))}
-									{pagos.length === 0 && <Text type="secondary">Sin pagos registrados</Text>}
-									{cambioCentimos > 0 && (
-										<div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
-											<span>Cambio</span>
-											<span>{formatMoney(cambioCentimos)}</span>
 										</div>
 									)}
 								</div>
+
+								<div style={{ borderBottom: '1px dashed #cbd5f5', paddingBottom: 8, marginBottom: 8 }}>
+									<div style={{ display: 'flex', justifyContent: 'space-between' }}>
+										<span>Ticket:</span>
+										<span>{pedido.codigoPedido ?? pedido.codigo_pedido ?? 'POS'}</span>
+									</div>
+									<div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+										<span>Fecha:</span>
+										<span>
+											{new Date(pedido.fechaCreacion || pedido.fecha_creacion || Date.now()).toLocaleDateString()}{' '}
+											{new Date(pedido.fechaCreacion || pedido.fecha_creacion || Date.now()).toLocaleTimeString()}
+										</span>
+									</div>
+								</div>
+
+								{mostrarCliente && (
+									<div style={{ borderBottom: '1px dashed #cbd5f5', paddingBottom: 8, marginBottom: 8 }}>
+										<Text strong style={{ display: 'block', marginBottom: 4 }}>Cliente</Text>
+										<div>{clienteNombre || pedido?.cliente?.nombreDoc || pedido?.cliente?.nombre_doc || 'Consumidor final'}</div>
+										{(clienteDocTipo || clienteDocNumero) && (
+											<div>
+												{(clienteDocTipo || 'DOC').toUpperCase()}: {clienteDocNumero || '---'}
+											</div>
+										)}
+										{clienteDireccion && <div>Dir: {clienteDireccion}</div>}
+									</div>
+								)}
+
+								<table style={{ width: '100%', marginBottom: 12 }}>
+									<thead>
+										<tr style={{ borderBottom: '1px solid #cbd5f5' }}>
+											<th style={{ paddingBottom: 4 }}>Cant.</th>
+											<th style={{ paddingBottom: 4 }}>Descripción</th>
+											<th style={{ paddingBottom: 4, textAlign: 'right' }}>Total</th>
+										</tr>
+									</thead>
+									<tbody>
+										{items.map((item, idx) => (
+											<tr key={item.id || idx}>
+												<td style={{ padding: '4px 0' }}>{item.quantity ?? item.cantidad ?? 0}</td>
+												<td style={{ padding: '4px 0' }}>
+													<div>{item.nombre || item.descripcion || 'Producto'}</div>
+													{(item.customNotes || item.notasItem || item.notas_item) && (
+														<div style={{ fontSize: 10, color: '#64748b' }}>
+															{item.customNotes || item.notasItem || item.notas_item}
+														</div>
+													)}
+												</td>
+												<td style={{ padding: '4px 0', textAlign: 'right' }}>
+													{formatMoney(item.subtotalLineaCentimos ?? item.subtotal_linea_centimos ?? 0)}
+												</td>
+											</tr>
+										))}
+										{items.length === 0 && (
+											<tr>
+												<td colSpan={3} style={{ textAlign: 'center', padding: 12 }}>
+													Sin productos registrados
+												</td>
+											</tr>
+										)}
+									</tbody>
+								</table>
+								{notasPedido && (
+									<div style={{ borderTop: '1px dashed #cbd5f5', padding: '8px 0', fontSize: 12 }}>
+										<Text strong style={{ display: 'block', marginBottom: 4 }}>Notas del pedido</Text>
+										<div>{notasPedido}</div>
+									</div>
+								)}
+
+								<div style={{ borderTop: '1px dashed #cbd5f5', paddingTop: 8 }}>
+									<div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
+										<span>Total</span>
+										<span>{formatMoney(totalCentimos)}</span>
+									</div>
+									<Divider style={{ margin: '12px 0' }} />
+									<div>
+										<Text strong>Pagos</Text>
+										<div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+											{pagos.map((pago) => (
+												<div key={pago.id || pago.metodoPago} style={{ display: 'flex', justifyContent: 'space-between' }}>
+													<span>{(pago.metodoPago ?? pago.metodo_pago ?? 's/d').toUpperCase()}</span>
+													<span>{formatMoney(pago.montoPagadoCentimos ?? pago.monto_pagado_centimos ?? 0)}</span>
+												</div>
+											))}
+											{pagos.length === 0 && <Text type="secondary">Sin pagos registrados</Text>}
+											{cambioCentimos > 0 && (
+												<div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
+													<span>Cambio</span>
+													<span>{formatMoney(cambioCentimos)}</span>
+												</div>
+											)}
+										</div>
+									</div>
+								</div>
+
+								<div style={{ textAlign: 'center', marginTop: 16, fontSize: 10, color: '#64748b' }}>
+									<div>Representación impresa del comprobante electrónico.</div>
+									<div>¡Gracias por su preferencia!</div>
+								</div>
 							</div>
-						</div>
 
-						<div style={{ textAlign: 'center', marginTop: 16, fontSize: 10, color: '#64748b' }}>
-							<div>Representación impresa del comprobante electrónico.</div>
-							<div>¡Gracias por su preferencia!</div>
-						</div>
-					</div>
-
-					<Button type="primary" icon={<PrinterOutlined />} block size="large" onClick={handlePrint}>
-						Imprimir ticket
-					</Button>
+							<Button type="primary" icon={<PrinterOutlined />} block size="large" onClick={handlePrint}>
+								Imprimir ticket
+							</Button>
+						</>
+					)}
 				</div>
 			)}
 		</Modal>

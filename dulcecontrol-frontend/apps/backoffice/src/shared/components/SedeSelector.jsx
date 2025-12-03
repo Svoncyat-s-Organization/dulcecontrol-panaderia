@@ -104,11 +104,15 @@ const SedeSelector = () => {
     ? 'Solo cuentas con una sede asignada'
     : null;
 
+  const displayValue = selectedSedeNombre || 
+    (selectedSedeId ? options.find(opt => opt.value === selectedSedeId)?.label : undefined);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <Select
-        value={selectedSedeId ?? undefined}
-        onChange={handleChange}
+        value={displayValue ? { label: displayValue, value: selectedSedeId } : undefined}
+        labelInValue
+        onChange={(option) => handleChange(option?.value)}
         options={options}
         placeholder={tiendaId ? 'Selecciona una sede' : 'Selecciona una tienda'}
         style={selectStyle}

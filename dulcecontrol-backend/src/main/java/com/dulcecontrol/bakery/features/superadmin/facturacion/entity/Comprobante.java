@@ -30,49 +30,49 @@ public class Comprobante {
     private Integer serieId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado_pago", nullable = false, columnDefinition = "ENUM('borrador','pendiente','pagado','anulado','reembolsado')")
-    private EstadoPago estadoPago = EstadoPago.pendiente;
+    @Column(name = "estado_pago", nullable = false)
+    private EstadoPago estadoPago;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipos_comprobante", nullable = false, columnDefinition = "ENUM('factura','boleta','nota_credito','nota_debito')")
+    @Column(name = "tipos_comprobante", nullable = false)
     private TipoComprobante tiposComprobante;
 
     @Column(nullable = false)
     private Integer correlativo;
 
     @Column(name = "fecha_emision", nullable = false)
-    private LocalDateTime fechaEmision = LocalDateTime.now();
+    private LocalDateTime fechaEmision;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "cliente_tipo_doc", nullable = false, columnDefinition = "ENUM('DNI','RUC')")
+    @Column(name = "cliente_tipo_doc", nullable = false)
     private TipoDocumento clienteTipoDoc;
 
-    @Column(name = "cliente_num_doc", nullable = false, length = 20)
+    @Column(name = "cliente_num_doc", nullable = false)
     private String clienteNumDoc;
 
-    @Column(name = "cliente_nombre_doc", nullable = false, length = 255)
+    @Column(name = "cliente_nombre_doc", nullable = false)
     private String clienteNombreDoc;
 
     @Column(name = "cliente_direccion")
     private String clienteDireccion;
 
-    @Column(name = "moneda", columnDefinition = "CHAR(3)", nullable = false)
+    @Column(nullable = false)
     private String moneda = "PEN";
 
     @Column(name = "total_gravado_centimos", nullable = false)
-    private Long totalGravadoCentimos = 0L;
+    private Long totalGravadoCentimos;
 
     @Column(name = "total_igv_centimos", nullable = false)
-    private Long totalIgvCentimos = 0L;
+    private Long totalIgvCentimos;
 
     @Column(name = "total_importe_centimos", nullable = false)
     private Long totalImporteCentimos;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estados_sunat", nullable = false, columnDefinition = "ENUM('pendiente','enviado','aceptado','observado','rechazado','anulado')")
-    private EstadoSunat estadosSunat = EstadoSunat.pendiente;
+    @Column(name = "estados_sunat", nullable = false)
+    private EstadoSunat estadosSunat;
 
-    @Column(name = "codigo_error_sunat", length = 50)
+    @Column(name = "codigo_error_sunat")
     private String codigoErrorSunat;
 
     @Column(name = "respuesta_sunat")
@@ -87,25 +87,20 @@ public class Comprobante {
     @Column(name = "url_pdf")
     private String urlPdf;
 
-    @Column(name = "creado_en", updatable = false)
+    @Column(name = "creado_en", nullable = false, updatable = false)
     private LocalDateTime creadoEn;
 
-    @Column(name = "actualizado_en")
+    @Column(name = "actualizado_en", nullable = false)
     private LocalDateTime actualizadoEn;
 
     @PrePersist
-    void onCreate() {
+    protected void onCreate() {
         creadoEn = LocalDateTime.now();
         actualizadoEn = LocalDateTime.now();
-        if (moneda == null) moneda = "PEN";
-        if (estadoPago == null) estadoPago = EstadoPago.pendiente;
-        if (estadosSunat == null) estadosSunat = EstadoSunat.pendiente;
-        if (totalGravadoCentimos == null) totalGravadoCentimos = 0L;
-        if (totalIgvCentimos == null) totalIgvCentimos = 0L;
     }
 
     @PreUpdate
-    void onUpdate() {
+    protected void onUpdate() {
         actualizadoEn = LocalDateTime.now();
     }
 }

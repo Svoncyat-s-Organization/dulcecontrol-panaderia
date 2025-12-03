@@ -20,12 +20,3 @@ export const formatDateTime = (dateString) => {
     return dayjs(dateString).format('DD/MM/YYYY HH:mm');
 };
 
-/**
- * Verifica si una fecha está vencida
- * @param {string} dateString - Fecha en formato ISO
- * @returns {boolean} True si está vencida
- */
-export const isExpired = (dateString) => {
-    if (!dateString) return false;
-    return dayjs(dateString).isBefore(dayjs());
-};

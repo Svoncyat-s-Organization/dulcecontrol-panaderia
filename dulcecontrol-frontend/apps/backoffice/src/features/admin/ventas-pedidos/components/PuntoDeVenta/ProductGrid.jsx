@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, Input, Button, Typography, Spin, Empty } from 'antd';
+import { Card, Input, Button, Typography, Spin, Empty, Tag, message } from 'antd';
 import { SearchOutlined, PlusOutlined, ShopOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
@@ -7,6 +7,8 @@ import { getCategorias } from '../../../catalogo/api/categorias.api.js';
 import { getProductos } from '../../../catalogo/api/productos.api.js';
 import { useCartStore } from '../../hooks/useCartStore.js';
 import { Tabs } from 'antd';
+import { getInventarioProductosPorSede } from '../../../inventario/api/existencias.api.js';
+import { useCajaSession } from '../../hooks/useCajaSession.js';
 
 const { Text } = Typography;
 
@@ -15,6 +17,7 @@ const ProductGrid = () => {
     const [selectedCategory, setSelectedCategory] = useState('ALL');
     const tiendaId = useTokenStore((state) => state.tiendaId);
     const addItem = useCartStore((state) => state.addItem);
+    const { currentCaja } = useCajaSession();
 
     // Fetch Categorias
     // Fetch Categorias
@@ -36,6 +39,20 @@ const ProductGrid = () => {
         queryFn: () => getProductos(tiendaId, { visibleEnPos: true }),
         enabled: !!tiendaId,
         select: (data) => data.filter(p => p.visibleEnPos && p.activo)
+    });
+
+    // Fetch Inventory for current sede
+    const { data: inventario = [] } = useQuery({
+        queryKey: ['inventario', 'pos', tiendaId, currentCaja?.sedeId],
+        queryFn: () => getInventarioProductosPorSede(tiendaId, currentCaja.sedeId),
+        enabled: !!tiendaId && !!currentCaja?.sedeId,
+        select: (data) => Array.isArray(data) ? data : []
+    });
+
+    // Create a map of productoId -> stock
+    const stockMap = new Map();
+    inventario.forEach((inv) => {
+        stockMap.set(inv.productoId, inv.cantidadActual ?? 0);
     });
 
     const filteredProducts = productos.filter(p => {
@@ -94,7 +111,20 @@ const ProductGrid = () => {
                                     </div>
                                 }
                                 actions={[
-                                    <Button key="add" type="primary" block icon={<PlusOutlined />} onClick={() => addItem(item)}>
+                                    <Button
+                                        key="add"
+                                        type="primary"
+                                        block
+                                        icon={<PlusOutlined />}
+                                        onClick={() => {
+                                            const currentStock = stockMap.get(item.id) ?? 0;
+                                            if (currentStock <= 0) {
+                                                message.warning('Este producto no tiene stock disponible');
+                                                return;
+                                            }
+                                            addItem(item);
+                                        }}
+                                    >
                                         Agregar
                                     </Button>
                                 ]}
@@ -108,10 +138,13 @@ const ProductGrid = () => {
                                         Cód: {item.sku}
                                     </Text>
                                 </div>
-                                <div style={{ marginTop: 8 }}>
+                                <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <Text strong style={{ color: '#1890ff', fontSize: 18 }}>
                                         S/ {(item.precioBaseCentimos / 100).toFixed(2)}
                                     </Text>
+                                    <Tag color={(stockMap.get(item.id) ?? 0) > 0 ? 'green' : 'red'}>
+                                        Stock: {stockMap.get(item.id) ?? 0}
+                                    </Tag>
                                 </div>
                             </Card>
                         ))}

@@ -12,6 +12,7 @@ import { InsumosPage as ComprasInsumosPage, ProveedoresPage, OrdenesCompraPage }
 import { ClientesPage } from '../../features/admin/clientes/index.js';
 import { lazy } from 'react';
 import { StockIdealPage, RecetasPage, PlanificacionPage } from '../../features/admin/produccion/index.js';
+import { FacturacionPage, FacturacionDetallePage, SeriesPage } from '../../features/admin/facturacion/index.js';
 
 // Lazy loading para configuración
 const DatosEmpresaPage = lazy(() => import('../../features/admin/configuracion/pages/DatosEmpresaPage.jsx'));
@@ -23,16 +24,6 @@ const PLACEHOLDER_ROUTES = [
     path: 'facturacion',
     title: 'Facturación',
     description: 'Configura tus comprobantes electrónicos, series y formatos oficiales.',
-  },
-  {
-    path: 'facturacion/series-correlativos',
-    title: 'Series y correlativos',
-    description: 'Enlazaremos tus series con SUNAT para mantener la numeración bajo control.',
-  },
-  {
-    path: 'facturacion/comprobantes',
-    title: 'Comprobantes',
-    description: 'Revisa, descarga o anula los comprobantes emitidos por la tienda.',
   },
   {
     path: 'compras',
@@ -104,6 +95,11 @@ const adminRoutes = (
     <Route path="configuracion/datos-empresa" element={<DatosEmpresaPage />} />
     <Route path="configuracion/sedes" element={<SedesPage />} />
     <Route path="configuracion/tienda-virtual" element={<TiendaVirtualPage />} />
+
+    <Route path="facturacion/comprobantes" element={<FacturacionPage />} />
+    <Route path="facturacion/comprobantes/:id" element={<FacturacionDetallePage />} />
+    <Route path="facturacion/series-correlativos" element={<SeriesPage />} />
+
     {PLACEHOLDER_ROUTES.map(({ path, title, description }) => (
       <Route
         key={path}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import {
     Button,
     Table,
@@ -16,7 +16,7 @@ import {
     InputNumber,
     Switch,
 } from 'antd';
-import { EditOutlined, EyeOutlined, ReloadOutlined } from '@ant-design/icons';
+import { EditOutlined, EyeOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { getStateTag, SUBSCRIPTION_STATES } from '../../constants/subscriptionStates.js';
 import { centimosToPEN } from '../../utils/currencyFormatter.js';
 import { formatDate, formatDateTime } from '../../utils/dateFormatter.js';
@@ -46,20 +46,63 @@ const SuscripcionesManagerView = ({
     onSaveEdit,
     isSavingEdit,
     planes,
+    tiendas,
+    tiendasMap,
+    tiendasConSuscripcion,
+    isCreateModalOpen,
+    onOpenCreate,
+    onCloseCreate,
+    onCreate,
+    isCreating,
 }) => {
     const { token } = theme.useToken();
-    const [filterForm] = Form.useForm();
     const [editForm] = Form.useForm();
+    const [createForm] = Form.useForm();
 
-    useEffect(() => {
-        filterForm.setFieldsValue({
-            estado: filters.estado || undefined,
-            rangoFechas:
-                filters.fechaInicio && filters.fechaFin
-                    ? [dayjs(filters.fechaInicio), dayjs(filters.fechaFin)]
-                    : undefined,
-        });
-    }, [filters, filterForm]);
+    const planMap = useMemo(() => {
+        const map = new Map();
+        (planes || []).forEach((plan) => map.set(plan.id, plan));
+        return map;
+    }, [planes]);
+    const tiendasLabelMap = tiendasMap || new Map();
+    const tiendasConSuscripcionSet = tiendasConSuscripcion || new Set();
+
+    const setCreateFormValues = useCallback((values) => {
+        createForm.setFieldsValue(values);
+    }, [createForm]);
+
+    const getPlanPrecioByCiclo = (planId, ciclo) => {
+        const selectedPlan = planMap.get(planId);
+        if (!selectedPlan) return null;
+        const isAnual = ciclo === 'ANUAL';
+        const centimos = isAnual
+            ? (typeof selectedPlan.precioAnualCentimos === 'number'
+                ? selectedPlan.precioAnualCentimos
+                : selectedPlan.precioMensualCentimos)
+            : (typeof selectedPlan.precioMensualCentimos === 'number'
+                ? selectedPlan.precioMensualCentimos
+                : selectedPlan.precioAnualCentimos);
+        if (typeof centimos !== 'number') return null;
+        return Number((centimos / 100).toFixed(2));
+    };
+
+    const syncCreatePrecio = (planId, ciclo) => {
+        const precio = getPlanPrecioByCiclo(planId, ciclo);
+        if (precio === null) {
+            setCreateFormValues({ precioPactadoSoles: undefined });
+            return;
+        }
+        setCreateFormValues({ precioPactadoSoles: precio });
+    };
+
+    const syncFechaFin = (fechaInicio, ciclo) => {
+        if (!fechaInicio) return;
+        const dias = ciclo === 'ANUAL' ? 365 : 30;
+        const nuevaFechaFin = dayjs(fechaInicio).add(dias, 'day');
+        setCreateFormValues({ fechaFin: nuevaFechaFin });
+    };
+
+
 
     useEffect(() => {
         if (!editSuscripcion) {
@@ -80,40 +123,41 @@ const SuscripcionesManagerView = ({
         });
     }, [editSuscripcion, editForm]);
 
-    const filteredData = useMemo(() => {
-        if (!filters.fechaInicio && !filters.fechaFin) {
-            return suscripciones;
+    useEffect(() => {
+        if (!isCreateModalOpen) {
+            createForm.resetFields();
+            return;
         }
 
-        const start = filters.fechaInicio ? dayjs(filters.fechaInicio) : null;
-        const end = filters.fechaFin ? dayjs(filters.fechaFin) : null;
-
-        return suscripciones.filter((item) => {
-            if (!item.fechaFin) return false;
-            const fechaFin = dayjs(item.fechaFin);
-            if (start && fechaFin.isBefore(start, 'day')) return false;
-            if (end && fechaFin.isAfter(end, 'day')) return false;
-            return true;
+        const fechaInicio = dayjs();
+        setCreateFormValues({
+            ciclo: 'MENSUAL',
+            estado: SUBSCRIPTION_STATES.EN_PRUEBA,
+            autorenovar: true,
+            fechaInicio,
+            fechaFin: fechaInicio.add(30, 'day'),
         });
-    }, [suscripciones, filters.fechaInicio, filters.fechaFin]);
+    }, [isCreateModalOpen, createForm, setCreateFormValues]);
 
-    const handleFormChange = (_, allValues) => {
-        if ('estado' in allValues) {
-            onFilterChange('estado', allValues.estado);
+
+
+    const handleCreateFormChange = (changedValues, allValues) => {
+        const planId = allValues.planId;
+        const ciclo = allValues.ciclo || 'MENSUAL';
+
+        if (Object.prototype.hasOwnProperty.call(changedValues, 'planId')
+            || Object.prototype.hasOwnProperty.call(changedValues, 'ciclo')) {
+            syncCreatePrecio(planId, ciclo);
         }
 
-        if (Array.isArray(allValues.rangoFechas) && allValues.rangoFechas.length === 2) {
-            onFilterChange('fechaInicio', allValues.rangoFechas[0]?.toISOString());
-            onFilterChange('fechaFin', allValues.rangoFechas[1]?.toISOString());
-        } else if (!allValues.rangoFechas || allValues.rangoFechas.length === 0) {
-            onFilterChange('fechaInicio', undefined);
-            onFilterChange('fechaFin', undefined);
+        if (Object.prototype.hasOwnProperty.call(changedValues, 'fechaInicio')
+            || Object.prototype.hasOwnProperty.call(changedValues, 'ciclo')) {
+            if (allValues.fechaInicio) {
+                syncFechaFin(allValues.fechaInicio, ciclo);
+            } else {
+                setCreateFormValues({ fechaFin: null });
+            }
         }
-    };
-
-    const handleReset = () => {
-        filterForm.resetFields();
-        onResetFilters();
     };
 
     const columns = [
@@ -129,19 +173,16 @@ const SuscripcionesManagerView = ({
             dataIndex: 'tiendaId',
             key: 'tiendaId',
             width: 120,
-            render: (tiendaId) => <Text>{tiendaId ? `Tienda #${tiendaId}` : '-'}</Text>,
+            render: (_, record) => (
+                <Text>{record.tiendaNombre || tiendasLabelMap.get(record.tiendaId) || '-'}</Text>
+            ),
         },
         {
             title: 'Plan',
             dataIndex: 'planNombre',
             key: 'planNombre',
-            width: 220,
-            render: (_, record) => (
-                <Space orientation="vertical" size={0}>
-                    <Text strong>{record.planNombre || '-'}</Text>
-                    <Text type="secondary">{record.planCodigo || 'Sin código'}</Text>
-                </Space>
-            ),
+            width: 200,
+            render: (planNombre) => <Text strong>{planNombre || '-'}</Text>,
         },
         {
             title: 'Ciclo',
@@ -243,39 +284,18 @@ const SuscripcionesManagerView = ({
                     </Typography.Title>
                     <Text type="secondary">Administra las suscripciones de las tiendas.</Text>
                 </div>
+                <Button type="primary" icon={<PlusOutlined />} onClick={onOpenCreate}>
+                    Crear Suscripción
+                </Button>
             </div>
 
-            <Form
-                form={filterForm}
-                layout="vertical"
-                onValuesChange={handleFormChange}
-                style={{ marginBottom: 16 }}
-            >
-                <Space style={{ width: '100%' }} wrap>
-                    <Form.Item name="estado" label="Estado" style={{ minWidth: 180 }}>
-                        <Select placeholder="Todos los estados" allowClear>
-                            <Select.Option value={SUBSCRIPTION_STATES.EN_PRUEBA}>En Prueba</Select.Option>
-                            <Select.Option value={SUBSCRIPTION_STATES.ACTIVA}>Activa</Select.Option>
-                            <Select.Option value={SUBSCRIPTION_STATES.VENCIDA}>Vencida</Select.Option>
-                            <Select.Option value={SUBSCRIPTION_STATES.CANCELADA}>Cancelada</Select.Option>
-                        </Select>
-                    </Form.Item>
 
-                    <Form.Item name="rangoFechas" label="Fecha Fin">
-                        <RangePicker format="DD/MM/YYYY" allowClear />
-                    </Form.Item>
 
-                    <Form.Item label=" ">
-                        <Button icon={<ReloadOutlined />} onClick={handleReset}>
-                            Limpiar Filtros
-                        </Button>
-                    </Form.Item>
-                </Space>
-            </Form>
+
 
             <Table
                 columns={columns}
-                dataSource={filteredData}
+                dataSource={suscripciones}
                 loading={loading}
                 rowKey="id"
                 pagination={{
@@ -295,10 +315,14 @@ const SuscripcionesManagerView = ({
             >
                 <Descriptions bordered column={2} size="small">
                     <Descriptions.Item label="Tienda">
-                        {detailSuscripcion?.tiendaId ? `Tienda #${detailSuscripcion.tiendaId}` : '-'}
+                        {detailSuscripcion?.tiendaNombre
+                            || (detailSuscripcion?.tiendaId
+                                ? (tiendasLabelMap.get(detailSuscripcion.tiendaId)
+                                    || `Tienda #${detailSuscripcion.tiendaId}`)
+                                : '-')}
                     </Descriptions.Item>
                     <Descriptions.Item label="Plan">
-                        {detailSuscripcion?.planNombre || '-'} ({detailSuscripcion?.planCodigo || 'sin código'})
+                        {detailSuscripcion?.planNombre || '-'}
                     </Descriptions.Item>
                     <Descriptions.Item label="Ciclo">
                         <Tag color={detailSuscripcion?.ciclo === 'MENSUAL' ? 'blue' : 'purple'}>
@@ -434,6 +458,135 @@ const SuscripcionesManagerView = ({
                                 Guardar cambios
                             </Button>
                             <Button onClick={onCloseEdit} disabled={isSavingEdit}>
+                                Cancelar
+                            </Button>
+                        </Space>
+                    </Form.Item>
+                </Form>
+            </Modal>
+
+            <Modal
+                title="Crear suscripción"
+                open={isCreateModalOpen}
+                onCancel={onCloseCreate}
+                footer={null}
+                width={720}
+                destroyOnClose
+            >
+                <Form
+                    form={createForm}
+                    layout="vertical"
+                    onFinish={onCreate}
+                    onValuesChange={handleCreateFormChange}
+                    disabled={isCreating}
+                >
+                    <Form.Item
+                        label="Tienda"
+                        name="tiendaId"
+                        rules={[{ required: true, message: 'Selecciona una tienda' }]}
+                    >
+                        <Select
+                            placeholder="Selecciona una tienda"
+                            showSearch
+                            optionFilterProp="children"
+                        >
+                            {(tiendas || []).map((tienda) => {
+                                const label = tienda.nombreComercial || tienda.nombreDoc || `Tienda #${tienda.id}`;
+                                const disabled = tiendasConSuscripcionSet.has(tienda.id);
+                                return (
+                                    <Select.Option key={tienda.id} value={tienda.id} disabled={disabled}>
+                                        {label}{disabled ? ' (ya suscrita)' : ''}
+                                    </Select.Option>
+                                );
+                            })}
+                        </Select>
+                    </Form.Item>
+
+                    <Form.Item
+                        label="Plan"
+                        name="planId"
+                        rules={[{ required: true, message: 'Selecciona un plan' }]}
+                    >
+                        <Select placeholder="Selecciona un plan" showSearch optionFilterProp="children">
+                            {(planes || []).map((plan) => (
+                                <Select.Option key={plan.id} value={plan.id}>
+                                    {plan.nombre}
+                                </Select.Option>
+                            ))}
+                        </Select>
+                    </Form.Item>
+
+                    <Space style={{ width: '100%' }} size="large" wrap>
+                        <Form.Item
+                            label="Ciclo"
+                            name="ciclo"
+                            rules={[{ required: true, message: 'Selecciona un ciclo' }]}
+                            style={{ flex: 1, minWidth: 160 }}
+                        >
+                            <Select placeholder="Selecciona un ciclo">
+                                <Select.Option value="MENSUAL">Mensual</Select.Option>
+                                <Select.Option value="ANUAL">Anual</Select.Option>
+                            </Select>
+                        </Form.Item>
+
+                        <Form.Item
+                            label="Estado"
+                            name="estado"
+                            rules={[{ required: true, message: 'Selecciona un estado' }]}
+                            style={{ flex: 1, minWidth: 160 }}
+                        >
+                            <Select placeholder="Selecciona un estado">
+                                <Select.Option value={SUBSCRIPTION_STATES.EN_PRUEBA}>En Prueba</Select.Option>
+                                <Select.Option value={SUBSCRIPTION_STATES.ACTIVA}>Activa</Select.Option>
+                                <Select.Option value={SUBSCRIPTION_STATES.VENCIDA}>Vencida</Select.Option>
+                                <Select.Option value={SUBSCRIPTION_STATES.CANCELADA}>Cancelada</Select.Option>
+                            </Select>
+                        </Form.Item>
+                    </Space>
+
+                    <Form.Item
+                        label="Precio Pactado (Soles)"
+                        name="precioPactadoSoles"
+                        rules={[{ required: true, message: 'El precio pactado es obligatorio' }]}
+                    >
+                        <InputNumber
+                            min={0}
+                            step={0.01}
+                            precision={2}
+                            addonBefore="S/"
+                            style={{ width: 200 }}
+                            readOnly
+                        />
+                    </Form.Item>
+
+                    <Space style={{ width: '100%' }} size="large" wrap>
+                        <Form.Item
+                            label="Fecha de Inicio"
+                            name="fechaInicio"
+                            rules={[{ required: true, message: 'Selecciona la fecha de inicio' }]}
+                            style={{ flex: 1, minWidth: 200 }}
+                        >
+                            <DatePicker format="DD/MM/YYYY" style={{ width: '100%' }} />
+                        </Form.Item>
+                        <Form.Item
+                            label="Fecha de Fin"
+                            name="fechaFin"
+                            style={{ flex: 1, minWidth: 200 }}
+                        >
+                            <DatePicker format="DD/MM/YYYY" style={{ width: '100%' }} disabled />
+                        </Form.Item>
+                    </Space>
+
+                    <Form.Item label="Autorenovar" name="autorenovar" valuePropName="checked">
+                        <Switch />
+                    </Form.Item>
+
+                    <Form.Item>
+                        <Space>
+                            <Button type="primary" htmlType="submit" loading={isCreating}>
+                                Crear suscripción
+                            </Button>
+                            <Button onClick={onCloseCreate} disabled={isCreating}>
                                 Cancelar
                             </Button>
                         </Space>

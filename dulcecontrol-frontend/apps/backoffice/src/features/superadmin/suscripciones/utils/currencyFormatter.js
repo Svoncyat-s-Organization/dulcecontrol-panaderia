@@ -20,12 +20,3 @@ export const PENToCentimos = (soles) => {
     return Math.round(solesNum * 100);
 };
 
-/**
- * Formatea un número como moneda sin el símbolo
- * @param {number} value - Valor a formatear
- * @returns {string} Valor formateado (ej. "99.00")
- */
-export const formatCurrency = (value) => {
-    if (value === null || value === undefined) return '0.00';
-    return value.toFixed(2);
-};

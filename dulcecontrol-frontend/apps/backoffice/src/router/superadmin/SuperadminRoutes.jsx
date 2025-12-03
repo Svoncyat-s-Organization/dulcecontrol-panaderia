@@ -10,6 +10,7 @@ import SedesPage from '../../features/superadmin/tiendas/pages/SedesPage.jsx';
 import DominiosPage from '../../features/superadmin/tiendas/pages/DominiosPage.jsx';
 import UsuariosPage from '../../features/superadmin/tiendas/pages/UsuariosPage.jsx';
 import { SoporteTicketsPage } from '../../features/superadmin/soporte/index.js';
+import { FacturacionPage, FacturacionDetallePage, SeriesPage, MetodosPagoPage } from '../../features/superadmin/facturacion/index.js';
 
 const superadminRoutes = (
   <Route
@@ -21,12 +22,8 @@ const superadminRoutes = (
     }
   >
     <Route index element={<Navigate to="tablero" replace />} />
-    <Route
-      path="tablero"
-      element={
-        <SuperadminDashboardPage />
-      }
-    />
+    <Route path="tablero" element={<SuperadminDashboardPage />} />
+
     <Route path="tiendas/directorio" element={<TiendasPage />} />
     <Route path="tiendas/sedes" element={<SedesPage />} />
     <Route path="tiendas/:tiendaId/sedes" element={<SedesPage />} />
@@ -34,46 +31,18 @@ const superadminRoutes = (
     <Route path="tiendas/:tiendaId/dominios" element={<DominiosPage />} />
     <Route path="tiendas/usuarios" element={<UsuariosPage />} />
     <Route path="tiendas/:tiendaId/usuarios" element={<UsuariosPage />} />
-    <Route
-      path="suscripciones/planes"
-      element={<PlanesManager />}
-    />
-    <Route
-      path="suscripciones/activas"
-      element={<SuscripcionesManager />}
-    />
-    <Route
-      path="suscripciones/historial"
-      element={<HistorialManager />}
-    />
-    <Route
-      path="facturacion/comprobantes"
-      element={
-        <PlaceholderPage
-          title="Comprobantes"
-          description="Estamos integrando Sunat y los proveedores de facturación electrónica para listar todos los comprobantes."
-        />
-      }
-    />
-    <Route
-      path="facturacion/metodos-pago"
-      element={
-        <PlaceholderPage
-          title="Métodos de pago"
-          description="Administra pasarelas y cuentas bancarias próximamente desde un único panel."
-        />
-      }
-    />
-    <Route
-      path="facturacion/configuracion-fiscal"
-      element={
-        <PlaceholderPage
-          title="Configuración fiscal"
-          description="Configuraciones tributarias y series de comprobantes estarán disponibles en breve."
-        />
-      }
-    />
+
+    <Route path="suscripciones/planes" element={<PlanesManager />} />
+    <Route path="suscripciones/activas" element={<SuscripcionesManager />} />
+    <Route path="suscripciones/historial" element={<HistorialManager />} />
+
+    <Route path="facturacion/comprobantes" element={<FacturacionPage />} />
+    <Route path="facturacion/comprobantes/:id" element={<FacturacionDetallePage />} />
+    <Route path="facturacion/configuracion-fiscal" element={<SeriesPage />} />
+    <Route path="facturacion/metodos-pago" element={<MetodosPagoPage />} />
+
     <Route path="soporte" element={<SoporteTicketsPage />} />
+
     <Route
       path="seguridad/equipo-superadmin"
       element={
@@ -92,6 +61,7 @@ const superadminRoutes = (
         />
       }
     />
+
     <Route
       path="*"
       element={
