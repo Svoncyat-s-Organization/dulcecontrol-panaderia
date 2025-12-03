@@ -149,7 +149,13 @@ const CajaControlView = ({
                 <ShopOutlined style={{ fontSize: 48, color: '#faad14', marginBottom: 24 }} />
                 <h2>Caja Cerrada</h2>
                 <br />
-                <Button type="primary" size="large" icon={<UnlockOutlined />} onClick={onOpenClick} style={{ marginBottom: 24 }}>
+                <Button
+                    type="primary"
+                    size="large"
+                    icon={<UnlockOutlined />}
+                    onClick={onOpenClick}
+                    style={{ marginBottom: 24 }}
+                >
                     Abrir Caja
                 </Button>
                 <p>Debe abrir una sesión de caja para poder realizar ventas.</p>
@@ -182,7 +188,12 @@ const CajaControlView = ({
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                             <Text type="secondary">Inicio: <Text strong>S/ {((session?.montoInicialCentimos ?? 0) / 100).toFixed(2)}</Text></Text>
-                            <Button danger size="small" icon={<LockOutlined />} onClick={onCloseClick}>
+                            <Button
+                                danger
+                                size="small"
+                                icon={<LockOutlined />}
+                                onClick={onCloseClick}
+                            >
                                 Cerrar
                             </Button>
                         </div>

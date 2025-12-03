@@ -43,7 +43,7 @@ public class AuthService {
 
         String token = jwtProvider.generarToken(usuario.getCorreo(), "ROLE_SUPERADMIN", TipoUsuario.SUPERADMIN, null,
             construirClaimsNombre(usuario.getNombres()));
-        return buildResponse(token, TipoUsuario.SUPERADMIN, null);
+        return buildResponse(token, TipoUsuario.SUPERADMIN, null, usuario.getId());
     }
 
     public AuthTokenResponse loginAdmin(AdminLoginRequest request) {
@@ -60,7 +60,7 @@ public class AuthService {
         Long tiendaId = usuario.getTiendaId();
         String token = jwtProvider.generarToken(usuario.getCorreo(), "ROLE_ADMIN", TipoUsuario.ADMIN, tiendaId,
             construirClaimsNombre(usuario.getNombres()));
-        return buildResponse(token, TipoUsuario.ADMIN, tiendaId);
+        return buildResponse(token, TipoUsuario.ADMIN, tiendaId, usuario.getId());
     }
 
     public AuthTokenResponse loginStorefront(StorefrontLoginRequest request) {
@@ -77,7 +77,7 @@ public class AuthService {
 
         String token = jwtProvider.generarToken(cliente.getEmail(), "ROLE_CLIENTE", TipoUsuario.CLIENTE, tiendaId,
             construirClaimsNombre(cliente.getNombreDoc()));
-        return buildResponse(token, TipoUsuario.CLIENTE, tiendaId);
+        return buildResponse(token, TipoUsuario.CLIENTE, tiendaId, cliente.getId());
     }
 
     private void validarPassword(String rawPassword, String hash) {
@@ -93,13 +93,14 @@ public class AuthService {
         return email.trim().toLowerCase();
     }
 
-    private AuthTokenResponse buildResponse(String token, TipoUsuario tipoUsuario, Long tiendaId) {
+    private AuthTokenResponse buildResponse(String token, TipoUsuario tipoUsuario, Long tiendaId, Long userId) {
         return AuthTokenResponse.builder()
                 .token(token)
                 .tokenType("Bearer")
                 .expiresIn(jwtProvider.getExpirationTime())
                 .userType(tipoUsuario)
                 .tiendaId(tiendaId)
+                .userId(userId)
                 .build();
     }
 

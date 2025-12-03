@@ -8,6 +8,7 @@ import com.dulcecontrol.bakery.features.admin.seguridad.entity.Rol;
 import com.dulcecontrol.bakery.features.admin.seguridad.repository.PermisoRepository;
 import com.dulcecontrol.bakery.features.admin.seguridad.repository.RolPermisoRepository;
 import com.dulcecontrol.bakery.features.admin.seguridad.repository.RolRepository;
+import com.dulcecontrol.bakery.features.admin.seguridad.repository.UsuarioTiendaRepository;
 import com.dulcecontrol.bakery.features.admin.seguridad.service.IRolAdminService;
 import com.dulcecontrol.bakery.shared.exception.BadRequestException;
 import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
@@ -26,6 +27,7 @@ public class RolAdminService implements IRolAdminService {
     private final RolRepository rolRepository;
     private final PermisoRepository permisoRepository;
     private final RolPermisoRepository rolPermisoRepository;
+    private final UsuarioTiendaRepository usuarioTiendaRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -105,6 +107,10 @@ public class RolAdminService implements IRolAdminService {
 
         if (Boolean.TRUE.equals(rol.getEsSistema())) {
             throw new BadRequestException("No se puede eliminar un rol del sistema");
+        }
+
+        if (usuarioTiendaRepository.existsByTiendaIdAndRolId(tiendaId, rolId)) {
+            throw new BadRequestException("No se puede eliminar un rol asignado a usuarios activos");
         }
 
         rolPermisoRepository.deleteByRolId(rol.getId());

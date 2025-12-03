@@ -13,4 +13,5 @@ public class AuthTokenResponse {
     private final Long expiresIn;
     private final TipoUsuario userType;
     private final Long tiendaId;
+    private final Long userId;
 }
