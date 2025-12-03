@@ -11,6 +11,7 @@ import DominiosPage from '../../features/superadmin/tiendas/pages/DominiosPage.j
 import UsuariosPage from '../../features/superadmin/tiendas/pages/UsuariosPage.jsx';
 import { SoporteTicketsPage } from '../../features/superadmin/soporte/index.js';
 import { FacturacionPage, FacturacionDetallePage, SeriesPage, MetodosPagoPage } from '../../features/superadmin/facturacion/index.js';
+import ObtenerTokenPage from '../../features/superadmin/token/pages/ObtenerTokenPage.jsx';
 
 const superadminRoutes = (
   <Route
@@ -42,6 +43,8 @@ const superadminRoutes = (
     <Route path="facturacion/metodos-pago" element={<MetodosPagoPage />} />
 
     <Route path="soporte" element={<SoporteTicketsPage />} />
+
+    <Route path="token" element={<ObtenerTokenPage />} />
 
     <Route
       path="seguridad/equipo-superadmin"
