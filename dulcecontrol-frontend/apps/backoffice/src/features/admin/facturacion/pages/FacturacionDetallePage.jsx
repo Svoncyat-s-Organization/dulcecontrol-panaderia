@@ -88,75 +88,73 @@ const FacturacionDetallePage = () => {
         if (!comprobante) return;
 
         const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.width;
 
         // --- Header ---
-        // Company Info (Left)
-        doc.setFontSize(14);
+        // Title (Top Left)
+        doc.setFontSize(40);
+        doc.setFont('courier', 'bold');
         doc.setFont(undefined, 'bold');
-        doc.text(comprobante.emisorRazonSocial || 'EMPRESA', 14, 20);
+        doc.text(comprobante.tipoComprobante || 'COMPROBANTE', 14, 25);
 
-        doc.setFontSize(9);
-        doc.setFont(undefined, 'normal');
-        doc.text(comprobante.emisorDireccion || '', 14, 26);
-        doc.text('LIMA - LIMA - PERÚ', 14, 31);
-        doc.text('Teléfono: (01) 123-4567', 14, 36);
-        doc.text('Email: contacto@dulcecontrol.pe', 14, 41);
+        // Logo (Top Right) - Placeholder Circle
+        doc.setFillColor(150, 150, 150);
+        doc.circle(pageWidth - 25, 20, 12, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10);
+        doc.text('LOGO', pageWidth - 25, 21, { align: 'center' });
+        doc.setTextColor(0, 0, 0);
 
-        // RUC Box (Right)
-        const rucBoxX = 135;
-        const rucBoxY = 15;
-        const rucBoxWidth = 60;
-        const rucBoxHeight = 30;
+        // --- Info Section ---
+        const startY = 45;
+        const leftColWidth = 90;
 
-        doc.setDrawColor(0);
-        doc.setLineWidth(0.5);
-        doc.rect(rucBoxX, rucBoxY, rucBoxWidth, rucBoxHeight);
-
-        doc.setFontSize(11);
+        // DE (Issuer)
+        doc.setFontSize(10);
         doc.setFont(undefined, 'bold');
-        doc.text(`R.U.C. ${comprobante.emisorRuc}`, rucBoxX + 30, rucBoxY + 8, { align: 'center' });
-
-        // Box Title Background
-        doc.setFillColor(240, 240, 240);
-        doc.rect(rucBoxX, rucBoxY + 10, rucBoxWidth, 10, 'F');
-        doc.setDrawColor(0); // Reset draw color after fill
-        doc.rect(rucBoxX, rucBoxY + 10, rucBoxWidth, 10); // Redraw border
-
-        doc.text(`${comprobante.tipoComprobante} ELECTRÓNICA`, rucBoxX + 30, rucBoxY + 17, { align: 'center' });
-
-        doc.setFontSize(12);
+        doc.text('DE', 14, startY);
         doc.setFont(undefined, 'normal');
-        doc.text(`${comprobante.serie} - ${String(comprobante.correlativo).padStart(8, '0')}`, rucBoxX + 30, rucBoxY + 26, { align: 'center' });
+        doc.text(comprobante.emisorRazonSocial || '', 14, startY + 6);
 
-        // --- Client Info ---
-        const clientY = 55;
-        doc.setFontSize(9);
+        // Wrap address
+        const emisorDirLines = doc.splitTextToSize(comprobante.emisorDireccion || '', leftColWidth);
+        doc.text(emisorDirLines, 14, startY + 11);
 
-        // Labels
+        // Adjust Y for RUC based on address lines
+        const rucY = startY + 11 + (emisorDirLines.length * 4);
+        doc.text(`RUC: ${comprobante.emisorRuc}`, 14, rucY);
+
+        // Invoice Details (Right Side)
+        const rightColX = 130; // Moved further right to avoid overlap
         doc.setFont(undefined, 'bold');
-        doc.text('Fecha de Emisión:', 14, clientY);
-        doc.text('Señor(es):', 14, clientY + 6);
-        doc.text(`${comprobante.clienteTipoDoc}:`, 14, clientY + 12);
-        doc.text('Dirección:', 14, clientY + 18);
-        doc.text('Moneda:', 14, clientY + 24);
-
-        // Values
+        doc.text(`N° DE ${comprobante.tipoComprobante}`, rightColX, startY, { align: 'right' });
         doc.setFont(undefined, 'normal');
-        doc.text(dayjs(comprobante.fechaEmision).format('DD/MM/YYYY'), 50, clientY);
-        doc.text(comprobante.clienteNombre, 50, clientY + 6);
-        doc.text(comprobante.clienteNumeroDoc, 50, clientY + 12);
-        doc.text(comprobante.clienteDireccion || '-', 50, clientY + 18);
-        doc.text(comprobante.moneda === 'PEN' ? 'SOLES' : 'DOLARES AMERICANOS', 50, clientY + 24);
+        doc.text(`${comprobante.serie}-${String(comprobante.correlativo).padStart(8, '0')}`, pageWidth - 14, startY, { align: 'right' });
 
-        // --- Items Table ---
-        const tableColumn = ["Cant.", "Unidad", "Descripción", "P. Unit", "Total"];
+        doc.setFont(undefined, 'bold');
+        doc.text('FECHA', rightColX, startY + 6, { align: 'right' });
+        doc.setFont(undefined, 'normal');
+        doc.text(dayjs(comprobante.fechaEmision).format('DD/MM/YYYY'), pageWidth - 14, startY + 6, { align: 'right' });
+
+        doc.setFont(undefined, 'bold');
+        doc.text('N° DE PEDIDO', rightColX, startY + 12, { align: 'right' });
+        doc.setFont(undefined, 'normal');
+        doc.text(`#${comprobante.referenciaId || '-'}`, pageWidth - 14, startY + 12, { align: 'right' });
+
+        doc.setFont(undefined, 'bold');
+        doc.text('FECHA VENCIMIENTO', rightColX, startY + 18, { align: 'right' });
+        doc.setFont(undefined, 'normal');
+        doc.text(dayjs(comprobante.fechaEmision).add(15, 'day').format('DD/MM/YYYY'), pageWidth - 14, startY + 18, { align: 'right' });
+
+        // --- Table ---
+        const tableStartY = startY + 30;
+        const tableColumn = ["CANT.", "DESCRIPCIÓN", "PRECIO UNITARIO", "IMPORTE"];
         const tableRows = [];
 
         if (comprobante.detalles) {
             comprobante.detalles.forEach(detail => {
                 const detailData = [
                     detail.cantidad,
-                    'NIU',
                     detail.descripcion,
                     (detail.precioUnitario / 100).toFixed(2),
                     (detail.subtotal / 100).toFixed(2)
@@ -168,45 +166,69 @@ const FacturacionDetallePage = () => {
         autoTable(doc, {
             head: [tableColumn],
             body: tableRows,
-            startY: clientY + 32,
+            startY: tableStartY,
             theme: 'plain',
-            styles: { fontSize: 9, cellPadding: 2 },
-            headStyles: { fillColor: [240, 240, 240], textColor: 0, fontStyle: 'bold', lineWidth: 0.1, lineColor: 0 },
-            bodyStyles: { lineWidth: 0.1, lineColor: 0 },
+            styles: {
+                fontSize: 10,
+                cellPadding: 3,
+                lineColor: [0, 0, 0],
+                lineWidth: 0.1,
+            },
+            headStyles: {
+                fillColor: [255, 255, 255],
+                textColor: 0,
+                fontStyle: 'bold',
+                halign: 'left',
+                lineWidth: { top: 0.5, bottom: 0.5, left: 0, right: 0 }
+            },
+            bodyStyles: {
+                lineWidth: { bottom: 0.1 },
+            },
             columnStyles: {
                 0: { halign: 'center', cellWidth: 20 },
-                1: { halign: 'center', cellWidth: 20 },
-                3: { halign: 'right', cellWidth: 30 },
-                4: { halign: 'right', cellWidth: 30 }
+                2: { halign: 'right', cellWidth: 40 },
+                3: { halign: 'right', cellWidth: 40 }
+            },
+            didParseCell: (data) => {
+                if (data.section === 'body' || data.section === 'head') {
+                    data.cell.styles.lineWidth = { top: data.cell.styles.lineWidth?.top || 0, bottom: data.cell.styles.lineWidth?.bottom || 0.1, left: 0, right: 0 };
+                    if (data.section === 'head') {
+                        data.cell.styles.lineWidth = { top: 0.5, bottom: 0.5, left: 0, right: 0 };
+                    }
+                }
             }
         });
 
         // --- Totals ---
         const finalY = doc.lastAutoTable.finalY + 10;
-        const rightX = 195;
-        const labelX = 140;
+        const rightX = pageWidth - 14;
 
-        doc.setFontSize(9);
-
-        doc.text(`Op. Gravada:`, labelX, finalY);
-        doc.text(`${comprobante.moneda === 'PEN' ? 'S/' : '$'} ${(comprobante.totalGravadoCentimos / 100).toFixed(2)}`, rightX, finalY, { align: 'right' });
-
-        doc.text(`IGV (18%):`, labelX, finalY + 6);
-        doc.text(`${comprobante.moneda === 'PEN' ? 'S/' : '$'} ${(comprobante.totalIgvCentimos / 100).toFixed(2)}`, rightX, finalY + 6, { align: 'right' });
-
-        doc.setFont(undefined, 'bold');
-        doc.text(`IMPORTE TOTAL:`, labelX, finalY + 14);
-        doc.text(`${comprobante.moneda === 'PEN' ? 'S/' : '$'} ${(comprobante.totalImporteCentimos / 100).toFixed(2)}`, rightX, finalY + 14, { align: 'right' });
-
-        // --- Footer ---
-        const pageHeight = doc.internal.pageSize.height;
-        doc.setFontSize(8);
+        doc.setFontSize(10);
         doc.setFont(undefined, 'normal');
-        doc.text(`Representación Impresa de la ${comprobante.tipoComprobante} ELECTRÓNICA.`, 105, pageHeight - 20, { align: 'center' });
-        doc.text('Autorizado mediante Resolución de Intendencia No. 034-005-0005315', 105, pageHeight - 15, { align: 'center' });
-        doc.text('Consulte su documento en www.dulcecontrol.pe', 105, pageHeight - 10, { align: 'center' });
 
-        doc.save(`${comprobante.serie}-${comprobante.correlativo}.pdf`);
+        // Subtotal
+        doc.text('Subtotal', rightX - 50, finalY, { align: 'right' });
+        doc.text((comprobante.totalGravadoCentimos / 100).toFixed(2), rightX, finalY, { align: 'right' });
+
+        // IGV
+        doc.text('IGV 18%', rightX - 50, finalY + 6, { align: 'right' });
+        doc.text((comprobante.totalIgvCentimos / 100).toFixed(2), rightX, finalY + 6, { align: 'right' });
+
+        // TOTAL BOX
+        const totalBoxY = finalY + 15;
+        doc.setDrawColor(0);
+        doc.setLineWidth(1);
+        doc.rect(14, totalBoxY, pageWidth - 28, 15);
+
+        doc.setFontSize(16);
+        doc.setFont(undefined, 'bold');
+        doc.text('TOTAL', 20, totalBoxY + 10);
+
+        const symbol = comprobante.moneda === 'PEN' ? 'S/' : '$';
+        const totalAmount = (comprobante.totalImporteCentimos / 100).toFixed(2);
+        doc.text(`${symbol} ${totalAmount}`, pageWidth - 20, totalBoxY + 10, { align: 'right' });
+
+        doc.save(`${comprobante.serie}-${String(comprobante.correlativo).padStart(8, '0')}.pdf`);
     };
 
     const handleExportarXML = () => {
@@ -438,187 +460,164 @@ const FacturacionDetallePage = () => {
                             background-color: white !important;
                             z-index: 9999;
                             padding: 40px;
-                            font-family: 'Arial', sans-serif;
+                            font-family: 'Courier New', Courier, monospace;
                             color: #000;
                         }
                         #invoice-print-template * {
                             visibility: visible;
                         }
-                        /* Hide everything else */
-                        .ant-layout-sider, .ant-layout-header, .ant-breadcrumb, .ant-card, .ant-btn, .ant-alert, .no-print {
+                        .no-print {
                             display: none !important;
                         }
-                        
-                        /* Invoice Styles */
-                        .invoice-header {
+
+                        /* Layout */
+                        .print-header {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: flex-start;
+                            margin-bottom: 40px;
+                        }
+                        .print-title {
+                            font-size: 40px;
+                            font-weight: bold;
+                        }
+                        .print-logo {
+                            width: 60px;
+                            height: 60px;
+                            background-color: #999;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            color: white;
+                            font-family: Arial, sans-serif;
+                            font-size: 12px;
+                        }
+
+                        .print-info-row {
                             display: flex;
                             justify-content: space-between;
                             margin-bottom: 30px;
                         }
-                        .company-info {
-                            flex: 1;
-                        }
-                        .company-name {
-                            font-size: 24px;
-                            font-weight: bold;
-                            margin-bottom: 5px;
-                            text-transform: uppercase;
-                        }
-                        .company-details {
+                        .print-issuer {
+                            width: 45%;
+                            font-family: Arial, sans-serif;
                             font-size: 12px;
-                            line-height: 1.4;
                         }
-                        .invoice-box {
-                            width: 300px;
-                            border: 2px solid #000;
-                            text-align: center;
-                            padding: 15px;
-                            margin-left: 20px;
-                        }
-                        .invoice-box-ruc {
-                            font-size: 14px;
+                        .print-issuer-label {
                             font-weight: bold;
                             margin-bottom: 5px;
                         }
-                        .invoice-box-type {
-                            font-size: 18px;
-                            font-weight: bold;
-                            background-color: #eee;
-                            padding: 5px 0;
-                            margin: 5px 0;
-                        }
-                        .invoice-box-number {
-                            font-size: 16px;
-                        }
-                        
-                        .client-info {
-                            border: 1px solid #ccc;
-                            padding: 10px;
-                            margin-bottom: 20px;
+                        .print-invoice-data {
+                            width: 45%;
+                            text-align: right;
+                            font-family: Arial, sans-serif;
                             font-size: 12px;
                         }
-                        .info-row {
+                        .data-row {
                             display: flex;
-                            margin-bottom: 5px;
+                            justify-content: flex-end;
+                            margin-bottom: 4px;
                         }
-                        .info-label {
+                        .data-label {
                             font-weight: bold;
-                            width: 120px;
+                            margin-right: 10px;
                         }
-                        
-                        .items-table {
+
+                        .print-table {
                             width: 100%;
                             border-collapse: collapse;
-                            margin-bottom: 20px;
+                            margin-bottom: 30px;
+                            font-family: Arial, sans-serif;
                             font-size: 12px;
                         }
-                        .items-table th {
-                            border: 1px solid #000;
+                        .print-table th {
+                            text-align: left;
                             padding: 8px;
-                            background-color: #eee;
-                            text-align: center;
-                            font-weight: bold;
+                            border-top: 2px solid #000;
+                            border-bottom: 2px solid #000;
                         }
-                        .items-table td {
-                            border: 1px solid #000;
+                        .print-table td {
                             padding: 8px;
+                            border-bottom: 1px solid #eee;
                         }
                         .text-right { text-align: right; }
                         .text-center { text-align: center; }
-                        
-                        .totals-section {
+
+                        .print-totals {
                             display: flex;
-                            justify-content: flex-end;
-                            margin-bottom: 40px;
-                        }
-                        .totals-table {
-                            width: 300px;
-                            border-collapse: collapse;
+                            flex-direction: column;
+                            align-items: flex-end;
+                            font-family: Arial, sans-serif;
                             font-size: 12px;
                         }
-                        .totals-table td {
-                            padding: 5px;
-                            border: 1px solid #ccc;
+                        .total-row {
+                            display: flex;
+                            justify-content: flex-end;
+                            width: 300px;
+                            margin-bottom: 5px;
                         }
-                        .total-row td {
+                        .total-box {
+                            margin-top: 10px;
+                            border: 2px solid #000;
+                            padding: 10px 20px;
+                            width: 100%;
+                            display: flex;
+                            justify-content: space-between;
+                            font-size: 18px;
                             font-weight: bold;
-                            background-color: #eee;
-                            border: 1px solid #000;
-                        }
-                        
-                        .footer {
-                            border-top: 1px solid #000;
-                            padding-top: 10px;
-                            text-align: center;
-                            font-size: 11px;
                         }
                     }
                 `}
             </style>
 
-            <div style={{ marginBottom: 16 }} className="no-print">
-                <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/admin/facturacion/comprobantes')}>
-                    Volver al listado
-                </Button>
-            </div>
-
-            {/* Template de Impresión (Factura/Boleta) */}
+            {/* Print Template */}
             <div id="invoice-print-template" style={{ display: 'none' }}>
-                <div className="invoice-header">
-                    <div className="company-info">
-                        <div className="company-name">{comprobante.emisorRazonSocial}</div>
-                        <div className="company-details">
-                            {comprobante.emisorDireccion}<br />
-                            LIMA - LIMA - PERÚ<br />
-                            Teléfono: (01) 123-4567<br />
-                            Email: contacto@dulcecontrol.pe
+                <div className="print-header">
+                    <div className="print-title">{comprobante.tipoComprobante || 'COMPROBANTE'}</div>
+                    <div className="print-logo">LOGO</div>
+                </div>
+
+                <div className="print-info-row">
+                    <div className="print-issuer">
+                        <div className="print-issuer-label">DE</div>
+                        <div>{comprobante.emisorRazonSocial}</div>
+                        <div>{comprobante.emisorDireccion}</div>
+                        <div style={{ marginTop: 5 }}>RUC: {comprobante.emisorRuc}</div>
+                    </div>
+                    <div className="print-invoice-data">
+                        <div className="data-row">
+                            <span className="data-label">N° DE {comprobante.tipoComprobante}</span>
+                            <span>{comprobante.serie}-{String(comprobante.correlativo).padStart(8, '0')}</span>
+                        </div>
+                        <div className="data-row">
+                            <span className="data-label">FECHA</span>
+                            <span>{dayjs(comprobante.fechaEmision).format('DD/MM/YYYY')}</span>
+                        </div>
+                        <div className="data-row">
+                            <span className="data-label">N° DE PEDIDO</span>
+                            <span>#{comprobante.referenciaId || '-'}</span>
+                        </div>
+                        <div className="data-row">
+                            <span className="data-label">FECHA VENCIMIENTO</span>
+                            <span>{dayjs(comprobante.fechaEmision).add(15, 'day').format('DD/MM/YYYY')}</span>
                         </div>
                     </div>
-                    <div className="invoice-box">
-                        <div className="invoice-box-ruc">R.U.C. {comprobante.emisorRuc}</div>
-                        <div className="invoice-box-type">{comprobante.tipoComprobante} ELECTRÓNICA</div>
-                        <div className="invoice-box-number">{comprobante.serie} - {String(comprobante.correlativo).padStart(8, '0')}</div>
-                    </div>
                 </div>
 
-                <div className="client-info">
-                    <div className="info-row">
-                        <div className="info-label">Fecha de Emisión:</div>
-                        <div>{dayjs(comprobante.fechaEmision).format('DD/MM/YYYY')}</div>
-                    </div>
-                    <div className="info-row">
-                        <div className="info-label">Señor(es):</div>
-                        <div>{comprobante.clienteNombre}</div>
-                    </div>
-                    <div className="info-row">
-                        <div className="info-label">{comprobante.clienteTipoDoc}:</div>
-                        <div>{comprobante.clienteNumeroDoc}</div>
-                    </div>
-                    <div className="info-row">
-                        <div className="info-label">Dirección:</div>
-                        <div>{comprobante.clienteDireccion || '-'}</div>
-                    </div>
-                    <div className="info-row">
-                        <div className="info-label">Moneda:</div>
-                        <div>{comprobante.moneda === 'PEN' ? 'SOLES' : 'DOLARES AMERICANOS'}</div>
-                    </div>
-                </div>
-
-                <table className="items-table">
+                <table className="print-table">
                     <thead>
                         <tr>
-                            <th style={{ width: '50px' }}>Cant.</th>
-                            <th style={{ width: '60px' }}>Unidad</th>
-                            <th>Descripción</th>
-                            <th style={{ width: '80px' }}>P. Unit</th>
-                            <th style={{ width: '80px' }}>Total</th>
+                            <th className="text-center" style={{ width: '10%' }}>CANT.</th>
+                            <th style={{ width: '50%' }}>DESCRIPCIÓN</th>
+                            <th className="text-right" style={{ width: '20%' }}>PRECIO UNITARIO</th>
+                            <th className="text-right" style={{ width: '20%' }}>IMPORTE</th>
                         </tr>
                     </thead>
                     <tbody>
                         {comprobante.detalles && comprobante.detalles.map((item, idx) => (
                             <tr key={idx}>
                                 <td className="text-center">{item.cantidad}</td>
-                                <td className="text-center">NIU</td>
                                 <td>{item.descripcion}</td>
                                 <td className="text-right">{(item.precioUnitario / 100).toFixed(2)}</td>
                                 <td className="text-right">{(item.subtotal / 100).toFixed(2)}</td>
@@ -627,29 +626,19 @@ const FacturacionDetallePage = () => {
                     </tbody>
                 </table>
 
-                <div className="totals-section">
-                    <table className="totals-table">
-                        <tbody>
-                            <tr>
-                                <td className="text-right">Op. Gravada:</td>
-                                <td className="text-right">{comprobante.moneda === 'PEN' ? 'S/' : '$'} {(comprobante.totalGravadoCentimos / 100).toFixed(2)}</td>
-                            </tr>
-                            <tr>
-                                <td className="text-right">IGV (18%):</td>
-                                <td className="text-right">{comprobante.moneda === 'PEN' ? 'S/' : '$'} {(comprobante.totalIgvCentimos / 100).toFixed(2)}</td>
-                            </tr>
-                            <tr className="total-row">
-                                <td className="text-right">IMPORTE TOTAL:</td>
-                                <td className="text-right">{comprobante.moneda === 'PEN' ? 'S/' : '$'} {(comprobante.totalImporteCentimos / 100).toFixed(2)}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div className="footer">
-                    <p>Representación Impresa de la {comprobante.tipoComprobante} ELECTRÓNICA.</p>
-                    <p>Autorizado mediante Resolución de Intendencia No. 034-005-0005315</p>
-                    <p>Consulte su documento en <strong>www.dulcecontrol.pe</strong></p>
+                <div className="print-totals">
+                    <div className="total-row">
+                        <span style={{ marginRight: 20 }}>Subtotal</span>
+                        <span>{(comprobante.totalGravadoCentimos / 100).toFixed(2)}</span>
+                    </div>
+                    <div className="total-row">
+                        <span style={{ marginRight: 20 }}>IGV 18%</span>
+                        <span>{(comprobante.totalIgvCentimos / 100).toFixed(2)}</span>
+                    </div>
+                    <div className="total-box">
+                        <span>TOTAL</span>
+                        <span>{comprobante.moneda === 'PEN' ? 'S/' : '$'} {(comprobante.totalImporteCentimos / 100).toFixed(2)}</span>
+                    </div>
                 </div>
             </div>
 

@@ -4,6 +4,7 @@ import SuperadminLayout from '../../layout/superadmin/SuperadminLayout.jsx';
 import PlaceholderPage from '../../shared/components/PlaceholderPage.jsx';
 import { VerTableroPage as SuperadminDashboardPage } from '../../features/superadmin/tablero/index.js';
 import NotFoundPage from '../../shared/components/NotFoundPage.jsx';
+import { FacturacionPage, FacturacionDetallePage, SeriesPage } from '../../features/superadmin/facturacion/index.js';
 
 const superadminRoutes = (
     <Route
@@ -74,12 +75,11 @@ const superadminRoutes = (
         />
         <Route
             path="facturacion/comprobantes"
-            element={
-                <PlaceholderPage
-                    title="Comprobantes"
-                    description="Estamos integrando Sunat y los proveedores de facturación electrónica para listar todos los comprobantes."
-                />
-            }
+            element={<FacturacionPage />}
+        />
+        <Route
+            path="facturacion/comprobantes/:id"
+            element={<FacturacionDetallePage />}
         />
         <Route
             path="facturacion/metodos-pago"
@@ -92,12 +92,7 @@ const superadminRoutes = (
         />
         <Route
             path="facturacion/configuracion-fiscal"
-            element={
-                <PlaceholderPage
-                    title="Configuración fiscal"
-                    description="Configuraciones tributarias y series de comprobantes estarán disponibles en breve."
-                />
-            }
+            element={<SeriesPage />}
         />
         <Route
             path="soporte"
