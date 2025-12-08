@@ -160,7 +160,7 @@ const VerTableroPage = () => {
   }
 
   return (
-    <Space orientation="vertical" size="large" style={{ width: '100%' }}>
+    <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <div>
         <Title level={2} style={{ marginBottom: 0 }}>
           Tablero corporativo
@@ -205,7 +205,7 @@ const VerTableroPage = () => {
         <Col xs={24} lg={12}>
           <Card title="Tickets críticos en soporte" styles={{ body: { height: 400, overflowY: 'auto' } }}>
             {ticketsCriticos.length ? (
-              <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                 {ticketsCriticos.map((ticket) => (
                   <Flex
                     key={ticket.id}

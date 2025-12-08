@@ -45,14 +45,14 @@ const TicketDetail = ({
     }
 
     return (
-        <Space orientation="vertical" size={16} style={{ width: '100%' }}>
+        <Space direction="vertical" size={16} style={{ width: '100%' }}>
             <Card>
                 {loadingTicket && !ticket ? (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
                         <Spin />
                     </div>
                 ) : (
-                    <Space orientation="vertical" size={20} style={{ width: '100%' }}>
+                    <Space direction="vertical" size={20} style={{ width: '100%' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
                                 <Title level={4} style={{ margin: 0 }}>{ticket?.asunto}</Title>
@@ -157,7 +157,7 @@ const TicketDetail = ({
                         <Spin />
                     </div>
                 ) : (
-                    <Space orientation="vertical" size={16} style={{ width: '100%' }}>
+                    <Space direction="vertical" size={16} style={{ width: '100%' }}>
                         <List
                             loading={loadingMessages}
                             dataSource={messages}
@@ -174,7 +174,7 @@ const TicketDetail = ({
                                             </Space>
                                         }
                                         description={
-                                            <Space orientation="vertical" size={4}>
+                                            <Space direction="vertical" size={4}>
                                                 <Text>{item.mensaje}</Text>
                                                 <Text type="secondary" style={{ fontSize: 12 }}>
                                                     {formatDateTime(item.creadoEn)}

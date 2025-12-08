@@ -5,7 +5,7 @@ const { Title, Paragraph } = Typography;
 
 const PlanificacionPage = () => {
   return (
-    <Space orientation="vertical" size="large" style={{ width: '100%' }}>
+    <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <div>
         <Title level={2}>Planificación de Producción</Title>
         <Paragraph type="secondary">

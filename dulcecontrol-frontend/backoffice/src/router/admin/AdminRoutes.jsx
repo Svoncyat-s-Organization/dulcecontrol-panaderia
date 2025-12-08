@@ -136,9 +136,30 @@ const adminRoutes = (
       }
     />
     <Route path="configuracion" element={<Navigate to="datos-empresa" replace />} />
-    <Route path="configuracion/datos-empresa" element={<DatosEmpresaPage />} />
-    <Route path="configuracion/sedes" element={<SedesPage />} />
-    <Route path="configuracion/tienda-virtual" element={<TiendaVirtualPage />} />
+    <Route
+      path="configuracion/datos-empresa"
+      element={
+        <Suspense fallback={<RouteFallback />}>
+          <DatosEmpresaPage />
+        </Suspense>
+      }
+    />
+    <Route
+      path="configuracion/sedes"
+      element={
+        <Suspense fallback={<RouteFallback />}>
+          <SedesPage />
+        </Suspense>
+      }
+    />
+    <Route
+      path="configuracion/tienda-virtual"
+      element={
+        <Suspense fallback={<RouteFallback />}>
+          <TiendaVirtualPage />
+        </Suspense>
+      }
+    />
 
     <Route path="facturacion/comprobantes" element={<FacturacionPage />} />
     <Route path="facturacion/comprobantes/:id" element={<FacturacionDetallePage />} />

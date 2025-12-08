@@ -22,7 +22,7 @@ const SoporteTicketsPage = () => {
     };
 
     return (
-        <Space orientation="vertical" size={24} style={{ width: '100%' }}>
+        <Space direction="vertical" size={24} style={{ width: '100%' }}>
             <div>
                 <Title level={2} style={{ marginBottom: 8 }}>Centro de soporte</Title>
                 <Paragraph type="secondary" style={{ margin: 0 }}>

@@ -44,7 +44,7 @@ const UsuariosPage = () => {
 
     if (!isDetailView) {
         return (
-            <Space orientation="vertical" size={24} style={{ width: '100%' }}>
+            <Space direction="vertical" size={24} style={{ width: '100%' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start' }}>
                     <div>
                         <Title level={2} style={{ marginBottom: 4 }}>Usuarios de tiendas</Title>
@@ -58,7 +58,7 @@ const UsuariosPage = () => {
                 </div>
 
                 <Card>
-                    <Space orientation="vertical" size={16} style={{ width: '100%' }}>
+                    <Space direction="vertical" size={16} style={{ width: '100%' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
                             <Space size={12} align="center">
                                 <TeamOutlined style={{ fontSize: 24, color: 'var(--ant-primary-color)' }} />
@@ -95,7 +95,7 @@ const UsuariosPage = () => {
     }
 
     return (
-        <Space orientation="vertical" size={24} style={{ width: '100%' }}>
+        <Space direction="vertical" size={24} style={{ width: '100%' }}>
             <Button
                 icon={<ArrowLeftOutlined />}
                 onClick={() => navigate('/superadmin/tiendas/directorio')}

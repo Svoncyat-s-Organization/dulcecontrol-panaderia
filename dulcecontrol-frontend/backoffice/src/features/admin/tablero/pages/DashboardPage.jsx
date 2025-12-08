@@ -178,7 +178,7 @@ const DashboardPage = () => {
   }
 
   return (
-    <Space orientation="vertical" size="large" style={{ width: '100%' }}>
+    <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <div>
         <Title level={2} style={{ marginBottom: 0 }}>
           Tablero general
@@ -247,7 +247,7 @@ const DashboardPage = () => {
         <Col xs={24} lg={12}>
           <Card title="Alertas de inventario">
             {productosBajoStock.length ? (
-              <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                 {productosBajoStock.map((item) => (
                   <Flex
                     key={item.sku}
@@ -273,7 +273,7 @@ const DashboardPage = () => {
         <Col xs={24} lg={12}>
           <Card title="Clientes más fieles">
             {mejoresClientes.length ? (
-              <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                 {mejoresClientes.map((cliente) => (
                   <Flex
                     key={cliente.nombre}
