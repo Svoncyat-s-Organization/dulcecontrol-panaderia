@@ -14,7 +14,6 @@ import { ExistenciasPage, InsumosPage, MovimientosPage } from '../../features/ad
 import { VentasPage, CajasPage } from '../../features/admin/ventas-pedidos/index.js';
 import { InsumosPage as ComprasInsumosPage, ProveedoresPage, OrdenesCompraPage } from '../../features/admin/compras/index.js';
 import { ClientesPage } from '../../features/admin/clientes/index.js';
-import { lazy } from 'react';
 import { StockIdealPage, RecetasPage, PlanificacionPage } from '../../features/admin/produccion/index.js';
 import { FacturacionPage, FacturacionDetallePage, SeriesPage } from '../../features/admin/facturacion/index.js';
 

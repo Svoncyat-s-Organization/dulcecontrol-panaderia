@@ -35,11 +35,18 @@ public class JwtProvider {
     }
 
     public String generarToken(String correo, String rol, TipoUsuario tipoUsuario, Long tiendaId, Map<String, Object> extraClaims) {
+        return generarToken(correo, rol, tipoUsuario, tiendaId, extraClaims, null);
+    }
+
+    public String generarToken(String correo, String rol, TipoUsuario tipoUsuario, Long tiendaId, Map<String, Object> extraClaims, Long userId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("rol_id", rol);
         claims.put("tipo_usuario", tipoUsuario != null ? tipoUsuario.name() : null);
         if (tiendaId != null) {
             claims.put("tienda_id", tiendaId);
+        }
+        if (userId != null) {
+            claims.put("id", userId);
         }
         if (extraClaims != null && !extraClaims.isEmpty()) {
             claims.putAll(extraClaims);

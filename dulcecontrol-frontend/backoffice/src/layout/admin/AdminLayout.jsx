@@ -1,7 +1,20 @@
 import { useEffect, useMemo } from 'react';
 import { Button, Result, Space, Spin, theme } from 'antd';
 import { useQuery } from '@tanstack/react-query';
-import { IconLogout, IconRefresh } from '@tabler/icons-react';
+import { 
+  IconLogout, 
+  IconRefresh, 
+  IconLayoutGrid, 
+  IconUsers, 
+  IconShoppingBag, 
+  IconInvoice, 
+  IconCakeRoll, 
+  IconBrandCakephp, 
+  IconBasketDollar, 
+  IconBuildingWarehouse, 
+  IconShieldLock, 
+  IconSettings 
+} from '@tabler/icons-react';
 import { useTokenStore } from '../../shared/store/tokenStore.js';
 import SedeSelector from '../../shared/components/SedeSelector.jsx';
 import MainLayout from '../shared/MainLayout.jsx';
