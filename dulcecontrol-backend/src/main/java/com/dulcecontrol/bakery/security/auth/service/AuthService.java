@@ -42,7 +42,7 @@ public class AuthService {
         validarPassword(request.getPassword(), usuario.getHashContrasena());
 
         String token = jwtProvider.generarToken(usuario.getCorreo(), "ROLE_SUPERADMIN", TipoUsuario.SUPERADMIN, null,
-            construirClaimsNombre(usuario.getNombres()));
+            construirClaimsNombre(usuario.getNombres()), usuario.getId());
         return buildResponse(token, TipoUsuario.SUPERADMIN, null, usuario.getId());
     }
 
@@ -59,7 +59,7 @@ public class AuthService {
 
         Long tiendaId = usuario.getTiendaId();
         String token = jwtProvider.generarToken(usuario.getCorreo(), "ROLE_ADMIN", TipoUsuario.ADMIN, tiendaId,
-            construirClaimsNombre(usuario.getNombres()));
+            construirClaimsNombre(usuario.getNombres()), usuario.getId());
         return buildResponse(token, TipoUsuario.ADMIN, tiendaId, usuario.getId());
     }
 
@@ -76,7 +76,7 @@ public class AuthService {
         validarPassword(request.getPassword(), cliente.getHashContrasena());
 
         String token = jwtProvider.generarToken(cliente.getEmail(), "ROLE_CLIENTE", TipoUsuario.CLIENTE, tiendaId,
-            construirClaimsNombre(cliente.getNombreDoc()));
+            construirClaimsNombre(cliente.getNombreDoc()), cliente.getId());
         return buildResponse(token, TipoUsuario.CLIENTE, tiendaId, cliente.getId());
     }
 
