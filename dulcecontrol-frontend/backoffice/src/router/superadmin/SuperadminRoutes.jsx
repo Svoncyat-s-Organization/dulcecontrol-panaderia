@@ -4,10 +4,7 @@ import SuperadminLayout from '../../layout/superadmin/SuperadminLayout.jsx';
 import NotFoundPage from '../../shared/components/NotFoundPage.jsx';
 import { VerTableroPage as SuperadminDashboardPage } from '../../features/superadmin/tablero/index.js';
 import { PlanesManager, SuscripcionesManager, HistorialManager } from '../../features/superadmin/suscripciones/index.js';
-import TiendasPage from '../../features/superadmin/tiendas/pages/TiendasPage.jsx';
-import SedesPage from '../../features/superadmin/tiendas/pages/SedesPage.jsx';
-import DominiosPage from '../../features/superadmin/tiendas/pages/DominiosPage.jsx';
-import UsuariosPage from '../../features/superadmin/tiendas/pages/UsuariosPage.jsx';
+import GestionTiendasPage from '../../features/superadmin/tiendas/pages/GestionTiendasPage.jsx';
 import { SoporteTicketsPage } from '../../features/superadmin/soporte/index.js';
 import { SeguridadUsuariosPage, SeguridadRolesPage, SeguridadBitacoraPage } from '../../features/superadmin/seguridad/index.js';
 import { FacturacionPage, FacturacionDetallePage, SeriesPage, MetodosPagoPage } from '../../features/superadmin/facturacion/index.js';
@@ -17,14 +14,7 @@ const superadminRoutes = (
   <Route path="/superadmin" element={<ProtectedRoute allowedRoles={['SUPERADMIN']}><SuperadminLayout /></ProtectedRoute>}>
     <Route index element={<Navigate to="tablero" replace />} />
     <Route path="tablero" element={<SuperadminDashboardPage />} />
-
-    <Route path="tiendas/directorio" element={<TiendasPage />} />
-    <Route path="tiendas/sedes" element={<SedesPage />} />
-    <Route path="tiendas/:tiendaId/sedes" element={<SedesPage />} />
-    <Route path="tiendas/dominios" element={<DominiosPage />} />
-    <Route path="tiendas/:tiendaId/dominios" element={<DominiosPage />} />
-    <Route path="tiendas/usuarios" element={<UsuariosPage />} />
-    <Route path="tiendas/:tiendaId/usuarios" element={<UsuariosPage />} />
+    <Route path="tiendas" element={<GestionTiendasPage />} />
 
     <Route path="suscripciones/planes" element={<PlanesManager />} />
     <Route path="suscripciones/activas" element={<SuscripcionesManager />} />

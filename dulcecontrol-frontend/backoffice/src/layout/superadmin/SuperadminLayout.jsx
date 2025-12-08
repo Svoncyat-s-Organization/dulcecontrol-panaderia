@@ -19,12 +19,7 @@ const getItem = (label, key, icon, children) => ({ key, icon, label, children })
 
 const menuItems = [
     getItem('Tablero', BASE_PATH, <IconLayoutGrid size={20} />),
-    getItem('Gestión de Tiendas', `${BASE_PATH}/tiendas`, <IconBuildingStore size={20} />, [
-        getItem('Tiendas', `${BASE_PATH}/tiendas/directorio`),
-        getItem('Sedes', `${BASE_PATH}/tiendas/sedes`),
-        getItem('Dominios', `${BASE_PATH}/tiendas/dominios`),
-        getItem('Usuarios', `${BASE_PATH}/tiendas/usuarios`),
-    ]),
+    getItem('Gestión de Tiendas', `${BASE_PATH}/tiendas`, <IconBuildingStore size={20} />),
     getItem('Suscripciones', `${BASE_PATH}/suscripciones`, <IconRosetteDiscountCheck size={20} />, [
         getItem('Planes', `${BASE_PATH}/suscripciones/planes`),
         getItem('Suscripciones', `${BASE_PATH}/suscripciones/activas`),

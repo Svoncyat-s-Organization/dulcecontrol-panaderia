@@ -14,9 +14,8 @@ const normalizeDominios = (dominios) => (
     }))
 );
 
-const TiendasListContainer = ({ onEdit, onCreate }) => {
+const TiendasListContainer = ({ onEdit, onCreate, onViewSedes, onViewDominios, onViewUsuarios }) => {
     const queryClient = useQueryClient();
-    const navigate = useNavigate();
     const [searchText, setSearchText] = useState('');
 
     const { data: tiendas, isLoading } = useQuery({
@@ -107,18 +106,6 @@ const TiendasListContainer = ({ onEdit, onCreate }) => {
         })
     ), [filteredTiendas, dominiosStatusById]);
 
-    const handleViewSedes = (tiendaId) => {
-        navigate(`/superadmin/tiendas/${tiendaId}/sedes`);
-    };
-
-    const handleViewDominios = (tiendaId) => {
-        navigate(`/superadmin/tiendas/${tiendaId}/dominios`);
-    };
-
-    const handleViewUsuarios = (tiendaId) => {
-        navigate(`/superadmin/tiendas/${tiendaId}/usuarios`);
-    };
-
     return (
         <TiendasList
             tiendas={tiendasConDominios}
@@ -126,9 +113,9 @@ const TiendasListContainer = ({ onEdit, onCreate }) => {
             onEdit={onEdit}
             onCreate={onCreate}
             onDelete={handleDelete}
-            onViewSedes={handleViewSedes}
-            onViewDominios={handleViewDominios}
-            onViewUsuarios={handleViewUsuarios}
+            onViewSedes={onViewSedes}
+            onViewDominios={onViewDominios}
+            onViewUsuarios={onViewUsuarios}
             searchText={searchText}
             setSearchText={setSearchText}
         />
