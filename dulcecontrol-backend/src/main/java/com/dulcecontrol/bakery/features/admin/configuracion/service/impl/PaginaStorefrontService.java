@@ -98,6 +98,14 @@ public class PaginaStorefrontService implements IPaginaStorefrontService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public PaginaStorefrontResponse obtenerPorSlug(Long tiendaId, String slug) {
+        PaginaStorefront pagina = paginaStorefrontRepository.findByTiendaIdAndSlug(tiendaId, slug)
+                .orElseThrow(() -> new ResourceNotFoundException("Página no encontrada"));
+        return toResponse(pagina);
+    }
+
+    @Override
     @Transactional
     public void eliminar(Long tiendaId, Long paginaId) {
         PaginaStorefront pagina = paginaStorefrontRepository.findByIdAndTiendaId(paginaId, tiendaId)

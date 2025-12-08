@@ -4,9 +4,10 @@ import dayjs from 'dayjs';
 import PedidosTableView from './PedidosTableView.jsx';
 import UnifiedStatusModal from './UnifiedStatusModal.jsx';
 import PedidoDetailDrawer from './PedidoDetailDrawer.jsx';
-import PedidoReceiptModal from './PedidoReceiptModal.jsx';
+import ReceiptModal from '../PuntoDeVenta/ReceiptModal.jsx';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 import { getPedidos, updatePedido, getDetallesPedido, addPagoPedido, getPagosPedido } from '../../api/pedidos.api.js';
+import { registrarMovimientoCaja } from '../../api/cajas.api.js';
 import { getClientes } from '../../api/clientes.api.js';
 import { getUsuariosAdmin } from '../../api/usuarios.api.js';
 import { getProductos } from '../../../catalogo/api/productos.api.js';
@@ -24,7 +25,8 @@ const PedidosTable = () => {
 
     const [statusModal, setStatusModal] = useState({ open: false, pedido: null });
     const [detailDrawer, setDetailDrawer] = useState({ open: false, pedido: null });
-    const [printModal, setPrintModal] = useState({ open: false, pedido: null });
+    const [receiptData, setReceiptData] = useState(null);
+    const [printingId, setPrintingId] = useState(null);
     const [filters, setFilters] = useState({
         codigoPedido: null,
         clienteId: null,
@@ -172,13 +174,33 @@ const PedidosTable = () => {
             const montoPagadoCentimos = Math.round(paymentData.montoPagado * 100);
 
             await addPagoPedido(tiendaId, pedido.id, {
-                sesionCajaId: pedido.raw.sesionCajaId,
+                sesionCajaId: paymentData.sesionCajaId || pedido.raw.sesionCajaId,
                 montoPagadoCentimos,
                 metodoPago: paymentData.metodoPago,
                 referenciaExterna: null,
                 fechaPago: new Date().toISOString().split('.')[0],
                 registradoPor: usuarioId || pedido.raw.vendedorId,
             });
+
+            // Registrar movimiento de caja
+            if (paymentData.sesionCajaId) {
+                const comprobanteRef = [
+                    pedido.raw.tipoComprobante,
+                    pedido.raw.serieComprobante,
+                    pedido.raw.numeroComprobante
+                ].filter(Boolean).join(' ');
+
+                await registrarMovimientoCaja(tiendaId, paymentData.sesionCajaId, {
+                    tipoMovimiento: 'venta',
+                    montoCentimos: montoPagadoCentimos,
+                    concepto: `Pago de pedido ${pedido.raw.codigoPedido}`,
+                    comprobanteAsociado: pedido.raw.codigoPedido,
+                    pedidoId: pedido.raw.id, // Also sending pedidoId as it is in the DTO
+                    metodoPago: paymentData.metodoPago,
+                    fechaMovimiento: new Date().toISOString(),
+                    usuarioId: usuarioId || pedido.raw.vendedorId,
+                });
+            }
 
             const totalCentimos = pedido.raw.totalFinalCentimos;
             const montoPagadoActual = pedido.raw.montoPagadoCentimos || 0;
@@ -310,12 +332,57 @@ const PedidosTable = () => {
         statusMutation.mutate({ pedido, nuevoEstado });
     };
 
-    const handlePrint = (pedido) => {
-        setPrintModal({ open: true, pedido });
+    const buildReceiptPayload = (pedido, detalles = [], pagos = []) => {
+        const clienteInfo = clientesMap.get(pedido.clienteId);
+        const normalizedDetalles = detalles.map((detalle) => ({
+            id: detalle.id,
+            nombre: productosMap.get(detalle.productoId)?.nombre || `Producto ${detalle.productoId}`,
+            quantity: detalle.cantidad,
+            precioBaseCentimos: detalle.precioUnitarioCentimos,
+            subtotalLineaCentimos: detalle.subtotalLineaCentimos,
+        }));
+        const normalizedPagos = pagos.map((pago) => ({
+            id: pago.id,
+            metodoPago: pago.metodoPago,
+            montoPagadoCentimos: pago.montoPagadoCentimos,
+            fechaPago: pago.fechaPago,
+        }));
+
+        return {
+            ...pedido,
+            items: normalizedDetalles,
+            pagos: normalizedPagos,
+            metodoPago: normalizedPagos[0]?.metodoPago,
+            cliente: clienteInfo
+                ? {
+                    nombreDoc: clienteInfo.nombreDoc || clienteInfo.nombre,
+                    tipoDoc: clienteInfo.tipoDoc,
+                    numeroDoc: clienteInfo.numeroDoc,
+                    direccion: clienteInfo.direccion,
+                }
+                : null,
+        };
+    };
+
+    const handlePrint = async (pedido) => {
+        if (!tiendaId || !pedido?.raw?.id) return;
+        setPrintingId(pedido.id);
+        try {
+            const pedidoId = pedido.raw.id;
+            const [detalles, pagos] = await Promise.all([
+                getDetallesPedido(tiendaId, pedidoId),
+                getPagosPedido(tiendaId, pedidoId),
+            ]);
+            setReceiptData(buildReceiptPayload(pedido.raw, detalles, pagos));
+        } catch (error) {
+            console.error('Error al preparar el recibo', error);
+        } finally {
+            setPrintingId(null);
+        }
     };
 
     const handleClosePrintModal = () => {
-        setPrintModal({ open: false, pedido: null });
+        setReceiptData(null);
     };
 
     const handleFiltersChange = (newFilters) => {
@@ -342,6 +409,7 @@ const PedidosTable = () => {
                 onManageStatus={handleManageStatus}
                 onViewDetail={handleViewDetail}
                 onPrint={handlePrint}
+                printingId={printingId}
                 filters={filters}
                 onFiltersChange={handleFiltersChange}
                 onResetFilters={handleResetFilters}
@@ -370,10 +438,10 @@ const PedidosTable = () => {
                 loading={detailDetallesQuery.isLoading || detailPagosQuery.isLoading}
             />
 
-            <PedidoReceiptModal
-                open={printModal.open}
+            <ReceiptModal
+                open={!!receiptData}
                 onClose={handleClosePrintModal}
-                pedido={printModal.pedido}
+                pedido={receiptData}
             />
         </>
     );

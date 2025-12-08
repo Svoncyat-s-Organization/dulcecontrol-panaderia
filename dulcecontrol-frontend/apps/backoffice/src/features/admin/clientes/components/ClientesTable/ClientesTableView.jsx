@@ -39,7 +39,7 @@ const ClientesTableView = ({
       dataIndex: 'nombreDoc',
       key: 'nombreDoc',
       render: (_, record) => (
-        <Space direction="vertical" size={0}>
+        <Space orientation="vertical" size={0}>
           <Text strong>{record.nombreDoc}</Text>
           <Text type="secondary">
             {record.tipoDoc}: {record.numeroDoc}
@@ -52,7 +52,7 @@ const ClientesTableView = ({
       dataIndex: 'email',
       key: 'contacto',
       render: (_, record) => (
-        <Space direction="vertical" size={0}>
+        <Space orientation="vertical" size={0}>
           {record.email && <Text>{record.email}</Text>}
           {record.telefono && <Text type="secondary">{record.telefono}</Text>}
         </Space>

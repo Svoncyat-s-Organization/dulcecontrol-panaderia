@@ -14,8 +14,14 @@ import { ExistenciasPage, InsumosPage, MovimientosPage } from '../../features/ad
 import { VentasPage, CajasPage } from '../../features/admin/ventas-pedidos/index.js';
 import { InsumosPage as ComprasInsumosPage, ProveedoresPage, OrdenesCompraPage } from '../../features/admin/compras/index.js';
 import { ClientesPage } from '../../features/admin/clientes/index.js';
-import { ConfiguracionPage } from '../../features/admin/configuracion/index.js';
+import { lazy } from 'react';
 import { StockIdealPage, RecetasPage, PlanificacionPage } from '../../features/admin/produccion/index.js';
+import { FacturacionPage, FacturacionDetallePage, SeriesPage } from '../../features/admin/facturacion/index.js';
+
+// Lazy loading para configuración
+const DatosEmpresaPage = lazy(() => import('../../features/admin/configuracion/pages/DatosEmpresaPage.jsx'));
+const SedesPage = lazy(() => import('../../features/admin/configuracion/pages/SedesPage.jsx'));
+const TiendaVirtualPage = lazy(() => import('../../features/admin/configuracion/pages/TiendaVirtualPage.jsx'));
 
 const SeguridadUsuariosPage = lazy(() => import('../../features/admin/seguridad/pages/UsuariosPage.jsx'));
 const SeguridadRolesPage = lazy(() => import('../../features/admin/seguridad/pages/RolesPage.jsx'));
@@ -41,16 +47,6 @@ const PLACEHOLDER_ROUTES = [
     description: 'Configura tus comprobantes electrónicos, series y formatos oficiales.',
   },
   {
-    path: 'facturacion/series-correlativos',
-    title: 'Series y correlativos',
-    description: 'Enlazaremos tus series con SUNAT para mantener la numeración bajo control.',
-  },
-  {
-    path: 'facturacion/comprobantes',
-    title: 'Comprobantes',
-    description: 'Revisa, descarga o anula los comprobantes emitidos por la tienda.',
-  },
-  {
     path: 'compras',
     title: 'Compras',
     description: 'Gestiona insumos, proveedores y órdenes de compra para tu panadería.',
@@ -74,6 +70,14 @@ const PLACEHOLDER_ROUTES = [
     path: 'configuracion',
     title: 'Configuración',
     description: 'Centralizará ajustes de tienda, branding y preferencias generales.',
+    path: 'seguridad',
+    title: 'Seguridad',
+    description: 'Gestiona roles, permisos y accesos del personal administrativo.',
+  },
+  {
+    path: 'configuracion/tienda-virtual',
+    title: 'Tienda Virtual',
+    description: 'Configura la apariencia, contenido y branding de tu tienda online.',
   },
   {
     path: 'configuracion/preferencias',
@@ -106,12 +110,11 @@ const adminRoutes = (
     <Route path="inventario/insumos" element={guard('inventario/insumos', <InsumosPage />)} />
     <Route path="inventario/movimientos" element={guard('inventario/movimientos', <MovimientosPage />)} />
     <Route path="produccion" element={<Navigate to="planificacion" replace />} />
-    <Route path="produccion/planificacion" element={guard('produccion/planificacion', <PlanificacionPage />)} />
-    <Route path="produccion/stock-ideal" element={guard('produccion/stock-ideal', <StockIdealPage />)} />
-    <Route path="produccion/recetas" element={guard('produccion/recetas', <RecetasPage />)} />
-    <Route path="catalogo/productos" element={guard('catalogo/productos', <ProductosPage />)} />
-    <Route path="catalogo/categorias" element={guard('catalogo/categorias', <CategoriasPage />)} />
-    <Route path="configuracion/sedes" element={guard('configuracion/sedes', <ConfiguracionPage />)} />
+    <Route path="produccion/planificacion" element={<PlanificacionPage />} />
+    <Route path="produccion/stock-ideal" element={<StockIdealPage />} />
+    <Route path="produccion/recetas" element={<RecetasPage />} />
+    <Route path="catalogo/productos" element={<ProductosPage />} />
+    <Route path="catalogo/categorias" element={<CategoriasPage />} />
     <Route path="seguridad" element={<Navigate to="seguridad/usuarios" replace />} />
     <Route
       path="seguridad/usuarios"
@@ -133,6 +136,15 @@ const adminRoutes = (
         </PermissionGuard>
       }
     />
+    <Route path="configuracion" element={<Navigate to="datos-empresa" replace />} />
+    <Route path="configuracion/datos-empresa" element={<DatosEmpresaPage />} />
+    <Route path="configuracion/sedes" element={<SedesPage />} />
+    <Route path="configuracion/tienda-virtual" element={<TiendaVirtualPage />} />
+
+    <Route path="facturacion/comprobantes" element={<FacturacionPage />} />
+    <Route path="facturacion/comprobantes/:id" element={<FacturacionDetallePage />} />
+    <Route path="facturacion/series-correlativos" element={<SeriesPage />} />
+
     {PLACEHOLDER_ROUTES.map(({ path, title, description }) => (
       <Route
         key={path}

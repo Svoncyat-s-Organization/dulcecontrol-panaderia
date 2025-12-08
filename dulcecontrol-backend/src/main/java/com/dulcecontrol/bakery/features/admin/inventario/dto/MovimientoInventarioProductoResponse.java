@@ -16,13 +16,25 @@ public class MovimientoInventarioProductoResponse {
     private Long id;
     private Long sedeId;
     private Long productoId;
+    
+    // Datos enriquecidos del producto
+    private String nombreProducto;
+    private String sku;
+    
+    // Datos del movimiento
     private TipoMovimientoInsumo tipoMovimiento;
     private Integer cantidad;
     private Integer cantidadAnterior;
     private Integer cantidadPosterior;
+    
+    // Referencias
     private Long pedidoId;
     private Long planProduccionId;
     private MotivoMovimientoProducto motivo;
+    
+    // Usuario responsable
     private Long responsableId;
+    private String usuarioResponsable;
+    
     private LocalDateTime creadoEn;
 }

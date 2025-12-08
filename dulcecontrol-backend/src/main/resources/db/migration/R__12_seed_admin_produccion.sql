@@ -11,7 +11,7 @@
 INSERT INTO recetas (tienda_id, producto_id, insumo_id, cantidad_requerida, unidad_medida, notas_preparacion)
 SELECT new.tienda_id, new.producto_id, new.insumo_id, new.cantidad_requerida, new.unidad_medida, new.notas_preparacion
 FROM (
-  -- Receta Pan Francés (Dulce Manjar) - Asumiendo que existe un producto con SKU 'PAN-001'
+  -- Receta Pan Francés (Dulce Manjar) - Asumiendo que existe un producto con SKU 'DM-PAN-001'
   SELECT
     p.tienda_id,
     p.id AS producto_id,
@@ -21,7 +21,7 @@ FROM (
     'Harina panadera para masa base' AS notas_preparacion
   FROM productos p
   INNER JOIN insumos i ON i.tienda_id = p.tienda_id
-  WHERE p.sku = 'PAN-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+  WHERE p.sku = 'DM-PAN-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
     AND i.codigo_interno = 'INS-001'
   
   UNION ALL
@@ -35,7 +35,7 @@ FROM (
     'Sal para mejorar sabor' AS notas_preparacion
   FROM productos p
   INNER JOIN insumos i ON i.tienda_id = p.tienda_id
-  WHERE p.sku = 'PAN-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+  WHERE p.sku = 'DM-PAN-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
     AND i.codigo_interno = 'INS-004'
   
   UNION ALL
@@ -49,7 +49,7 @@ FROM (
     'Levadura seca activa' AS notas_preparacion
   FROM productos p
   INNER JOIN insumos i ON i.tienda_id = p.tienda_id
-  WHERE p.sku = 'PAN-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+  WHERE p.sku = 'DM-PAN-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
     AND i.codigo_interno = 'INS-003'
   
   UNION ALL
@@ -63,12 +63,12 @@ FROM (
     'Agua para hidratar masa' AS notas_preparacion
   FROM productos p
   INNER JOIN insumos i ON i.tienda_id = p.tienda_id
-  WHERE p.sku = 'PAN-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+  WHERE p.sku = 'DM-PAN-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
     AND i.codigo_interno = 'INS-007'
   
   UNION ALL
   
-  -- Receta Torta de Chocolate (Dulce Manjar) - SKU 'TORTA-001'
+  -- Receta Torta de Chocolate (Dulce Manjar) - SKU 'DM-TORTA-001'
   SELECT
     p.tienda_id,
     p.id AS producto_id,
@@ -78,7 +78,7 @@ FROM (
     'Harina para bizcocho' AS notas_preparacion
   FROM productos p
   INNER JOIN insumos i ON i.tienda_id = p.tienda_id
-  WHERE p.sku = 'TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+  WHERE p.sku = 'DM-TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
     AND i.codigo_interno = 'INS-001'
   
   UNION ALL
@@ -92,7 +92,7 @@ FROM (
     'Azúcar blanca' AS notas_preparacion
   FROM productos p
   INNER JOIN insumos i ON i.tienda_id = p.tienda_id
-  WHERE p.sku = 'TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+  WHERE p.sku = 'DM-TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
     AND i.codigo_interno = 'INS-002'
   
   UNION ALL
@@ -106,7 +106,7 @@ FROM (
     'Huevos para el bizcocho' AS notas_preparacion
   FROM productos p
   INNER JOIN insumos i ON i.tienda_id = p.tienda_id
-  WHERE p.sku = 'TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+  WHERE p.sku = 'DM-TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
     AND i.codigo_interno = 'INS-006'
   
   UNION ALL
@@ -120,7 +120,7 @@ FROM (
     'Chocolate para cobertura' AS notas_preparacion
   FROM productos p
   INNER JOIN insumos i ON i.tienda_id = p.tienda_id
-  WHERE p.sku = 'TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+  WHERE p.sku = 'DM-TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
     AND i.codigo_interno = 'INS-009'
   
   UNION ALL
@@ -134,7 +134,7 @@ FROM (
     'Mantequilla sin sal' AS notas_preparacion
   FROM productos p
   INNER JOIN insumos i ON i.tienda_id = p.tienda_id
-  WHERE p.sku = 'TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+  WHERE p.sku = 'DM-TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
     AND i.codigo_interno = 'INS-005'
   
   UNION ALL
@@ -148,7 +148,7 @@ FROM (
     'Leche para mezcla' AS notas_preparacion
   FROM productos p
   INNER JOIN insumos i ON i.tienda_id = p.tienda_id
-  WHERE p.sku = 'TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+  WHERE p.sku = 'DM-TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
     AND i.codigo_interno = 'INS-007'
 ) AS new
 ON DUPLICATE KEY UPDATE
@@ -171,7 +171,7 @@ FROM (
     30 AS punto_reposicion
   FROM productos p
   INNER JOIN sedes s ON s.tienda_id = p.tienda_id
-  WHERE p.sku = 'PAN-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+  WHERE p.sku = 'DM-PAN-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
     AND s.codigo_interno = 'DM-001'
   
   UNION ALL
@@ -184,7 +184,7 @@ FROM (
     5 AS punto_reposicion
   FROM productos p
   INNER JOIN sedes s ON s.tienda_id = p.tienda_id
-  WHERE p.sku = 'TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+  WHERE p.sku = 'DM-TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
     AND s.codigo_interno = 'DM-001'
   
   UNION ALL
@@ -198,7 +198,7 @@ FROM (
     25 AS punto_reposicion
   FROM productos p
   INNER JOIN sedes s ON s.tienda_id = p.tienda_id
-  WHERE p.sku = 'PAN-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+  WHERE p.sku = 'DM-PAN-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
     AND s.codigo_interno = 'DM-002'
   
   UNION ALL
@@ -211,7 +211,7 @@ FROM (
     5 AS punto_reposicion
   FROM productos p
   INNER JOIN sedes s ON s.tienda_id = p.tienda_id
-  WHERE p.sku = 'TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+  WHERE p.sku = 'DM-TORTA-001' AND p.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
     AND s.codigo_interno = 'DM-002'
 ) AS new
 ON DUPLICATE KEY UPDATE
@@ -276,7 +276,7 @@ FROM (
   INNER JOIN productos p ON p.tienda_id = cd.tienda_id
   WHERE cd.sede_id = (SELECT id FROM sedes WHERE codigo_interno = 'DM-001')
     AND cd.fecha_conteo = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-    AND p.sku = 'PAN-001'
+    AND p.sku = 'DM-PAN-001'
   
   UNION ALL
   
@@ -289,7 +289,7 @@ FROM (
   INNER JOIN productos p ON p.tienda_id = cd.tienda_id
   WHERE cd.sede_id = (SELECT id FROM sedes WHERE codigo_interno = 'DM-001')
     AND cd.fecha_conteo = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-    AND p.sku = 'TORTA-001'
+    AND p.sku = 'DM-TORTA-001'
 ) AS new
 ON DUPLICATE KEY UPDATE
   cantidad_fisica = VALUES(cantidad_fisica),
@@ -308,7 +308,7 @@ FROM (
   INNER JOIN productos p ON p.tienda_id = cd.tienda_id
   WHERE cd.sede_id = (SELECT id FROM sedes WHERE codigo_interno = 'DM-001')
     AND cd.fecha_conteo = CURDATE()
-    AND p.sku = 'PAN-001'
+    AND p.sku = 'DM-PAN-001'
   
   UNION ALL
   
@@ -321,7 +321,7 @@ FROM (
   INNER JOIN productos p ON p.tienda_id = cd.tienda_id
   WHERE cd.sede_id = (SELECT id FROM sedes WHERE codigo_interno = 'DM-001')
     AND cd.fecha_conteo = CURDATE()
-    AND p.sku = 'TORTA-001'
+    AND p.sku = 'DM-TORTA-001'
 ) AS new
 ON DUPLICATE KEY UPDATE
   cantidad_fisica = VALUES(cantidad_fisica),
@@ -451,7 +451,7 @@ FROM (
   INNER JOIN productos p ON p.tienda_id = pp.tienda_id
   WHERE pp.sede_id = (SELECT id FROM sedes WHERE codigo_interno = 'DM-001')
     AND pp.fecha_produccion = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-    AND p.sku = 'PAN-001'
+    AND p.sku = 'DM-PAN-001'
   
   UNION ALL
   
@@ -474,7 +474,7 @@ FROM (
   INNER JOIN productos p ON p.tienda_id = pp.tienda_id
   WHERE pp.sede_id = (SELECT id FROM sedes WHERE codigo_interno = 'DM-001')
     AND pp.fecha_produccion = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-    AND p.sku = 'TORTA-001'
+    AND p.sku = 'DM-TORTA-001'
 ) AS new
 ON DUPLICATE KEY UPDATE
   cantidad_producida = VALUES(cantidad_producida),
@@ -520,7 +520,7 @@ FROM (
   INNER JOIN productos p ON p.tienda_id = pp.tienda_id
   WHERE pp.sede_id = (SELECT id FROM sedes WHERE codigo_interno = 'DM-001')
     AND pp.fecha_produccion = CURDATE()
-    AND p.sku = 'PAN-001'
+    AND p.sku = 'DM-PAN-001'
   
   UNION ALL
   
@@ -543,7 +543,7 @@ FROM (
   INNER JOIN productos p ON p.tienda_id = pp.tienda_id
   WHERE pp.sede_id = (SELECT id FROM sedes WHERE codigo_interno = 'DM-001')
     AND pp.fecha_produccion = CURDATE()
-    AND p.sku = 'TORTA-001'
+    AND p.sku = 'DM-TORTA-001'
 ) AS new
 ON DUPLICATE KEY UPDATE
   cantidad_producida = VALUES(cantidad_producida),
@@ -588,7 +588,7 @@ FROM (
   INNER JOIN productos p ON p.tienda_id = pp.tienda_id
   WHERE pp.sede_id = (SELECT id FROM sedes WHERE codigo_interno = 'DM-001')
     AND pp.fecha_produccion = DATE_ADD(CURDATE(), INTERVAL 1 DAY)
-    AND p.sku = 'PAN-001'
+    AND p.sku = 'DM-PAN-001'
   
   UNION ALL
   
@@ -611,7 +611,7 @@ FROM (
   INNER JOIN productos p ON p.tienda_id = pp.tienda_id
   WHERE pp.sede_id = (SELECT id FROM sedes WHERE codigo_interno = 'DM-001')
     AND pp.fecha_produccion = DATE_ADD(CURDATE(), INTERVAL 1 DAY)
-    AND p.sku = 'TORTA-001'
+    AND p.sku = 'DM-TORTA-001'
 ) AS new
 ON DUPLICATE KEY UPDATE
   cantidad_planificada = VALUES(cantidad_planificada),

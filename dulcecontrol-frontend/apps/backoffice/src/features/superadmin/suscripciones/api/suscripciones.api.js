@@ -15,16 +15,6 @@ export const getPlanes = async (params = {}) => {
 };
 
 /**
- * Obtener un plan por ID
- * @param {number} id - ID del plan
- * @returns {Promise<object>}
- */
-export const getPlanById = async (id) => {
-    const { data } = await apiClient.get(`/api/superadmin/suscripciones/planes/${id}`);
-    return data;
-};
-
-/**
  * Crear un nuevo plan
  * @param {object} payload - Datos del plan
  * @returns {Promise<object>}
@@ -56,16 +46,6 @@ export const updatePlan = async (id, payload) => {
  */
 export const getSuscripciones = async (params = {}) => {
     const { data } = await apiClient.get('/api/superadmin/suscripciones', { params });
-    return data;
-};
-
-/**
- * Obtener una suscripción por ID
- * @param {number} id - ID de la suscripción
- * @returns {Promise<object>}
- */
-export const getSuscripcionById = async (id) => {
-    const { data } = await apiClient.get(`/api/superadmin/suscripciones/${id}`);
     return data;
 };
 

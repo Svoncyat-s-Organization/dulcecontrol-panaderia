@@ -11,5 +11,7 @@ public interface DetallePlanProduccionRepository extends JpaRepository<DetallePl
 
     List<DetallePlanProduccion> findByPlanIdOrderByIdAsc(Long planId);
 
+    List<DetallePlanProduccion> findByPlanIdInOrderByPlanIdAscIdAsc(List<Long> planIds);
+
     void deleteByPlanId(Long planId);
 }

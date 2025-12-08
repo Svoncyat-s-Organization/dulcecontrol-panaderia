@@ -10,7 +10,7 @@ const TiendasPage = () => {
     const { isOpen, entity, openForCreate, openForEdit, close } = useEntityModal();
 
     return (
-        <Space direction="vertical" size={24} style={{ width: '100%' }}>
+        <Space orientation="vertical" size={24} style={{ width: '100%' }}>
             <div>
                 <Title level={2} style={{ marginBottom: 8 }}>Gestión de tiendas</Title>
                 <Paragraph type="secondary" style={{ margin: 0 }}>

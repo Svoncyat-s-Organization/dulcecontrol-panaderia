@@ -1,7 +1,7 @@
-import axios from 'axios';
-import {ENDPOINTS, getApiUrl} from "../../../../config/api.config.js";
+import apiClient from '../../../../api/apiClient.js';
+import { ENDPOINTS } from '../../../../config/api.config.js';
 
-const ADMIN_ENDPOINT = `${getApiUrl()}${ENDPOINTS.API_ADMIN}`;
+const ADMIN_ENDPOINT = ENDPOINTS.API_ADMIN;
 
 /**
 * Función para OBTENER la lista de tiendas (con filtros)
@@ -11,13 +11,16 @@ const ADMIN_ENDPOINT = `${getApiUrl()}${ENDPOINTS.API_ADMIN}`;
 * */
 export const getTiendas = async (queryParams = {}) => {
     try {
-        const response = await axios.get(ADMIN_ENDPOINT, {params: queryParams});
-        return response.data;
+        const { data } = await apiClient.get(ADMIN_ENDPOINT, { params: queryParams });
+        if (Array.isArray(data)) return data;
+        if (Array.isArray(data?.content)) return data.content;
+        if (Array.isArray(data?.data)) return data.data;
+        return data ?? [];
     } catch (error) {
         console.error('Error al obtener tiendas', error);
         throw error;
     }
-}
+};
 
 /**
  * Función para CREAR una nueva tienda manualmente
@@ -27,13 +30,13 @@ export const getTiendas = async (queryParams = {}) => {
  **/
 export const postTienda = async (payload) => {
     try {
-        const response = await axios.post(ADMIN_ENDPOINT, payload);
-        return response.data;
+        const { data } = await apiClient.post(ADMIN_ENDPOINT, payload);
+        return data;
     } catch (error) {
         console.error('Error al crear tienda', error);
         throw error;
     }
-}
+};
 
 /**
  * Función para OBTENER una tienda por ID
@@ -44,13 +47,13 @@ export const postTienda = async (payload) => {
 export const getTiendaById = async (tiendaId) => {
     try {
         const url = `${ADMIN_ENDPOINT}/${tiendaId}`;
-        const response = await axios.get(url);
-        return response.data;
+        const { data } = await apiClient.get(url);
+        return data;
     } catch (error) {
         console.error(`Error al obtener tienda con ID: ${tiendaId}`, error);
         throw error;
     }
-}
+};
 
 /**
  * Función para ACTUALIZAR una tienda existente
@@ -62,13 +65,13 @@ export const getTiendaById = async (tiendaId) => {
 export const putTienda = async (tiendaId, payload) => {
     try {
         const url = `${ADMIN_ENDPOINT}/${tiendaId}`;
-        const response = await axios.put(url, payload);
-        return response.data;
+        const { data } = await apiClient.put(url, payload);
+        return data;
     } catch (error) {
         console.error(`Error al actualizar tienda con ID: ${tiendaId}`, error);
         throw error;
     }
-}
+};
 
 /**
  * Función para ELIMINAR una tienda existente
@@ -79,10 +82,10 @@ export const putTienda = async (tiendaId, payload) => {
 export const deleteTienda = async (tiendaId) => {
     try {
         const url = `${ADMIN_ENDPOINT}/${tiendaId}`;
-        const response = await axios.delete(url);
-        return response.data;
+        const { data } = await apiClient.delete(url);
+        return data;
     } catch (error) {
         console.error(`Error al eliminar tienda con ID: ${tiendaId}`, error);
         throw error;
     }
-}
+};

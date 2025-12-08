@@ -1,7 +1,7 @@
 package com.dulcecontrol.bakery.features.admin.produccion.service;
 
 import com.dulcecontrol.bakery.features.admin.catalogo.entity.Producto;
-import com.dulcecontrol.bakery.features.admin.catalogo.repository.ProductoRepository;
+import com.dulcecontrol.bakery.features.shared.catalogo.repository.ProductoRepository;
 import com.dulcecontrol.bakery.features.admin.produccion.dto.DetallePlanProduccionResponse;
 import com.dulcecontrol.bakery.features.admin.produccion.dto.DetallePlanProduccionUpdateRequest;
 import com.dulcecontrol.bakery.features.admin.produccion.dto.PlanProduccionCreateRequest;
@@ -217,21 +217,75 @@ public class PlanProduccionAdminService {
                 ? planRepository.findByTiendaIdAndSedeIdOrderByFechaProduccionDesc(tiendaId, sedeId)
                 : planRepository.findByTiendaIdOrderByFechaProduccionDesc(tiendaId);
 
+        // Obtener todos los IDs de planes
+        List<Long> planIds = planes.stream()
+                .map(PlanProduccion::getId)
+                .collect(Collectors.toList());
+
+        // Cargar todos los detalles de una vez (optimización N+1)
+        List<DetallePlanProduccion> todosDetalles = planIds.isEmpty()
+                ? List.of()
+                : detalleRepository.findByPlanIdInOrderByPlanIdAscIdAsc(planIds);
+
+        // Agrupar detalles por planId
+        Map<Long, List<DetallePlanProduccion>> detallesPorPlan = todosDetalles.stream()
+                .collect(Collectors.groupingBy(DetallePlanProduccion::getPlanId));
+
+        // Obtener todos los productos únicos
+        List<Long> productoIds = todosDetalles.stream()
+                .map(DetallePlanProduccion::getProductoId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<Long, Producto> productosMap = productoIds.isEmpty()
+                ? Map.of()
+                : productoRepository.findAllById(productoIds).stream()
+                        .collect(Collectors.toMap(Producto::getId, Function.identity()));
+
         return planes.stream()
-                .map(plan -> PlanProduccionResponse.builder()
-                        .id(plan.getId())
-                        .tiendaId(plan.getTiendaId())
-                        .sedeId(plan.getSedeId())
-                        .fechaProduccion(plan.getFechaProduccion())
-                        .estado(plan.getEstado())
-                        .generadoPor(plan.getGeneradoPor())
-                        .confirmadoPor(plan.getConfirmadoPor())
-                        .horaInicioReal(plan.getHoraInicioReal())
-                        .horaFinReal(plan.getHoraFinReal())
-                        .notasMaestro(plan.getNotasMaestro())
-                        .creadoEn(plan.getCreadoEn())
-                        .actualizadoEn(plan.getActualizadoEn())
-                        .build())
+                .map(plan -> {
+                    List<DetallePlanProduccion> detalles = detallesPorPlan.getOrDefault(plan.getId(), List.of());
+
+                    List<DetallePlanProduccionResponse> detalleResponses = detalles.stream()
+                            .map(d -> {
+                                Producto producto = productosMap.get(d.getProductoId());
+                                return DetallePlanProduccionResponse.builder()
+                                        .id(d.getId())
+                                        .planId(d.getPlanId())
+                                        .productoId(d.getProductoId())
+                                        .productoNombre(producto != null ? producto.getNombre() : "Producto desconocido")
+                                        .origen(d.getOrigen())
+                                        .pedidoClienteId(d.getPedidoClienteId())
+                                        .detallePedidoId(d.getDetallePedidoId())
+                                        .esPersonalizado(d.getEsPersonalizado())
+                                        .personalizacionId(d.getPersonalizacionId())
+                                        .cantidadSugerida(d.getCantidadSugerida())
+                                        .cantidadPlanificada(d.getCantidadPlanificada())
+                                        .cantidadProducida(d.getCantidadProducida())
+                                        .cantidadMerma(d.getCantidadMerma())
+                                        .estado(d.getEstado())
+                                        .horaTermino(d.getHoraTermino())
+                                        .observaciones(d.getObservaciones())
+                                        .build();
+                            })
+                            .collect(Collectors.toList());
+
+                    return PlanProduccionResponse.builder()
+                            .id(plan.getId())
+                            .tiendaId(plan.getTiendaId())
+                            .sedeId(plan.getSedeId())
+                            .fechaProduccion(plan.getFechaProduccion())
+                            .estado(plan.getEstado())
+                            .generadoPor(plan.getGeneradoPor())
+                            .confirmadoPor(plan.getConfirmadoPor())
+                            .horaInicioReal(plan.getHoraInicioReal())
+                            .horaFinReal(plan.getHoraFinReal())
+                            .notasMaestro(plan.getNotasMaestro())
+                            .creadoEn(plan.getCreadoEn())
+                            .actualizadoEn(plan.getActualizadoEn())
+                            .detalles(detalleResponses)
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 }

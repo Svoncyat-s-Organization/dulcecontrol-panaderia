@@ -1,19 +1,16 @@
 import { Alert, Card, Col, Empty, Flex, Row, Space, Statistic, Table, Tag, Typography } from 'antd';
 import { Area, Pie } from '@ant-design/plots';
+import { useQuery } from '@tanstack/react-query';
 import {
   IconCash,
   IconShoppingCart,
   IconAlertTriangle,
   IconUsers,
 } from '@tabler/icons-react';
-import {
-  categoriasMasVendidas,
-  mejoresClientes,
-  pedidosRecientes,
-  productosBajoStock,
-  resumenMetrics,
-  ventasHistoricas,
-} from '../../tablero/constants/dashboardMocks.js';
+import { getEstadisticasTablero } from '../api/tablero.api.js';
+import { TABLERO_KEYS } from '../constants/queryKeys.js';
+import { useTokenStore } from '../../../../shared/store/tokenStore.js';
+import { useSedeStore } from '../../../../shared/store/sedeStore.js';
 
 const { Title, Text } = Typography;
 
@@ -31,105 +28,124 @@ const formatCurrency = (value) =>
   })}`;
 
 const DashboardPage = () => {
+  const tiendaId = useTokenStore((state) => state.tiendaId);
+  const selectedSedeId = useSedeStore((state) => state.selectedSedeId);
+
+  const { data: estadisticas, isLoading, isError } = useQuery({
+    queryKey: TABLERO_KEYS.estadisticas(tiendaId, selectedSedeId),
+    queryFn: () => getEstadisticasTablero(tiendaId, selectedSedeId),
+    enabled: !!tiendaId,
+  });
+
+  const resumenMetrics = estadisticas?.resumenMetrics || [];
+  const ventasHistoricas = estadisticas?.ventasHistoricas || [];
+  const categoriasMasVendidas = estadisticas?.categoriasMasVendidas || [];
+  const pedidosRecientes = estadisticas?.pedidosRecientes || [];
+  const productosBajoStock = estadisticas?.productosBajoStock || [];
+  const mejoresClientes = estadisticas?.mejoresClientes || [];
+
   const tieneVentas = ventasHistoricas.length > 0;
   const tieneCategorias = categoriasMasVendidas.length > 0;
   const sumaVentas = tieneVentas
-    ? ventasHistoricas.reduce((acum, item) => acum + item.monto, 0)
+    ? ventasHistoricas.reduce((acum, item) => acum + Number(item.monto), 0)
     : 0;
   const promedioDiario = tieneVentas ? sumaVentas / ventasHistoricas.length : 0;
   const mejorDia = tieneVentas
-    ? ventasHistoricas.reduce((prev, curr) => (curr.monto > prev.monto ? curr : prev))
+    ? ventasHistoricas.reduce((prev, curr) => (Number(curr.monto) > Number(prev.monto) ? curr : prev))
     : null;
 
+  const areaData = ventasHistoricas.map(v => ({ 
+    dia: v.dia, 
+    monto: Number(v.monto) || 0 
+  }));
+
   const areaConfig = {
-    data: ventasHistoricas,
-    height: 320,
+    data: areaData,
+    height: 280,
     autoFit: true,
-    appendPadding: 16,
-    padding: [12, 16, 24, 8],
     xField: 'dia',
     yField: 'monto',
     smooth: true,
-    color: '#fb6f92',
+    color: '#1890ff',
     point: {
-      size: 4,
+      size: 5,
       shape: 'circle',
-      style: { fill: '#fb6f92', stroke: '#fff', lineWidth: 2 },
+      style: { 
+        fill: '#1890ff', 
+        stroke: '#fff', 
+        lineWidth: 2,
+        cursor: 'pointer',
+      },
     },
     areaStyle: {
-      fill: 'l(270) 0:#ffe5ec 0.5:#ffc2d1 1:#fb6f92',
-      fillOpacity: 0.7,
-    },
-    meta: {
-      dia: { alias: 'Día' },
-      monto: { alias: 'Ventas (S/)' },
+      fill: 'l(270) 0:#e6f4ff 0.5:#91caff 1:#1890ff',
+      fillOpacity: 0.6,
     },
     xAxis: {
-      tickCount: 6,
-      label: { autoHide: true },
+      label: { 
+        style: { fontSize: 11 },
+        autoRotate: false,
+        autoHide: true,
+      },
     },
     yAxis: {
       label: {
-        formatter: (value) => `S/ ${Number(value).toLocaleString('es-PE')}`,
+        style: { fontSize: 11 },
+        formatter: (value) => `S/ ${Number(value).toFixed(0)}`,
+      },
+    },
+    tooltip: {
+      title: (title, datum) => datum.dia,
+      customContent: (title, items) => {
+        if (!items || !items.length) return null;
+        const value = items[0]?.value || 0;
+        return `
+          <div style="padding: 10px;">
+            <div style="margin-bottom: 8px; font-weight: 600;">${title}</div>
+            <div style="color: #1890ff; font-size: 16px; font-weight: 600;">
+              ${formatCurrency(value)}
+            </div>
+          </div>
+        `;
+      },
+    },
+    interactions: [{ type: 'tooltip' }],
+  };
+
+  const ventasCategoriasTotales = categoriasMasVendidas.reduce(
+    (acc, categoria) => acc + Number(categoria.ventas),
+    0,
+  );
+
+  const pieData = categoriasMasVendidas.map(c => ({ 
+    type: String(c.nombre || c.tipo || 'Sin categoría'), 
+    value: Number(c.ventas) || 0,
+    pedidos: Number(c.pedidos) || 0
+  }));
+
+  const pieConfig = {
+    data: pieData,
+    angleField: 'value',
+    colorField: 'type',
+    radius: 0.9,
+    innerRadius: 0.6,
+    label: false,
+    legend: { 
+      position: 'bottom',
+    },
+    statistic: {
+      title: false,
+      content: {
+        style: { fontSize: '18px', fontWeight: '600' },
+        content: formatCurrency(ventasCategoriasTotales),
       },
     },
     tooltip: {
       formatter: (datum) => ({
-        name: 'Ventas',
-        value: formatCurrency(datum.monto),
+        name: datum.type,
+        value: `${formatCurrency(datum.value)} (${((datum.value / ventasCategoriasTotales) * 100).toFixed(1)}%)`,
       }),
     },
-  };
-
-  const ventasCategoriasTotales = categoriasMasVendidas.reduce(
-    (acc, categoria) => acc + categoria.ventas,
-    0,
-  );
-
-  const pieConfig = {
-    appendPadding: 16,
-    data: categoriasMasVendidas,
-    angleField: 'ventas',
-    colorField: 'tipo',
-    radius: 0.85,
-    innerRadius: 0.6,
-    label: {
-      type: 'inner',
-      offset: '-30%',
-      autoRotate: false,
-      style: { fontSize: 14 },
-      formatter: (datum) => {
-        if (!datum || !ventasCategoriasTotales) {
-          return '0%';
-        }
-        return `${((datum.ventas / ventasCategoriasTotales) * 100).toFixed(1)}%`;
-      },
-    },
-    pieStyle: { lineWidth: 0 },
-    legend: { position: 'bottom' },
-    statistic: {
-      title: { formatter: () => 'Ventas' },
-      content: {
-        style: { fontSize: 16 },
-        formatter: () =>
-          ventasCategoriasTotales ? formatCurrency(ventasCategoriasTotales) : 'Sin datos',
-      },
-    },
-    tooltip: {
-      formatter: (datum) => {
-        if (!datum) {
-          return { name: 'Categoría', value: 'Sin datos' };
-        }
-        return {
-          name: datum.tipo,
-          value: `${formatCurrency(datum.ventas)} · ${datum.pedidos} pedidos`,
-        };
-      },
-    },
-    interactions: [
-      { type: 'element-active' },
-      { type: 'pie-legend-active' },
-    ],
   };
 
   const columns = [
@@ -146,6 +162,21 @@ const DashboardPage = () => {
     },
   ];
 
+  if (isLoading) {
+    return <div style={{ padding: '24px', textAlign: 'center' }}>Cargando estadísticas...</div>;
+  }
+
+  if (isError) {
+    return (
+      <Alert
+        type="error"
+        showIcon
+        title="Error al cargar estadísticas"
+        description="No se pudieron obtener los datos del tablero. Por favor, intenta nuevamente."
+      />
+    );
+  }
+
   return (
     <Space orientation="vertical" size="large" style={{ width: '100%' }}>
       <div>
@@ -154,13 +185,6 @@ const DashboardPage = () => {
         </Title>
         <Text type="secondary">Monitorea el pulso diario de tu panadería.</Text>
       </div>
-
-      <Alert
-        type="info"
-        showIcon
-        title="Datos de referencia"
-        description="Este tablero utiliza información 100% simulada mientras se integran los endpoints reales del backend."
-      />
 
       <Row gutter={[16, 16]}>
         {resumenMetrics.map((metric) => (
@@ -198,7 +222,7 @@ const DashboardPage = () => {
                   <div>
                     <Text type="secondary">Mejor día</Text>
                     <div style={{ fontWeight: 600 }}>
-                      {mejorDia?.dia ?? '—'} · {mejorDia ? formatCurrency(mejorDia.monto) : 'S/ 0.00'}
+                      {mejorDia?.dia ?? '—'} · {mejorDia ? formatCurrency(Number(mejorDia.monto)) : 'S/ 0.00'}
                     </div>
                   </div>
                 </Flex>
@@ -284,8 +308,6 @@ const DashboardPage = () => {
           pagination={false}
         />
       </Card>
-
-      {/* Para sustituir los mocks, usa useQuery y reemplaza los datos importados desde dashboardMocks por la respuesta real del backend antes de pasarlos a los componentes. */}
     </Space>
   );
 };

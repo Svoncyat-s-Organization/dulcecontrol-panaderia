@@ -7,6 +7,10 @@ import com.dulcecontrol.bakery.features.admin.inventario.entity.MovimientoInvent
 import com.dulcecontrol.bakery.features.admin.inventario.repository.InventarioProductoRepository;
 import com.dulcecontrol.bakery.features.admin.inventario.repository.MovimientoInventarioProductoRepository;
 import com.dulcecontrol.bakery.features.admin.inventario.service.IMovimientoInventarioProductoService;
+import com.dulcecontrol.bakery.features.admin.catalogo.entity.Producto;
+import com.dulcecontrol.bakery.features.shared.catalogo.repository.ProductoRepository;
+import com.dulcecontrol.bakery.features.admin.seguridad.entity.UsuarioTienda;
+import com.dulcecontrol.bakery.features.admin.seguridad.repository.UsuarioTiendaRepository;
 import com.dulcecontrol.bakery.shared.exception.BadRequestException;
 import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +28,8 @@ public class MovimientoInventarioProductoService implements IMovimientoInventari
 
     private final MovimientoInventarioProductoRepository repository;
     private final InventarioProductoRepository inventarioRepository;
+    private final ProductoRepository productoRepository;
+    private final UsuarioTiendaRepository usuarioRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -150,10 +156,23 @@ public class MovimientoInventarioProductoService implements IMovimientoInventari
     }
 
     private MovimientoInventarioProductoResponse toResponse(MovimientoInventarioProducto entity) {
+        // Enriquecer con datos del producto
+        Producto producto = productoRepository.findById(entity.getProductoId()).orElse(null);
+        
+        // Enriquecer con datos del usuario responsable
+        String usuarioResponsable = null;
+        if (entity.getResponsableId() != null) {
+            usuarioResponsable = usuarioRepository.findById(entity.getResponsableId())
+                    .map(UsuarioTienda::getNombres)
+                    .orElse(null);
+        }
+        
         return MovimientoInventarioProductoResponse.builder()
                 .id(entity.getId())
                 .sedeId(entity.getSedeId())
                 .productoId(entity.getProductoId())
+                .nombreProducto(producto != null ? producto.getNombre() : null)
+                .sku(producto != null ? producto.getSku() : null)
                 .tipoMovimiento(entity.getTipoMovimiento())
                 .cantidad(entity.getCantidad())
                 .cantidadAnterior(entity.getCantidadAnterior())
@@ -162,6 +181,7 @@ public class MovimientoInventarioProductoService implements IMovimientoInventari
                 .planProduccionId(entity.getPlanProduccionId())
                 .motivo(entity.getMotivo())
                 .responsableId(entity.getResponsableId())
+                .usuarioResponsable(usuarioResponsable)
                 .creadoEn(entity.getCreadoEn())
                 .build();
     }

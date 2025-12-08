@@ -15,6 +15,7 @@ public class ProductoResponse {
     private final Long id;
     private final Long tiendaId;
     private final Long categoriaId;
+    private final String categoriaNombre;
     private final String nombre;
     private final String slug;
     private final String sku;

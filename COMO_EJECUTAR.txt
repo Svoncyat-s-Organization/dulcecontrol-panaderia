@@ -1,0 +1,185 @@
+================================================================================
+  GUÍA DE EJECUCIÓN - DULCE CONTROL
+  Sistema de Gestión para Panaderías y Pastelerías
+================================================================================
+
+Para una build en vivo visitar:
+- https://sa-dulcecontrol.vercel.app/admin/login - Administrador
+- https://sa-dulcecontrol.vercel.app/superadmin/login - Superadministrador
+- https://sa-dulcecontrol.vercel.app/token - Generador de tokens
+
+REQUISITOS PREVIOS
+------------------
+- Java 17 o superior
+- MySQL 5.5 o superior
+- Node.js 18 o superior
+- npm o pnpm
+- phpMyAdmin (opcional) o acceso a MySQL CLI
+
+
+================================================================================
+PASO 1: CONFIGURAR LA BASE DE DATOS
+================================================================================
+
+1. Crear la base de datos vacía en MySQL:
+   
+   Opción A - Con phpMyAdmin:
+   - Acceder a phpMyAdmin
+   - Ir a la pestaña "Bases de datos"
+   - Crear una nueva base de datos con el nombre: pasteleria_panaderia
+   - Cotejamiento: utf8mb4_general_ci (recomendado)
+
+   Opción B - Con MySQL CLI:
+   mysql -u root -p
+   CREATE DATABASE pasteleria_panaderia CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+   EXIT;
+
+2. Configurar credenciales (OPCIONAL):
+   
+   El backend usa por defecto:
+   - Usuario: pasteleria_admin
+   - Contraseña: #$PanP4sT3Ler1A2025$$
+   - Puerto: 3306
+   - Base de datos: pasteleria_panaderia
+
+   Si necesitas cambiar estos valores, edita:
+   dulcecontrol-backend/src/main/resources/application.properties
+
+   O establece variables de entorno:
+   export MY_DB_USER=tu_usuario
+   export MY_DB_PASSWORD=tu_contraseña
+
+NOTA IMPORTANTE: 
+La base de datos DEBE estar vacía. Las migraciones de Flyway se ejecutarán 
+automáticamente al iniciar el backend y crearán todas las tablas necesarias.
+
+
+================================================================================
+PASO 2: EJECUTAR EL BACKEND
+================================================================================
+
+El backend usa Spring Boot y se ejecuta en el puerto 2250.
+
+1. Navegar al directorio del backend:
+   cd dulcecontrol-backend
+
+2. Ejecutar con el wrapper de Maven (NO requiere Maven instalado):
+
+   En Linux/Mac:
+   ./mvnw spring-boot:run
+
+   En Windows:
+   mvnw.cmd spring-boot:run
+
+3. Verificar que el backend esté funcionando:
+   - Deberías ver logs indicando que las migraciones Flyway se ejecutaron
+   - El mensaje final será: "Started DulceControlApplication in X seconds"
+   - La API estará disponible en: http://localhost:2250
+
+4. (Opcional) Compilar el proyecto primero:
+   ./mvnw clean install -DskipTests
+
+
+================================================================================
+PASO 3: EJECUTAR EL FRONTEND - BACKOFFICE
+================================================================================
+
+El backoffice es la aplicación de administración (panel de control).
+
+1. Navegar al directorio del backoffice:
+   cd dulcecontrol-frontend/apps/backoffice
+
+2. Instalar dependencias (solo la primera vez o si cambia package.json):
+   npm install
+   
+   O si usas pnpm:
+   pnpm install
+
+3. Ejecutar el servidor de desarrollo:
+   npm run dev
+   
+   O con pnpm:
+   pnpm dev
+
+4. Acceder a la aplicación:
+   - URL por defecto: http://localhost:5173
+   - El puerto puede variar si 5173 está ocupado (Vite te informará)
+
+
+================================================================================
+PASO 4: EJECUTAR EL FRONTEND - STOREFRONT
+================================================================================
+
+El storefront es la tienda virtual (cara al cliente).
+
+1. Navegar al directorio del storefront:
+   cd dulcecontrol-frontend/apps/storefront
+
+2. Instalar dependencias (solo la primera vez o si cambia package.json):
+   npm install
+   
+   O si usas pnpm:
+   pnpm install
+
+3. Ejecutar el servidor de desarrollo:
+   npm run dev
+   
+   O con pnpm:
+   pnpm dev
+
+4. Acceder a la aplicación:
+   - URL por defecto: http://localhost:5174
+   - El puerto puede variar si 5174 está ocupado (Vite te informará)
+
+
+================================================================================
+RESUMEN DE PUERTOS
+================================================================================
+
+Backend (Spring Boot):  http://localhost:2250
+Backoffice (Vite):      http://localhost:5173
+Storefront (Vite):      http://localhost:5174
+
+
+================================================================================
+SOLUCIÓN DE PROBLEMAS
+================================================================================
+
+Error: "Access denied for user"
+- Verifica que el usuario y contraseña de MySQL sean correctos
+- Asegúrate de que el usuario tenga permisos en la base de datos
+- Revisa application.properties o configura variables de entorno
+
+Error: "Unknown database 'pasteleria_panaderia'"
+- Asegúrate de haber creado la base de datos vacía primero
+- Verifica que el nombre sea exactamente: pasteleria_panaderia
+
+Error: "Port 2250 already in use"
+- Otro proceso está usando el puerto 2250
+- Detén el proceso anterior o cambia el puerto en application.properties
+
+Error: "Port 5173 already in use" (Vite)
+- Vite automáticamente asignará otro puerto disponible
+- O puedes detener el proceso que está usando ese puerto
+
+Error de migraciones Flyway:
+- Asegúrate de que la base de datos esté completamente vacía
+- Si ya tiene tablas, elimínalas o crea una nueva base de datos limpia
+- Flyway mantiene control de versiones de las migraciones
+
+
+================================================================================
+NOTAS ADICIONALES
+================================================================================
+
+- El backend DEBE estar ejecutándose para que el frontend funcione correctamente
+- Las migraciones de Flyway son automáticas y secuenciales
+- Los cambios en el código frontend se reflejan automáticamente (hot reload)
+- Para producción, ejecuta "npm run build" en cada app del frontend
+- El backoffice requiere autenticación (usuarios se crean en la BD)
+- El storefront es de acceso público (catálogo de productos)
+
+
+================================================================================
+FIN DE LA GUÍA
+================================================================================

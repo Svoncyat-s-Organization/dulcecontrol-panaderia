@@ -17,6 +17,9 @@ public interface InventarioInsumoSedeRepository extends JpaRepository<Inventario
 
     List<InventarioInsumoSede> findByTiendaIdAndSedeId(Long tiendaId, Long sedeId);
 
+    @Query("SELECT iis FROM InventarioInsumoSede iis WHERE iis.tiendaId = :tiendaId AND iis.sedeId = :sedeId ORDER BY iis.id")
+    List<InventarioInsumoSede> findEnrichedByTiendaIdAndSedeId(@Param("tiendaId") Long tiendaId, @Param("sedeId") Long sedeId);
+
     Optional<InventarioInsumoSede> findByIdAndTiendaId(Long id, Long tiendaId);
 
     Optional<InventarioInsumoSede> findBySedeIdAndInsumoId(Long sedeId, Long insumoId);

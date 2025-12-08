@@ -64,7 +64,7 @@ const PlanesManagerView = ({
             title: 'Código',
             dataIndex: 'codigo',
             key: 'codigo',
-            width: 150,
+            width: 250,
             render: (codigo) => <Text strong>{codigo}</Text>,
         },
         {
@@ -145,7 +145,7 @@ const PlanesManagerView = ({
                 background: token.colorBgContainer,
                 boxShadow: token.boxShadowTertiary,
             }}
-            bodyStyle={{ padding: 24 }}
+            styles={{ body: { padding: 24 } }}
         >
             <div
                 style={{

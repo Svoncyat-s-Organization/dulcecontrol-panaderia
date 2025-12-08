@@ -42,7 +42,8 @@ public class ComprobanteService implements IComprobanteService {
     @Override
     @Transactional(readOnly = true)
     public ComprobanteResponse obtener(Long id) {
-        Comprobante c = comprobanteRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado"));
+        Comprobante c = comprobanteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado"));
         return toResponse(c);
     }
 

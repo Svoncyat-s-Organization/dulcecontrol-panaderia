@@ -1,5 +1,6 @@
 export const CATEGORIA_FORM_DEFAULTS = {
   nombre: '',
+  slug: '',
   descripcion: '',
   urlImagen: '',
   ordenVisual: 0,
@@ -12,11 +13,13 @@ export const mapCategoriasResponse = (categorias = []) =>
     ordenVisual: Number.isFinite(Number(categoria.ordenVisual))
       ? Number(categoria.ordenVisual)
       : 0,
+    productosCount: categoria.productosCount ?? 0,
   }));
 
 export const getCategoriaFormInitialValues = (categoria) => ({
   ...CATEGORIA_FORM_DEFAULTS,
   nombre: categoria?.nombre ?? CATEGORIA_FORM_DEFAULTS.nombre,
+  slug: categoria?.slug ?? CATEGORIA_FORM_DEFAULTS.slug,
   descripcion: categoria?.descripcion ?? CATEGORIA_FORM_DEFAULTS.descripcion,
   urlImagen: categoria?.urlImagen ?? CATEGORIA_FORM_DEFAULTS.urlImagen,
   ordenVisual: categoria?.ordenVisual ?? CATEGORIA_FORM_DEFAULTS.ordenVisual,
@@ -25,6 +28,7 @@ export const getCategoriaFormInitialValues = (categoria) => ({
 
 export const buildCategoriaPayload = (values) => ({
   nombre: values.nombre?.trim() ?? '',
+  slug: values.slug?.trim() ?? '',
   descripcion: values.descripcion ?? '',
   urlImagen: values.urlImagen ?? '',
   activa: values.activa ?? true,

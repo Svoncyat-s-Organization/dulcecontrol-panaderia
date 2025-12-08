@@ -6,6 +6,12 @@ import com.dulcecontrol.bakery.features.admin.inventario.dto.InventarioProductoR
 import com.dulcecontrol.bakery.features.admin.inventario.entity.InventarioProducto;
 import com.dulcecontrol.bakery.features.admin.inventario.repository.InventarioProductoRepository;
 import com.dulcecontrol.bakery.features.admin.inventario.service.IInventarioProductoService;
+import com.dulcecontrol.bakery.features.admin.catalogo.entity.Producto;
+import com.dulcecontrol.bakery.features.admin.catalogo.entity.Categoria;
+import com.dulcecontrol.bakery.features.shared.catalogo.repository.ProductoRepository;
+import com.dulcecontrol.bakery.features.shared.catalogo.repository.CategoriaRepository;
+import com.dulcecontrol.bakery.features.admin.produccion.entity.StockIdeal;
+import com.dulcecontrol.bakery.features.admin.produccion.repository.StockIdealRepository;
 import com.dulcecontrol.bakery.shared.exception.BadRequestException;
 import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -13,12 +19,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class InventarioProductoService implements IInventarioProductoService {
 
     private final InventarioProductoRepository repository;
+    private final ProductoRepository productoRepository;
+    private final CategoriaRepository categoriaRepository;
+    private final StockIdealRepository stockIdealRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -93,6 +103,30 @@ public class InventarioProductoService implements IInventarioProductoService {
     }
 
     private InventarioProductoResponse toResponse(InventarioProducto entity) {
+        // Obtener datos del producto
+        Producto producto = productoRepository.findById(entity.getProductoId())
+                .orElse(null);
+        
+        String nombreProducto = producto != null ? producto.getNombre() : "Producto no encontrado";
+        String sku = producto != null ? producto.getSku() : null;
+        
+        // Obtener categoría
+        String categoriaNombre = null;
+        if (producto != null && producto.getCategoriaId() != null) {
+            categoriaNombre = categoriaRepository.findById(producto.getCategoriaId())
+                    .map(Categoria::getNombre)
+                    .orElse(null);
+        }
+        
+        // Obtener stock ideal para esta sede
+        Optional<StockIdeal> stockIdealOpt = stockIdealRepository.findByTiendaIdAndSedeIdAndProductoId(
+                entity.getTiendaId(), entity.getSedeId(), entity.getProductoId());
+        
+        Integer stockIdeal = stockIdealOpt.map(StockIdeal::getCantidadIdeal).orElse(null);
+        
+        // Calcular estado de stock
+        String estadoStock = calcularEstadoStock(entity.getCantidadActual(), stockIdeal);
+        
         return InventarioProductoResponse.builder()
                 .id(entity.getId())
                 .sedeId(entity.getSedeId())
@@ -100,6 +134,27 @@ public class InventarioProductoService implements IInventarioProductoService {
                 .cantidadActual(entity.getCantidadActual())
                 .ubicacionFisica(entity.getUbicacionFisica())
                 .actualizadoEn(entity.getActualizadoEn())
+                .nombreProducto(nombreProducto)
+                .sku(sku)
+                .stockIdeal(stockIdeal)
+                .estadoStock(estadoStock)
+                .categoriaNombre(categoriaNombre)
                 .build();
+    }
+    
+    private String calcularEstadoStock(Integer cantidadActual, Integer stockIdeal) {
+        if (stockIdeal == null) {
+            return "SIN_CONFIGURAR";
+        }
+        
+        double porcentaje = (double) cantidadActual / stockIdeal;
+        
+        if (porcentaje >= 0.8) {
+            return "OK";
+        } else if (porcentaje >= 0.2) {
+            return "BAJO_STOCK";
+        } else {
+            return "CRITICO";
+        }
     }
 }

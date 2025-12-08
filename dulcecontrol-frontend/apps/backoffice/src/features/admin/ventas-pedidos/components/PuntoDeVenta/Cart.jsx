@@ -38,7 +38,17 @@ const Cart = ({ onCheckout }) => {
             </div>
             <Card
                 title={<><ShoppingCartOutlined /> Carrito de Compras</>}
-                extra={items.length > 0 && <Button type="link" danger onClick={clearCart}>Vaciar</Button>}
+                extra={items.length > 0 && (
+                    <Button
+                        type="primary"
+                        danger
+                        icon={<DeleteOutlined />}
+                        size="small"
+                        onClick={clearCart}
+                    >
+                        Vaciar
+                    </Button>
+                )}
                 style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
                 styles={{ body: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 } }}
             >
@@ -81,7 +91,7 @@ const Cart = ({ onCheckout }) => {
                                         S/ {((item.precioBaseCentimos * item.quantity) / 100).toFixed(2)}
                                     </Text>
                                 </div>
-                                {isPedido && (
+                                {isPedido && item.esPersonalizable && (
                                     <div style={{ marginTop: 12 }}>
                                         <Text type="secondary" style={{ fontSize: 12 }}>Notas para este producto</Text>
                                         <Input.TextArea
@@ -103,7 +113,7 @@ const Cart = ({ onCheckout }) => {
             <div style={{ padding: 16, background: '#fafafa', borderTop: '1px solid #f0f0f0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
                     <Title level={4} style={{ margin: 0 }}>Total</Title>
-                    <Title level={3} style={{ margin: 0, color: '#52c41a' }}>S/ {total.toFixed(2)}</Title>
+                    <Title level={3} style={{ margin: 0, color: '#1677ff' }}>S/ {total.toFixed(2)}</Title>
                 </div>
                 <Button
                     type="primary"

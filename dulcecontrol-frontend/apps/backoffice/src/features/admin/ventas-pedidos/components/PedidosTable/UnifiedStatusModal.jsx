@@ -1,6 +1,8 @@
 import { Modal, Form, Select, Alert, Divider, Row, Col, Radio, Typography, Button, Input } from 'antd';
-import { CheckCircleOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, WarningOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
+import MoneyInput from '../../../../../shared/components/MoneyInput.jsx';
+import { useCajaSession } from '../../hooks/useCajaSession.js';
 
 const { Option } = Select;
 const { Title, Text } = Typography;
@@ -8,9 +10,11 @@ const { Title, Text } = Typography;
 const UnifiedStatusModal = ({ open, onClose, pedido, onConfirmPayment, onConfirmStatus, loadingPayment, loadingStatus }) => {
     const [form] = Form.useForm();
     const [selectedOrderStatus, setSelectedOrderStatus] = useState(null);
-    const [centavosInput, setCentavosInput] = useState('000');
+    const [montoPagar, setMontoPagar] = useState(0);
     const [localSaldoPendiente, setLocalSaldoPendiente] = useState(0);
     const [localIsPaymentComplete, setLocalIsPaymentComplete] = useState(false);
+
+    const { isOpen: isCajaOpen, session: cajaSession } = useCajaSession();
 
     const isOrderDelivered = pedido?.estado?.toLowerCase() === 'entregado';
 
@@ -22,7 +26,7 @@ const UnifiedStatusModal = ({ open, onClose, pedido, onConfirmPayment, onConfirm
 
             setLocalSaldoPendiente(saldoInicial);
             setLocalIsPaymentComplete(pedido.estadoPago?.toLowerCase() === 'pagado_total');
-            setCentavosInput('000');
+            setMontoPagar(0);
 
             form.setFieldsValue({
                 estadoPedido: pedido.raw?.estadoPedido,
@@ -39,7 +43,7 @@ const UnifiedStatusModal = ({ open, onClose, pedido, onConfirmPayment, onConfirm
     const handleCancel = () => {
         form.resetFields();
         setSelectedOrderStatus(null);
-        setCentavosInput('000');
+        setMontoPagar(0);
         setLocalSaldoPendiente(0);
         setLocalIsPaymentComplete(false);
         onClose();
@@ -49,32 +53,15 @@ const UnifiedStatusModal = ({ open, onClose, pedido, onConfirmPayment, onConfirm
         setSelectedOrderStatus(value);
     };
 
-    const handleCentavosKeyDown = (e) => {
-        if (e.key >= '0' && e.key <= '9') {
-            e.preventDefault();
-            const newValue = (centavosInput + e.key).slice(-10);
-            setCentavosInput(newValue.padStart(3, '0'));
-        } else if (e.key === 'Backspace') {
-            e.preventDefault();
-            const newValue = ('0' + centavosInput).slice(0, -1);
-            setCentavosInput(newValue.padStart(3, '0'));
-        }
-    };
 
-    const formatCentavosDisplay = (centavos) => {
-        const paddedValue = centavos.padStart(3, '0');
-        const integerPart = paddedValue.slice(0, -2) || '0';
-        const decimalPart = paddedValue.slice(-2);
-        return `${parseInt(integerPart).toLocaleString('es-PE')}.${decimalPart}`;
-    };
-
-    const getCentavosValue = () => {
-        return parseInt(centavosInput) / 100;
-    };
 
     const handlePayment = () => {
+        if (!isCajaOpen || !cajaSession) {
+            return;
+        }
+
         const metodoPago = form.getFieldValue('metodoPago');
-        const montoPagado = getCentavosValue();
+        const montoPagado = montoPagar;
 
         if (!metodoPago || montoPagado <= 0) {
             return;
@@ -92,6 +79,7 @@ const UnifiedStatusModal = ({ open, onClose, pedido, onConfirmPayment, onConfirm
         onConfirmPayment(pedido, {
             metodoPago: metodoPago,
             montoPagado: montoPagado,
+            sesionCajaId: cajaSession.id,
         });
 
         // Update local state
@@ -99,7 +87,7 @@ const UnifiedStatusModal = ({ open, onClose, pedido, onConfirmPayment, onConfirm
         setLocalIsPaymentComplete(esPagoCompleto);
 
         // Reset inputs
-        setCentavosInput('000');
+        setMontoPagar(0);
         form.setFieldsValue({
             metodoPago: 'efectivo',
         });
@@ -140,71 +128,83 @@ const UnifiedStatusModal = ({ open, onClose, pedido, onConfirmPayment, onConfirm
                                 <Text strong style={{ fontSize: 16 }}>Registro de Pago</Text>
                             </div>
 
-                            <div style={{
-                                background: '#fff7e6',
-                                padding: '12px 16px',
-                                borderRadius: 6,
-                                marginBottom: 16,
-                                border: '1px solid #ffd666'
-                            }}>
-                                <Text type="secondary">Saldo Pendiente</Text>
-                                <Title level={3} style={{ margin: 0, color: '#fa8c16' }}>
-                                    S/ {localSaldoPendiente.toFixed(2)}
-                                </Title>
-                            </div>
-
-                            <Form.Item
-                                name="metodoPago"
-                                label="Método de Pago"
-                            >
-                                <Radio.Group
-                                    buttonStyle="solid"
-                                    style={{ width: '100%' }}
-                                >
-                                    <Row gutter={[8, 8]}>
-                                        <Col span={12}><Radio.Button value="efectivo" style={{ width: '100%', textAlign: 'center' }}>Efectivo</Radio.Button></Col>
-                                        <Col span={12}><Radio.Button value="yape" style={{ width: '100%', textAlign: 'center' }}>Yape / Plin</Radio.Button></Col>
-                                        <Col span={12}><Radio.Button value="tarjeta_credito" style={{ width: '100%', textAlign: 'center' }}>Tarjeta</Radio.Button></Col>
-                                        <Col span={12}><Radio.Button value="transferencia" style={{ width: '100%', textAlign: 'center' }}>Transferencia</Radio.Button></Col>
-                                    </Row>
-                                </Radio.Group>
-                            </Form.Item>
-
-                            <div style={{ marginBottom: 16 }}>
-                                <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
-                                    Monto a Pagar
-                                </label>
-                                <Input
-                                    size="large"
-                                    value={`S/ ${formatCentavosDisplay(centavosInput)}`}
-                                    onKeyDown={handleCentavosKeyDown}
-                                    readOnly
-                                    style={{
-                                        fontSize: '24px',
-                                        fontWeight: 'bold',
-                                        textAlign: 'right',
-                                        color: '#1890ff',
-                                        cursor: 'text'
-                                    }}
-                                    placeholder="S/ 0.00"
+                            {!isCajaOpen ? (
+                                <Alert
+                                    message="Caja Cerrada"
+                                    description="Debes abrir una caja en el Punto de Venta para poder registrar pagos."
+                                    type="warning"
+                                    showIcon
+                                    icon={<WarningOutlined />}
+                                    style={{ marginBottom: 16 }}
                                 />
-                                {getCentavosValue() > localSaldoPendiente && (
-                                    <Text type="danger" style={{ fontSize: 12 }}>
-                                        El monto excede el saldo pendiente
-                                    </Text>
-                                )}
-                            </div>
+                            ) : (
+                                <>
+                                    <div style={{
+                                        background: '#fff7e6',
+                                        padding: '12px 16px',
+                                        borderRadius: 6,
+                                        marginBottom: 16,
+                                        border: '1px solid #ffd666'
+                                    }}>
+                                        <Text type="secondary">Saldo Pendiente</Text>
+                                        <Title level={3} style={{ margin: 0, color: '#fa8c16' }}>
+                                            S/ {localSaldoPendiente.toFixed(2)}
+                                        </Title>
+                                    </div>
 
-                            <Button
-                                type="primary"
-                                block
-                                size="large"
-                                onClick={handlePayment}
-                                loading={loadingPayment}
-                                disabled={getCentavosValue() <= 0 || getCentavosValue() > localSaldoPendiente}
-                            >
-                                Registrar Pago
-                            </Button>
+                                    <Form.Item
+                                        name="metodoPago"
+                                        label="Método de Pago"
+                                    >
+                                        <Radio.Group
+                                            buttonStyle="solid"
+                                            style={{ width: '100%' }}
+                                        >
+                                            <Row gutter={[8, 8]}>
+                                                <Col span={12}><Radio.Button value="efectivo" style={{ width: '100%', textAlign: 'center' }}>Efectivo</Radio.Button></Col>
+                                                <Col span={12}><Radio.Button value="yape" style={{ width: '100%', textAlign: 'center' }}>Yape / Plin</Radio.Button></Col>
+                                                <Col span={12}><Radio.Button value="tarjeta_credito" style={{ width: '100%', textAlign: 'center' }}>Tarjeta</Radio.Button></Col>
+                                                <Col span={12}><Radio.Button value="transferencia" style={{ width: '100%', textAlign: 'center' }}>Transferencia</Radio.Button></Col>
+                                            </Row>
+                                        </Radio.Group>
+                                    </Form.Item>
+
+                                    <div style={{ marginBottom: 16 }}>
+                                        <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+                                            Monto a Pagar
+                                        </label>
+                                        <MoneyInput
+                                            size="large"
+                                            value={montoPagar}
+                                            onChange={setMontoPagar}
+                                            style={{
+                                                fontSize: '24px',
+                                                fontWeight: 'bold',
+                                                textAlign: 'right',
+                                                color: '#1890ff',
+                                                cursor: 'text'
+                                            }}
+                                            placeholder="0.00"
+                                        />
+                                        {montoPagar > localSaldoPendiente && (
+                                            <Text type="danger" style={{ fontSize: 12 }}>
+                                                El monto excede el saldo pendiente
+                                            </Text>
+                                        )}
+                                    </div>
+
+                                    <Button
+                                        type="primary"
+                                        block
+                                        size="large"
+                                        onClick={handlePayment}
+                                        loading={loadingPayment}
+                                        disabled={montoPagar <= 0 || montoPagar > localSaldoPendiente}
+                                    >
+                                        Registrar Pago
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     </>
                 )}
