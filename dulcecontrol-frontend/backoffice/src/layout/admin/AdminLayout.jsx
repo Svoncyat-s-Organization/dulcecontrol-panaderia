@@ -1,20 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Button, Result, Space, Spin, theme } from 'antd';
 import { useQuery } from '@tanstack/react-query';
-import { 
-  IconLogout, 
-  IconRefresh, 
-  IconLayoutGrid, 
-  IconUsers, 
-  IconShoppingBag, 
-  IconInvoice, 
-  IconCakeRoll, 
-  IconBrandCakephp, 
-  IconBasketDollar, 
-  IconBuildingWarehouse, 
-  IconShieldLock, 
-  IconSettings 
-} from '@tabler/icons-react';
+import { IconLogout, IconRefresh } from '@tabler/icons-react';
 import { useTokenStore } from '../../shared/store/tokenStore.js';
 import SedeSelector from '../../shared/components/SedeSelector.jsx';
 import MainLayout from '../shared/MainLayout.jsx';
@@ -27,48 +14,6 @@ import { createPermissionSet } from '../../shared/utils/permissionUtils.js';
 import { DEV_AUTH_TOKEN, DEV_PERMISSION_SLUGS } from '../../shared/constants/devAuth.js';
 
 const BASE_PATH = '/admin';
-
-const getItem = (label, key, icon, children) => ({ key, icon, label, children });
-
-const menuItems = [
-  getItem('Tablero', BASE_PATH, <IconLayoutGrid size={18} />),
-  getItem('Clientes', `${BASE_PATH}/clientes`, <IconUsers size={18} />),
-  getItem('Ventas & Pedidos', `${BASE_PATH}/ventas`, <IconShoppingBag size={18} />, [
-    getItem('Punto de venta', `${BASE_PATH}/ventas/punto-de-venta`),
-    getItem('Pedidos', `${BASE_PATH}/ventas/pedidos`),
-    getItem('Cajas', `${BASE_PATH}/ventas/cajas`),
-    getItem('Historial de ventas', `${BASE_PATH}/ventas/historial`),
-  ]),
-  getItem('Facturación', `${BASE_PATH}/facturacion`, <IconInvoice size={18} />, [
-    getItem('Series y Correlativos', `${BASE_PATH}/facturacion/series-correlativos`),
-    getItem('Comprobantes', `${BASE_PATH}/facturacion/comprobantes`),
-  ]),
-  getItem('Producción', `${BASE_PATH}/produccion`, <IconCakeRoll size={18} />, [
-    getItem('Stock ideal', `${BASE_PATH}/produccion/stock-ideal`),
-    getItem('Planificación', `${BASE_PATH}/produccion/planificacion`),
-    getItem('Recetas', `${BASE_PATH}/produccion/recetas`),
-  ]),
-  getItem('Catálogo', `${BASE_PATH}/catalogo`, <IconBrandCakephp size={18} />, [
-    getItem('Productos', `${BASE_PATH}/catalogo/productos`),
-    getItem('Categorías', `${BASE_PATH}/catalogo/categorias`),
-  ]),
-  getItem('Compras y Proveedores', `${BASE_PATH}/compras`, <IconBasketDollar size={18} />, [
-    getItem('Proveedores', `${BASE_PATH}/compras/proveedores`),
-    getItem('Órdenes de Compra', `${BASE_PATH}/compras/ordenes`),
-  ]),
-  getItem('Inventario', `${BASE_PATH}/inventario`, <IconBuildingWarehouse size={18} />, [
-    getItem('Existencias', `${BASE_PATH}/inventario/existencias`),
-    getItem('Insumos', `${BASE_PATH}/inventario/insumos`),
-    getItem('Movimientos', `${BASE_PATH}/inventario/movimientos`),
-  ]),
-  // getItem('Reportes', `${BASE_PATH}/reportes`, <IconReport size={18} />),
-  getItem('Seguridad', `${BASE_PATH}/seguridad`, <IconShieldLock size={18} />),
-  getItem('Configuración', `${BASE_PATH}/configuracion`, <IconSettings size={18} />, [
-    getItem('Datos de Empresa', `${BASE_PATH}/configuracion/datos-empresa`),
-    getItem('Sedes', `${BASE_PATH}/configuracion/sedes`),
-    getItem('Tienda Virtual', `${BASE_PATH}/configuracion/tienda-virtual`),
-  ]),
-];
 
 const AdminLayout = () => {
   const logout = useTokenStore((state) => state.logout);

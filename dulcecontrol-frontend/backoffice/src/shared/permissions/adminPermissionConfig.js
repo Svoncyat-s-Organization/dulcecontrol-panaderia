@@ -314,14 +314,19 @@ export const ADMIN_MENU_BLUEPRINT = [
     permissionPrefixes: ['config'],
     children: [
       {
-        key: `${BASE_PATH}/configuracion/preferencias`,
-        label: 'Preferencias',
+        key: `${BASE_PATH}/configuracion/datos-empresa`,
+        label: 'Datos de Empresa',
         permissionPrefixes: ['config'],
       },
       {
         key: `${BASE_PATH}/configuracion/sedes`,
         label: 'Sedes',
         permissionPrefixes: ['config', 'config.sedes'],
+      },
+      {
+        key: `${BASE_PATH}/configuracion/tienda-virtual`,
+        label: 'Tienda Virtual',
+        permissionPrefixes: ['config'],
       },
     ],
   },

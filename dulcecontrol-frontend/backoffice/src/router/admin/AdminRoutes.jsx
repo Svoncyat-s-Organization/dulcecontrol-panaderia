@@ -66,19 +66,6 @@ const PLACEHOLDER_ROUTES = [
     description: 'Consolida KPIs diarios y alertas financieras de la operación.',
   },
   {
-    path: 'configuracion',
-    title: 'Configuración',
-    description: 'Centralizará ajustes de tienda, branding y preferencias generales.',
-    path: 'seguridad',
-    title: 'Seguridad',
-    description: 'Gestiona roles, permisos y accesos del personal administrativo.',
-  },
-  {
-    path: 'configuracion/tienda-virtual',
-    title: 'Tienda Virtual',
-    description: 'Configura la apariencia, contenido y branding de tu tienda online.',
-  },
-  {
     path: 'configuracion/preferencias',
     title: 'Preferencias',
     description: 'Define horarios, monedas y parámetros locales para la operación.',
