@@ -22,6 +22,7 @@ const ConfiguracionPublicaForm = () => {
     queryKey: CONFIGURACION_PUBLICA_KEYS.byTienda(tiendaId),
     queryFn: () => getConfiguracionPublica(tiendaId),
     enabled: !!tiendaId,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Mutation para actualizar
@@ -97,7 +98,20 @@ const ConfiguracionPublicaForm = () => {
             <Form.Item
               label="Horario de Atención (JSON)"
               name="horarioAtencion"
-              tooltip='Formato: {"lunes": {"abierto": true, "horario": "09:00-18:00"}}'
+              tooltip='{"lunes": {"abierto": true, "horario": "09:00-18:00"}}'
+              rules={[
+                {
+                  validator: (_, value) => {
+                    if (!value) return Promise.resolve();
+                    try {
+                      JSON.parse(value);
+                      return Promise.resolve();
+                    } catch {
+                      return Promise.reject(new Error('JSON inválido'));
+                    }
+                  },
+                },
+              ]}
             >
               <TextArea
                 rows={6}
@@ -110,11 +124,24 @@ const ConfiguracionPublicaForm = () => {
             <Form.Item
               label="Redes Sociales (JSON)"
               name="redesSociales"
-              tooltip='Formato: {"facebook": "url", "instagram": "url"}'
+              tooltip='{"facebook": "url", "instagram": "url"}'
+              rules={[
+                {
+                  validator: (_, value) => {
+                    if (!value) return Promise.resolve();
+                    try {
+                      JSON.parse(value);
+                      return Promise.resolve();
+                    } catch {
+                      return Promise.reject(new Error('JSON inválido'));
+                    }
+                  },
+                },
+              ]}
             >
               <TextArea
                 rows={6}
-                placeholder='{"facebook": "https://facebook.com/...", "instagram": "https://instagram.com/..."}'
+                placeholder='{"facebook": "https://facebook.com/...", "instagram": "https://instagram.com/..."}}'
               />
             </Form.Item>
           </Col>

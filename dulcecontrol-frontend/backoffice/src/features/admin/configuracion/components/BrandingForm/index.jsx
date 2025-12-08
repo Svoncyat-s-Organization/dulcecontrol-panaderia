@@ -20,6 +20,7 @@ const BrandingForm = () => {
     queryKey: BRANDING_KEYS.byTienda(tiendaId),
     queryFn: () => getBranding(tiendaId),
     enabled: !!tiendaId,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Mutation para actualizar branding

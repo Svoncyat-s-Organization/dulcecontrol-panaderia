@@ -25,6 +25,7 @@ const PaginasStorefrontTable = () => {
     queryKey: PAGINAS_STOREFRONT_KEYS.lists(tiendaId),
     queryFn: () => getPaginasStorefront(tiendaId),
     enabled: !!tiendaId,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Mutation para crear

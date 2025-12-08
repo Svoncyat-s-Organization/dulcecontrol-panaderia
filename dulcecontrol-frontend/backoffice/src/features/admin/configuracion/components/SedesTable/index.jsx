@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { message, Modal } from 'antd';
 import { getSedes, createSede, updateSede, deleteSede, desactivarSede } from '../../api/sedes.api';
 import { SEDES_KEYS } from '../../constants/queryKeys';
+import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 import SedesTableView from './SedesTableView';
 
 /**
@@ -12,14 +13,14 @@ export default function SedesTable() {
   const queryClient = useQueryClient();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingSede, setEditingSede] = useState(null);
-
-  // TODO: Obtener tiendaId del contexto de autenticación
-  const tiendaId = 1;
+  const tiendaId = useTokenStore((state) => state.tiendaId);
 
   // Consulta para obtener las sedes
   const { data: sedes = [], isLoading } = useQuery({
     queryKey: SEDES_KEYS.lists(tiendaId),
     queryFn: () => getSedes(tiendaId),
+    enabled: !!tiendaId,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Mutación para crear sede
