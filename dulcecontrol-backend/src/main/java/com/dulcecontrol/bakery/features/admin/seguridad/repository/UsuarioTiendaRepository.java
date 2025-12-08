@@ -27,6 +27,8 @@ public interface UsuarioTiendaRepository extends JpaRepository<UsuarioTienda, Lo
 
     boolean existsByTiendaIdAndNumeroDocAndIdNot(Long tiendaId, String numeroDoc, Long id);
 
+    boolean existsByTiendaIdAndRolId(Long tiendaId, Long rolId);
+
     List<UsuarioTienda> findByTiendaId(Long tiendaId);
 
     Optional<UsuarioTienda> findByIdAndTiendaId(Long id, Long tiendaId);

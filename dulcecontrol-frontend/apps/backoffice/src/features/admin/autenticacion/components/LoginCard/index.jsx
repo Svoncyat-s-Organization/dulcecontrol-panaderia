@@ -7,6 +7,7 @@ import { AUTH_MESSAGES } from '../../constants/messages.js';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 import LoginCardView from './LoginCardView.jsx';
 import { featureFlags } from '../../../../../config/featureFlags.js';
+import { DEV_AUTH_TOKEN } from '../../../../../shared/constants/devAuth.js';
 
 const LoginCard = ({ redirectPath }) => {
   const login = useTokenStore((state) => state.login);
@@ -50,10 +51,11 @@ const LoginCard = ({ redirectPath }) => {
 
     setFormError(null);
     login({
-      token: 'dev-admin-token',
+      token: DEV_AUTH_TOKEN,
       userType: 'ADMIN',
       tiendaId: 1,
       expiresIn: null,
+      userId: 0,
     });
     message.info(AUTH_MESSAGES.DEV_LOGIN);
     navigate(redirectPath, { replace: true });

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useSedeStore } from './sedeStore.js';
+import { useAuthorizationStore } from './authorizationStore.js';
 import { parseJwt } from '../utils/jwtUtils.js';
 
 const initialState = {
@@ -20,12 +21,17 @@ export const useTokenStore = create(
             login: ({ token, userType, tiendaId = null, expiresIn, userId }) => {
                 const expiresAt = expiresIn ? Date.now() + expiresIn * 1000 : null;
                 const { selectedTiendaId, clearSelection } = useSedeStore.getState();
+                useAuthorizationStore.getState().reset();
                 if (selectedTiendaId && tiendaId !== selectedTiendaId) {
                     clearSelection();
                 }
-                const userClaims = parseJwt(token);
+                const userClaims = parseJwt(token) || {};
                 // Merge claims with explicit userId if provided
-                const user = { ...userClaims, id: userId || userClaims?.id };
+                const resolvedUserId = typeof userId === 'number' ? userId : userClaims?.id;
+                const user = {
+                    ...userClaims,
+                    id: resolvedUserId,
+                };
 
                 set({
                     token,
@@ -41,6 +47,7 @@ export const useTokenStore = create(
                 set({ ...initialState });
                 localStorage.removeItem('token-storage');
                 useSedeStore.getState().clearSelection();
+                useAuthorizationStore.getState().reset();
             },
             setPanelRoleHint: (role) => {
                 set({ panelRoleHint: role });

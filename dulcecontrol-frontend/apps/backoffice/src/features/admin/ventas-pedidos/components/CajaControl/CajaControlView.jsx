@@ -236,7 +236,13 @@ const CajaControlView = ({
                 <ShopOutlined style={{ fontSize: 48, color: '#faad14', marginBottom: 24 }} />
                 <h2>Caja Cerrada</h2>
                 <br />
-                <Button type="primary" size="large" icon={<UnlockOutlined />} onClick={onOpenClick} style={{ marginBottom: 24 }}>
+                <Button
+                    type="primary"
+                    size="large"
+                    icon={<UnlockOutlined />}
+                    onClick={onOpenClick}
+                    style={{ marginBottom: 24 }}
+                >
                     Abrir Caja
                 </Button>
                 <p>Debe abrir una sesión de caja para poder realizar ventas.</p>

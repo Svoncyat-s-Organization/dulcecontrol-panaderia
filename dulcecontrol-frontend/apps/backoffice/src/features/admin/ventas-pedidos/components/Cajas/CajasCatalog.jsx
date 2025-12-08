@@ -189,7 +189,12 @@ const CajasCatalog = () => {
                         cancelText="No"
                         onConfirm={() => deleteMutation.mutate(record.id)}
                     >
-                        <Button type="link" danger icon={<DeleteOutlined />} loading={deleteMutation.isPending}>
+                        <Button
+                            type="link"
+                            danger
+                            icon={<DeleteOutlined />}
+                            loading={deleteMutation.isPending}
+                        >
                             Eliminar
                         </Button>
                     </Popconfirm>
@@ -228,7 +233,11 @@ const CajasCatalog = () => {
                     </Typography.Title>
                     <Text type="secondary">Administra las cajas de cada sede.</Text>
                 </div>
-                <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenDrawer()}>
+                <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => handleOpenDrawer()}
+                >
                     Crear nueva caja
                 </Button>
             </div>
@@ -280,7 +289,11 @@ const CajasCatalog = () => {
                 extra={
                     <Space>
                         <Button onClick={handleCloseDrawer}>Cancelar</Button>
-                        <Button type="primary" onClick={handleSubmit} loading={mutation.isPending}>
+                        <Button
+                            type="primary"
+                            onClick={handleSubmit}
+                            loading={mutation.isPending}
+                        >
                             Guardar
                         </Button>
                     </Space>

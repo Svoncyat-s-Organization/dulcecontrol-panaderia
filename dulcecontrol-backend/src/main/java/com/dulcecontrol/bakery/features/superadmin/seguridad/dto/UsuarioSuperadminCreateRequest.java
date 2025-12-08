@@ -3,10 +3,13 @@ package com.dulcecontrol.bakery.features.superadmin.seguridad.dto;
 import com.dulcecontrol.bakery.features.superadmin.seguridad.entity.enums.TipoDocumento;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.Set;
 
 @Getter
 @Setter
@@ -31,4 +34,7 @@ public class UsuarioSuperadminCreateRequest {
 
     @Size(max = 50)
     private String telefono;
+
+    @NotEmpty
+    private Set<Long> roles;
 }

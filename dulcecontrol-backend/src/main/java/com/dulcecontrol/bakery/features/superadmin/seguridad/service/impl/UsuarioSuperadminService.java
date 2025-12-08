@@ -1,9 +1,12 @@
 package com.dulcecontrol.bakery.features.superadmin.seguridad.service.impl;
 
+import com.dulcecontrol.bakery.features.superadmin.seguridad.dto.RolSuperadminSummaryResponse;
 import com.dulcecontrol.bakery.features.superadmin.seguridad.dto.UsuarioSuperadminCreateRequest;
 import com.dulcecontrol.bakery.features.superadmin.seguridad.dto.UsuarioSuperadminResponse;
 import com.dulcecontrol.bakery.features.superadmin.seguridad.dto.UsuarioSuperadminUpdateRequest;
+import com.dulcecontrol.bakery.features.superadmin.seguridad.entity.RolSuperadmin;
 import com.dulcecontrol.bakery.features.superadmin.seguridad.entity.UsuarioSuperadmin;
+import com.dulcecontrol.bakery.features.superadmin.seguridad.repository.RolSuperadminRepository;
 import com.dulcecontrol.bakery.features.superadmin.seguridad.repository.UsuarioSuperadminRepository;
 import com.dulcecontrol.bakery.features.superadmin.seguridad.service.IUsuarioSuperadminService;
 import com.dulcecontrol.bakery.shared.exception.BadRequestException;
@@ -14,7 +17,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +30,7 @@ public class UsuarioSuperadminService implements IUsuarioSuperadminService {
 
     private final UsuarioSuperadminRepository usuarioRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final RolSuperadminRepository rolRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -46,6 +55,8 @@ public class UsuarioSuperadminService implements IUsuarioSuperadminService {
         String numeroDocNormalizado = limpiar(request.getNumeroDoc());
         validarDuplicadosAlCrear(correoNormalizado, numeroDocNormalizado);
 
+        Set<RolSuperadmin> rolesAsignados = resolverRoles(request.getRoles(), true);
+
         UsuarioSuperadmin usuario = new UsuarioSuperadmin();
         usuario.setCorreo(correoNormalizado);
         usuario.setHashContrasena(passwordEncoder.encode(request.getContrasena()));
@@ -54,6 +65,7 @@ public class UsuarioSuperadminService implements IUsuarioSuperadminService {
         usuario.setNombres(request.getNombres());
         usuario.setTelefono(limpiar(request.getTelefono()));
         usuario.setActivo(Boolean.TRUE);
+        usuario.setRoles(new HashSet<>(rolesAsignados));
 
         UsuarioSuperadmin guardado = usuarioRepository.save(usuario);
         return toResponse(guardado);
@@ -94,6 +106,11 @@ public class UsuarioSuperadminService implements IUsuarioSuperadminService {
             usuario.setHashContrasena(passwordEncoder.encode(request.getNuevaContrasena()));
         }
 
+        if (request.getRoles() != null) {
+            Set<RolSuperadmin> roles = resolverRoles(request.getRoles(), true);
+            usuario.setRoles(new HashSet<>(roles));
+        }
+
         UsuarioSuperadmin actualizado = usuarioRepository.save(usuario);
         return toResponse(actualizado);
     }
@@ -119,7 +136,24 @@ public class UsuarioSuperadminService implements IUsuarioSuperadminService {
         return valor == null || valor.isBlank() ? null : valor.trim();
     }
 
+    private Set<RolSuperadmin> resolverRoles(Set<Long> rolesIds, boolean obligatorio) {
+        if (rolesIds == null || rolesIds.isEmpty()) {
+            if (obligatorio) {
+                throw new BadRequestException("Debe asignar al menos un rol");
+            }
+            return Set.of();
+        }
+
+        List<RolSuperadmin> encontrados = rolRepository.findAllById(rolesIds);
+        if (encontrados.size() != rolesIds.size()) {
+            throw new BadRequestException("Uno o más roles no existen");
+        }
+        return new HashSet<>(encontrados);
+    }
+
     private UsuarioSuperadminResponse toResponse(UsuarioSuperadmin usuario) {
+        Set<RolSuperadmin> roles = usuario.getRoles() == null ? Set.of() : usuario.getRoles();
+
         return UsuarioSuperadminResponse.builder()
                 .id(usuario.getId())
                 .correo(usuario.getCorreo())
@@ -130,6 +164,14 @@ public class UsuarioSuperadminService implements IUsuarioSuperadminService {
                 .activo(usuario.getActivo())
                 .creadoEn(usuario.getCreadoEn())
                 .actualizadoEn(usuario.getActualizadoEn())
+            .roles(roles.stream()
+                        .sorted(Comparator.comparing(RolSuperadmin::getNombre, String.CASE_INSENSITIVE_ORDER))
+                        .map(rol -> RolSuperadminSummaryResponse.builder()
+                                .id(rol.getId())
+                                .nombre(rol.getNombre())
+                                .esSistema(rol.getEsSistema())
+                                .build())
+                        .collect(Collectors.toCollection(LinkedHashSet::new)))
                 .build();
     }
 }

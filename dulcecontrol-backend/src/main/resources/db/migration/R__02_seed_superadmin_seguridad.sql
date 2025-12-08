@@ -106,6 +106,68 @@ ON DUPLICATE KEY UPDATE
   actualizado_en = VALUES(actualizado_en);
 
 -- =================================
+-- PERMISOS SUPERADMIN
+-- =================================
+
+INSERT INTO permisos_superadmin (id, slug, nombre_visible, modulo)
+VALUES
+  (1, 'seguridad.usuarios.view', 'Ver usuarios corporativos', 'Seguridad'),
+  (2, 'seguridad.usuarios.manage', 'Gestionar usuarios corporativos', 'Seguridad'),
+  (3, 'seguridad.roles.manage', 'Gestionar roles y permisos', 'Seguridad'),
+  (4, 'tiendas.manage', 'Gestionar tiendas y sucursales', 'Tiendas'),
+  (5, 'suscripciones.manage', 'Gestionar suscripciones', 'Suscripciones'),
+  (6, 'facturacion.manage', 'Gestionar facturación SaaS', 'Facturacion'),
+  (7, 'soporte.manage', 'Gestionar soporte corporativo', 'Soporte'),
+  (8, 'reportes.view', 'Ver reportes ejecutivos', 'Reportes')
+ON DUPLICATE KEY UPDATE
+  nombre_visible = VALUES(nombre_visible),
+  modulo = VALUES(modulo);
+
+-- =================================
+-- ROLES SUPERADMIN
+-- =================================
+
+INSERT INTO roles_superadmin (id, nombre, descripcion, es_sistema)
+VALUES
+  (
+    1,
+    'Administrador Global',
+    'Acceso completo a la plataforma y capacidades corporativas',
+    TRUE
+  )
+ON DUPLICATE KEY UPDATE
+  descripcion = VALUES(descripcion),
+  es_sistema = VALUES(es_sistema),
+  actualizado_en = CURRENT_TIMESTAMP;
+
+-- =================================
+-- ASIGNACIÓN DE PERMISOS A ROLES
+-- =================================
+
+INSERT INTO roles_superadmin_permisos (rol_id, permiso_id)
+SELECT
+  (SELECT id FROM roles_superadmin WHERE nombre = 'Administrador Global') AS rol_id,
+  p.id AS permiso_id
+FROM permisos_superadmin p
+ON DUPLICATE KEY UPDATE rol_id = VALUES(rol_id);
+
+-- =================================
+-- ASIGNACIÓN DE ROLES A USUARIOS
+-- =================================
+
+INSERT INTO usuarios_superadmin_roles (usuario_id, rol_id)
+SELECT u.id, r.id
+FROM usuarios_superadmin u
+CROSS JOIN roles_superadmin r
+WHERE r.nombre = 'Administrador Global'
+  AND u.correo IN (
+    'sofia.rojas@dulcecontrol.pe',
+    'martin.leon@dulcecontrol.pe',
+    'administrador@dulcecontrol.pe'
+  )
+ON DUPLICATE KEY UPDATE usuario_id = VALUES(usuario_id);
+
+-- =================================
 -- ACTIVIDADES RECIENTES
 -- =================================
 

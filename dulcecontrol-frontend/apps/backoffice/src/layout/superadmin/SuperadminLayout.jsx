@@ -37,8 +37,9 @@ const menuItems = [
     ]),
     getItem('Soporte', `${BASE_PATH}/soporte`, <IconHeartHandshake size={20} />),
     getItem('Seguridad', `${BASE_PATH}/seguridad`, <IconShieldLock size={20} />, [
-        getItem('El Equipo', `${BASE_PATH}/seguridad/equipo-superadmin`),
-        getItem('Bitácora de Auditoría', `${BASE_PATH}/seguridad/bitacora-auditoria`),
+        getItem('Usuarios', `${BASE_PATH}/seguridad/usuarios`),
+        getItem('Roles y Permisos', `${BASE_PATH}/seguridad/roles`),
+        getItem('Bitácora', `${BASE_PATH}/seguridad/bitacora`),
     ]),
 ];
 
