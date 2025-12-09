@@ -6,6 +6,7 @@ import { IconArrowRight } from '@tabler/icons-react';
 import ProductCard from '@/components/ProductCard';
 import { useTiendaConfig } from '../../context/TiendaConfigContext';
 import { getProductos, formatPrecio } from '@/api/catalogo.api';
+import { getPaginasActivas } from '@/api/tienda.api';
 
 const HomePage = () => {
   const { config } = useTiendaConfig();
@@ -16,9 +17,30 @@ const HomePage = () => {
     queryFn: () => getProductos({ destacado: true, size: 4 })
   });
 
+  // Fetch páginas activas (JSON sections para HomePage)
+  const { data: paginasData } = useQuery({
+    queryKey: ['paginas-storefront-activas'],
+    queryFn: getPaginasActivas,
+    staleTime: 5 * 60 * 1000, // Cache 5 minutos
+  });
+
+  // Extraer secciones JSON de HomePage
+  const seccionDestacados = paginasData?.find(p => p.slug === 'home-seccion-destacados');
+  const seccionPersonalizada = paginasData?.find(p => p.slug === 'home-seccion-personalizada');
+
+  // Parsear contenido JSON
+  const destacadosData = seccionDestacados 
+    ? JSON.parse(seccionDestacados.contenido || '{}')
+    : {};
+  
+  const personalizadaData = seccionPersonalizada
+    ? JSON.parse(seccionPersonalizada.contenido || '{}')
+    : {};
+
   // Banner y mensaje dinámicos desde el backend
   const bannerUrl = config?.bannerPrincipalUrl || 'https://images.unsplash.com/photo-1535141192574-5d4897c12636?auto=format&fit=crop&q=80&w=1000';
   const mensajeBienvenida = config?.mensajeBienvenida || 'Descubre la magia de la repostería artesanal. Sabores que te harán sonreír en cada bocado.';
+  const sloganTienda = config?.sloganTienda || 'Dulces Momentos';
 
   // Transformar productos de la API al formato esperado por ProductCard
   const featuredProducts = productosData?.content?.map(producto => ({
@@ -30,6 +52,11 @@ const HomePage = () => {
     badge: producto.tieneOferta ? 'OFERTA' : (producto.destacadoStorefront ? 'BEST SELLER' : null)
   })) || [];
 
+  // Dividir slogan en dos partes (primera palabra normal, resto en itálica)
+  const sloganParts = sloganTienda.trim().split(' ');
+  const primerapalabra = sloganParts[0] || 'Dulces';
+  const restoSlogan = sloganParts.slice(1).join(' ') || 'Momentos';
+
   return (
     <div className="flex flex-col w-full">
       {/* 1. Hero Section - Pink Background */}
@@ -37,8 +64,8 @@ const HomePage = () => {
         <div className="container flex flex-col md:flex-row items-center gap-12">
           <div className="flex-1 text-center md:text-left space-y-8 z-10">
             <h1 className="text-6xl md:text-8xl font-bold text-foreground leading-[0.9] tracking-tight">
-              Dulces <br/>
-              <span className="italic font-serif text-primary-foreground/80">Momentos</span>
+              {primerapalabra} <br/>
+              <span className="italic font-serif text-primary/80">{restoSlogan}</span>
             </h1>
             <p className="text-xl text-foreground/80 max-w-lg mx-auto md:mx-0 font-medium leading-relaxed">
               {mensajeBienvenida}
@@ -72,11 +99,11 @@ const HomePage = () => {
           <div className="text-center mb-16 space-y-4">
             <h2 className="text-4xl md:text-5xl font-bold text-foreground">Los Favoritos del Barrio</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-              Estos son los postres que todos están pidiendo. ¡No te quedes sin probarlos!
+              {destacadosData.subtitulo || 'Estos son los postres que todos están pidiendo. ¡No te quedes sin probarlos!'}
             </p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-12 mx-auto" style={{maxWidth: 'fit-content'}}>
             {loadingProductos ? (
               // Loading skeleton
               Array.from({ length: 4 }).map((_, index) => (
@@ -115,48 +142,37 @@ const HomePage = () => {
                  </div>
                  <h2 className="text-5xl md:text-6xl font-bold text-primary-foreground leading-tight">
                     ¿Tienes una idea única? <br/>
-                    <span className="text-white">¡La hacemos realidad!</span>
+                    <span className="text-white">
+                      {personalizadaData.titulo_destacado || '¡La hacemos realidad!'}
+                    </span>
                  </h2>
                  <p className="text-xl text-primary-foreground/90 font-medium max-w-xl">
-                    Sube una foto de referencia, elige tus sabores favoritos y nosotros nos encargamos del resto. Perfecto para cumpleaños y eventos especiales.
+                    {personalizadaData.descripcion || 'Sube una foto de referencia, elige tus sabores favoritos y nosotros nos encargamos del resto. Perfecto para cumpleaños y eventos especiales.'}
                  </p>
-                 <Button asChild size="lg" className="rounded-full bg-white text-primary-foreground hover:bg-white/90 font-bold uppercase tracking-widest px-10 py-7 shadow-xl border-0">
-                    <Link to="/custom-order">Cotizar Ahora</Link>
+                 <Button asChild size="lg" className="rounded-full bg-white text-primary hover:bg-white/90 font-bold uppercase tracking-widest px-10 py-7 shadow-xl border-0">
+                    <Link to={personalizadaData.enlace_boton || '/custom-order'}>
+                      {personalizadaData.texto_boton || 'Cotizar Ahora'}
+                    </Link>
                  </Button>
               </div>
               <div className="flex-1 relative">
                  <div className="grid grid-cols-2 gap-6">
-                    <img src="https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&q=80&w=500" className="rounded-2xl shadow-lg -rotate-6 hover:rotate-0 transition-transform duration-500 border-4 border-white/50" alt="Custom Cake 1" />
-                    <img src="https://images.unsplash.com/photo-1586985289688-ca3cf47d3e6e?auto=format&fit=crop&q=80&w=500" className="rounded-2xl shadow-lg rotate-6 hover:rotate-0 transition-transform duration-500 border-4 border-white/50 mt-12" alt="Custom Cake 2" />
+                    <img 
+                      src={personalizadaData.imagen_1 || 'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&q=80&w=500'} 
+                      className="rounded-2xl shadow-lg -rotate-6 hover:rotate-0 transition-transform duration-500 border-4 border-white/50" 
+                      alt="Personalización 1" 
+                    />
+                    <img 
+                      src={personalizadaData.imagen_2 || 'https://images.unsplash.com/photo-1586985289688-ca3cf47d3e6e?auto=format&fit=crop&q=80&w=500'} 
+                      className="rounded-2xl shadow-lg rotate-6 hover:rotate-0 transition-transform duration-500 border-4 border-white/50 mt-12" 
+                      alt="Personalización 2" 
+                    />
                  </div>
               </div>
            </div>
         </div>
         {/* Pattern overlay */}
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
-      </section>
-
-      {/* 4. Newsletter - Yellow Background */}
-      <section className="bg-accent py-24">
-        <div className="container text-center max-w-3xl mx-auto space-y-8">
-           <h2 className="text-4xl md:text-5xl font-bold text-foreground">Únete al Club Dulce</h2>
-           <p className="text-lg text-foreground/80 font-medium">
-             Recibe noticias frescas, ofertas exclusivas y un <span className="font-bold underline decoration-wavy decoration-primary">10% de descuento</span> en tu cumpleaños.
-           </p>
-           <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto pt-4">
-              <input 
-                type="email" 
-                placeholder="TU CORREO ELECTRÓNICO" 
-                className="flex h-14 w-full rounded-full border-2 border-foreground/10 bg-white px-8 text-xs font-bold tracking-widest placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground text-foreground"
-              />
-              <Button size="lg" className="h-14 rounded-full px-10 bg-foreground text-white hover:bg-foreground/80 font-bold uppercase tracking-widest">
-                Suscribirme
-              </Button>
-           </div>
-           <p className="text-xs text-muted-foreground pt-4">
-             Prometemos no enviarte spam, solo cosas deliciosas.
-           </p>
-        </div>
       </section>
     </div>
   );

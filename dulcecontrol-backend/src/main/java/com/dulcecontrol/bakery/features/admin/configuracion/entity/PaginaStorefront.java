@@ -1,5 +1,6 @@
 package com.dulcecontrol.bakery.features.admin.configuracion.entity;
 
+import com.dulcecontrol.bakery.features.admin.configuracion.entity.enums.TipoContenido;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.SQLDelete;
@@ -35,6 +36,10 @@ public class PaginaStorefront {
     @Column(name = "meta_descripcion", columnDefinition = "TEXT")
     private String metaDescripcion;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_contenido", length = 10)
+    private TipoContenido tipoContenido = TipoContenido.HTML;
+
     @Column(name = "orden_menu")
     private Integer ordenMenu = 0;
 
@@ -62,6 +67,9 @@ public class PaginaStorefront {
         }
         if (activa == null) {
             activa = true;
+        }
+        if (tipoContenido == null) {
+            tipoContenido = TipoContenido.HTML;
         }
     }
 

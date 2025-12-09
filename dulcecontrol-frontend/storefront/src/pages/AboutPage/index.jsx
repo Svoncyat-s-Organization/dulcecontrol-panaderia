@@ -1,6 +1,33 @@
 import React from 'react';
+import { getPaginaBySlug } from '../../api/paginas.api';
 
 const AboutPage = () => {
+  const [aboutData, setAboutData] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchAboutData = async () => {
+      try {
+        const pagina = await getPaginaBySlug('home-seccion-about');
+        const contenido = JSON.parse(pagina.contenido);
+        setAboutData(contenido);
+      } catch (error) {
+        console.error('Error al cargar página About:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAboutData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Cargando...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -10,7 +37,7 @@ const AboutPage = () => {
             Nuestra Historia
           </h1>
           <p className="text-xl text-foreground/80 font-medium leading-relaxed">
-            Desde 1996, horneando felicidad con los mejores ingredientes y mucho amor.
+            {aboutData?.descripcion || 'Conoce nuestra historia y pasión por la repostería.'}
           </p>
         </div>
       </section>
@@ -31,10 +58,7 @@ const AboutPage = () => {
                 Tradición y Pasión
               </h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Todo comenzó en una pequeña cocina con una batidora y un sueño. Queríamos traer el sabor auténtico de la repostería casera a cada mesa. Hoy, seguimos fieles a esa misión, utilizando recetas tradicionales y técnicas artesanales.
-              </p>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Creemos que un buen postre no solo alimenta el cuerpo, sino también el alma. Por eso, cada pastel, cada galleta y cada cupcake se hace a mano, fresco cada día.
+                {aboutData?.descripcion || 'Todo comenzó con una pasión por crear momentos dulces e inolvidables.'}
               </p>
             </div>
           </div>
@@ -47,28 +71,36 @@ const AboutPage = () => {
           <div className="text-center mb-16">
             <h2 className="text-4xl font-serif font-bold text-foreground">Nuestros Valores</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
-            <div className="space-y-4">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm text-2xl">
-                🌿
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 text-center">
+            {aboutData?.valores?.map((valor, index) => (
+              <div key={index} className="space-y-4">
+                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm text-2xl">
+                  {['🌿', '👐', '❤️', '✨'][index % 4]}
+                </div>
+                <h3 className="text-2xl font-serif font-bold">{valor}</h3>
               </div>
-              <h3 className="text-2xl font-serif font-bold">Ingredientes Frescos</h3>
-              <p className="text-muted-foreground">Solo usamos mantequilla real, huevos de granja y frutas de estación.</p>
-            </div>
-            <div className="space-y-4">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm text-2xl">
-                👐
-              </div>
-              <h3 className="text-2xl font-serif font-bold">Hecho a Mano</h3>
-              <p className="text-muted-foreground">Sin premezclas ni atajos. Todo se hace desde cero en nuestra cocina.</p>
-            </div>
-            <div className="space-y-4">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm text-2xl">
-                ❤️
-              </div>
-              <h3 className="text-2xl font-serif font-bold">Con Amor</h3>
-              <p className="text-muted-foreground">Ponemos el corazón en cada detalle para que disfrutes cada bocado.</p>
-            </div>
+            )) || (
+              <>
+                <div className="space-y-4">
+                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm text-2xl">
+                    🌿
+                  </div>
+                  <h3 className="text-2xl font-serif font-bold">Ingredientes Frescos</h3>
+                </div>
+                <div className="space-y-4">
+                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm text-2xl">
+                    👐
+                  </div>
+                  <h3 className="text-2xl font-serif font-bold">Hecho a Mano</h3>
+                </div>
+                <div className="space-y-4">
+                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm text-2xl">
+                    ❤️
+                  </div>
+                  <h3 className="text-2xl font-serif font-bold">Con Amor</h3>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </section>

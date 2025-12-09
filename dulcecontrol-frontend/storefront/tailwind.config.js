@@ -25,11 +25,15 @@ export default {
   			},
   			primary: {
   				DEFAULT: 'hsl(var(--primary))',
-  				foreground: 'hsl(var(--primary-foreground))'
+  				foreground: 'hsl(var(--primary-foreground))',
+  				// Agregar acceso directo al color HEX del backend
+  				brand: 'var(--color-primary)',
   			},
   			secondary: {
   				DEFAULT: 'hsl(var(--secondary))',
-  				foreground: 'hsl(var(--secondary-foreground))'
+  				foreground: 'hsl(var(--secondary-foreground))',
+  				// Agregar acceso directo al color HEX del backend
+  				brand: 'var(--color-secondary)',
   			},
   			muted: {
   				DEFAULT: 'hsl(var(--muted))',

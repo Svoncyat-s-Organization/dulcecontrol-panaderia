@@ -274,6 +274,7 @@ pnpm run dev
 
 ## 📝 TODO / Mejoras Futuras
 
+- [x] **Secciones HomePage Dinámicas**: Implementado formulario para editar secciones de la página principal (Destacados y Personalizada).
 - [ ] **Editor Rich Text**: Integrar ReactQuill o TipTap para `contenido` en lugar de TextArea plano.
 - [ ] **Upload de Imágenes**: Componente `Upload` de Ant Design integrado con CDN (Cloudinary, AWS S3).
 - [ ] **Detección de Subdominio**: Reemplazar `TIENDA_ID` hardcodeado por detección automática desde `window.location.hostname`.
@@ -298,13 +299,18 @@ pnpm run dev
 - [x] Backend: DTOs creados y validados
 - [x] Backend: Services con lógica de negocio
 - [x] Backend: Controllers Admin + Público
-- [x] Backend: Compilación exitosa (523 archivos)
+- [x] Backend: Compilación exitosa (579 archivos)
+- [x] Backend: Migraciones V15 y R__15 con tipo_contenido
+- [x] Backend: Entidad PaginaStorefront con enum TipoContenido
 - [x] Frontend Admin: Componentes UI con Ant Design
 - [x] Frontend Admin: Página con Tabs + Lazy Loading
+- [x] Frontend Admin: SeccionesHomeForm para editar HomePage
+- [x] Frontend Admin: Filtrado de páginas HTML vs JSON
 - [x] Frontend Admin: Compilación exitosa
 - [x] Storefront: Context + Hook `useTiendaConfig`
 - [x] Storefront: Integración en MainLayout y HomePage
 - [x] Storefront: Inyección de colores en CSS
+- [ ] Storefront: Consumir secciones HomePage desde API
 - [x] Documentación: README completo
 
 ---

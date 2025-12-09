@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link } from 'react-router-dom';
-import { IconShoppingBag, IconUser, IconMenu2, IconSearch } from '@tabler/icons-react';
+import { IconShoppingBag, IconUser, IconMenu2, IconSearch, IconBrandFacebook, IconBrandInstagram, IconBrandTiktok, IconBrandPinterest, IconBrandWhatsapp } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -9,6 +9,26 @@ import { useTiendaConfig } from '../context/TiendaConfigContext';
 
 const MainLayout = () => {
   const { config, loading } = useTiendaConfig();
+
+  // Parse redesSociales JSON
+  const redesSociales = React.useMemo(() => {
+    if (!config?.redesSociales) return null;
+    try {
+      return JSON.parse(config.redesSociales);
+    } catch (error) {
+      console.error('Error parsing redesSociales:', error);
+      return null;
+    }
+  }, [config?.redesSociales]);
+
+  // Mapeo de redes sociales a íconos
+  const socialIcons = {
+    facebook: { Icon: IconBrandFacebook, label: 'Facebook' },
+    instagram: { Icon: IconBrandInstagram, label: 'Instagram' },
+    tiktok: { Icon: IconBrandTiktok, label: 'TikTok' },
+    pinterest: { Icon: IconBrandPinterest, label: 'Pinterest' },
+    whatsapp: { Icon: IconBrandWhatsapp, label: 'WhatsApp' },
+  };
 
   // Mostrar loader mientras carga la configuración
   if (loading) {
@@ -164,13 +184,35 @@ const MainLayout = () => {
             <div>
               <h4 className="font-bold uppercase text-xs tracking-widest mb-4 text-foreground">Síguenos</h4>
               <div className="flex gap-4">
-                {/* Social Icons placeholder */}
-                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-foreground hover:bg-primary hover:text-white transition-colors cursor-pointer shadow-sm">
-                   <span className="font-serif font-bold">Ig</span>
-                </div>
-                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-foreground hover:bg-primary hover:text-white transition-colors cursor-pointer shadow-sm">
-                   <span className="font-serif font-bold">Fb</span>
-                </div>
+                {redesSociales && Object.entries(redesSociales).length > 0 ? (
+                  Object.entries(redesSociales).map(([red, url]) => {
+                    const socialData = socialIcons[red.toLowerCase()];
+                    if (!socialData || !url) return null;
+                    
+                    const { Icon, label } = socialData;
+                    return (
+                      <a
+                        key={red}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={label}
+                        className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-foreground hover:bg-primary hover:text-white transition-colors shadow-sm"
+                      >
+                        <Icon className="h-5 w-5" />
+                      </a>
+                    );
+                  })
+                ) : (
+                  <>
+                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-foreground hover:bg-primary hover:text-white transition-colors cursor-pointer shadow-sm">
+                      <span className="font-serif font-bold">Ig</span>
+                    </div>
+                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-foreground hover:bg-primary hover:text-white transition-colors cursor-pointer shadow-sm">
+                      <span className="font-serif font-bold">Fb</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

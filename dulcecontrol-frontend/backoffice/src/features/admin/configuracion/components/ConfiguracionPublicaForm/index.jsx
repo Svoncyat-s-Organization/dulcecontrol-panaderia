@@ -41,12 +41,11 @@ const ConfiguracionPublicaForm = () => {
   React.useEffect(() => {
     if (config) {
       form.setFieldsValue({
+        sloganTienda: config.sloganTienda,
         bannerPrincipalUrl: config.bannerPrincipalUrl,
         mensajeBienvenida: config.mensajeBienvenida,
         horarioAtencion: config.horarioAtencion,
         redesSociales: config.redesSociales,
-        politicasEnvio: config.politicasEnvio,
-        politicasDevolucion: config.politicasDevolucion,
       });
     }
   }, [config, form]);
@@ -72,6 +71,23 @@ const ConfiguracionPublicaForm = () => {
         autoComplete="off"
       >
         <Row gutter={24}>
+          <Col span={24}>
+            <Form.Item
+              label="Slogan de la Tienda"
+              name="sloganTienda"
+              rules={[
+                { max: 100, message: 'Máximo 100 caracteres' },
+              ]}
+              tooltip="Slogan que aparece en el título principal del Hero (ej: 'Dulces Momentos', 'Pan Fresco Diario')"
+            >
+              <Input 
+                placeholder="Ej: Dulces Momentos" 
+                maxLength={100}
+                showCount
+              />
+            </Form.Item>
+          </Col>
+
           <Col span={24}>
             <Form.Item
               label="URL del Banner Principal"
@@ -143,27 +159,6 @@ const ConfiguracionPublicaForm = () => {
                 rows={6}
                 placeholder='{"facebook": "https://facebook.com/...", "instagram": "https://instagram.com/..."}}'
               />
-            </Form.Item>
-          </Col>
-
-          <Col span={24}>
-            <Form.Item
-              label="Políticas de Envío"
-              name="politicasEnvio"
-              rules={[{ required: true, message: 'Las políticas de envío son obligatorias' }]}
-              tooltip="Información sobre tiempos y costos de envío"
-            >
-              <TextArea rows={4} placeholder="Entregas en 24-48 horas. Costo de envío: S/ 10.00..." />
-            </Form.Item>
-          </Col>
-
-          <Col span={24}>
-            <Form.Item
-              label="Políticas de Devolución"
-              name="politicasDevolucion"
-              tooltip="Condiciones para devoluciones y cambios"
-            >
-              <TextArea rows={4} placeholder="Aceptamos devoluciones dentro de las primeras 2 horas..." />
             </Form.Item>
           </Col>
         </Row>

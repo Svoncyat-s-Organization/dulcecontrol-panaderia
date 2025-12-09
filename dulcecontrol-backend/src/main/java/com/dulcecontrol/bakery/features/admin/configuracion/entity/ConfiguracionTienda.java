@@ -50,6 +50,9 @@ public class ConfiguracionTienda {
     @Column(name = "merchant_id_niubiz", length = 100)
     private String merchantIdNiubiz;
 
+    @Column(name = "slogan_tienda", length = 100)
+    private String sloganTienda;
+
     @Column(name = "banner_principal_url", columnDefinition = "TEXT")
     private String bannerPrincipalUrl;
 
@@ -61,12 +64,6 @@ public class ConfiguracionTienda {
 
     @Column(name = "redes_sociales", columnDefinition = "JSON")
     private String redesSociales;
-
-    @Column(name = "politicas_envio", columnDefinition = "TEXT")
-    private String politicasEnvio;
-
-    @Column(name = "politicas_devolucion", columnDefinition = "TEXT")
-    private String politicasDevolucion;
 
     @Column(name = "email_notificaciones", length = 255)
     private String emailNotificaciones;

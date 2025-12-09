@@ -9,8 +9,8 @@ import ConfiguracionPublicaForm from '../components/ConfiguracionPublicaForm';
  * Página principal del módulo Tienda Virtual (CMS & Branding)
  * Organizada en 3 pestañas:
  * 1. Apariencia (logo, favicon, colores)
- * 2. Páginas (CMS dinámico)
- * 3. Configuración Pública (banner, horarios, redes, políticas)
+ * 2. Páginas (CMS centralizado - TODAS las páginas HTML y JSON)
+ * 3. Configuración Pública (banner, horarios, redes)
  */
 const TiendaVirtualPage = () => {
   const [activeTab, setActiveTab] = useState('1');

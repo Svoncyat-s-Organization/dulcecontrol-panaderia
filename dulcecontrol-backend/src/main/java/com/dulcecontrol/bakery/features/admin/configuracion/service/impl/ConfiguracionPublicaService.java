@@ -31,12 +31,11 @@ public class ConfiguracionPublicaService implements IConfiguracionPublicaService
 
         return ConfiguracionPublicaResponse.builder()
                 .tiendaId(tiendaId)
+                .sloganTienda(config.getSloganTienda())
                 .bannerPrincipalUrl(config.getBannerPrincipalUrl())
                 .mensajeBienvenida(config.getMensajeBienvenida())
                 .horarioAtencion(config.getHorarioAtencion())
                 .redesSociales(config.getRedesSociales())
-                .politicasEnvio(config.getPoliticasEnvio())
-                .politicasDevolucion(config.getPoliticasDevolucion())
                 .urlLogo(dominio.getUrlLogo())
                 .urlFavicon(dominio.getUrlFavicon())
                 .colorPrimario(dominio.getColorPrimario())
@@ -50,12 +49,11 @@ public class ConfiguracionPublicaService implements IConfiguracionPublicaService
         ConfiguracionTienda config = configuracionTiendaRepository.findByTiendaId(tiendaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Configuración de tienda no encontrada"));
 
+        config.setSloganTienda(request.getSloganTienda());
         config.setBannerPrincipalUrl(request.getBannerPrincipalUrl());
         config.setMensajeBienvenida(request.getMensajeBienvenida());
         config.setHorarioAtencion(request.getHorarioAtencion());
         config.setRedesSociales(request.getRedesSociales());
-        config.setPoliticasEnvio(request.getPoliticasEnvio());
-        config.setPoliticasDevolucion(request.getPoliticasDevolucion());
 
         configuracionTiendaRepository.save(config);
 

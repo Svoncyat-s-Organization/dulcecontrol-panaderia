@@ -23,7 +23,7 @@ VALUES
     'Tortas',
     'tortas',
     'Tortas artesanales para toda ocasión. Personalizables con tu dedicatoria especial.',
-    'https://cdn.dulcemanjar.pe/categorias/tortas.jpg',
+    'https://images.pexels.com/photos/291528/pexels-photo-291528.jpeg',
     'cake',
     TRUE,
     1
@@ -33,7 +33,7 @@ VALUES
     'Pasteles y Postres',
     'pasteles-postres',
     'Delicias individuales perfectas para compartir o disfrutar solo.',
-    'https://cdn.dulcemanjar.pe/categorias/pasteles.jpg',
+    'https://images.pexels.com/photos/1055272/pexels-photo-1055272.jpeg',
     'cupcake',
     TRUE,
     2
@@ -43,7 +43,7 @@ VALUES
     'Panes Especiales',
     'panes-especiales',
     'Pan fresco horneado diariamente con ingredientes premium.',
-    'https://cdn.dulcemanjar.pe/categorias/panes.jpg',
+    'https://images.pexels.com/photos/1871024/pexels-photo-1871024.jpeg',
     'bread-slice',
     TRUE,
     3
@@ -53,7 +53,7 @@ VALUES
     'Bebidas',
     'bebidas',
     'Café, jugos naturales y bebidas calientes para acompañar tus dulces.',
-    'https://cdn.dulcemanjar.pe/categorias/bebidas.jpg',
+    'https://images.pexels.com/photos/1710023/pexels-photo-1710023.jpeg',
     'coffee',
     TRUE,
     4
@@ -65,7 +65,7 @@ VALUES
     'Panes del Día',
     'panes-del-dia',
     'Pan fresco todos los días. ¡Calentito como el sol!',
-    'https://cdn.panaderia-elsol.pe/categorias/panes.jpg',
+    'https://images.pexels.com/photos/1871024/pexels-photo-1871024.jpeg',
     'bread-slice',
     TRUE,
     1
@@ -75,7 +75,7 @@ VALUES
     'Tortas Caseras',
     'tortas-caseras',
     'Tortas con el sabor tradicional de casa.',
-    'https://cdn.panaderia-elsol.pe/categorias/tortas.jpg',
+    'https://images.pexels.com/photos/291528/pexels-photo-291528.jpeg',
     'cake',
     TRUE,
     2
@@ -85,7 +85,7 @@ VALUES
     'Bocaditos',
     'bocaditos',
     'Pequeños placeres para cualquier momento del día.',
-    'https://cdn.panaderia-elsol.pe/categorias/bocaditos.jpg',
+    'https://images.pexels.com/photos/298217/pexels-photo-298217.jpeg',
     'cookie',
     TRUE,
     3
@@ -97,7 +97,7 @@ VALUES
     'Tortas Premium',
     'tortas-premium',
     'Creaciones exclusivas con ingredientes importados de primera calidad.',
-    'https://cdn.tortasydelicias.pe/categorias/tortas-premium.jpg',
+    'https://images.pexels.com/photos/140831/pexels-photo-140831.jpeg',
     'cake',
     TRUE,
     1
@@ -107,7 +107,7 @@ VALUES
     'Postres Gourmet',
     'postres-gourmet',
     'Postres de autor con presentación impecable.',
-    'https://cdn.tortasydelicias.pe/categorias/postres.jpg',
+    'https://images.pexels.com/photos/1055272/pexels-photo-1055272.jpeg',
     'ice-cream',
     TRUE,
     2
@@ -117,7 +117,7 @@ VALUES
     'Panadería Artesanal',
     'panaderia-artesanal',
     'Panes con masa madre y fermentación lenta.',
-    'https://cdn.tortasydelicias.pe/categorias/panaderia.jpg',
+    'https://images.pexels.com/photos/1871024/pexels-photo-1871024.jpeg',
     'bread-slice',
     TRUE,
     3
@@ -169,10 +169,10 @@ VALUES
     TRUE,
     TRUE,
     TRUE,
-    'https://cdn.dulcemanjar.pe/productos/tres-leches.jpg',
+    'https://plazavea.vteximg.com.br/arquivos/ids/518741-1000-1000/20196885.jpg',
     JSON_ARRAY(
-      'https://cdn.dulcemanjar.pe/productos/tres-leches-1.jpg',
-      'https://cdn.dulcemanjar.pe/productos/tres-leches-2.jpg'
+      'https://gourmet.iprospect.cl/wp-content/uploads/2016/09/Torta-3-leches.jpg',
+      'https://images.pexels.com/photos/32590852/pexels-photo-32590852.jpeg'
     ),
     JSON_OBJECT(
       'porciones', '8-10',
@@ -196,9 +196,9 @@ VALUES
     TRUE,
     TRUE,
     TRUE,
-    'https://cdn.dulcemanjar.pe/productos/selva-negra.jpg',
+    'https://res.cloudinary.com/riqra/image/upload/v1752091349/sellers/tortas-gaby/products/o9x40s694cz3gm1l32vj.png',
     JSON_ARRAY(
-      'https://cdn.dulcemanjar.pe/productos/selva-negra-1.jpg'
+      'https://www.recetasnestle.cl/sites/default/files/srh_recipes/797bcc63bf54837e035b42a9936598d2.jpg'
     ),
     JSON_OBJECT(
       'porciones', '12-15',
@@ -222,7 +222,7 @@ VALUES
     TRUE,
     TRUE,
     FALSE,
-    'https://cdn.dulcemanjar.pe/productos/suspiro.jpg',
+    'https://es.cravingsjournal.com/wp-content/uploads/2018/07/suspiro-de-limen%CC%83a-1.jpg',
     JSON_ARRAY(),
     JSON_OBJECT(
       'porciones', '1',
@@ -244,7 +244,7 @@ VALUES
     TRUE,
     TRUE,
     TRUE,
-    'https://cdn.dulcemanjar.pe/productos/alfajor.jpg',
+    'https://media.ambito.com/p/268818fc874fb8b067c66b9f025e7fab/adjuntos/239/imagenes/041/041/0041041868/730x0/smart/alfajores-morgana-3jpg.jpg',
     JSON_ARRAY(),
     JSON_OBJECT(
       'porciones', '1',
@@ -266,7 +266,7 @@ VALUES
     TRUE,
     TRUE,
     FALSE,
-    'https://cdn.dulcemanjar.pe/productos/pan-integral.jpg',
+    'https://elikaeskola.com/wp-content/uploads/1.jpg',
     JSON_ARRAY(),
     JSON_OBJECT(
       'peso_kg', 0.5,
@@ -288,7 +288,7 @@ VALUES
     TRUE,
     FALSE,
     FALSE,
-    'https://cdn.dulcemanjar.pe/productos/cafe.jpg',
+    'https://excelso77.com/wp-content/uploads/2024/05/por-que-el-cafe-americano-se-llama-asi-te-lo-contamos.webp',
     JSON_ARRAY(),
     JSON_OBJECT(
       'tamaño_ml', 250
@@ -311,7 +311,7 @@ VALUES
     TRUE,
     TRUE,
     TRUE,
-    'https://cdn.panaderia-elsol.pe/productos/pan-frances.jpg',
+    'https://img-global.cpcdn.com/recipes/403023df5ce8e8ea/680x781f0.5_0.50125_1.0q80/pan-frances-peruano-foto-principal.jpg',
     JSON_ARRAY(),
     JSON_OBJECT(
       'peso_kg', 0.05,
@@ -333,7 +333,7 @@ VALUES
     TRUE,
     TRUE,
     FALSE,
-    'https://cdn.panaderia-elsol.pe/productos/pan-yema.jpg',
+    'https://silvanapastrychef.wordpress.com/wp-content/uploads/2021/03/unnamed-4.jpg',
     JSON_ARRAY(),
     JSON_OBJECT(
       'peso_kg', 0.08,
@@ -355,7 +355,7 @@ VALUES
     TRUE,
     TRUE,
     TRUE,
-    'https://cdn.panaderia-elsol.pe/productos/torta-chocolate.jpg',
+    'https://cdn0.recetasgratis.net/es/posts/2/5/2/torta_de_chocolate_casera_45252_orig.jpg',
     JSON_ARRAY(),
     JSON_OBJECT(
       'porciones', '10-12',
@@ -379,7 +379,7 @@ VALUES
     TRUE,
     TRUE,
     FALSE,
-    'https://cdn.panaderia-elsol.pe/productos/empanada.jpg',
+    'https://cdn0.recetasgratis.net/es/posts/4/0/6/empanadas_de_pollo_peruanas_76604_orig.jpg',
     JSON_ARRAY(),
     JSON_OBJECT(
       'peso_kg', 0.15,
@@ -403,11 +403,11 @@ VALUES
     TRUE,
     TRUE,
     TRUE,
-    'https://cdn.tortasydelicias.pe/productos/red-velvet.jpg',
+    'https://www.infobae.com/new-resizer/DGoMOTuyK29Gwu_0GG0rzZg4VGk=/arc-anglerfish-arc2-prod-infobae/public/52E6H6YM2NHAHHAR6S7SL47SEM.jpg',
     JSON_ARRAY(
-      'https://cdn.tortasydelicias.pe/productos/red-velvet-1.jpg',
-      'https://cdn.tortasydelicias.pe/productos/red-velvet-2.jpg',
-      'https://cdn.tortasydelicias.pe/productos/red-velvet-3.jpg'
+      'https://i0.wp.com/www.pasionthermomix.co/wp-content/uploads/2022/10/0001005216LosMejoresPostresDelMundoEp007RedVelvetCake3.jpg?fit=1600%2C900&ssl=1',
+      'https://assets.tmecosys.com/image/upload/t_web_rdp_recipe_584x480/img/recipe/ras/Assets/e5f2ceaf-5530-46e8-908e-ea9586a03bf9/Derivates/e7f68f7a-23c5-4803-a26e-b9d23aa8802f.jpg',
+      'https://i0.wp.com/sarasellos.com/wp-content/uploads/2025/01/mini-cake-red-velvet-4.jpg?resize=683%2C1024&ssl=1'
     ),
     JSON_OBJECT(
       'porciones', '15-20',
@@ -432,7 +432,7 @@ VALUES
     TRUE,
     TRUE,
     TRUE,
-    'https://cdn.tortasydelicias.pe/productos/opera.jpg',
+    'https://www.recetasnestle.com.ec/sites/default/files/srh_recipes/45fae8a0529af6bde82db0195a3fec0b.jpg',
     JSON_ARRAY(),
     JSON_OBJECT(
       'porciones', '8-10',
@@ -457,7 +457,7 @@ VALUES
     TRUE,
     TRUE,
     TRUE,
-    'https://cdn.tortasydelicias.pe/productos/macarons.jpg',
+    'https://lamorapasteleria.com/cdn/shop/files/60_480x480.jpg?v=1717606177',
     JSON_ARRAY(),
     JSON_OBJECT(
       'unidades', 6,
@@ -479,7 +479,7 @@ VALUES
     TRUE,
     TRUE,
     FALSE,
-    'https://cdn.tortasydelicias.pe/productos/masa-madre.jpg',
+    'https://int.360cookware.com/cdn/shop/articles/20230605140332-20230104201122-sourdough-bread.webp?v=1690464286',
     JSON_ARRAY(),
     JSON_OBJECT(
       'peso_kg', 0.8,
