@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -56,6 +57,9 @@ public class AuthService {
         }
 
         validarPassword(request.getPassword(), usuario.getHashContrasena());
+
+        usuario.setUltimoAccesoEn(LocalDateTime.now());
+        usuarioTiendaRepository.save(usuario);
 
         Long tiendaId = usuario.getTiendaId();
         String token = jwtProvider.generarToken(usuario.getCorreo(), "ROLE_ADMIN", TipoUsuario.ADMIN, tiendaId,
