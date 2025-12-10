@@ -122,13 +122,7 @@ const ClienteForm = ({ open, onClose, tiendaId, cliente }) => {
   });
 
   const handleSubmit = (values) => {
-    Modal.confirm({
-      title: `¿Estás seguro de ${isEditing ? 'actualizar' : 'crear'} este cliente?`,
-      content: `Se ${isEditing ? 'actualizarán' : 'crearán'} los datos del cliente "${values.nombreDoc}".`,
-      okText: isEditing ? 'Actualizar' : 'Crear',
-      cancelText: 'Cancelar',
-      onOk: () => mutation.mutate(values),
-    });
+    mutation.mutate(values);
   };
 
   return (
