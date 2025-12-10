@@ -51,7 +51,7 @@ const TiendaVirtualPage = () => {
   return (
     <div style={{ padding: '24px' }}>
       <h1 style={{ marginBottom: '24px', fontSize: '24px', fontWeight: 600 }}>
-        🌐 Tienda Virtual (CMS & Branding)
+        Tienda Virtual (CMS & Branding)
       </h1>
       <Tabs
         activeKey={activeTab}

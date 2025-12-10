@@ -21,7 +21,8 @@ const HomePage = () => {
   const { data: paginasData } = useQuery({
     queryKey: ['paginas-storefront-activas'],
     queryFn: getPaginasActivas,
-    staleTime: 5 * 60 * 1000, // Cache 5 minutos
+    staleTime: 30 * 1000, // 30 segundos (reducido de 5 minutos)
+    refetchOnWindowFocus: true, // Refrescar al volver a la pestaña
   });
 
   // Extraer secciones JSON de HomePage
@@ -97,7 +98,9 @@ const HomePage = () => {
       <section className="bg-background py-24">
         <div className="container">
           <div className="text-center mb-16 space-y-4">
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground">Los Favoritos del Barrio</h2>
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground">
+              {seccionDestacados?.titulo || 'Los Favoritos del Barrio'}
+            </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
               {destacadosData.subtitulo || 'Estos son los postres que todos están pidiendo. ¡No te quedes sin probarlos!'}
             </p>
@@ -141,7 +144,7 @@ const HomePage = () => {
                     Personalización Total
                  </div>
                  <h2 className="text-5xl md:text-6xl font-bold text-primary-foreground leading-tight">
-                    ¿Tienes una idea única? <br/>
+                    {seccionPersonalizada?.titulo || '¿Tienes una idea única?'} <br/>
                     <span className="text-white">
                       {personalizadaData.titulo_destacado || '¡La hacemos realidad!'}
                     </span>

@@ -1,26 +1,21 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { getPaginaBySlug } from '../../api/paginas.api';
 
 const AboutPage = () => {
-  const [aboutData, setAboutData] = React.useState(null);
-  const [loading, setLoading] = React.useState(true);
+  // Usar React Query con refetch automático al cambiar de pestaña
+  const { data: paginaData, isLoading } = useQuery({
+    queryKey: ['pagina-storefront', 'home-seccion-about'],
+    queryFn: () => getPaginaBySlug('home-seccion-about'),
+    staleTime: 30 * 1000, // 30 segundos (antes era 5 minutos)
+    refetchOnWindowFocus: true, // Refrescar al volver a la pestaña
+  });
 
-  React.useEffect(() => {
-    const fetchAboutData = async () => {
-      try {
-        const pagina = await getPaginaBySlug('home-seccion-about');
-        const contenido = JSON.parse(pagina.contenido);
-        setAboutData(contenido);
-      } catch (error) {
-        console.error('Error al cargar página About:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAboutData();
-  }, []);
+  // Parsear contenido JSON
+  const aboutData = paginaData ? JSON.parse(paginaData.contenido || '{}') : {};
+  const tituloPage = paginaData?.titulo || 'Nuestra Historia';
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-muted-foreground">Cargando...</p>
@@ -34,7 +29,7 @@ const AboutPage = () => {
       <section className="bg-secondary/30 py-20 md:py-32">
         <div className="container text-center max-w-3xl mx-auto">
           <h1 className="text-5xl md:text-7xl font-serif font-bold text-foreground mb-6">
-            Nuestra Historia
+            {tituloPage}
           </h1>
           <p className="text-xl text-foreground/80 font-medium leading-relaxed">
             {aboutData?.descripcion || 'Conoce nuestra historia y pasión por la repostería.'}

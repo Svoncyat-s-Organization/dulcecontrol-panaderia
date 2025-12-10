@@ -159,21 +159,7 @@ const PaginasStorefrontTable = () => {
   return (
     <Card
       title={<span><CodeOutlined /> Secciones JSON del Storefront</span>}
-    >
-      <div style={{ marginBottom: 16, padding: '12px', background: '#f0f9ff', borderLeft: '4px solid #0ea5e9', borderRadius: '4px' }}>
-        <p style={{ margin: 0, color: '#0c4a6e', fontSize: '14px' }}>
-          <strong>📝 Secciones Dinámicas:</strong>
-          <br />
-          • <strong>home-seccion-destacados</strong> → Título de productos destacados en HomePage
-          <br />
-          • <strong>home-seccion-personalizada</strong> → Sección de tortas personalizadas en HomePage
-          <br />
-          • <strong>home-seccion-about</strong> → Historia y valores en AboutPage
-          <br />
-          • <strong>home-seccion-contact</strong> → Dirección, teléfono y email en ContactPage
-        </p>
-      </div>
-      
+    >      
       <Table
         columns={columns}
         dataSource={allPaginas}

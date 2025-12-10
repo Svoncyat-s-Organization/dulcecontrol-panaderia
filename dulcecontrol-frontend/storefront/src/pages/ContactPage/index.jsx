@@ -1,29 +1,27 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTiendaConfig } from '../../context/TiendaConfigContext';
 import { getPaginaBySlug } from '../../api/paginas.api';
 
 const ContactInfo = ({ horarioAtencion, diasSemana }) => {
-  const [contactData, setContactData] = React.useState(null);
+  // Usar React Query con refetch automático
+  const { data: paginaData } = useQuery({
+    queryKey: ['pagina-storefront', 'home-seccion-contact'],
+    queryFn: () => getPaginaBySlug('home-seccion-contact'),
+    staleTime: 30 * 1000, // 30 segundos
+    refetchOnWindowFocus: true, // Refrescar al volver a la pestaña
+  });
 
-  React.useEffect(() => {
-    const fetchContactData = async () => {
-      try {
-        const pagina = await getPaginaBySlug('home-seccion-contact');
-        const contenido = JSON.parse(pagina.contenido);
-        setContactData(contenido);
-      } catch (error) {
-        console.error('Error al cargar datos de contacto:', error);
-      }
-    };
-    fetchContactData();
-  }, []);
+  // Parsear contenido JSON y obtener título
+  const contactData = paginaData ? JSON.parse(paginaData.contenido || '{}') : {};
+  const tituloVisitanos = paginaData?.titulo || 'Visítanos';
 
   return (
     <div className="space-y-12">
       <div>
-        <h2 className="text-3xl font-serif font-bold text-foreground mb-6">Visítanos</h2>
+        <h2 className="text-3xl font-serif font-bold text-foreground mb-6">{tituloVisitanos}</h2>
         <p className="text-lg text-muted-foreground mb-2">
           {contactData?.direccion || 'Av. Larco 123, Miraflores'}
         </p>
