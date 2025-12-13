@@ -1,5 +1,5 @@
-﻿import { Button, Card, Result, Space, Table, Tag, Typography, Popconfirm, Select, Dropdown } from 'antd';
-import { IconPlus, IconEye, IconEdit, IconTrash, IconDots } from '@tabler/icons-react';
+﻿import { Button, Card, Result, Space, Table, Tag, Typography, Popconfirm, Select, Dropdown, Tooltip } from 'antd';
+import { IconPlus, IconEye, IconEdit, IconTrash, IconDots, IconCash, IconHistory } from '@tabler/icons-react';
 import { formatCurrency, formatDate } from '../../utils/formatters.js';
 import { ESTADO_ORDEN_COMPRA, ESTADO_ORDEN_COMPRA_VALUES, getEstadoColor } from '../../constants/enums.js';
 
@@ -17,6 +17,8 @@ const OrdenesCompraTableView = ({
   onChangeStatus,
   onRecibirParcial,
   onRecibirTotal,
+  onPagar,
+  onVerHistorialPagos,
   filters,
   onFilterChange,
 }) => {
@@ -148,9 +150,23 @@ const OrdenesCompraTableView = ({
       render: (metodo) => metodo ? <Text>{metodo}</Text> : <Text type="secondary">N/D</Text>,
     },
     {
+      title: 'Saldo Pendiente',
+      dataIndex: 'saldoPendienteCentimos',
+      key: 'saldo',
+      width: 130,
+      render: (saldo, record) => {
+        if (record.metodoPago !== 'credito') return <Text type="secondary">N/A</Text>;
+        return (
+          <Tag color={(saldo || 0) > 0 ? 'red' : 'green'}>
+            {formatCurrency(saldo || 0)}
+          </Tag>
+        );
+      },
+    },
+    {
       title: 'Acciones',
       key: 'acciones',
-      width: 140,
+      width: 180,
       render: (_, record) => (
         <Space size="small">
           <Dropdown menu={{ items: getStatusMenuItems(record) }} trigger={['click']} placement="bottomRight">
@@ -172,6 +188,36 @@ const OrdenesCompraTableView = ({
               onClick={() => onViewDetails(record)}
               title="Ver detalles"
             />
+          )}
+          {/* Botón de registrar pago - solo si hay saldo pendiente */}
+          {record.metodoPago === 'credito' && (record.saldoPendienteCentimos || 0) > 0 && (
+            <Tooltip title="Registrar pago">
+              <Button
+                type="link"
+                size="small"
+                icon={<IconCash size={16} />}
+                onClick={() => onPagar(record)}
+                style={{ color: '#52c41a' }}
+              />
+            </Tooltip>
+          )}
+          {/* Botón de historial - siempre visible para órdenes a crédito */}
+          {record.metodoPago === 'credito' && (
+            <Tooltip title={
+              (record.saldoPendienteCentimos || 0) === 0 
+                ? "Ver historial de pagos (Pagado completamente)" 
+                : "Ver historial de pagos"
+            }>
+              <Button
+                type="link"
+                size="small"
+                icon={<IconHistory size={16} />}
+                onClick={() => onVerHistorialPagos(record)}
+                style={{ 
+                  color: (record.saldoPendienteCentimos || 0) === 0 ? '#52c41a' : '#1890ff' 
+                }}
+              />
+            </Tooltip>
           )}
           {record.estado === ESTADO_ORDEN_COMPRA_VALUES.BORRADOR && (
             <Popconfirm
@@ -223,6 +269,7 @@ const OrdenesCompraTableView = ({
         dataSource={ordenes}
         loading={loading}
         rowKey="id"
+        scroll={{ x: 1400 }}
         pagination={{
           pageSize: 10,
           showSizeChanger: true,

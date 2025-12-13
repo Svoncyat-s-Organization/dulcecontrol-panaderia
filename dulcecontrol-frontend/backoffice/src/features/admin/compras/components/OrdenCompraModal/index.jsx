@@ -78,8 +78,20 @@ const OrdenCompraModal = ({ open, onClose, tiendaId, sedeId, orden }) => {
     }
   }, [open, orden, form, sedeId]);
 
+  // Función para convertir archivo a base64
+  const getBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   const mutation = useMutation({
-    mutationFn: (values) => {
+    mutationFn: async (values) => {
+      console.log('📤 Enviando orden al backend...', { tiendaId, sedeId, isEditing });
+      
       const payload = {
         ...values,
         detalles: detalles.map((d) => ({
@@ -91,45 +103,63 @@ const OrdenCompraModal = ({ open, onClose, tiendaId, sedeId, orden }) => {
         })),
       };
 
+      // Convertir montoInicialCentimos si existe
+      if (payload.montoInicialCentimos !== undefined && payload.montoInicialCentimos !== null) {
+        payload.montoInicialCentimos = decimalToCentimos(payload.montoInicialCentimos);
+      }
+
+      // Convertir imagen a base64
+      if (payload.urlFotoComprobante && Array.isArray(payload.urlFotoComprobante) && payload.urlFotoComprobante.length > 0) {
+        const file = payload.urlFotoComprobante[0];
+        if (file.originFileObj) {
+          payload.urlFotoComprobante = await getBase64(file.originFileObj);
+        } else {
+          payload.urlFotoComprobante = null;
+        }
+      } else {
+        payload.urlFotoComprobante = null;
+      }
+
       if (!payload.sedeDestinoId && sedeId) {
         payload.sedeDestinoId = sedeId;
       }
 
-      if (isEditing) {
-        return updateOrden(tiendaId, orden.id, payload);
-      }
-      return createOrden(tiendaId, payload);
+      console.log('📦 Payload final:', payload);
+
+      const result = isEditing 
+        ? await updateOrden(tiendaId, orden.id, payload)
+        : await createOrden(tiendaId, payload);
+      
+      console.log('📥 Respuesta del backend:', result);
+      return result;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      console.log('✅ Orden guardada exitosamente:', data);
+      console.log('   - Sede de la orden:', data.sedeDestinoId);
+      console.log('   - Sede actual en tabla:', sedeId);
+      
       message.success(
         isEditing ? 'Orden actualizada correctamente' : 'Orden creada correctamente'
       );
       
-      // Actualizar cache inmediatamente
-      const allFilters = [
-        { estado: undefined },
-        { estado: 'borrador' },
-        { estado: 'enviada' },
-        { estado: 'recibida_parcial' },
-        { estado: 'recibida_total' },
-        { estado: 'cancelada' },
-      ];
+      // Invalidar queries de la sede de destino de la orden
+      const sedeDestino = data.sedeDestinoId;
+      const baseKeySede = ORDENES_COMPRA_KEYS.all(tiendaId, sedeDestino);
+      console.log('🔄 Invalidando queries de sede destino:', baseKeySede);
       
-      allFilters.forEach((filter) => {
-        queryClient.setQueryData(
-          ORDENES_COMPRA_KEYS.lists(tiendaId, sedeId, filter),
-          (oldData) => {
-            if (!oldData) return isEditing ? oldData : [data];
-            
-            if (isEditing) {
-              return oldData.map(o => o.id === data.id ? data : o);
-            } else {
-              return [...oldData, data];
-            }
-          }
-        );
+      await queryClient.invalidateQueries({ 
+        queryKey: baseKeySede,
+        exact: false
       });
       
+      console.log('🔄 Refetching queries activas...');
+      await queryClient.refetchQueries({ 
+        queryKey: baseKeySede,
+        exact: false,
+        type: 'active'
+      });
+      
+      console.log('✅ Refetch completado');
       handleClose();
     },
     onError: (error) => {

@@ -7,6 +7,8 @@ import { ORDENES_COMPRA_KEYS } from '../../constants/queryKeys.js';
 import OrdenCompraModal from '../OrdenCompraModal/index.jsx';
 import OrdenCompraDetalleModal from '../OrdenCompraDetalleModal/index.jsx';
 import RecepcionParcialModal from '../RecepcionParcialModal/index.jsx';
+import PagoModal from '../PagoModal/index.jsx';
+import HistorialPagosModal from '../HistorialPagosModal/index.jsx';
 
 const OrdenesCompraTable = ({ tiendaId, sedeId }) => {
   const { message, modal } = App.useApp();
@@ -16,6 +18,10 @@ const OrdenesCompraTable = ({ tiendaId, sedeId }) => {
   const [selectedOrden, setSelectedOrden] = useState(null);
   const [ordenDetalle, setOrdenDetalle] = useState(null);
   const [ordenRecepcion, setOrdenRecepcion] = useState(null);
+  const [ordenPago, setOrdenPago] = useState(null);
+  const [ordenHistorialPagos, setOrdenHistorialPagos] = useState(null);
+  const [pagoModalOpen, setPagoModalOpen] = useState(false);
+  const [historialPagosModalOpen, setHistorialPagosModalOpen] = useState(false);
   const [filters, setFilters] = useState({});
   const queryClient = useQueryClient();
 
@@ -26,14 +32,29 @@ const OrdenesCompraTable = ({ tiendaId, sedeId }) => {
     refetch,
   } = useQuery({
     queryKey: ORDENES_COMPRA_KEYS.lists(tiendaId, sedeId, filters),
-    queryFn: () =>
-      getOrdenes(tiendaId, sedeId, filters).catch((error) => {
+    queryFn: async () => {
+      console.log('🔍 Fetching órdenes con:', { tiendaId, sedeId, filters });
+      try {
+        const result = await getOrdenes(tiendaId, sedeId, filters);
+        console.log('✅ Órdenes obtenidas:', result.length, 'órdenes');
+        return result;
+      } catch (error) {
+        console.error('❌ Error al obtener órdenes:', error);
         message.error(
           error?.response?.data?.message ?? 'No se pudo obtener las órdenes de compra'
         );
         throw error;
-      }),
+      }
+    },
     enabled: Boolean(tiendaId && sedeId),
+  });
+  
+  console.log('📊 Estado de la tabla:', { 
+    tiendaId, 
+    sedeId, 
+    totalOrdenes: data?.length,
+    isLoading,
+    isError 
   });
 
   const deleteMutation = useMutation({
@@ -140,6 +161,26 @@ const OrdenesCompraTable = ({ tiendaId, sedeId }) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
   };
 
+  const handlePagar = (orden) => {
+    setOrdenPago(orden);
+    setPagoModalOpen(true);
+  };
+
+  const handleClosePagoModal = () => {
+    setPagoModalOpen(false);
+    setOrdenPago(null);
+  };
+
+  const handleVerHistorialPagos = (orden) => {
+    setOrdenHistorialPagos(orden);
+    setHistorialPagosModalOpen(true);
+  };
+
+  const handleCloseHistorialPagosModal = () => {
+    setHistorialPagosModalOpen(false);
+    setOrdenHistorialPagos(null);
+  };
+
   return (
     <>
       <OrdenesCompraTableView
@@ -154,6 +195,8 @@ const OrdenesCompraTable = ({ tiendaId, sedeId }) => {
         onChangeStatus={handleChangeStatus}
         onRecibirParcial={handleRecibirParcial}
         onRecibirTotal={handleRecibirTotal}
+        onPagar={handlePagar}
+        onVerHistorialPagos={handleVerHistorialPagos}
         filters={filters}
         onFilterChange={handleFilterChange}
       />
@@ -178,6 +221,18 @@ const OrdenesCompraTable = ({ tiendaId, sedeId }) => {
         orden={ordenRecepcion}
         tiendaId={tiendaId}
         sedeId={sedeId}
+      />
+
+      <PagoModal
+        open={pagoModalOpen}
+        onClose={handleClosePagoModal}
+        ordenCompra={ordenPago}
+      />
+
+      <HistorialPagosModal
+        open={historialPagosModalOpen}
+        onClose={handleCloseHistorialPagosModal}
+        ordenCompra={ordenHistorialPagos}
       />
     </>
   );

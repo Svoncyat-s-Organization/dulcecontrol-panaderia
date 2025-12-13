@@ -3,7 +3,9 @@ package com.dulcecontrol.bakery.features.admin.compras.service.impl;
 import com.dulcecontrol.bakery.features.admin.compras.dto.*;
 import com.dulcecontrol.bakery.features.admin.compras.entity.DetalleOrdenCompra;
 import com.dulcecontrol.bakery.features.admin.compras.entity.OrdenCompra;
+import com.dulcecontrol.bakery.features.admin.compras.entity.PagoOrdenCompra;
 import com.dulcecontrol.bakery.features.admin.compras.entity.enums.EstadoOrdenCompra;
+import com.dulcecontrol.bakery.features.admin.compras.entity.enums.MetodoPago;
 import com.dulcecontrol.bakery.features.admin.compras.repository.DetalleOrdenCompraRepository;
 import com.dulcecontrol.bakery.features.admin.compras.repository.OrdenCompraRepository;
 import com.dulcecontrol.bakery.features.admin.compras.service.IOrdenCompraService;
@@ -28,6 +30,7 @@ public class OrdenCompraService implements IOrdenCompraService {
     private final com.dulcecontrol.bakery.features.superadmin.tiendas.repository.SedeRepository sedeRepository;
     private final com.dulcecontrol.bakery.features.admin.compras.repository.InsumoRepository insumoRepository;
     private final com.dulcecontrol.bakery.features.admin.inventario.repository.InventarioInsumoSedeRepository inventarioInsumoSedeRepository;
+    private final com.dulcecontrol.bakery.features.admin.compras.repository.PagoOrdenCompraRepository pagoOrdenCompraRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -106,6 +109,30 @@ public class OrdenCompraService implements IOrdenCompraService {
         orden.setEstado(request.getEstado() != null ? request.getEstado() : EstadoOrdenCompra.BORRADOR);
         orden.setMoneda(request.getMoneda() != null ? request.getMoneda() : "PEN");
         orden.setMetodoPago(request.getMetodoPago());
+        
+        // Calcular total
+        Long totalCentimos = calcularTotal(request.getDetalles());
+        orden.setTotalCompraCentimos(totalCentimos);
+        
+        // Manejar pagos según el método de pago
+        if (request.getMetodoPago() != null && request.getMetodoPago() == MetodoPago.CREDITO) {
+            // Para crédito: registrar monto inicial y calcular saldo pendiente
+            Long montoInicial = request.getMontoInicialCentimos() != null ? request.getMontoInicialCentimos() : 0L;
+            orden.setMontoInicialCentimos(montoInicial);
+            orden.setMontoPagadoCentimos(montoInicial);
+            orden.setSaldoPendienteCentimos(totalCentimos - montoInicial);
+        } else if (request.getMetodoPago() != null && request.getMetodoPago() == MetodoPago.EFECTIVO) {
+            // Para efectivo: marcar como pagado completamente
+            orden.setMontoInicialCentimos(totalCentimos);
+            orden.setMontoPagadoCentimos(totalCentimos);
+            orden.setSaldoPendienteCentimos(0L);
+        } else {
+            // Si no hay método de pago definido, valores por defecto
+            orden.setMontoInicialCentimos(0L);
+            orden.setMontoPagadoCentimos(0L);
+            orden.setSaldoPendienteCentimos(0L);
+        }
+        
         orden.setReferenciaPago(request.getReferenciaPago());
         orden.setTipoComprobanteProveedor(request.getTipoComprobanteProveedor());
         orden.setSerieComprobanteProveedor(request.getSerieComprobanteProveedor());
@@ -113,10 +140,6 @@ public class OrdenCompraService implements IOrdenCompraService {
         orden.setUrlFotoComprobante(request.getUrlFotoComprobante());
         orden.setObservaciones(request.getObservaciones());
         orden.setRegistradoPor(request.getRegistradoPor());
-
-        // Calcular total
-        Long totalCentimos = calcularTotal(request.getDetalles());
-        orden.setTotalCompraCentimos(totalCentimos);
 
         OrdenCompra guardada = ordenCompraRepository.save(orden);
 
@@ -137,6 +160,28 @@ public class OrdenCompraService implements IOrdenCompraService {
             detalleEntity.setRecibidoCompleto(detalle.getRecibidoCompleto());
 
             detalleOrdenCompraRepository.save(detalleEntity);
+        }
+
+        // Si es crédito y hay pago inicial, crear registro en historial de pagos
+        if (request.getMetodoPago() == MetodoPago.CREDITO && 
+            request.getMontoInicialCentimos() != null && 
+            request.getMontoInicialCentimos() > 0) {
+            
+            PagoOrdenCompra pagoInicial = new PagoOrdenCompra();
+            pagoInicial.setOrdenCompraId(guardada.getId());
+            pagoInicial.setFechaPago(request.getFechaEmision() != null ? request.getFechaEmision() : LocalDate.now());
+            pagoInicial.setMontoPagadoCentimos(request.getMontoInicialCentimos());
+            pagoInicial.setUrlFotoComprobante(request.getUrlFotoComprobante());
+            pagoInicial.setReferenciaPago(request.getReferenciaPago());
+            pagoInicial.setObservaciones("Pago inicial al crear la orden");
+            
+            pagoOrdenCompraRepository.save(pagoInicial);
+            
+            System.out.println("=== PAGO INICIAL REGISTRADO ===");
+            System.out.println("Orden ID: " + guardada.getId());
+            System.out.println("Monto pagado: " + request.getMontoInicialCentimos());
+            System.out.println("Tiene comprobante: " + (request.getUrlFotoComprobante() != null));
+            System.out.println("================================");
         }
 
         return toResponse(guardada);
@@ -296,6 +341,9 @@ public class OrdenCompraService implements IOrdenCompraService {
                 .moneda(orden.getMoneda())
                 .totalCompraCentimos(orden.getTotalCompraCentimos())
                 .metodoPago(orden.getMetodoPago())
+                .montoInicialCentimos(orden.getMontoInicialCentimos())
+                .montoPagadoCentimos(orden.getMontoPagadoCentimos())
+                .saldoPendienteCentimos(orden.getSaldoPendienteCentimos())
                 .referenciaPago(orden.getReferenciaPago())
                 .tipoComprobanteProveedor(orden.getTipoComprobanteProveedor())
                 .serieComprobanteProveedor(orden.getSerieComprobanteProveedor())
