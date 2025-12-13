@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Table, Button, Space, Modal, Form, Input, InputNumber, Switch, message, Card, Tag } from 'antd';
-import { EditOutlined, DeleteOutlined, CodeOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Modal, Form, Input, InputNumber, Switch, message, Card, Tag, Divider } from 'antd';
+import { EditOutlined, DeleteOutlined, CodeOutlined, HomeOutlined, InfoCircleOutlined, PhoneOutlined } from '@ant-design/icons';
 import {
   getPaginasStorefront,
   createPaginaStorefront,
@@ -12,6 +12,34 @@ import { PAGINAS_STOREFRONT_KEYS } from '../../constants/queryKeys';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 
 const { TextArea } = Input;
+
+// Configuración de páginas del storefront
+const PAGINAS_CONFIG = [
+  {
+    key: 'home',
+    nombre: 'Página de Inicio',
+    descripcion: 'Secciones dinámicas de la página principal del storefront',
+    icon: <HomeOutlined />,
+    slugPrefix: 'home-seccion-',
+    color: '#1890ff',
+  },
+  {
+    key: 'about',
+    nombre: 'Sobre Nosotros',
+    descripcion: 'Contenido de la página "Nuestra Historia"',
+    icon: <InfoCircleOutlined />,
+    slugPrefix: 'home-seccion-about',
+    color: '#52c41a',
+  },
+  {
+    key: 'contact',
+    nombre: 'Contáctanos',
+    descripcion: 'Información de contacto y ubicación',
+    icon: <PhoneOutlined />,
+    slugPrefix: 'home-seccion-contact',
+    color: '#faad14',
+  },
+];
 
 const PaginasStorefrontTable = () => {
   const [form] = Form.useForm();
@@ -116,8 +144,8 @@ const PaginasStorefrontTable = () => {
       title: 'Slug',
       dataIndex: 'slug',
       key: 'slug',
-      width: 150,
-      render: (slug) => <code>/{slug}</code>,
+      width: 250,
+      render: (slug) => <code style={{ fontSize: '12px' }}>/{slug}</code>,
     },
     {
       title: 'Tipo',
@@ -127,7 +155,7 @@ const PaginasStorefrontTable = () => {
       align: 'center',
       render: (tipo) => (
         <Tag color={tipo === 'HTML' ? 'blue' : 'purple'}>
-          {tipo || 'HTML'}
+          {tipo || 'JSON'}
         </Tag>
       ),
     },
@@ -136,7 +164,10 @@ const PaginasStorefrontTable = () => {
       dataIndex: 'contenido',
       key: 'contenido',
       ellipsis: true,
-      render: (text) => text?.substring(0, 100) + (text?.length > 100 ? '...' : ''),
+      render: (text) => {
+        const preview = text?.substring(0, 80);
+        return <span style={{ fontSize: '12px', color: '#666' }}>{preview}{text?.length > 80 ? '...' : ''}</span>;
+      },
     },
     {
       title: 'Acciones',
@@ -156,18 +187,61 @@ const PaginasStorefrontTable = () => {
     },
   ];
 
+  // Función para filtrar páginas por prefijo de slug
+  const getPaginasByPrefix = (prefix) => {
+    if (prefix === 'home-seccion-about') {
+      return allPaginas.filter(p => p.slug === 'home-seccion-about');
+    }
+    if (prefix === 'home-seccion-contact') {
+      return allPaginas.filter(p => p.slug === 'home-seccion-contact');
+    }
+    if (prefix === 'home-seccion-') {
+      return allPaginas.filter(p => 
+        p.slug.startsWith(prefix) && 
+        p.slug !== 'home-seccion-about' && 
+        p.slug !== 'home-seccion-contact'
+      );
+    }
+    return [];
+  };
+
   return (
-    <Card
-      title={<span><CodeOutlined /> Secciones JSON del Storefront</span>}
-    >      
-      <Table
-        columns={columns}
-        dataSource={allPaginas}
-        rowKey="id"
-        loading={isLoading}
-        pagination={false}
-        scroll={{ x: 1100 }}
-      />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {PAGINAS_CONFIG.map((pagina) => {
+        const secciones = getPaginasByPrefix(pagina.slugPrefix);
+        
+        return (
+          <Card
+            key={pagina.key}
+            title={
+              <Space>
+                <span style={{ color: pagina.color, fontSize: '18px' }}>{pagina.icon}</span>
+                <span style={{ fontWeight: 600 }}>{pagina.nombre}</span>
+                <Tag color={pagina.color}>{secciones.length} {secciones.length === 1 ? 'sección' : 'secciones'}</Tag>
+              </Space>
+            }
+            extra={
+              <span style={{ fontSize: '13px', color: '#666' }}>{pagina.descripcion}</span>
+            }
+            style={{ 
+              borderLeft: `4px solid ${pagina.color}`,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+            }}
+          >
+            <Table
+              columns={columns}
+              dataSource={secciones}
+              rowKey="id"
+              loading={isLoading}
+              pagination={false}
+              scroll={{ x: 1000 }}
+              locale={{
+                emptyText: secciones.length === 0 ? 'No hay secciones configuradas para esta página' : 'Sin datos'
+              }}
+            />
+          </Card>
+        );
+      })}
 
       <Modal
         title={editingPagina ? `Editar: ${editingPagina.titulo}` : 'Nueva Sección'}
@@ -247,7 +321,7 @@ const PaginasStorefrontTable = () => {
           </Form.Item>
         </Form>
       </Modal>
-    </Card>
+    </div>
   );
 };
 

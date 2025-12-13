@@ -12,7 +12,9 @@ import lombok.Getter;
 public class ConfiguracionPublicaResponse {
 
     private final Long tiendaId;
-    private final String sloganTienda;
+    private final String nombreTienda;
+    private final String sloganParte1;
+    private final String sloganParte2;
     private final String bannerPrincipalUrl;
     private final String mensajeBienvenida;
     private final String horarioAtencion; // JSON string

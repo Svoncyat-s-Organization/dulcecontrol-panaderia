@@ -41,7 +41,8 @@ const ConfiguracionPublicaForm = () => {
   React.useEffect(() => {
     if (config) {
       form.setFieldsValue({
-        sloganTienda: config.sloganTienda,
+        sloganParte1: config.sloganParte1,
+        sloganParte2: config.sloganParte2,
         bannerPrincipalUrl: config.bannerPrincipalUrl,
         mensajeBienvenida: config.mensajeBienvenida,
         horarioAtencion: config.horarioAtencion,
@@ -71,18 +72,35 @@ const ConfiguracionPublicaForm = () => {
         autoComplete="off"
       >
         <Row gutter={24}>
-          <Col span={24}>
+          <Col span={12}>
             <Form.Item
-              label="Slogan de la Tienda"
-              name="sloganTienda"
+              label="Slogan - Parte 1 (Estilo Normal)"
+              name="sloganParte1"
               rules={[
-                { max: 100, message: 'Máximo 100 caracteres' },
+                { max: 50, message: 'Máximo 50 caracteres' },
               ]}
-              tooltip="Slogan que aparece en el título principal del Hero (ej: 'Dulces Momentos', 'Pan Fresco Diario')"
+              tooltip="Primera parte del slogan que aparece con estilo normal (ej: 'Dulces')"
             >
               <Input 
-                placeholder="Ej: Dulces Momentos" 
-                maxLength={100}
+                placeholder="Ej: Dulces" 
+                maxLength={50}
+                showCount
+              />
+            </Form.Item>
+          </Col>
+
+          <Col span={12}>
+            <Form.Item
+              label="Slogan - Parte 2 (Estilo Itálica/Color)"
+              name="sloganParte2"
+              rules={[
+                { max: 50, message: 'Máximo 50 caracteres' },
+              ]}
+              tooltip="Segunda parte del slogan que aparece con estilo itálica y color primario (ej: 'Momentos')"
+            >
+              <Input 
+                placeholder="Ej: Momentos" 
+                maxLength={50}
                 showCount
               />
             </Form.Item>

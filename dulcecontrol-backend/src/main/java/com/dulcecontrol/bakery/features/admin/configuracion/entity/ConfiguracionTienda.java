@@ -50,8 +50,11 @@ public class ConfiguracionTienda {
     @Column(name = "merchant_id_niubiz", length = 100)
     private String merchantIdNiubiz;
 
-    @Column(name = "slogan_tienda", length = 100)
-    private String sloganTienda;
+    @Column(name = "slogan_parte1", length = 50)
+    private String sloganParte1;
+
+    @Column(name = "slogan_parte2", length = 50)
+    private String sloganParte2;
 
     @Column(name = "banner_principal_url", columnDefinition = "TEXT")
     private String bannerPrincipalUrl;

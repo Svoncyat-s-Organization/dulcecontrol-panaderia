@@ -39,24 +39,21 @@ const HomePage = () => {
     : {};
 
   // Banner y mensaje dinámicos desde el backend
-  const bannerUrl = config?.bannerPrincipalUrl || 'https://images.unsplash.com/photo-1535141192574-5d4897c12636?auto=format&fit=crop&q=80&w=1000';
-  const mensajeBienvenida = config?.mensajeBienvenida || 'Descubre la magia de la repostería artesanal. Sabores que te harán sonreír en cada bocado.';
-  const sloganTienda = config?.sloganTienda || 'Dulces Momentos';
+  const bannerUrl = config?.bannerPrincipalUrl;
+  const mensajeBienvenida = config?.mensajeBienvenida;
+  const sloganParte1 = config?.sloganParte1;
+  const sloganParte2 = config?.sloganParte2;
 
   // Transformar productos de la API al formato esperado por ProductCard
   const featuredProducts = productosData?.content?.map(producto => ({
     id: producto.id,
+    slug: producto.slug,
     name: producto.nombre,
     price: parseFloat(formatPrecio(producto.precioEfectivoCentimos || producto.precioBaseCentimos)),
     category: producto.nombreCategoria || 'General',
-    image: producto.urlImagenPrincipal || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=1000',
+    image: producto.urlImagenPrincipal,
     badge: producto.tieneOferta ? 'OFERTA' : (producto.destacadoStorefront ? 'BEST SELLER' : null)
   })) || [];
-
-  // Dividir slogan en dos partes (primera palabra normal, resto en itálica)
-  const sloganParts = sloganTienda.trim().split(' ');
-  const primerapalabra = sloganParts[0] || 'Dulces';
-  const restoSlogan = sloganParts.slice(1).join(' ') || 'Momentos';
 
   return (
     <div className="flex flex-col w-full">
@@ -65,8 +62,8 @@ const HomePage = () => {
         <div className="container flex flex-col md:flex-row items-center gap-12">
           <div className="flex-1 text-center md:text-left space-y-8 z-10">
             <h1 className="text-6xl md:text-8xl font-bold text-foreground leading-[0.9] tracking-tight">
-              {primerapalabra} <br/>
-              <span className="italic font-serif text-primary/80">{restoSlogan}</span>
+              {sloganParte1} <br/>
+              <span className="italic font-serif text-primary/80">{sloganParte2}</span>
             </h1>
             <p className="text-xl text-foreground/80 max-w-lg mx-auto md:mx-0 font-medium leading-relaxed">
               {mensajeBienvenida}
@@ -99,10 +96,10 @@ const HomePage = () => {
         <div className="container">
           <div className="text-center mb-16 space-y-4">
             <h2 className="text-4xl md:text-5xl font-bold text-foreground">
-              {seccionDestacados?.titulo || 'Los Favoritos del Barrio'}
+              {seccionDestacados?.titulo}
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-              {destacadosData.subtitulo || 'Estos son los postres que todos están pidiendo. ¡No te quedes sin probarlos!'}
+              {destacadosData.subtitulo}
             </p>
           </div>
           
@@ -143,30 +140,30 @@ const HomePage = () => {
                  <div className="inline-block bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase text-primary-foreground mb-2 border border-white/30">
                     Personalización Total
                  </div>
-                 <h2 className="text-5xl md:text-6xl font-bold text-primary-foreground leading-tight">
-                    {seccionPersonalizada?.titulo || '¿Tienes una idea única?'} <br/>
-                    <span className="text-white">
-                      {personalizadaData.titulo_destacado || '¡La hacemos realidad!'}
+                 <h2 className="text-5xl md:text-5xl font-bold text-foreground leading-tight">
+                    {seccionPersonalizada?.titulo} <br/>
+                    <span className="text-6xl md:text-6xl text-secondary">
+                      {personalizadaData.titulo_destacado}
                     </span>
                  </h2>
                  <p className="text-xl text-primary-foreground/90 font-medium max-w-xl">
-                    {personalizadaData.descripcion || 'Sube una foto de referencia, elige tus sabores favoritos y nosotros nos encargamos del resto. Perfecto para cumpleaños y eventos especiales.'}
+                    {personalizadaData.descripcion}
                  </p>
                  <Button asChild size="lg" className="rounded-full bg-white text-primary hover:bg-white/90 font-bold uppercase tracking-widest px-10 py-7 shadow-xl border-0">
-                    <Link to={personalizadaData.enlace_boton || '/custom-order'}>
-                      {personalizadaData.texto_boton || 'Cotizar Ahora'}
+                    <Link to={personalizadaData.enlace_boton}>
+                      {personalizadaData.texto_boton}
                     </Link>
                  </Button>
               </div>
               <div className="flex-1 relative">
                  <div className="grid grid-cols-2 gap-6">
                     <img 
-                      src={personalizadaData.imagen_1 || 'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&q=80&w=500'} 
+                      src={personalizadaData.imagen_1} 
                       className="rounded-2xl shadow-lg -rotate-6 hover:rotate-0 transition-transform duration-500 border-4 border-white/50" 
                       alt="Personalización 1" 
                     />
                     <img 
-                      src={personalizadaData.imagen_2 || 'https://images.unsplash.com/photo-1586985289688-ca3cf47d3e6e?auto=format&fit=crop&q=80&w=500'} 
+                      src={personalizadaData.imagen_2} 
                       className="rounded-2xl shadow-lg rotate-6 hover:rotate-0 transition-transform duration-500 border-4 border-white/50 mt-12" 
                       alt="Personalización 2" 
                     />

@@ -20,7 +20,8 @@ INSERT INTO configuracion_tienda (
   api_key_yape,
   api_key_plin,
   merchant_id_niubiz,
-  slogan_tienda,
+  slogan_parte1,
+  slogan_parte2,
   banner_principal_url,
   mensaje_bienvenida,
   horario_atencion,
@@ -48,7 +49,8 @@ VALUES
     'yape_api_key_dulcemanjar_prod',
     'plin_api_key_dulcemanjar_prod',
     'merchant_niubiz_456789123',
-    'Dulces Momentos',
+    'Dulces',
+    'Momentos',
     'https://images.unsplash.com/photo-1587241321921-91a834d6d191?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YmFrZXJ5JTIwY2FmZXxlbnwwfHwwfHx8MA%3D%3D',
     '¡Bienvenidos a Dulce Manjar! La mejor repostería artesanal de Lima. Hacemos tus momentos especiales aún más dulces.',
     JSON_OBJECT(
@@ -88,7 +90,8 @@ VALUES
     NULL,
     NULL,
     NULL,
-    'Pan Fresco Diario',
+    'Pan Fresco',
+    'Diario',
     'https://images.unsplash.com/photo-1568254183919-78a4f43a2877?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8YmFrZXJ5fGVufDB8fDB8fHww',
     'Panadería El Sol - Pan fresco todos los días desde 1995. Calidad y tradición en cada bocado.',
     JSON_OBJECT(
@@ -127,7 +130,8 @@ VALUES
     'yape_api_key_tortasdelicias',
     'plin_api_key_tortasdelicias',
     'merchant_niubiz_987654321',
-    'Celebra con Sabor',
+    'Celebra con',
+    'Sabor',
     'https://wallpapers.com/images/hd/shot-of-bakery-bread-x4bgj6adcoqjiohh.jpg',
     'Bienvenido a Tortas & Delicias. Creamos las tortas más hermosas y deliciosas para tus celebraciones especiales. ¡Hacemos realidad tus sueños más dulces!',
     JSON_OBJECT(
@@ -209,24 +213,36 @@ VALUES
     FALSE,
     TRUE
   ),
-  -- Sección 3: About/Historia (consumida por AboutPage y HomePage)
+  -- Sección 3: About/Historia (consumida por AboutPage)
   (
     (SELECT id FROM tiendas WHERE numero_doc = '20601234567'),
     'home-seccion-about',
     'Nuestra Historia',
-    '{"descripcion": "Dulce Manjar nació en 2010 con un sueño: llevar los mejores sabores de la repostería peruana a cada hogar limeño.", "valores": ["Calidad en cada bocado", "Ingredientes seleccionados", "Recetas tradicionales", "Atención personalizada"]}',
+    '{"descripcion": "Dulce Manjar nació en 2010 con un sueño: llevar los mejores sabores de la repostería peruana a cada hogar limeño.", "titulo_tradicion": "Tradición y Pasión", "texto_tradicion": "Todo comenzó con una pasión por crear momentos dulces e inolvidables. Desde nuestros inicios, hemos mantenido el compromiso de usar solo los mejores ingredientes.", "imagen_tradicion": "https://images.unsplash.com/photo-1556910103-1c02745a30bf?auto=format&fit=crop&q=80&w=1000", "titulo_valores": "Nuestros Valores", "valores": ["Calidad en cada bocado", "Ingredientes seleccionados", "Recetas tradicionales", "Atención personalizada"], "iconos_valores": ["🌿", "👐", "❤️", "✨"]}',
     NULL,
     'JSON',
     0,
     FALSE,
     TRUE
   ),
-  -- Sección 4: Contacto (consumida por ContactPage)
+  -- Sección 4: Hero de Contacto (consumida por ContactPage)
+  (
+    (SELECT id FROM tiendas WHERE numero_doc = '20601234567'),
+    'contact-hero',
+    'Contáctanos',
+    '{"subtitulo": "Estamos aquí para endulzar tu día. ¡Escríbenos!", "titulo_formulario": "Envíanos un Mensaje"}',
+    NULL,
+    'JSON',
+    0,
+    FALSE,
+    TRUE
+  ),
+  -- Sección 5: Info de Contacto (consumida por ContactPage)
   (
     (SELECT id FROM tiendas WHERE numero_doc = '20601234567'),
     'home-seccion-contact',
     'Visítanos',
-    '{"direccion": "Av. Larco 789, Miraflores", "telefono": "+51 987 654 321", "email": "pedidos@dulcemanjar.pe"}',
+    '{"direccion": "Av. Larco 789, Miraflores", "ciudad": "Lima, Perú", "titulo_horario": "Horario", "titulo_telefono": "Llámanos", "telefono": "+51 987 654 321", "email": "pedidos@dulcemanjar.pe"}',
     NULL,
     'JSON',
     0,

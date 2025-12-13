@@ -1,19 +1,44 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { IconMail, IconLock } from '@tabler/icons-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
+import { IconMail, IconLock, IconAlertCircle } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { loginStorefront } from '../../api/auth.api';
+import { useAuthStore } from '../../stores/authStore';
+import { getTiendaIdentifier } from '../../config/tenant.config';
 
 const LoginPage = () => {
+  const navigate = useNavigate();
+  const setAuth = useAuthStore((state) => state.setAuth);
+  const tiendaId = getTiendaIdentifier();
+
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
 
+  const { mutate, isLoading, isError, error } = useMutation({
+    mutationFn: loginStorefront,
+    onSuccess: (data) => {
+      setAuth(data);
+      navigate('/');
+    },
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Login:', formData);
-    // Here would be the actual login logic
+    
+    if (!tiendaId) {
+      alert('Error: No se pudo obtener el ID de la tienda');
+      return;
+    }
+
+    mutate({
+      tiendaId,
+      email: formData.email,
+      password: formData.password,
+    });
   };
 
   const handleChange = (e) => {
@@ -38,6 +63,14 @@ const LoginPage = () => {
 
         {/* Form Card */}
         <div className="bg-card border-2 border-border rounded-2xl p-8 shadow-sm">
+          {/* Error Message */}
+          {isError && (
+            <div className="mb-6 bg-red-50 border-2 border-red-200 rounded-xl p-4 flex items-start gap-3">
+              <IconAlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-800">{error?.message || 'Error al iniciar sesión'}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Input */}
             <div>
@@ -100,9 +133,10 @@ const LoginPage = () => {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full h-12 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold uppercase tracking-widest"
+              disabled={isLoading}
+              className="w-full h-12 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Iniciar Sesión
+              {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
             </Button>
           </form>
 
