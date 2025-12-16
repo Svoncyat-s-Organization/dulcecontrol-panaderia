@@ -1,8 +1,8 @@
 package com.dulcecontrol.bakery.features.admin.configuracion.dto;
 
+import com.dulcecontrol.bakery.features.admin.configuracion.entity.enums.TipoContenido;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,13 +21,12 @@ public class PaginaStorefrontCreateRequest {
 
     private String metaDescripcion;
 
-    @NotNull(message = "El orden en el menú es obligatorio")
+    private TipoContenido tipoContenido = TipoContenido.JSON;
+
     @Min(value = 0, message = "El orden en el menú debe ser mayor o igual a 0")
-    private Integer ordenMenu;
+    private Integer ordenMenu = 0;
 
-    @NotNull(message = "Visible en menú es obligatorio")
-    private Boolean visibleEnMenu;
+    private Boolean visibleEnMenu = false;
 
-    @NotNull(message = "Activa es obligatoria")
-    private Boolean activa;
+    private Boolean activa = true;
 }

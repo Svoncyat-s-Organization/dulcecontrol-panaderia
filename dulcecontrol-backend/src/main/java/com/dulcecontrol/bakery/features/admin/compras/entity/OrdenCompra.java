@@ -50,8 +50,17 @@ public class OrdenCompra {
     private Long totalCompraCentimos = 0L;
 
     @Convert(converter = MetodoPagoConverter.class)
-    @Column(name = "metodo_pago", columnDefinition = "ENUM('efectivo', 'transferencia', 'credito', 'tarjeta')")
+    @Column(name = "metodo_pago", columnDefinition = "ENUM('efectivo', 'credito')")
     private MetodoPago metodoPago;
+
+    @Column(name = "monto_inicial_centimos")
+    private Long montoInicialCentimos = 0L;
+
+    @Column(name = "monto_pagado_centimos")
+    private Long montoPagadoCentimos = 0L;
+
+    @Column(name = "saldo_pendiente_centimos")
+    private Long saldoPendienteCentimos = 0L;
 
     @Column(name = "referencia_pago", length = 100)
     private String referenciaPago;

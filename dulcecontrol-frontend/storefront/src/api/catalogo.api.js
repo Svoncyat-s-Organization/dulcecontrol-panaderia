@@ -1,13 +1,13 @@
 /**
  * API para el catálogo público del storefront.
  * Endpoints sin autenticación para productos y categorías.
+ * 
+ * La tienda se detecta automáticamente por:
+ * - Producción: Subdominio o dominio personalizado
+ * - Desarrollo: Variable VITE_TIENDA_ID del .env
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
-
-// TODO: Implementar detección de subdominio o parámetro de tienda
-// Por ahora hardcodeado a tienda 1 para MVP
-const TIENDA_ID = 1;
+import { getTiendaIdentifier, buildPublicApiUrl } from '../config/tenant.config';
 
 /**
  * Obtiene todas las categorías activas de la tienda.
@@ -16,7 +16,14 @@ const TIENDA_ID = 1;
  * @returns {Promise<Array>} Lista de categorías ordenadas por ordenVisual
  */
 export const getCategorias = async () => {
-  const response = await fetch(`${API_BASE_URL}/api/public/tienda/${TIENDA_ID}/catalogo/categorias`);
+  const identifier = getTiendaIdentifier();
+  
+  if (!identifier) {
+    throw new Error('No se pudo detectar la tienda.');
+  }
+  
+  const url = buildPublicApiUrl(identifier, 'catalogo/categorias');
+  const response = await fetch(url);
   
   if (!response.ok) {
     throw new Error(`Error al obtener categorías: ${response.statusText}`);
@@ -46,7 +53,14 @@ export const getProductos = async (params = {}) => {
   if (params.size !== undefined) queryParams.append('size', params.size);
   if (params.sort) queryParams.append('sort', params.sort);
   
-  const url = `${API_BASE_URL}/api/public/tienda/${TIENDA_ID}/catalogo/productos?${queryParams.toString()}`;
+  const identifier = getTiendaIdentifier();
+  
+  if (!identifier) {
+    throw new Error('No se pudo detectar la tienda.');
+  }
+  
+  const baseUrl = buildPublicApiUrl(identifier, 'catalogo/productos');
+  const url = `${baseUrl}?${queryParams.toString()}`;
   const response = await fetch(url);
   
   if (!response.ok) {
@@ -64,7 +78,14 @@ export const getProductos = async (params = {}) => {
  * @returns {Promise<Object>} ProductoDetallePublicoResponse con galería, atributos, categoría
  */
 export const getProductoBySlug = async (slug) => {
-  const response = await fetch(`${API_BASE_URL}/api/public/tienda/${TIENDA_ID}/catalogo/productos/${slug}`);
+  const identifier = getTiendaIdentifier();
+  
+  if (!identifier) {
+    throw new Error('No se pudo detectar la tienda.');
+  }
+  
+  const url = buildPublicApiUrl(identifier, `catalogo/productos/${slug}`);
+  const response = await fetch(url);
   
   if (!response.ok) {
     if (response.status === 404) {

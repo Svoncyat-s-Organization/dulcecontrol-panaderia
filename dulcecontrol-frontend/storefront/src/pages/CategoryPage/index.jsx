@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { categoryConfig } from '@/config/categories';
+import { useQuery } from '@tanstack/react-query';
 import ProductCard from '@/components/ProductCard';
+import { getCategorias, getProductos, formatPrecio } from '@/api/catalogo.api';
 import {
   Accordion,
   AccordionContent,
@@ -13,34 +14,37 @@ import { IconChevronDown } from '@tabler/icons-react';
 
 const CategoryPage = () => {
   const { slug } = useParams();
-  const config = categoryConfig[slug];
-  const [products, setProducts] = useState([]);
+  
+  // Fetch todas las categorías
+  const { data: categorias = [] } = useQuery({
+    queryKey: ['categorias'],
+    queryFn: getCategorias,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  // Mock Products Data (In a real app, fetch based on slug)
-  useEffect(() => {
-    // Simulating API fetch
-    const mockProducts = [
-      { id: 1, name: 'Torta de Chocolate', price: 45.00, category: 'Pastelería', image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=1000', badge: 'BEST SELLER' },
-      { id: 2, name: 'Cheesecake de Fresa', price: 12.00, category: 'Pastelería', image: 'https://images.unsplash.com/photo-1524351199678-941a58a3df26?auto=format&fit=crop&q=80&w=1000', badge: 'PICK UP ONLY' },
-      { id: 3, name: 'Alfajores (Caja x6)', price: 18.00, category: 'Pastelería', image: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?auto=format&fit=crop&q=80&w=1000' },
-      { id: 4, name: 'Red Velvet Cupcake', price: 8.00, category: 'Cupcakes', image: 'https://images.unsplash.com/photo-1614707267537-b85aaf00c4b7?auto=format&fit=crop&q=80&w=1000', badge: 'NEW' },
-      { id: 5, name: 'Vanilla Bean Cupcake', price: 7.50, category: 'Cupcakes', image: 'https://images.unsplash.com/photo-1519869325930-281384150729?auto=format&fit=crop&q=80&w=1000' },
-      { id: 6, name: 'Chocochip Cookies', price: 12.00, category: 'Galletas', image: 'https://images.unsplash.com/photo-1499636138143-bd630f5cfdeb?auto=format&fit=crop&q=80&w=1000' },
-    ];
-    
-    // Simple filter simulation
-    if (slug === 'pasteleria') {
-        setProducts(mockProducts.filter(p => p.category === 'Pastelería'));
-    } else if (slug === 'cupcakes') {
-        setProducts(mockProducts.filter(p => p.category === 'Cupcakes'));
-    } else if (slug === 'galletas') {
-        setProducts(mockProducts.filter(p => p.category === 'Galletas'));
-    } else {
-        setProducts(mockProducts);
-    }
-  }, [slug]);
+  // Encontrar la categoría actual por slug
+  const currentCategory = categorias.find(cat => cat.slug === slug);
 
-  if (!config) {
+  // Fetch productos de la categoría actual
+  const { data: productosData, isLoading } = useQuery({
+    queryKey: ['productos-categoria', currentCategory?.id],
+    queryFn: () => getProductos({ categoriaId: currentCategory?.id, size: 100 }),
+    enabled: !!currentCategory?.id,
+    staleTime: 30 * 1000,
+  });
+
+  // Transformar productos de la API
+  const products = productosData?.content?.map(producto => ({
+    id: producto.id,
+    slug: producto.slug,
+    name: producto.nombre,
+    price: parseFloat(formatPrecio(producto.precioEfectivoCentimos || producto.precioBaseCentimos)),
+    category: producto.nombreCategoria,
+    image: producto.urlImagenPrincipal,
+    badge: producto.tieneOferta ? 'OFERTA' : (producto.destacadoStorefront ? 'BEST SELLER' : null)
+  })) || [];
+
+  if (!currentCategory && !isLoading) {
     return <div className="py-20 text-center">Categoría no encontrada</div>;
   }
 
@@ -49,11 +53,11 @@ const CategoryPage = () => {
       <section className="relative w-full">
         {/* Desktop Background Layer */}
         <div className="hidden md:flex absolute inset-0 z-0">
-          <div className={`w-1/2 ${config.themeColor}`} />
+          <div className="w-1/2 bg-primary" />
           <div className="w-1/2 relative">
             <img 
-              src={config.heroImage} 
-              alt={config.title} 
+              src={currentCategory?.urlImagen || 'https://images.unsplash.com/photo-1486427944299-d1955d23e34d?auto=format&fit=crop&q=80&w=2070'} 
+              alt={currentCategory?.nombre || 'Categoría'} 
               className="w-full h-full object-cover"
             />
           </div>
@@ -62,20 +66,20 @@ const CategoryPage = () => {
         {/* Content Layer */}
         <div className="flex flex-col md:block relative z-10">
           {/* Text Section */}
-          <div className={`md:bg-transparent ${config.themeColor} w-full`}>
+          <div className="md:bg-transparent bg-primary w-full">
             <div className="container md:h-full md:flex md:items-center md:min-h-[50vh]">
               <div className="w-full md:w-1/2 py-12 md:py-20">
                 <div className="space-y-6 max-w-lg mx-auto md:mx-0">
                   <nav className="text-xs font-bold tracking-widest uppercase text-foreground/60">
                     <Link to="/colecciones" className="hover:text-foreground">Categorías</Link>
                     <span className="mx-2">/</span>
-                    <span className="text-foreground">{config.title}</span>
+                    <span className="text-foreground">{currentCategory?.nombre || 'Productos'}</span>
                   </nav>
                   <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold text-foreground leading-[0.9]">
-                    {config.title}
+                    {currentCategory?.nombre || 'Productos'}
                   </h1>
                   <p className="text-lg text-foreground/80 font-medium leading-relaxed">
-                    {config.description}
+                    {currentCategory?.descripcion || 'Descubre nuestros deliciosos productos'}
                   </p>
                 </div>
               </div>
@@ -85,8 +89,8 @@ const CategoryPage = () => {
           {/* Mobile Image Section */}
           <div className="md:hidden h-[300px] relative w-full">
             <img 
-              src={config.heroImage} 
-              alt={config.title} 
+              src={currentCategory?.urlImagen || 'https://images.unsplash.com/photo-1486427944299-d1955d23e34d?auto=format&fit=crop&q=80&w=2070'} 
+              alt={currentCategory?.nombre || 'Categoría'} 
               className="absolute inset-0 w-full h-full object-cover"
             />
           </div>
@@ -104,29 +108,26 @@ const CategoryPage = () => {
               </button>
             </div>
             
-            <Accordion type="multiple" defaultValue={["pickup", "type"]} className="w-full">
-              <AccordionItem value="pickup" className="border-b border-border">
+            <Accordion type="multiple" defaultValue={["personalizable", "alergenos"]} className="w-full">
+              <AccordionItem value="personalizable" className="border-b border-border">
                 <AccordionTrigger className="text-sm font-bold uppercase tracking-widest hover:no-underline py-4">
-                  Entrega / Recojo
+                  Personalización
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-2 pb-4">
                     <label className="flex items-center gap-2 text-sm text-foreground/80 cursor-pointer">
-                      <input type="checkbox" className="rounded border-input" /> Solo Recojo
+                      <input type="checkbox" className="rounded border-input" /> Personalizables
                     </label>
                     <label className="flex items-center gap-2 text-sm text-foreground/80 cursor-pointer">
-                      <input type="checkbox" className="rounded border-input" /> Delivery Local
-                    </label>
-                    <label className="flex items-center gap-2 text-sm text-foreground/80 cursor-pointer">
-                      <input type="checkbox" className="rounded border-input" /> Envíos Nacionales
+                      <input type="checkbox" className="rounded border-input" /> Productos Estándar
                     </label>
                   </div>
                 </AccordionContent>
               </AccordionItem>
 
-              <AccordionItem value="type" className="border-b border-border">
+              <AccordionItem value="alergenos" className="border-b border-border">
                 <AccordionTrigger className="text-sm font-bold uppercase tracking-widest hover:no-underline py-4">
-                  Tipo
+                  Alérgenos
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-2 pb-4">
@@ -134,29 +135,13 @@ const CategoryPage = () => {
                       <input type="checkbox" className="rounded border-input" /> Sin Gluten
                     </label>
                     <label className="flex items-center gap-2 text-sm text-foreground/80 cursor-pointer">
-                      <input type="checkbox" className="rounded border-input" /> Vegano
+                      <input type="checkbox" className="rounded border-input" /> Sin Lácteos
                     </label>
                     <label className="flex items-center gap-2 text-sm text-foreground/80 cursor-pointer">
-                      <input type="checkbox" className="rounded border-input" /> Sin Nueces
-                    </label>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-              
-               <AccordionItem value="flavor" className="border-b border-border">
-                <AccordionTrigger className="text-sm font-bold uppercase tracking-widest hover:no-underline py-4">
-                  Sabor
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-2 pb-4">
-                    <label className="flex items-center gap-2 text-sm text-foreground/80 cursor-pointer">
-                      <input type="checkbox" className="rounded border-input" /> Chocolate
+                      <input type="checkbox" className="rounded border-input" /> Sin Huevo
                     </label>
                     <label className="flex items-center gap-2 text-sm text-foreground/80 cursor-pointer">
-                      <input type="checkbox" className="rounded border-input" /> Vainilla
-                    </label>
-                    <label className="flex items-center gap-2 text-sm text-foreground/80 cursor-pointer">
-                      <input type="checkbox" className="rounded border-input" /> Fruta
+                      <input type="checkbox" className="rounded border-input" /> Sin Frutos Secos
                     </label>
                   </div>
                 </AccordionContent>
@@ -176,11 +161,27 @@ const CategoryPage = () => {
             </div>
 
             {/* Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            {isLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="animate-pulse">
+                    <div className="aspect-square bg-muted rounded-lg mb-4" />
+                    <div className="h-4 bg-muted rounded w-3/4 mb-2" />
+                    <div className="h-4 bg-muted rounded w-1/2" />
+                  </div>
+                ))}
+              </div>
+            ) : products.length === 0 ? (
+              <div className="text-center py-20 text-foreground/60">
+                No hay productos disponibles en esta categoría
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
+                {products.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -199,24 +200,22 @@ const CategoryPage = () => {
                   </Button>
                </div>
             </div>
-            {/* Simple Carousel Mockup */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-               {[
-                 { name: 'Tortas', image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=500' },
-                 { name: 'Favoritos', image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&q=80&w=500' },
-                 { name: 'Galletas', image: 'https://images.unsplash.com/photo-1499636138143-bd630f5cfdeb?auto=format&fit=crop&q=80&w=500' },
-                 { name: 'Cupcakes', image: 'https://images.unsplash.com/photo-1519869325930-281384150729?auto=format&fit=crop&q=80&w=500' }
-               ].map((item, i) => (
-                  <div key={i} className="group cursor-pointer">
+               {categorias.filter(cat => cat.slug !== slug).slice(0, 4).map((categoria) => (
+                  <Link 
+                    key={categoria.id} 
+                    to={`/colecciones/${categoria.slug}`}
+                    className="group cursor-pointer"
+                  >
                      <div className="aspect-square bg-white rounded-xl mb-4 overflow-hidden">
                         <img 
-                           src={item.image} 
-                           alt={item.name}
+                           src={categoria.urlImagen || 'https://images.unsplash.com/photo-1486427944299-d1955d23e34d?auto=format&fit=crop&q=80&w=500'} 
+                           alt={categoria.nombre}
                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                      </div>
-                     <h3 className="font-serif text-xl font-medium">{item.name}</h3>
-                  </div>
+                     <h3 className="font-serif text-xl font-medium">{categoria.nombre}</h3>
+                  </Link>
                ))}
             </div>
          </div>

@@ -1,113 +1,297 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { IconUpload, IconCalendar, IconSend } from '@tabler/icons-react';
+import { Input } from '@/components/ui/input';
+import { 
+  IconLogin,
+  IconCake,
+  IconArrowLeft,
+  IconCheck
+} from '@tabler/icons-react';
+import { useAuthStore } from '../../stores/authStore';
+import { getProductos, formatPrecio } from '@/api/catalogo.api';
+import { createPedidoPersonalizado } from '../../api/pedidos.api';
+import ProductCard from '@/components/ProductCard';
 
 const CustomOrderPage = () => {
-  const [file, setFile] = useState(null);
+  const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const token = useAuthStore((state) => state.token);
 
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-    }
+  const [step, setStep] = useState('selector'); // 'selector' | 'form'
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [formData, setFormData] = useState({
+    cantidad: 1,
+    descripcionSolicitud: '',
+    textoDedicatoria: '',
+    saborMasa: '',
+    saborRelleno: '',
+    tematica: '',
+  });
+
+  // Fetch productos para selector
+  const { data: productosData, isLoading } = useQuery({
+    queryKey: ['productos-catalogo'],
+    queryFn: () => getProductos({ size: 20 }),
+    enabled: isAuthenticated,
+  });
+
+  // Mutation para crear pedido
+  const { mutate: crearPedido, isLoading: creandoPedido } = useMutation({
+    mutationFn: (data) => createPedidoPersonalizado(data, token),
+    onSuccess: () => {
+      alert('¡Pedido creado exitosamente! Nos pondremos en contacto contigo.');
+      navigate('/');
+    },
+    onError: (error) => {
+      alert(error.message || 'Error al crear pedido');
+    },
+  });
+
+  const handleProductSelect = (product) => {
+    setSelectedProduct(product);
+    setStep('form');
   };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (!selectedProduct) {
+      alert('Selecciona un producto base');
+      return;
+    }
+
+    if (!formData.descripcionSolicitud.trim()) {
+      alert('Describe cómo quieres personalizar tu producto');
+      return;
+    }
+
+    crearPedido({
+      productoId: selectedProduct.id,
+      ...formData,
+    });
+  };
+
+  // Si no está autenticado, mostrar mensaje
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4">
+        <div className="max-w-md w-full text-center">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 border border-border">
+            <IconLogin className="w-16 h-16 text-primary mx-auto mb-6" />
+            <h2 className="text-2xl font-serif font-bold text-foreground mb-4">
+              Inicia Sesión
+            </h2>
+            <p className="text-muted-foreground mb-6">
+              Debes tener una cuenta para realizar pedidos personalizados
+            </p>
+            <div className="space-y-3">
+              <Button 
+                onClick={() => navigate('/login')}
+                className="w-full h-12 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold uppercase tracking-widest"
+              >
+                Iniciar Sesión
+              </Button>
+              <Button 
+                onClick={() => navigate('/register')}
+                variant="outline"
+                className="w-full h-12 rounded-full font-bold uppercase tracking-widest"
+              >
+                Crear Cuenta
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header Section - Mint */}
-      <section className="bg-primary py-16 md:py-24 text-center">
-        <div className="container">
-          <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground mb-4">
-            Diseña tu Pastel Soñado
+      {/* Header Section */}
+      <section className="relative py-16 md:py-24 text-center overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-secondary/20 to-background"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,182,193,0.2),transparent_50%)]"></div>
+        
+        <div className="container relative z-10">
+          <div className="inline-block mb-6 px-6 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-primary/20">
+            <span className="text-sm font-bold uppercase tracking-widest text-primary">
+              {step === 'selector' ? 'Paso 1: Producto Base' : 'Paso 2: Personalización'}
+            </span>
+          </div>
+          <h1 className="text-4xl md:text-6xl font-serif font-bold text-foreground mb-4">
+            Diseña tu Producto Soñado
           </h1>
-          <p className="text-xl text-primary-foreground/90 max-w-2xl mx-auto font-medium">
-            Cuéntanos tu idea, sube una referencia y nosotros crearemos una obra de arte comestible solo para ti.
-          </p>
+          {step === 'selector' ? (
+            <p className="text-xl text-foreground/70 max-w-2xl mx-auto font-medium">
+              Selecciona el producto base que quieres personalizar
+            </p>
+          ) : (
+            <div className="flex items-center justify-center gap-4">
+              <Button
+                onClick={() => setStep('selector')}
+                variant="outline"
+                className="rounded-full"
+              >
+                <IconArrowLeft className="w-4 h-4 mr-2" />
+                Cambiar Producto
+              </Button>
+              <p className="text-lg text-foreground/70">
+                Base: <strong>{selectedProduct?.nombre}</strong>
+              </p>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Form Section */}
-      <div className="container max-w-3xl -mt-10 relative z-10">
-        <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12 border border-border">
-          <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
+      {/* Content */}
+      <div className="container max-w-6xl -mt-10 relative z-10">
+        {step === 'selector' && (
+          <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 border border-border">
+            <h2 className="text-2xl font-serif font-bold text-foreground mb-6 text-center">
+              Catálogo de Productos Base
+            </h2>
             
-            {/* Reference Image */}
-            <div className="space-y-4">
-              <label className="block text-lg font-serif font-bold text-foreground">
-                1. ¿Tienes una foto de referencia?
-              </label>
-              <div className="border-2 border-dashed border-input rounded-2xl p-8 text-center hover:bg-muted/30 transition-colors cursor-pointer relative">
-                <input 
-                  type="file" 
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  onChange={handleFileChange}
-                  accept="image/*"
-                />
-                <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                  <div className="w-12 h-12 bg-secondary/30 rounded-full flex items-center justify-center text-secondary-foreground mb-2">
-                    <IconUpload className="w-6 h-6" />
+            {isLoading ? (
+              <p className="text-center text-muted-foreground">Cargando productos...</p>
+            ) : productosData?.content?.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {productosData.content.map((producto) => (
+                  <div
+                    key={producto.id}
+                    className="border-2 border-border rounded-2xl p-4 hover:border-primary transition-colors cursor-pointer"
+                    onClick={() => handleProductSelect(producto)}
+                  >
+                    <ProductCard producto={producto} />
+                    <Button className="w-full mt-4 rounded-full bg-primary">
+                      Seleccionar
+                    </Button>
                   </div>
-                  {file ? (
-                    <span className="font-bold text-primary">{file.name}</span>
-                  ) : (
-                    <>
-                      <span className="font-bold">Haz clic para subir una imagen</span>
-                      <span className="text-sm">o arrastra y suelta aquí</span>
-                    </>
-                  )}
-                </div>
+                ))}
               </div>
-            </div>
+            ) : (
+              <p className="text-center text-muted-foreground">No hay productos disponibles</p>
+            )}
+          </div>
+        )}
 
-            {/* Description */}
-            <div className="space-y-4">
-              <label className="block text-lg font-serif font-bold text-foreground">
-                2. Describe tu pedido
-              </label>
-              <textarea 
-                className="w-full min-h-[150px] rounded-xl border-2 border-input p-4 text-base focus:outline-none focus:border-primary transition-colors resize-none"
-                placeholder="Ej: Quiero un pastel de vainilla con relleno de manjar blanco, para 20 personas. La temática es de dinosaurios..."
-              ></textarea>
-            </div>
+        {step === 'form' && selectedProduct && (
+          <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 border border-border">
+            <div className="max-w-2xl mx-auto">
+              <h2 className="text-2xl font-serif font-bold text-foreground mb-6 text-center">
+                Personaliza tu {selectedProduct.nombre}
+              </h2>
 
-            {/* Date & Contact */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <label className="block text-lg font-serif font-bold text-foreground">
-                  3. Fecha de Entrega
-                </label>
-                <div className="relative">
-                  <input 
-                    type="date" 
-                    className="w-full h-12 rounded-xl border-2 border-input px-4 text-base focus:outline-none focus:border-primary transition-colors"
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Cantidad */}
+                <div>
+                  <label className="block text-sm font-bold uppercase tracking-widest text-foreground/70 mb-2">
+                    Cantidad
+                  </label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={formData.cantidad}
+                    onChange={(e) => setFormData({ ...formData, cantidad: parseInt(e.target.value) })}
+                    className="rounded-full h-12"
+                    required
                   />
-                  <IconCalendar className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                 </div>
-              </div>
-              <div className="space-y-4">
-                <label className="block text-lg font-serif font-bold text-foreground">
-                  4. Tu Nombre
-                </label>
-                <input 
-                  type="text" 
-                  placeholder="Juan Pérez"
-                  className="w-full h-12 rounded-xl border-2 border-input px-4 text-base focus:outline-none focus:border-primary transition-colors"
-                />
-              </div>
-            </div>
 
-            {/* Submit Button */}
-            <div className="pt-4">
-              <Button size="lg" className="w-full h-14 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 font-bold uppercase tracking-widest text-lg shadow-lg">
-                <IconSend className="w-5 h-5 mr-2" />
-                Enviar Cotización
-              </Button>
-              <p className="text-center text-xs text-muted-foreground mt-4">
-                Te responderemos en menos de 24 horas con el precio y detalles.
-              </p>
-            </div>
+                {/* Descripción de la solicitud */}
+                <div>
+                  <label className="block text-sm font-bold uppercase tracking-widest text-foreground/70 mb-2">
+                    Descripción de tu Pedido *
+                  </label>
+                  <textarea
+                    value={formData.descripcionSolicitud}
+                    onChange={(e) => setFormData({ ...formData, descripcionSolicitud: e.target.value })}
+                    className="w-full min-h-[120px] px-4 py-3 border-2 border-border rounded-2xl focus:border-primary focus:outline-none resize-none"
+                    placeholder="Describe cómo quieres tu producto personalizado..."
+                    required
+                  />
+                </div>
 
-          </form>
-        </div>
+                {/* Sabor de Masa */}
+                <div>
+                  <label className="block text-sm font-bold uppercase tracking-widest text-foreground/70 mb-2">
+                    Sabor de Masa
+                  </label>
+                  <Input
+                    type="text"
+                    value={formData.saborMasa}
+                    onChange={(e) => setFormData({ ...formData, saborMasa: e.target.value })}
+                    className="rounded-full h-12"
+                    placeholder="Ej: Vainilla, Chocolate, Red Velvet..."
+                  />
+                </div>
+
+                {/* Sabor de Relleno */}
+                <div>
+                  <label className="block text-sm font-bold uppercase tracking-widest text-foreground/70 mb-2">
+                    Sabor de Relleno
+                  </label>
+                  <Input
+                    type="text"
+                    value={formData.saborRelleno}
+                    onChange={(e) => setFormData({ ...formData, saborRelleno: e.target.value })}
+                    className="rounded-full h-12"
+                    placeholder="Ej: Crema pastelera, Dulce de leche..."
+                  />
+                </div>
+
+                {/* Dedicatoria */}
+                <div>
+                  <label className="block text-sm font-bold uppercase tracking-widest text-foreground/70 mb-2">
+                    Dedicatoria
+                  </label>
+                  <textarea
+                    value={formData.textoDedicatoria}
+                    onChange={(e) => setFormData({ ...formData, textoDedicatoria: e.target.value })}
+                    className="w-full min-h-[80px] px-4 py-3 border-2 border-border rounded-2xl focus:border-primary focus:outline-none resize-none"
+                    placeholder="Mensaje para decorar el producto..."
+                  />
+                </div>
+
+                {/* Temática */}
+                <div>
+                  <label className="block text-sm font-bold uppercase tracking-widest text-foreground/70 mb-2">
+                    Temática
+                  </label>
+                  <Input
+                    type="text"
+                    value={formData.tematica}
+                    onChange={(e) => setFormData({ ...formData, tematica: e.target.value })}
+                    className="rounded-full h-12"
+                    placeholder="Ej: Unicornio, Fútbol, Princesas..."
+                  />
+                </div>
+
+                {/* Botones */}
+                <div className="flex gap-4 pt-6">
+                  <Button
+                    type="button"
+                    onClick={() => setStep('selector')}
+                    variant="outline"
+                    className="flex-1 h-12 rounded-full font-bold uppercase tracking-widest"
+                  >
+                    <IconArrowLeft className="w-5 h-5 mr-2" />
+                    Volver
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={creandoPedido}
+                    className="flex-1 h-12 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold uppercase tracking-widest"
+                  >
+                    <IconCheck className="w-5 h-5 mr-2" />
+                    {creandoPedido ? 'Enviando...' : 'Crear Pedido'}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

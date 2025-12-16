@@ -11,6 +11,12 @@ import lombok.Data;
 @Data
 public class ConfiguracionPublicaUpdateRequest {
 
+    @Size(max = 50, message = "La primera parte del slogan no puede exceder 50 caracteres")
+    private String sloganParte1;
+
+    @Size(max = 50, message = "La segunda parte del slogan no puede exceder 50 caracteres")
+    private String sloganParte2;
+
     @Size(max = 1000, message = "La URL del banner no puede exceder 1000 caracteres")
     private String bannerPrincipalUrl;
 
@@ -20,9 +26,4 @@ public class ConfiguracionPublicaUpdateRequest {
     private String horarioAtencion; // JSON string
 
     private String redesSociales; // JSON string
-
-    @NotBlank(message = "Las políticas de envío son obligatorias")
-    private String politicasEnvio;
-
-    private String politicasDevolucion;
 }

@@ -53,10 +53,6 @@ public class ConfiguracionTiendaUpdateRequest {
 
     private String redesSociales;
 
-    private String politicasEnvio;
-
-    private String politicasDevolucion;
-
     @Email(message = "El email de notificaciones debe tener un formato válido")
     private String emailNotificaciones;
 

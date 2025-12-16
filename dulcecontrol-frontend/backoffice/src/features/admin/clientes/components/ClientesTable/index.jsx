@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, message, Input } from 'antd';
+import { Modal, message, Input, Button } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import ClientesTableView from './ClientesTableView.jsx';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
@@ -14,7 +14,9 @@ const ClientesTable = () => {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState(null);
+  const [clienteToDelete, setClienteToDelete] = useState(null);
   const [searchText, setSearchText] = useState('');
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
 
@@ -83,14 +85,21 @@ const ClientesTable = () => {
       return;
     }
 
-    Modal.confirm({
-      title: '¿Estás seguro de eliminar este cliente?',
-      content: `Se eliminará al cliente "${cliente.nombreDoc}". Esta acción no se puede deshacer.`,
-      okText: 'Eliminar',
-      okType: 'danger',
-      cancelText: 'Cancelar',
-      onOk: () => deleteMutation.mutate(cliente.id),
-    });
+    setClienteToDelete(cliente);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (clienteToDelete) {
+      deleteMutation.mutate(clienteToDelete.id);
+    }
+    setIsDeleteModalOpen(false);
+    setClienteToDelete(null);
+  };
+
+  const handleCancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setClienteToDelete(null);
   };
 
   const handleSearch = (value) => {
@@ -163,6 +172,24 @@ const ClientesTable = () => {
         tiendaId={tiendaId}
         cliente={selectedCliente}
       />
+
+      {/* Modal de confirmación para eliminar */}
+      <Modal
+        title="¿Estás seguro de eliminar este cliente?"
+        open={isDeleteModalOpen}
+        onCancel={handleCancelDelete}
+        footer={null}
+      >
+        <p>Se eliminará al cliente "{clienteToDelete?.nombreDoc}". Esta acción es un borrado lógico y puede ser revertida.</p>
+        <div style={{ textAlign: 'right', marginTop: 16 }}>
+          <Button onClick={handleCancelDelete} style={{ marginRight: 8 }}>
+            No
+          </Button>
+          <Button type="primary" danger onClick={handleConfirmDelete}>
+            Sí
+          </Button>
+        </div>
+      </Modal>
     </>
   );
 };

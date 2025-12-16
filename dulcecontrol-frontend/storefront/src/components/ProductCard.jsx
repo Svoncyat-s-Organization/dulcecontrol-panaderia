@@ -5,7 +5,7 @@ import { IconEye } from '@tabler/icons-react';
 import { Card } from '@/components/ui/card'; // Added import for Card component
 
 const ProductCard = ({ product }) => {
-  const { id, name, price, image, badge } = product; // Added badge to destructuring
+  const { slug, name, price, image, badge } = product; // Added badge to destructuring
 
   return (
     <Card className="group border-0 shadow-none bg-transparent relative overflow-hidden">
@@ -30,7 +30,7 @@ const ProductCard = ({ product }) => {
              size="sm" 
              className="rounded-full bg-white text-foreground hover:bg-white/90 font-bold uppercase tracking-wider text-xs px-6 h-9 shadow-lg translate-y-4 group-hover:translate-y-0 transition-transform duration-300"
            >
-             <Link to={`/producto/${id}`}>
+             <Link to={`/producto/${slug}`}>
                <IconEye className="w-4 h-4 mr-2" />
                Vista Rápida
              </Link>

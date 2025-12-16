@@ -7,37 +7,43 @@
 
 @layer base {
   :root {
-    /* Two Base Colors System */
-    /* PRIMARY: Mint Green - Main brand color */
-    --primary: 153 35% 69%; /* #96CBB3 - Verde Menta Magnolia */
-    --primary-foreground: 153 35% 20%; /* Dark mint for text on primary */
+    /* Colores dinámicos desde el backend (HEX) */
+    --color-primary-hex: #96CBB3;
+    --color-secondary-hex: #F6D3D8;
+    --color-primary-rgb: 150 203 179;
+    --color-secondary-rgb: 246 211 216;
 
-    /* SECONDARY: Pastel Pink - Accent brand color */
-    --secondary: 351 65% 90%; /* #F6D3D8 - Rosa Pastel Glaseado */
-    --secondary-foreground: 351 65% 25%; /* Dark pink for text on secondary */
+    /* Sistema de colores Tailwind (HSL) - Se sobrescriben automáticamente desde el backend */
+    /* PRIMARY: Color principal de la tienda */
+    --primary: 153 35% 69%;
+    --primary-foreground: 153 35% 20%;
 
-    /* Derived Colors from Primary */
-    --background: 153 20% 98%; /* Very light mint tint for background */
-    --foreground: 153 35% 20%; /* Dark mint for main text */
+    /* SECONDARY: Color secundario/acento de la tienda */
+    --secondary: 351 65% 90%;
+    --secondary-foreground: 351 65% 25%;
 
-    --card: 0 0% 100%; /* Pure white for cards */
-    --card-foreground: 153 35% 20%;
+    /* Colores base del sistema (no dependen del backend) */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 153 35% 20%;
+    --popover-foreground: 0 0% 15%;
 
-    --muted: 153 15% 95%; /* Very light mint for muted backgrounds */
-    --muted-foreground: 153 20% 40%; /* Mid-tone mint for muted text */
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 40%;
 
-    --accent: 351 50% 85%; /* Lighter secondary for accents */
-    --accent-foreground: 351 65% 25%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 15%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 153 20% 85%; /* Light mint for borders */
-    --input: 153 20% 85%;
-    --ring: 153 35% 69%; /* Primary color for focus rings */
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 153 35% 69%;
 
     --radius: 0.75rem;
   }

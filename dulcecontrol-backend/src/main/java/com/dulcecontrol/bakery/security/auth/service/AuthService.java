@@ -16,8 +16,10 @@ import com.dulcecontrol.bakery.security.auth.dto.AdminLoginRequest;
 import com.dulcecontrol.bakery.security.auth.dto.AuthTokenResponse;
 import com.dulcecontrol.bakery.security.auth.dto.StorefrontLoginRequest;
 import com.dulcecontrol.bakery.security.auth.dto.SubscriptionStatusPayload;
+import com.dulcecontrol.bakery.security.auth.dto.StorefrontRegisterRequest;
 import com.dulcecontrol.bakery.security.auth.dto.SuperadminLoginRequest;
 import com.dulcecontrol.bakery.shared.exception.AuthenticationException;
+import com.dulcecontrol.bakery.shared.exception.ResourceConflictException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -99,6 +101,33 @@ public class AuthService {
         String token = jwtProvider.generarToken(cliente.getEmail(), "ROLE_CLIENTE", TipoUsuario.CLIENTE, tiendaId,
             construirClaimsNombre(cliente.getNombreDoc()), cliente.getId());
         return buildResponse(token, TipoUsuario.CLIENTE, tiendaId, cliente.getId(), null);
+    }
+
+    public AuthTokenResponse registerStorefront(StorefrontRegisterRequest request) {
+        Long tiendaId = request.getTiendaId();
+        String email = normalizarCorreo(request.getEmail());
+        
+        // Validar que no exista el email
+        if (clienteRepository.findByTiendaIdAndEmail(tiendaId, email).isPresent()) {
+            throw new ResourceConflictException("Ya existe un usuario con este email");
+        }
+
+        // Crear cliente
+        Cliente cliente = new Cliente();
+        cliente.setTiendaId(tiendaId);
+        cliente.setNombreDoc(request.getNombreCompleto());
+        cliente.setEmail(email);
+        cliente.setTelefono(request.getTelefono());
+        cliente.setEsUsuarioVirtual(true); // Usuario registrado desde storefront
+        cliente.setHashContrasena(passwordEncoder.encode(request.getPassword()));
+        cliente.setActivo(true);
+        
+        cliente = clienteRepository.save(cliente);
+
+        // Generar token
+        String token = jwtProvider.generarToken(cliente.getEmail(), "ROLE_CLIENTE", TipoUsuario.CLIENTE, tiendaId,
+            construirClaimsNombre(cliente.getNombreDoc()), cliente.getId());
+        return buildResponse(token, TipoUsuario.CLIENTE, tiendaId, cliente.getId());
     }
 
     private void validarPassword(String rawPassword, String hash) {

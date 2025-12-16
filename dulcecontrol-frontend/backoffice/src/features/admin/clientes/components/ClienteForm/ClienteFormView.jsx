@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Form, Input, Select, Switch, Button, Modal, Space, Typography } from 'antd';
 import { IconX } from '@tabler/icons-react';
 
@@ -6,18 +7,38 @@ const { Option } = Select;
 const { Text } = Typography;
 
 const ClienteFormView = ({ open, onClose, form, onSubmit, loading, isEditing }) => {
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+  const [submitValues, setSubmitValues] = useState(null);
+
   const handleFinish = (values) => {
     onSubmit(values);
   };
 
   const handleCancel = () => {
-    Modal.confirm({
-      title: '¿Estás seguro de cancelar?',
-      content: 'Los cambios no guardados se perderán.',
-      okText: 'Sí, cancelar',
-      cancelText: 'Continuar editando',
-      onOk: onClose,
-    });
+    onClose();
+  };
+
+  const handleSubmitClick = async () => {
+    try {
+      const values = await form.validateFields();
+      setSubmitValues(values);
+      setShowSubmitConfirm(true);
+    } catch (error) {
+      // Validation failed, errors are shown automatically
+    }
+  };
+
+  const handleConfirmSubmit = () => {
+    setShowSubmitConfirm(false);
+    if (submitValues) {
+      onSubmit(submitValues);
+    }
+    setSubmitValues(null);
+  };
+
+  const handleCancelSubmit = () => {
+    setShowSubmitConfirm(false);
+    setSubmitValues(null);
   };
 
   return (
@@ -208,12 +229,29 @@ const ClienteFormView = ({ open, onClose, form, onSubmit, loading, isEditing }) 
             <Button onClick={handleCancel} disabled={loading}>
               Cancelar
             </Button>
-            <Button type="primary" htmlType="submit" loading={loading}>
+            <Button type="primary" onClick={handleSubmitClick} loading={loading}>
               {isEditing ? 'Actualizar' : 'Crear'} Cliente
             </Button>
           </Space>
         </Form.Item>
       </Form>
+
+      {/* Modal de confirmación para submit */}
+      <Modal
+        title={`¿Estás seguro de ${isEditing ? 'actualizar' : 'crear'} este cliente?`}
+        open={showSubmitConfirm}
+        onCancel={handleCancelSubmit}
+        footer={[
+          <Button key="cancel" onClick={handleCancelSubmit}>
+            No
+          </Button>,
+          <Button key="confirm" type="primary" onClick={handleConfirmSubmit}>
+            Sí
+          </Button>,
+        ]}
+      >
+        <p>Se {isEditing ? 'actualizarán' : 'crearán'} los datos del cliente "{submitValues?.nombreDoc}".</p>
+      </Modal>
     </Modal>
   );
 };

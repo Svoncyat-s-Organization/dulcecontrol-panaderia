@@ -27,6 +27,9 @@ public class OrdenCompraResponse {
     private final String moneda;
     private final Long totalCompraCentimos;
     private final MetodoPago metodoPago;
+    private final Long montoInicialCentimos;
+    private final Long montoPagadoCentimos;
+    private final Long saldoPendienteCentimos;
     private final String referenciaPago;
     private final TipoComprobanteProveedor tipoComprobanteProveedor;
     private final String serieComprobanteProveedor;

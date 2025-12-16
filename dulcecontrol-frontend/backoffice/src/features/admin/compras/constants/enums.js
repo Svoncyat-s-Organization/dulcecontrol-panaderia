@@ -32,9 +32,7 @@ export const ESTADO_ORDEN_COMPRA_VALUES = {
 
 export const METODO_PAGO = {
   efectivo: 'Efectivo',
-  transferencia: 'Transferencia',
   credito: 'Crédito',
-  tarjeta: 'Tarjeta',
 };
 
 export const TIPO_COMPROBANTE = {

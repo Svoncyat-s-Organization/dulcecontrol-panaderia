@@ -162,6 +162,7 @@ const InsumosTableView = ({
         dataSource={insumos}
         loading={loading}
         rowKey="id"
+        scroll={{ x: 1200 }}
         pagination={{
           pageSize: 10,
           showSizeChanger: true,

@@ -35,6 +35,8 @@ public class OrdenCompraCreateRequest {
 
     private MetodoPago metodoPago;
 
+    private Long montoInicialCentimos;
+
     private String referenciaPago;
 
     private TipoComprobanteProveedor tipoComprobanteProveedor;
