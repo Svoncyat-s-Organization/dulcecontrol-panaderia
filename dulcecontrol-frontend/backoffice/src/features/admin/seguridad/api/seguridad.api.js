@@ -34,6 +34,11 @@ export const getUsuario = async (tiendaId, usuarioId) => {
   return data;
 };
 
+export const getUsuarioSedes = async (tiendaId, usuarioId) => {
+  const { data } = await apiClient.get(buildUsuariosUrl(tiendaId, `/${usuarioId}/sedes`));
+  return data ?? [];
+};
+
 export const createUsuario = async (tiendaId, payload) => {
   const { data } = await apiClient.post(buildUsuariosUrl(tiendaId), payload);
   return data;

@@ -91,9 +91,9 @@ const UsuarioForm = ({
 
       return createUsuario(tiendaId, payload);
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
       message.success(`Usuario ${isEditing ? 'actualizado' : 'creado'} correctamente`);
-      onSuccess?.();
+      onSuccess?.(response, { isEditing });
       form.resetFields();
     },
     onError: (error) => {

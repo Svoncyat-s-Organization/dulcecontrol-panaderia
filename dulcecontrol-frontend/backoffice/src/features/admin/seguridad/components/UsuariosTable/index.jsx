@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { App, message } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import UsuariosTableView from './UsuariosTableView.jsx';
@@ -14,6 +14,7 @@ const UsuariosTable = () => {
   const [searchText, setSearchText] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUsuario, setSelectedUsuario] = useState(null);
+  const [usuariosData, setUsuariosData] = useState([]);
 
   const { modal } = App.useApp();
 
@@ -49,7 +50,13 @@ const UsuariosTable = () => {
     },
   });
 
-  const usuarios = useMemo(() => usuariosQuery.data ?? [], [usuariosQuery.data]);
+  useEffect(() => {
+    if (Array.isArray(usuariosQuery.data)) {
+      setUsuariosData(usuariosQuery.data);
+    }
+  }, [usuariosQuery.data]);
+
+  const usuarios = useMemo(() => usuariosData ?? [], [usuariosData]);
   const roles = useMemo(() => rolesQuery.data ?? [], [rolesQuery.data]);
   const sedes = useMemo(() => sedesQuery.data ?? [], [sedesQuery.data]);
 
@@ -101,7 +108,27 @@ const UsuariosTable = () => {
     setSearchText(value);
   };
 
-  const handleFormSuccess = () => {
+  const handleFormSuccess = (updatedUsuario, { isEditing } = {}) => {
+    if (updatedUsuario) {
+      setUsuariosData((current) => {
+        if (!Array.isArray(current)) {
+          return current;
+        }
+
+        if (isEditing) {
+          return current.map((item) =>
+            item.id === updatedUsuario.id ? { ...item, ...updatedUsuario } : item
+          );
+        }
+
+        if (current.some((item) => item.id === updatedUsuario.id)) {
+          return current;
+        }
+
+        return [updatedUsuario, ...current];
+      });
+    }
+
     queryClient.invalidateQueries({ queryKey: SEGURIDAD_KEYS.usuarios(tiendaId) });
     setIsModalOpen(false);
     setSelectedUsuario(null);
