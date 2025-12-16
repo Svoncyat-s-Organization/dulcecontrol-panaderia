@@ -15,6 +15,9 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
 
     List<Cliente> findByTiendaId(Long tiendaId);
 
+    @Query("SELECT c FROM Cliente c WHERE c.tiendaId = :tiendaId")
+    List<Cliente> findAllByTiendaIdIncludingInactive(@Param("tiendaId") Long tiendaId);
+
     Optional<Cliente> findByIdAndTiendaId(Long id, Long tiendaId);
 
         @Query("SELECT c FROM Cliente c WHERE c.tiendaId = :tiendaId AND LOWER(c.email) = LOWER(:email)")

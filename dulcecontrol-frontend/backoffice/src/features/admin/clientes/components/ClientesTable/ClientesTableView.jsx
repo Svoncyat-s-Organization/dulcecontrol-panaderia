@@ -75,7 +75,7 @@ const ClientesTableView = ({
       key: 'activo',
       width: 100,
       render: (activo) => (
-        <Tag color={activo ? 'green' : 'red'}>
+        <Tag color={activo ? 'green' : 'orange'}>
           {activo ? 'Activo' : 'Inactivo'}
         </Tag>
       ),
