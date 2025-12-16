@@ -29,4 +29,6 @@ public interface SedeAdminRepository extends JpaRepository<Sede, Long> {
     @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM Sede s " +
            "WHERE s.tienda.id = :tiendaId AND s.esPrincipal = true AND s.id <> :sedeId")
     boolean existsOtraSedePrincipal(@Param("tiendaId") Long tiendaId, @Param("sedeId") Long sedeId);
+
+    long countByTiendaIdAndActivoTrue(Long tiendaId);
 }

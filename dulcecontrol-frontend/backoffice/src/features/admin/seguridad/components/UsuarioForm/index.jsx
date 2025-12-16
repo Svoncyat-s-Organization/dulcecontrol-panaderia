@@ -11,6 +11,8 @@ const UsuarioForm = ({
   tiendaId,
   usuario,
   roles,
+  sedes,
+  sedesLoading,
   tipoDocumentoOptions,
 }) => {
   const [form] = Form.useForm();
@@ -25,6 +27,7 @@ const UsuarioForm = ({
     if (isEditing && usuario) {
       form.setFieldsValue({
         rolId: usuario.rolId,
+        sedeId: usuario.sedeId ?? null,
         nombres: usuario.nombres,
         correo: usuario.correo,
         tipoDoc: usuario.tipoDoc,
@@ -36,6 +39,7 @@ const UsuarioForm = ({
     } else {
       form.setFieldsValue({
         rolId: roles?.[0]?.id,
+        sedeId: sedes?.[0]?.id ?? null,
         nombres: '',
         correo: '',
         tipoDoc: tipoDocumentoOptions?.[0]?.value ?? 'DNI',
@@ -45,7 +49,7 @@ const UsuarioForm = ({
         contrasena: '',
       });
     }
-  }, [open, isEditing, usuario, form, roles, tipoDocumentoOptions]);
+  }, [open, isEditing, usuario, form, roles, sedes, tipoDocumentoOptions]);
 
   const mutation = useMutation({
     mutationFn: async (values) => {
@@ -56,6 +60,7 @@ const UsuarioForm = ({
       if (isEditing) {
         const payload = {
           rolId: values.rolId,
+          sedeId: values.sedeId,
           correo: values.correo,
           tipoDoc: values.tipoDoc,
           numeroDoc: values.numeroDoc,
@@ -73,6 +78,7 @@ const UsuarioForm = ({
 
       const payload = {
         rolId: values.rolId,
+        sedeId: values.sedeId,
         correo: values.correo,
         contrasena: values.contrasena,
         tipoDoc: values.tipoDoc,
@@ -95,6 +101,33 @@ const UsuarioForm = ({
     },
   });
 
+  const handleCancel = () => {
+    if (mutation.isPending) {
+      return;
+    }
+
+    const closeModal = () => {
+      form.resetFields();
+      mutation.reset();
+      onClose?.();
+    };
+
+    if (!form.isFieldsTouched()) {
+      closeModal();
+      return;
+    }
+
+    Modal.confirm({
+      title: '¿Cancelar cambios?',
+      content: 'Los cambios no guardados se perderán.',
+      okText: 'Sí, cancelar',
+      cancelText: 'Seguir editando',
+      onOk: () => {
+        closeModal();
+      },
+    });
+  };
+
   const handleSubmit = (values) => {
     Modal.confirm({
       title: isEditing ? 'Actualizar usuario' : 'Crear usuario',
@@ -110,12 +143,14 @@ const UsuarioForm = ({
   return (
     <UsuarioFormView
       open={open}
-      onClose={onClose}
+      onCancel={handleCancel}
       form={form}
       onSubmit={handleSubmit}
       loading={mutation.isPending}
       isEditing={isEditing}
       roles={roles}
+      sedes={sedes}
+      sedesLoading={sedesLoading}
       tipoDocumentoOptions={tipoDocumentoOptions}
     />
   );

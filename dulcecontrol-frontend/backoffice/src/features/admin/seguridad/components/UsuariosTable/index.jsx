@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import UsuariosTableView from './UsuariosTableView.jsx';
 import UsuarioForm from '../UsuarioForm/index.jsx';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
-import { getRoles, getUsuarios, deleteUsuario } from '../../api/seguridad.api.js';
+import { getRoles, getUsuarios, deleteUsuario, getSedes } from '../../api/seguridad.api.js';
 import { SEGURIDAD_KEYS } from '../../constants/queryKeys.js';
 import { TIPO_DOCUMENTO_OPTIONS } from '../../constants/options.js';
 
@@ -28,6 +28,13 @@ const UsuariosTable = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  const sedesQuery = useQuery({
+    queryKey: SEGURIDAD_KEYS.sedes(tiendaId),
+    queryFn: () => getSedes(tiendaId),
+    enabled: Boolean(tiendaId),
+    staleTime: 5 * 60 * 1000,
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (usuarioId) => deleteUsuario(tiendaId, usuarioId),
     onSuccess: () => {
@@ -42,6 +49,7 @@ const UsuariosTable = () => {
 
   const usuarios = useMemo(() => usuariosQuery.data ?? [], [usuariosQuery.data]);
   const roles = useMemo(() => rolesQuery.data ?? [], [rolesQuery.data]);
+  const sedes = useMemo(() => sedesQuery.data ?? [], [sedesQuery.data]);
 
   const filteredUsuarios = useMemo(() => {
     if (!searchText.trim()) return usuarios;
@@ -52,6 +60,7 @@ const UsuariosTable = () => {
         usuario.correo,
         usuario.numeroDoc,
         usuario.rolNombre,
+        usuario.sedeNombre,
       ]
         .filter(Boolean)
         .some((value) => value.toLowerCase().includes(normalized));
@@ -111,6 +120,8 @@ const UsuariosTable = () => {
         deletingId={deletingId}
         rolesLoading={rolesQuery.isLoading}
         rolesReady={roles.length > 0}
+        sedesLoading={sedesQuery.isLoading}
+        sedesReady={sedes.length > 0}
       />
 
       <UsuarioForm
@@ -120,6 +131,8 @@ const UsuariosTable = () => {
         tiendaId={tiendaId}
         usuario={selectedUsuario}
         roles={roles}
+        sedes={sedes}
+        sedesLoading={sedesQuery.isLoading}
         tipoDocumentoOptions={TIPO_DOCUMENTO_OPTIONS}
       />
     </>

@@ -4,33 +4,25 @@ const { Text } = Typography;
 
 const UsuarioFormView = ({
   open,
-  onClose,
+  onCancel,
   form,
   onSubmit,
   loading,
   isEditing,
   roles,
+  sedes,
+  sedesLoading,
   tipoDocumentoOptions,
 }) => {
   const handleFinish = (values) => {
     onSubmit(values);
   };
 
-  const handleCancel = () => {
-    Modal.confirm({
-      title: '¿Cancelar cambios?',
-      content: 'Los cambios no guardados se perderán.',
-      okText: 'Sí, cancelar',
-      cancelText: 'Seguir editando',
-      onOk: onClose,
-    });
-  };
-
   return (
     <Modal
       title={isEditing ? 'Editar usuario' : 'Nuevo usuario'}
       open={open}
-      onCancel={handleCancel}
+      onCancel={onCancel}
       footer={null}
       width={640}
       destroyOnClose
@@ -54,6 +46,26 @@ const UsuarioFormView = ({
             valuePropName="checked"
           >
             <Switch checkedChildren="Activo" unCheckedChildren="Inactivo" />
+          </Form.Item>
+          <Form.Item
+            label="Sede principal"
+            name="sedeId"
+            rules={[{ required: true, message: 'Selecciona la sede principal' }]}
+            style={{ gridColumn: '1 / span 2' }}
+            extra={
+              !sedes?.length
+                ? <Text type="secondary">Configura sedes en la sección de Configuración para poder asignarlas.</Text>
+                : null
+            }
+          >
+            <Select
+              placeholder="Selecciona la sede principal"
+              loading={sedesLoading}
+              options={sedes?.map((sede) => ({ label: sede.nombre, value: sede.id }))}
+              disabled={!sedes?.length}
+              showSearch
+              optionFilterProp="label"
+            />
           </Form.Item>
         </div>
 
@@ -120,7 +132,7 @@ const UsuarioFormView = ({
 
         <Form.Item style={{ textAlign: 'right', marginBottom: 0 }}>
           <Space>
-            <Button onClick={handleCancel} disabled={loading}>
+            <Button onClick={onCancel} disabled={loading}>
               Cancelar
             </Button>
             <Button type="primary" htmlType="submit" loading={loading}>

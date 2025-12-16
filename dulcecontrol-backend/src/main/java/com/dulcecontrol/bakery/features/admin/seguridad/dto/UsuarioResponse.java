@@ -14,6 +14,8 @@ public class UsuarioResponse {
     private final Long tiendaId;
     private final Long rolId;
     private final String rolNombre;
+    private final Long sedeId;
+    private final String sedeNombre;
     private final String correo;
     private final TipoDocumento tipoDoc;
     private final String numeroDoc;

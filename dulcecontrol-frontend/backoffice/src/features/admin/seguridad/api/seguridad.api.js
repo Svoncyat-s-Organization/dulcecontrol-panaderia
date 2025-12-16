@@ -14,6 +14,13 @@ const buildRolesUrl = (tiendaId, suffix = '') => {
   return `/api/admin/tiendas/${tiendaId}/seguridad/roles${suffix}`;
 };
 
+const buildSedesUrl = (tiendaId, suffix = '') => {
+  if (!tiendaId) {
+    throw new Error('tiendaId es requerido para gestionar sedes');
+  }
+  return `/api/admin/tiendas/${tiendaId}/configuracion/sedes${suffix}`;
+};
+
 const PERMISOS_URL = '/api/admin/seguridad/permisos';
 
 // Usuarios
@@ -69,5 +76,11 @@ export const deleteRol = async (tiendaId, rolId) => {
 // Permisos
 export const getPermisos = async () => {
   const { data } = await apiClient.get(PERMISOS_URL);
+  return data ?? [];
+};
+
+// Sedes
+export const getSedes = async (tiendaId) => {
+  const { data } = await apiClient.get(buildSedesUrl(tiendaId));
   return data ?? [];
 };

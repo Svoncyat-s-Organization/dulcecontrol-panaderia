@@ -23,6 +23,8 @@ const UsuariosTableView = ({
   deletingId,
   rolesLoading,
   rolesReady,
+  sedesLoading,
+  sedesReady,
 }) => {
   if (isError) {
     return (
@@ -68,6 +70,17 @@ const UsuariosTableView = ({
       key: 'rol',
       render: (rolNombre) => <Text>{rolNombre ?? 'Sin rol asignado'}</Text>,
       width: 200,
+    },
+    {
+      title: 'Sede',
+      dataIndex: 'sedeNombre',
+      key: 'sede',
+      render: (sedeNombre) => (
+        <Text type={sedeNombre ? undefined : 'secondary'}>
+          {sedeNombre ?? 'Sin sede asignada'}
+        </Text>
+      ),
+      width: 220,
     },
     {
       title: 'Estado',
@@ -143,7 +156,7 @@ const UsuariosTableView = ({
           type="primary"
           icon={<IconPlus size={16} />}
           onClick={onCreate}
-          disabled={rolesLoading || !rolesReady}
+          disabled={rolesLoading || !rolesReady || sedesLoading || !sedesReady}
         >
           Nuevo usuario
         </Button>
@@ -151,7 +164,7 @@ const UsuariosTableView = ({
 
       <div style={{ marginBottom: 16 }}>
         <Input
-          placeholder="Buscar por nombre, rol o correo..."
+          placeholder="Buscar por nombre, rol, sede o correo..."
           prefix={<IconSearch size={16} />}
           value={searchText}
           onChange={(event) => onSearch(event.target.value)}

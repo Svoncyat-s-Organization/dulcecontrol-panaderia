@@ -14,4 +14,5 @@ public class AuthTokenResponse {
     private final TipoUsuario userType;
     private final Long tiendaId;
     private final Long userId;
+    private final SubscriptionStatusPayload subscriptionStatus;
 }

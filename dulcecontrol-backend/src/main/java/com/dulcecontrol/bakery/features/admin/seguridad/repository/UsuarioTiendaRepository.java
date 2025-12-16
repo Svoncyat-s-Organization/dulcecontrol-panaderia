@@ -32,4 +32,6 @@ public interface UsuarioTiendaRepository extends JpaRepository<UsuarioTienda, Lo
     List<UsuarioTienda> findByTiendaId(Long tiendaId);
 
     Optional<UsuarioTienda> findByIdAndTiendaId(Long id, Long tiendaId);
+
+    long countByTiendaId(Long tiendaId);
 }

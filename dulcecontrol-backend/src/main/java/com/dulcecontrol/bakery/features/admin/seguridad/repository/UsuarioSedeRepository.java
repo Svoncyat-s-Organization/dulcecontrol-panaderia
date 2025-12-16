@@ -15,6 +15,8 @@ public interface UsuarioSedeRepository extends JpaRepository<UsuarioSede, Usuari
 
     List<UsuarioSede> findByIdUsuarioId(Long usuarioId);
 
+    List<UsuarioSede> findByIdUsuarioIdIn(List<Long> usuarioIds);
+
     List<UsuarioSede> findByIdSedeId(Long sedeId);
 
     @Modifying
