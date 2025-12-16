@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Modal, message } from 'antd';
+import { App, message } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import RolesManagerView from './RolesManagerView.jsx';
 import RolPermisosDrawer from './RolPermisosDrawer.jsx';
@@ -20,6 +20,8 @@ const RolesManager = () => {
   const currentRoleId = useAuthorizationStore((state) => state.role?.id);
   const currentUserId = useTokenStore((state) => state.user?.id);
   const isDevToken = token === DEV_AUTH_TOKEN;
+
+  const { modal } = App.useApp();
 
   const rolesQuery = useQuery({
     queryKey: SEGURIDAD_KEYS.roles(tiendaId),
@@ -91,7 +93,7 @@ const RolesManager = () => {
       return;
     }
 
-    Modal.confirm({
+    modal.confirm({
       title: '¿Eliminar rol?',
       content: `Se eliminará el rol "${rol.nombre}" y sus asignaciones.`,
       okText: 'Eliminar',

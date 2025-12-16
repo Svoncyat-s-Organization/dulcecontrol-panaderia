@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Modal, message } from 'antd';
+import { App, message } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import RolesManagerView from './RolesManagerView.jsx';
 import RolPermisosDrawer from './RolPermisosDrawer.jsx';
@@ -16,6 +16,8 @@ const RolesManager = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedRol, setSelectedRol] = useState(null);
   const [drawerRol, setDrawerRol] = useState(null);
+
+  const { modal } = App.useApp();
 
   const rolesQuery = useQuery({
     queryKey: SUPERADMIN_SEGURIDAD_KEYS.roles(),
@@ -59,7 +61,7 @@ const RolesManager = () => {
       return;
     }
 
-    Modal.confirm({
+    modal.confirm({
       title: '¿Eliminar rol?',
       content: `Se eliminará el rol "${rol.nombre}" y sus asignaciones.`,
       okText: 'Eliminar',

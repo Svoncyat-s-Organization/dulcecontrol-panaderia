@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Form, Modal, message } from 'antd';
+import { App, Form, message } from 'antd';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import UsuarioFormView from './UsuarioFormView.jsx';
 import {
@@ -18,6 +18,7 @@ const UsuarioForm = ({
 }) => {
   const [form] = Form.useForm();
   const isEditing = Boolean(usuario?.id);
+  const { modal } = App.useApp();
 
   const rolesQuery = useQuery({
     queryKey: SUPERADMIN_SEGURIDAD_KEYS.roles(),
@@ -106,7 +107,7 @@ const UsuarioForm = ({
   });
 
   const handleSubmit = (values) => {
-    Modal.confirm({
+    modal.confirm({
       title: isEditing ? 'Actualizar superadmin' : 'Crear superadmin',
       content: isEditing
         ? 'Se actualizarán las credenciales del usuario seleccionado.'
@@ -117,10 +118,35 @@ const UsuarioForm = ({
     });
   };
 
+  const handleCancel = () => {
+    if (mutation.isPending) {
+      return;
+    }
+
+    const closeModal = () => {
+      form.resetFields();
+      mutation.reset();
+      onClose?.();
+    };
+
+    if (!form.isFieldsTouched(true)) {
+      closeModal();
+      return;
+    }
+
+    modal.confirm({
+      title: '¿Cancelar cambios?',
+      content: 'Los cambios no guardados se perderán.',
+      okText: 'Sí, cancelar',
+      cancelText: 'Seguir editando',
+      onOk: closeModal,
+    });
+  };
+
   return (
     <UsuarioFormView
       open={open}
-      onClose={onClose}
+      onCancel={handleCancel}
       form={form}
       onSubmit={handleSubmit}
       loading={mutation.isPending}

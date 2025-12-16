@@ -15,6 +15,9 @@ public class UsuarioUpdateRequest {
     @NotNull
     private Long rolId;
 
+    @NotNull
+    private Long sedeId;
+
     @Email
     @NotBlank
     private String correo;

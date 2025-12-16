@@ -12,13 +12,14 @@ const initialState = {
     isAuthenticated: false,
     panelRoleHint: null,
     user: null,
+    subscription: null,
 };
 
 export const useTokenStore = create(
     persist(
         (set, get) => ({
             ...initialState,
-            login: ({ token, userType, tiendaId = null, expiresIn, userId }) => {
+            login: ({ token, userType, tiendaId = null, expiresIn, userId, subscription = null }) => {
                 const expiresAt = expiresIn ? Date.now() + expiresIn * 1000 : null;
                 const { selectedTiendaId, clearSelection } = useSedeStore.getState();
                 useAuthorizationStore.getState().reset();
@@ -41,6 +42,7 @@ export const useTokenStore = create(
                     isAuthenticated: true,
                     panelRoleHint: null,
                     user,
+                    subscription,
                 });
             },
             logout: () => {
@@ -51,6 +53,9 @@ export const useTokenStore = create(
             },
             setPanelRoleHint: (role) => {
                 set({ panelRoleHint: role });
+            },
+            setSubscription: (nextSubscription) => {
+                set({ subscription: nextSubscription });
             },
             hasValidSession: () => {
                 const { token, expiresAt } = get();
@@ -70,6 +75,7 @@ export const useTokenStore = create(
                 expiresAt: state.expiresAt,
                 isAuthenticated: state.isAuthenticated,
                 user: state.user,
+                subscription: state.subscription,
             }),
         }
     )

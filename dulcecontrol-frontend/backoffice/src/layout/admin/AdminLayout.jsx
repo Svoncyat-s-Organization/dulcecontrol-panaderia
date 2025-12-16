@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { IconLogout, IconRefresh } from '@tabler/icons-react';
 import { useTokenStore } from '../../shared/store/tokenStore.js';
 import SedeSelector from '../../shared/components/SedeSelector.jsx';
+import SubscriptionStatusIndicator from '../../shared/components/SubscriptionStatusIndicator.jsx';
 import MainLayout from '../shared/MainLayout.jsx';
 import { buildInitials, buildPreferredName } from '../../shared/utils/nameUtils.js';
 import { useAuthorizationStore } from '../../shared/store/authorizationStore.js';
@@ -170,6 +171,7 @@ const AdminLayout = () => {
 
   const headerExtras = (
     <Space size={12} align="center">
+      <SubscriptionStatusIndicator />
       <SedeSelector />
       {isAuthLoading && <Spin size="small" />}
     </Space>

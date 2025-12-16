@@ -4,6 +4,8 @@ import com.dulcecontrol.bakery.features.admin.configuracion.dto.SedeCreateReques
 import com.dulcecontrol.bakery.features.admin.configuracion.dto.SedeResponse;
 import com.dulcecontrol.bakery.features.admin.configuracion.dto.SedeUpdateRequest;
 import com.dulcecontrol.bakery.features.admin.configuracion.repository.SedeAdminRepository;
+import com.dulcecontrol.bakery.features.shared.suscripciones.model.PlanLimites;
+import com.dulcecontrol.bakery.features.shared.suscripciones.service.PlanLimitesService;
 import com.dulcecontrol.bakery.features.shared.ubigeo.entity.UbigeoDistrito;
 import com.dulcecontrol.bakery.features.shared.ubigeo.repository.UbigeoDistritoRepository;
 import com.dulcecontrol.bakery.features.superadmin.tiendas.entity.Sede;
@@ -23,6 +25,7 @@ public class SedeAdminService implements ISedeAdminService {
     private final SedeAdminRepository sedeRepository;
     private final TiendaRepository tiendaRepository;
     private final UbigeoDistritoRepository distritoRepository;
+    private final PlanLimitesService planLimitesService;
 
     @Override
     @Transactional(readOnly = true)
@@ -59,6 +62,8 @@ public class SedeAdminService implements ISedeAdminService {
         // Validar distrito existe
         UbigeoDistrito distrito = distritoRepository.findById(request.getDistritoId())
                 .orElseThrow(() -> new IllegalArgumentException("Distrito no encontrado"));
+
+        validarLimiteSedesActivas(tiendaId);
 
         // Validar solo una sede principal
         Boolean esPrincipal = request.getEsPrincipal() != null ? request.getEsPrincipal() : Boolean.FALSE;
@@ -105,6 +110,10 @@ public class SedeAdminService implements ISedeAdminService {
         Boolean esPrincipal = request.getEsPrincipal() != null ? request.getEsPrincipal() : Boolean.FALSE;
         if (esPrincipal && !sede.getEsPrincipal() && sedeRepository.existsOtraSedePrincipal(tiendaId, sedeId)) {
             throw new IllegalArgumentException("Ya existe una sede principal. Desactiva la actual antes de marcar esta como principal");
+        }
+
+        if (Boolean.TRUE.equals(request.getActivo()) && Boolean.FALSE.equals(sede.getActivo())) {
+            validarLimiteSedesActivas(tiendaId);
         }
 
         sede.setCodigoInterno(request.getCodigoInterno());
@@ -191,5 +200,20 @@ public class SedeAdminService implements ISedeAdminService {
                 .creadoEn(sede.getCreadoEn())
                 .actualizadoEn(sede.getActualizadoEn())
                 .build();
+    }
+
+    private void validarLimiteSedesActivas(Long tiendaId) {
+        PlanLimites limites = planLimitesService.obtenerLimitesVigentes(tiendaId);
+        if (!limites.tieneLimiteSedes()) {
+            return;
+        }
+
+        long sedesActivas = sedeRepository.countByTiendaIdAndActivoTrue(tiendaId);
+        if (sedesActivas >= limites.getMaxSedes()) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "Tu plan permite hasta %d sedes activas. Actualiza tu suscripción para habilitar más ubicaciones.",
+                            limites.getMaxSedes()));
+        }
     }
 }

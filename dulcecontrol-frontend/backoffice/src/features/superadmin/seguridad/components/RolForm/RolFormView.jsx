@@ -1,4 +1,4 @@
-import { Button, Checkbox, Divider, Form, Input, Modal, Space, Spin, Typography } from 'antd';
+import { App, Button, Checkbox, Divider, Form, Input, Modal, Space, Spin, Typography } from 'antd';
 
 const { Text, Title } = Typography;
 const { TextArea } = Input;
@@ -16,12 +16,14 @@ const RolFormView = ({
   onToggleModulo,
   loadingPermisos,
 }) => {
+  const { modal } = App.useApp();
+
   const handleFinish = (values) => {
     onSubmit(values);
   };
 
   const handleCancel = () => {
-    Modal.confirm({
+    modal.confirm({
       title: '¿Cancelar cambios?',
       content: 'Los cambios no guardados se perderán.',
       okText: 'Sí, cancelar',

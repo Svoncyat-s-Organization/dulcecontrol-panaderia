@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react';
-import { Modal, message } from 'antd';
+import { useEffect, useMemo, useState } from 'react';
+import { App, message } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import UsuariosTableView from './UsuariosTableView.jsx';
 import UsuarioForm from '../UsuarioForm/index.jsx';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
-import { getRoles, getUsuarios, deleteUsuario } from '../../api/seguridad.api.js';
+import { getRoles, getUsuarios, deleteUsuario, getSedes } from '../../api/seguridad.api.js';
 import { SEGURIDAD_KEYS } from '../../constants/queryKeys.js';
 import { TIPO_DOCUMENTO_OPTIONS } from '../../constants/options.js';
 
@@ -14,6 +14,9 @@ const UsuariosTable = () => {
   const [searchText, setSearchText] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUsuario, setSelectedUsuario] = useState(null);
+  const [usuariosData, setUsuariosData] = useState([]);
+
+  const { modal } = App.useApp();
 
   const usuariosQuery = useQuery({
     queryKey: SEGURIDAD_KEYS.usuarios(tiendaId),
@@ -24,6 +27,13 @@ const UsuariosTable = () => {
   const rolesQuery = useQuery({
     queryKey: SEGURIDAD_KEYS.roles(tiendaId),
     queryFn: () => getRoles(tiendaId),
+    enabled: Boolean(tiendaId),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const sedesQuery = useQuery({
+    queryKey: SEGURIDAD_KEYS.sedes(tiendaId),
+    queryFn: () => getSedes(tiendaId),
     enabled: Boolean(tiendaId),
     staleTime: 5 * 60 * 1000,
   });
@@ -40,8 +50,15 @@ const UsuariosTable = () => {
     },
   });
 
-  const usuarios = useMemo(() => usuariosQuery.data ?? [], [usuariosQuery.data]);
+  useEffect(() => {
+    if (Array.isArray(usuariosQuery.data)) {
+      setUsuariosData(usuariosQuery.data);
+    }
+  }, [usuariosQuery.data]);
+
+  const usuarios = useMemo(() => usuariosData ?? [], [usuariosData]);
   const roles = useMemo(() => rolesQuery.data ?? [], [rolesQuery.data]);
+  const sedes = useMemo(() => sedesQuery.data ?? [], [sedesQuery.data]);
 
   const filteredUsuarios = useMemo(() => {
     if (!searchText.trim()) return usuarios;
@@ -52,6 +69,7 @@ const UsuariosTable = () => {
         usuario.correo,
         usuario.numeroDoc,
         usuario.rolNombre,
+        usuario.sedeNombre,
       ]
         .filter(Boolean)
         .some((value) => value.toLowerCase().includes(normalized));
@@ -71,7 +89,7 @@ const UsuariosTable = () => {
   };
 
   const handleDelete = (usuario) => {
-    Modal.confirm({
+    modal.confirm({
       title: '¿Eliminar usuario?',
       content: `Se eliminará al usuario "${usuario.nombres}" y perderá acceso al sistema.`,
       okText: 'Eliminar',
@@ -90,7 +108,27 @@ const UsuariosTable = () => {
     setSearchText(value);
   };
 
-  const handleFormSuccess = () => {
+  const handleFormSuccess = (updatedUsuario, { isEditing } = {}) => {
+    if (updatedUsuario) {
+      setUsuariosData((current) => {
+        if (!Array.isArray(current)) {
+          return current;
+        }
+
+        if (isEditing) {
+          return current.map((item) =>
+            item.id === updatedUsuario.id ? { ...item, ...updatedUsuario } : item
+          );
+        }
+
+        if (current.some((item) => item.id === updatedUsuario.id)) {
+          return current;
+        }
+
+        return [updatedUsuario, ...current];
+      });
+    }
+
     queryClient.invalidateQueries({ queryKey: SEGURIDAD_KEYS.usuarios(tiendaId) });
     setIsModalOpen(false);
     setSelectedUsuario(null);
@@ -111,6 +149,8 @@ const UsuariosTable = () => {
         deletingId={deletingId}
         rolesLoading={rolesQuery.isLoading}
         rolesReady={roles.length > 0}
+        sedesLoading={sedesQuery.isLoading}
+        sedesReady={sedes.length > 0}
       />
 
       <UsuarioForm
@@ -120,6 +160,8 @@ const UsuariosTable = () => {
         tiendaId={tiendaId}
         usuario={selectedUsuario}
         roles={roles}
+        sedes={sedes}
+        sedesLoading={sedesQuery.isLoading}
         tipoDocumentoOptions={TIPO_DOCUMENTO_OPTIONS}
       />
     </>
