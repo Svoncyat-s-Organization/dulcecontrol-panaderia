@@ -142,6 +142,35 @@ const prettifyModulo = (modulo) => {
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 };
 
+const buildPermissionDisplayName = (permiso, fallbackLabel) => {
+  const baseName = (permiso?.nombreVisible ?? '').trim();
+  if (baseName.length > 0) {
+    const normalized = baseName.toLowerCase();
+    if (normalized.startsWith('gestión') || normalized.startsWith('gestion')) {
+      return baseName;
+    }
+    if (normalized.startsWith('gestionar') || normalized.startsWith('administrar') || normalized.startsWith('configurar')) {
+      return baseName;
+    }
+    if (/^ver\s+/i.test(baseName)) {
+      const remainder = baseName.replace(/^ver\s+/i, '').trim();
+      if (remainder.length > 0) {
+        return `Gestión de ${remainder.charAt(0).toUpperCase()}${remainder.slice(1)}`;
+      }
+    }
+    if (/^view\s+/i.test(baseName)) {
+      const remainder = baseName.replace(/^view\s+/i, '').trim();
+      if (remainder.length > 0) {
+        return `Gestión de ${remainder.charAt(0).toUpperCase()}${remainder.slice(1)}`;
+      }
+    }
+    return baseName;
+  }
+
+  const subject = fallbackLabel ?? prettifyModulo(permiso?.modulo || permiso?.slug?.split('.')?.[0]);
+  return subject ? `Gestión de ${subject}` : 'Gestión de módulo';
+};
+
 export const ADMIN_MENU_BLUEPRINT = [
   {
     key: `${BASE_PATH}/tablero`,
@@ -435,8 +464,11 @@ export const groupPermissionsForDisplay = (permisos = []) => {
     .map((group) => ({
       ...group,
       permisos: group.permisos
-        .slice()
-        .sort((a, b) => a.nombreVisible.localeCompare(b.nombreVisible, 'es', { sensitivity: 'base' })),
+        .map((permiso) => ({
+          ...permiso,
+          displayName: buildPermissionDisplayName(permiso, group.label),
+        }))
+        .sort((a, b) => a.displayName.localeCompare(b.displayName, 'es', { sensitivity: 'base' })),
     }))
     .sort((a, b) => {
       if (a.order !== b.order) {

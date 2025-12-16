@@ -22,9 +22,15 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -42,20 +48,19 @@ public class UsuarioAdminService implements IUsuarioAdminService {
     @Override
     @Transactional(readOnly = true)
     public List<UsuarioResponse> listarPorTienda(Long tiendaId) {
-        List<UsuarioTienda> usuarios = usuarioRepository.findByTiendaId(tiendaId);
+        List<UsuarioTienda> usuarios = usuarioRepository.findAllIncludingInactiveByTiendaId(tiendaId);
         Map<Long, Rol> roles = rolRepository.findByTiendaId(tiendaId)
                 .stream()
                 .collect(Collectors.toMap(Rol::getId, Function.identity()));
 
-        Map<Long, UsuarioSede> asignaciones = obtenerAsignacionPrincipalPorUsuario(usuarios);
-        Map<Long, Sede> sedes = cargarSedesPorAsignacion(asignaciones);
+        Map<Long, List<UsuarioSede>> asignaciones = obtenerAsignacionesPorUsuario(usuarios);
+        Map<Long, Sede> sedes = cargarSedesPorAsignaciones(asignaciones);
 
         return usuarios.stream()
                 .map(usuario -> {
                     Rol rol = roles.get(usuario.getRolId());
-                    UsuarioSede asignacion = asignaciones.get(usuario.getId());
-                    Sede sede = asignacion != null ? sedes.get(asignacion.getId().getSedeId()) : null;
-                    return toResponse(usuario, rol, asignacion, sede);
+                    List<UsuarioSede> usuarioSedes = asignaciones.getOrDefault(usuario.getId(), Collections.emptyList());
+                    return toResponse(usuario, rol, usuarioSedes, sedes);
                 })
                 .toList();
     }
@@ -63,15 +68,13 @@ public class UsuarioAdminService implements IUsuarioAdminService {
     @Override
     @Transactional(readOnly = true)
     public UsuarioResponse obtenerPorId(Long tiendaId, Long usuarioId) {
-        UsuarioTienda usuario = usuarioRepository.findByIdAndTiendaId(usuarioId, tiendaId)
+        UsuarioTienda usuario = usuarioRepository.findIncludingInactiveByIdAndTiendaId(usuarioId, tiendaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         Rol rol = rolRepository.findById(usuario.getRolId())
                 .orElseThrow(() -> new ResourceNotFoundException("Rol no encontrado"));
-        UsuarioSede asignacion = obtenerAsignacionPrincipal(usuarioId);
-        Sede sede = asignacion != null
-            ? sedeAdminRepository.findByIdAndTiendaId(asignacion.getId().getSedeId(), tiendaId).orElse(null)
-            : null;
-        return toResponse(usuario, rol, asignacion, sede);
+        List<UsuarioSede> asignaciones = usuarioSedeRepository.findByIdUsuarioId(usuarioId);
+        Map<Long, Sede> sedes = cargarSedesDetalle(tiendaId, asignaciones);
+        return toResponse(usuario, rol, asignaciones, sedes);
     }
 
     @Override
@@ -80,7 +83,13 @@ public class UsuarioAdminService implements IUsuarioAdminService {
         validarRolPerteneceATienda(request.getRolId(), tiendaId);
         validarDuplicadosAlCrear(tiendaId, request.getCorreo(), request.getNumeroDoc());
         validarLimiteUsuarios(tiendaId);
-        Sede sede = validarSedePerteneceATienda(tiendaId, request.getSedeId());
+        List<Long> sedeIds = normalizarSedeIds(request.getSedeIds());
+        if (sedeIds.isEmpty()) {
+            throw new BadRequestException("Debes asignar al menos una sede");
+        }
+        List<Sede> sedesSeleccionadas = validarSedesPertenecenATienda(tiendaId, sedeIds);
+        Map<Long, Sede> sedesDetalle = sedesSeleccionadas.stream()
+                .collect(Collectors.toMap(Sede::getId, Function.identity()));
 
         UsuarioTienda usuario = new UsuarioTienda();
         usuario.setTiendaId(tiendaId);
@@ -94,10 +103,10 @@ public class UsuarioAdminService implements IUsuarioAdminService {
         usuario.setActivo(Boolean.TRUE);
 
         UsuarioTienda guardado = usuarioRepository.save(usuario);
-        UsuarioSede asignacion = asignarSedePrincipal(guardado.getId(), sede);
+        List<UsuarioSede> asignaciones = sincronizarSedesAsignadas(guardado.getId(), sedesSeleccionadas);
         Rol rol = rolRepository.findById(request.getRolId())
                 .orElseThrow(() -> new ResourceNotFoundException("Rol no encontrado tras crear"));
-        return toResponse(guardado, rol, asignacion, sede);
+        return toResponse(guardado, rol, asignaciones, sedesDetalle);
     }
 
     private void validarLimiteUsuarios(Long tiendaId) {
@@ -118,14 +127,21 @@ public class UsuarioAdminService implements IUsuarioAdminService {
     @Override
     @Transactional
     public UsuarioResponse actualizar(Long tiendaId, Long usuarioId, UsuarioUpdateRequest request) {
-        UsuarioTienda usuario = usuarioRepository.findByIdAndTiendaId(usuarioId, tiendaId)
+        UsuarioTienda usuario = usuarioRepository.findIncludingInactiveByIdAndTiendaId(usuarioId, tiendaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
         validarRolPerteneceATienda(request.getRolId(), tiendaId);
-        Sede sede = validarSedePerteneceATienda(tiendaId, request.getSedeId());
+        List<Long> sedeIds = normalizarSedeIds(request.getSedeIds());
+        if (sedeIds.isEmpty()) {
+            throw new BadRequestException("Debes asignar al menos una sede");
+        }
+        List<Sede> sedesSeleccionadas = validarSedesPertenecenATienda(tiendaId, sedeIds);
+        Map<Long, Sede> sedesDetalle = sedesSeleccionadas.stream()
+            .collect(Collectors.toMap(Sede::getId, Function.identity()));
 
+        String correoNormalizado = request.getCorreo().toLowerCase();
         if (!usuario.getCorreo().equalsIgnoreCase(request.getCorreo()) &&
-                usuarioRepository.existsByTiendaIdAndCorreoAndIdNot(tiendaId, request.getCorreo(), usuarioId)) {
+            usuarioRepository.existsByTiendaIdAndCorreoAndIdNot(tiendaId, correoNormalizado, usuarioId)) {
             throw new BadRequestException("El correo ya está registrado para esta tienda");
         }
 
@@ -135,7 +151,7 @@ public class UsuarioAdminService implements IUsuarioAdminService {
         }
 
         usuario.setRolId(request.getRolId());
-        usuario.setCorreo(request.getCorreo().toLowerCase());
+        usuario.setCorreo(correoNormalizado);
         usuario.setTipoDoc(request.getTipoDoc());
         usuario.setNumeroDoc(request.getNumeroDoc());
         usuario.setNombres(request.getNombres());
@@ -150,16 +166,16 @@ public class UsuarioAdminService implements IUsuarioAdminService {
         }
 
         UsuarioTienda actualizado = usuarioRepository.save(usuario);
-        UsuarioSede asignacion = asignarSedePrincipal(actualizado.getId(), sede);
+        List<UsuarioSede> asignaciones = sincronizarSedesAsignadas(actualizado.getId(), sedesSeleccionadas);
         Rol rol = rolRepository.findById(request.getRolId())
                 .orElseThrow(() -> new ResourceNotFoundException("Rol no encontrado tras actualizar"));
-        return toResponse(actualizado, rol, asignacion, sede);
+        return toResponse(actualizado, rol, asignaciones, sedesDetalle);
     }
 
     @Override
     @Transactional
     public void eliminar(Long tiendaId, Long usuarioId) {
-        UsuarioTienda usuario = usuarioRepository.findByIdAndTiendaId(usuarioId, tiendaId)
+        UsuarioTienda usuario = usuarioRepository.findIncludingInactiveByIdAndTiendaId(usuarioId, tiendaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         usuarioRepository.delete(usuario);
         usuarioSedeRepository.deleteByIdUsuarioId(usuarioId);
@@ -171,7 +187,8 @@ public class UsuarioAdminService implements IUsuarioAdminService {
     }
 
     private void validarDuplicadosAlCrear(Long tiendaId, String correo, String numeroDoc) {
-        if (usuarioRepository.existsByTiendaIdAndCorreo(tiendaId, correo)) {
+        String correoNormalizado = correo != null ? correo.toLowerCase() : null;
+        if (correoNormalizado != null && usuarioRepository.existsByTiendaIdAndCorreo(tiendaId, correoNormalizado)) {
             throw new BadRequestException("El correo ya está registrado para esta tienda");
         }
         if (usuarioRepository.existsByTiendaIdAndNumeroDoc(tiendaId, numeroDoc)) {
@@ -179,22 +196,36 @@ public class UsuarioAdminService implements IUsuarioAdminService {
         }
     }
 
-    private UsuarioResponse toResponse(UsuarioTienda usuario, Rol rol, UsuarioSede usuarioSede, Sede sede) {
-        Long sedeId = null;
-        if (usuarioSede != null && usuarioSede.getId() != null) {
-            sedeId = usuarioSede.getId().getSedeId();
-        }
-        if (sede != null && sedeId == null) {
-            sedeId = sede.getId();
-        }
+    private UsuarioResponse toResponse(UsuarioTienda usuario, Rol rol, List<UsuarioSede> asignaciones,
+            Map<Long, Sede> sedesDetalle) {
+        List<UsuarioSede> ordenadas = ordenarAsignaciones(asignaciones);
+        List<Long> sedeIds = ordenadas.stream()
+                .map(asignacion -> asignacion.getId().getSedeId())
+                .toList();
+
+        List<String> sedeNombres = sedeIds.stream()
+                .map(sedeId -> Optional.ofNullable(sedesDetalle.get(sedeId)).map(Sede::getNombre).orElse(null))
+                .toList();
+
+        Long sedePrincipalId = ordenadas.stream()
+                .filter(asignacion -> Boolean.TRUE.equals(asignacion.getEsSedePrincipal()))
+                .map(asignacion -> asignacion.getId().getSedeId())
+                .findFirst()
+                .orElseGet(() -> sedeIds.isEmpty() ? null : sedeIds.get(0));
+
+        String sedePrincipalNombre = sedePrincipalId != null
+                ? Optional.ofNullable(sedesDetalle.get(sedePrincipalId)).map(Sede::getNombre).orElse(null)
+                : null;
 
         return UsuarioResponse.builder()
                 .id(usuario.getId())
                 .tiendaId(usuario.getTiendaId())
                 .rolId(usuario.getRolId())
                 .rolNombre(rol != null ? rol.getNombre() : null)
-                .sedeId(sedeId)
-                .sedeNombre(sede != null ? sede.getNombre() : null)
+                .sedeId(sedePrincipalId)
+                .sedeNombre(sedePrincipalNombre)
+                .sedeIds(sedeIds)
+                .sedes(sedeNombres)
                 .correo(usuario.getCorreo())
                 .tipoDoc(usuario.getTipoDoc())
                 .numeroDoc(usuario.getNumeroDoc())
@@ -206,7 +237,7 @@ public class UsuarioAdminService implements IUsuarioAdminService {
                 .build();
     }
 
-    private Map<Long, UsuarioSede> obtenerAsignacionPrincipalPorUsuario(List<UsuarioTienda> usuarios) {
+    private Map<Long, List<UsuarioSede>> obtenerAsignacionesPorUsuario(List<UsuarioTienda> usuarios) {
         if (usuarios.isEmpty()) {
             return Map.of();
         }
@@ -217,92 +248,106 @@ public class UsuarioAdminService implements IUsuarioAdminService {
 
         List<UsuarioSede> asignaciones = usuarioSedeRepository.findByIdUsuarioIdIn(usuarioIds);
         return asignaciones.stream()
-                .collect(Collectors.toMap(
-                        asignacion -> asignacion.getId().getUsuarioId(),
-                        Function.identity(),
-                        this::preferirPrincipal));
+                .collect(Collectors.groupingBy(asignacion -> asignacion.getId().getUsuarioId()));
     }
 
-    private Map<Long, Sede> cargarSedesPorAsignacion(Map<Long, UsuarioSede> asignaciones) {
+    private Map<Long, Sede> cargarSedesPorAsignaciones(Map<Long, List<UsuarioSede>> asignaciones) {
         if (asignaciones.isEmpty()) {
             return Map.of();
         }
 
-        List<Long> sedeIds = asignaciones.values().stream()
-                .filter(asignacion -> asignacion != null && asignacion.getId() != null)
-                .map(asignacion -> asignacion.getId().getSedeId())
-                .distinct()
-                .collect(Collectors.toList());
+        Set<Long> sedeIds = asignaciones.values().stream()
+                .filter(Objects::nonNull)
+                .flatMap(lista -> lista.stream().map(asignacion -> asignacion.getId().getSedeId()))
+                .collect(Collectors.toSet());
 
-        Map<Long, Sede> sedesPorId = sedeAdminRepository.findAllById(sedeIds).stream()
+        if (sedeIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return sedeAdminRepository.findAllById(sedeIds).stream()
+                .collect(Collectors.toMap(Sede::getId, Function.identity()));
+    }
+
+    private Map<Long, Sede> cargarSedesDetalle(Long tiendaId, List<UsuarioSede> asignaciones) {
+        if (asignaciones == null || asignaciones.isEmpty()) {
+            return Map.of();
+        }
+
+        Set<Long> sedeIds = asignaciones.stream()
+                .map(asignacion -> asignacion.getId().getSedeId())
+                .collect(Collectors.toSet());
+
+        if (sedeIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return sedeAdminRepository.findAllById(sedeIds).stream()
+                .filter(sede -> sede != null && sede.getTienda() != null
+                        && Objects.equals(sede.getTienda().getId(), tiendaId))
+                .collect(Collectors.toMap(Sede::getId, Function.identity()));
+    }
+
+    private List<Long> normalizarSedeIds(List<Long> sedeIds) {
+        if (sedeIds == null || sedeIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        LinkedHashSet<Long> unique = sedeIds.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return new ArrayList<>(unique);
+    }
+
+    private List<Sede> validarSedesPertenecenATienda(Long tiendaId, List<Long> sedeIds) {
+        if (sedeIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Sede> sedes = sedeAdminRepository.findAllById(sedeIds);
+        Map<Long, Sede> sedesPorId = sedes.stream()
                 .collect(Collectors.toMap(Sede::getId, Function.identity()));
 
-        Map<Long, Sede> resultado = new HashMap<>();
-        asignaciones.forEach((usuarioId, asignacion) -> {
-            if (asignacion != null && asignacion.getId() != null) {
-                resultado.put(usuarioId, sedesPorId.get(asignacion.getId().getSedeId()));
+        for (Long sedeId : sedeIds) {
+            Sede sede = sedesPorId.get(sedeId);
+            if (sede == null || sede.getTienda() == null || !Objects.equals(sede.getTienda().getId(), tiendaId)) {
+                throw new BadRequestException("La sede seleccionada no pertenece a la tienda");
             }
-        });
+        }
+
+        return sedeIds.stream()
+                .map(sedesPorId::get)
+                .collect(Collectors.toList());
+    }
+
+    private List<UsuarioSede> sincronizarSedesAsignadas(Long usuarioId, List<Sede> sedesSeleccionadas) {
+        usuarioSedeRepository.deleteByIdUsuarioId(usuarioId);
+
+        if (sedesSeleccionadas == null || sedesSeleccionadas.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Long sedePrincipalId = sedesSeleccionadas.get(0).getId();
+        List<UsuarioSede> resultado = new ArrayList<>();
+
+        for (Sede sede : sedesSeleccionadas) {
+            UsuarioSede usuarioSede = new UsuarioSede();
+            usuarioSede.setId(new UsuarioSedeId(usuarioId, sede.getId()));
+            usuarioSede.setEsSedePrincipal(Objects.equals(sede.getId(), sedePrincipalId));
+            resultado.add(usuarioSedeRepository.save(usuarioSede));
+        }
+
         return resultado;
     }
 
-    private UsuarioSede obtenerAsignacionPrincipal(Long usuarioId) {
-        List<UsuarioSede> asignaciones = usuarioSedeRepository.findByIdUsuarioId(usuarioId);
-        return asignaciones.stream().reduce(this::preferirPrincipal).orElse(null);
-    }
-
-    private UsuarioSede preferirPrincipal(UsuarioSede actual, UsuarioSede candidato) {
-        if (actual == null) {
-            return candidato;
-        }
-        if (candidato == null) {
-            return actual;
-        }
-        if (Boolean.TRUE.equals(candidato.getEsSedePrincipal())) {
-            return candidato;
-        }
-        if (Boolean.TRUE.equals(actual.getEsSedePrincipal())) {
-            return actual;
-        }
-        return actual;
-    }
-
-    private Sede validarSedePerteneceATienda(Long tiendaId, Long sedeId) {
-        if (sedeId == null) {
-            throw new BadRequestException("Debe seleccionar una sede");
-        }
-        return sedeAdminRepository.findByIdAndTiendaId(sedeId, tiendaId)
-                .orElseThrow(() -> new BadRequestException("La sede seleccionada no pertenece a la tienda"));
-    }
-
-    private UsuarioSede asignarSedePrincipal(Long usuarioId, Sede sede) {
-        if (sede == null) {
-            usuarioSedeRepository.deleteByIdUsuarioId(usuarioId);
-            return null;
+    private List<UsuarioSede> ordenarAsignaciones(List<UsuarioSede> asignaciones) {
+        if (asignaciones == null || asignaciones.isEmpty()) {
+            return Collections.emptyList();
         }
 
-        List<UsuarioSede> asignaciones = usuarioSedeRepository.findByIdUsuarioId(usuarioId);
-        UsuarioSede principal = null;
-
-        for (UsuarioSede asignacion : asignaciones) {
-            boolean esPrincipalSeleccionada = asignacion.getId().getSedeId().equals(sede.getId());
-            boolean estadoActual = Boolean.TRUE.equals(asignacion.getEsSedePrincipal());
-            if (estadoActual != esPrincipalSeleccionada) {
-                asignacion.setEsSedePrincipal(esPrincipalSeleccionada);
-                usuarioSedeRepository.save(asignacion);
-            }
-            if (esPrincipalSeleccionada) {
-                principal = asignacion;
-            }
-        }
-
-        if (principal == null) {
-            UsuarioSede nueva = new UsuarioSede();
-            nueva.setId(new UsuarioSedeId(usuarioId, sede.getId()));
-            nueva.setEsSedePrincipal(Boolean.TRUE);
-            principal = usuarioSedeRepository.save(nueva);
-        }
-
-        return principal;
+        return asignaciones.stream()
+                .sorted(Comparator
+                        .comparing((UsuarioSede asignacion) -> Boolean.TRUE.equals(asignacion.getEsSedePrincipal()) ? 0 : 1)
+                        .thenComparing(asignacion -> asignacion.getId().getSedeId()))
+                .toList();
     }
 }

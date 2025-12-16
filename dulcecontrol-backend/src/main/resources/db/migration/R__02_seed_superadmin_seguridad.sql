@@ -111,14 +111,14 @@ ON DUPLICATE KEY UPDATE
 
 INSERT INTO permisos_superadmin (id, slug, nombre_visible, modulo)
 VALUES
-  (1, 'seguridad.usuarios.view', 'Ver usuarios corporativos', 'Seguridad'),
+  (1, 'seguridad.usuarios.view', 'Gestión de usuarios corporativos', 'Seguridad'),
   (2, 'seguridad.usuarios.manage', 'Gestionar usuarios corporativos', 'Seguridad'),
   (3, 'seguridad.roles.manage', 'Gestionar roles y permisos', 'Seguridad'),
   (4, 'tiendas.manage', 'Gestionar tiendas y sucursales', 'Tiendas'),
   (5, 'suscripciones.manage', 'Gestionar suscripciones', 'Suscripciones'),
   (6, 'facturacion.manage', 'Gestionar facturación SaaS', 'Facturacion'),
   (7, 'soporte.manage', 'Gestionar soporte corporativo', 'Soporte'),
-  (8, 'reportes.view', 'Ver reportes ejecutivos', 'Reportes')
+  (8, 'reportes.view', 'Gestión de reportes ejecutivos', 'Reportes')
 ON DUPLICATE KEY UPDATE
   nombre_visible = VALUES(nombre_visible),
   modulo = VALUES(modulo);

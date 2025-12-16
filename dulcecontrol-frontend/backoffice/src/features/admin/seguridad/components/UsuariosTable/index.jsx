@@ -15,6 +15,7 @@ const UsuariosTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUsuario, setSelectedUsuario] = useState(null);
   const [usuariosData, setUsuariosData] = useState([]);
+  const [showInactiveOnly, setShowInactiveOnly] = useState(false);
 
   const { modal } = App.useApp();
 
@@ -61,20 +62,32 @@ const UsuariosTable = () => {
   const sedes = useMemo(() => sedesQuery.data ?? [], [sedesQuery.data]);
 
   const filteredUsuarios = useMemo(() => {
-    if (!searchText.trim()) return usuarios;
+    const base = usuarios.filter((usuario) => {
+      const isActive = usuario.activo === true;
+      return showInactiveOnly ? !isActive : isActive;
+    });
+
+    if (!searchText.trim()) {
+      return base;
+    }
+
     const normalized = searchText.trim().toLowerCase();
-    return usuarios.filter((usuario) => {
+    return base.filter((usuario) => {
+      const sedesTexto = Array.isArray(usuario.sedes)
+        ? usuario.sedes.filter(Boolean).join(' ')
+        : usuario.sedeNombre;
+
       return [
         usuario.nombres,
         usuario.correo,
         usuario.numeroDoc,
         usuario.rolNombre,
-        usuario.sedeNombre,
+        sedesTexto,
       ]
         .filter(Boolean)
         .some((value) => value.toLowerCase().includes(normalized));
     });
-  }, [usuarios, searchText]);
+  }, [usuarios, searchText, showInactiveOnly]);
 
   const deletingId = deleteMutation.isPending ? deleteMutation.variables : null;
 
@@ -106,6 +119,10 @@ const UsuariosTable = () => {
 
   const handleSearch = (value) => {
     setSearchText(value);
+  };
+
+  const handleToggleInactive = () => {
+    setShowInactiveOnly((current) => !current);
   };
 
   const handleFormSuccess = (updatedUsuario, { isEditing } = {}) => {
@@ -151,6 +168,8 @@ const UsuariosTable = () => {
         rolesReady={roles.length > 0}
         sedesLoading={sedesQuery.isLoading}
         sedesReady={sedes.length > 0}
+        showInactiveOnly={showInactiveOnly}
+        onToggleInactive={handleToggleInactive}
       />
 
       <UsuarioForm

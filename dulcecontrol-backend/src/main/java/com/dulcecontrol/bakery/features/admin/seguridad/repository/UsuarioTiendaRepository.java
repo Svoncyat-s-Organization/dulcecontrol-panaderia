@@ -31,7 +31,13 @@ public interface UsuarioTiendaRepository extends JpaRepository<UsuarioTienda, Lo
 
     List<UsuarioTienda> findByTiendaId(Long tiendaId);
 
+    @Query(value = "SELECT * FROM usuarios_tienda WHERE tienda_id = :tiendaId", nativeQuery = true)
+    List<UsuarioTienda> findAllIncludingInactiveByTiendaId(@Param("tiendaId") Long tiendaId);
+
     Optional<UsuarioTienda> findByIdAndTiendaId(Long id, Long tiendaId);
+
+    @Query(value = "SELECT * FROM usuarios_tienda WHERE id = :id AND tienda_id = :tiendaId LIMIT 1", nativeQuery = true)
+    Optional<UsuarioTienda> findIncludingInactiveByIdAndTiendaId(@Param("id") Long id, @Param("tiendaId") Long tiendaId);
 
     long countByTiendaId(Long tiendaId);
 }

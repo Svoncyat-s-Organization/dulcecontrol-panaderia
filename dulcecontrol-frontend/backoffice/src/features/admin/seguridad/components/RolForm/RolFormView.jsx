@@ -154,7 +154,7 @@ const RolFormView = ({
                       checked={selectedPermisos.includes(permiso.id)}
                       onChange={(event) => onTogglePermission(permiso.id, event.target.checked)}
                     >
-                      {permiso.nombreVisible}
+                      {permiso.displayName ?? permiso.nombreVisible}
                     </Checkbox>
                   ))}
                 </div>
