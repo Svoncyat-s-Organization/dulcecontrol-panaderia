@@ -507,6 +507,9 @@ INSERT INTO ordenes_compra (
   moneda,
   total_compra_centimos,
   metodo_pago,
+  monto_inicial_centimos,
+  monto_pagado_centimos,
+  saldo_pendiente_centimos,
   referencia_pago,
   tipo_comprobante_proveedor,
   serie_comprobante_proveedor,
@@ -526,8 +529,11 @@ VALUES
     'recibida_total',
     'PEN',
     1250000,
-    'transferencia',
-    'TRANS-20241028-001',
+    'efectivo',
+    1250000,
+    1250000,
+    0,
+    NULL,
     'factura',
     'F001',
     '00012345',
@@ -546,11 +552,14 @@ VALUES
     'PEN',
     850000,
     'credito',
+    300000,
+    300000,
+    550000,
     NULL,
     'factura',
     'F001',
     '00045678',
-    'Pedido de lácteos',
+    'Pedido de lácteos - Pago inicial 30%',
     (SELECT id FROM usuarios_tienda WHERE correo = 'almacen@dulcemanjar.pe')
   ),
   -- Orden 3: Dulce Manjar - San Isidro (Borrador)
@@ -565,6 +574,9 @@ VALUES
     'PEN',
     650000,
     NULL,
+    0,
+    0,
+    0,
     NULL,
     NULL,
     NULL,
@@ -584,6 +596,9 @@ VALUES
     'PEN',
     780000,
     'efectivo',
+    780000,
+    780000,
+    0,
     NULL,
     'boleta',
     'B001',
@@ -602,12 +617,15 @@ VALUES
     'enviada',
     'PEN',
     420000,
-    'transferencia',
-    'TRANS-20241110-002',
+    'credito',
+    200000,
+    200000,
+    220000,
+    NULL,
     'factura',
     'F001',
     '00078901',
-    'Pedido de insumos de repostería',
+    'Pedido de insumos de repostería - Pago inicial 50%',
     (SELECT id FROM usuarios_tienda WHERE correo = 'admin@tortasdelicias.pe')
   )
 ON DUPLICATE KEY UPDATE
@@ -864,3 +882,36 @@ FROM (
 ON DUPLICATE KEY UPDATE
   cantidad_recibida = VALUES(cantidad_recibida),
   recibido_completo = VALUES(recibido_completo);
+
+-- =================================
+-- HISTORIAL DE PAGOS
+-- =================================
+
+-- Pagos para Orden 2: Dulce Manjar - Lácteos (crédito con pago inicial de 300000)
+INSERT IGNORE INTO pagos_orden_compra (orden_compra_id, fecha_pago, monto_pagado_centimos, url_foto_comprobante, observaciones)
+SELECT 
+  oc.id,
+  oc.fecha_emision,
+  300000,
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+  'Pago inicial 30% - Al momento de crear la orden'
+FROM ordenes_compra oc
+WHERE oc.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234567')
+  AND oc.sede_destino_id = (SELECT id FROM sedes WHERE codigo_interno = 'DM-001')
+  AND oc.fecha_emision = DATE_SUB(CURDATE(), INTERVAL 3 DAY)
+  AND oc.metodo_pago = 'credito'
+LIMIT 1;
+
+-- Pagos para Orden 5: Tortas & Delicias (crédito con pago inicial de 200000)
+INSERT IGNORE INTO pagos_orden_compra (orden_compra_id, fecha_pago, monto_pagado_centimos, observaciones)
+SELECT 
+  oc.id,
+  oc.fecha_emision,
+  200000,
+  'Pago inicial 50% - Al momento de crear la orden'
+FROM ordenes_compra oc
+WHERE oc.tienda_id = (SELECT id FROM tiendas WHERE numero_doc = '20601234569')
+  AND oc.sede_destino_id = (SELECT id FROM sedes WHERE codigo_interno = 'TD-001')
+  AND oc.fecha_emision = DATE_SUB(CURDATE(), INTERVAL 2 DAY)
+  AND oc.metodo_pago = 'credito'
+LIMIT 1;

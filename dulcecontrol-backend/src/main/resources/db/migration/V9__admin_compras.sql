@@ -49,7 +49,10 @@ CREATE TABLE IF NOT EXISTS ordenes_compra (
     estado ENUM('BORRADOR', 'ENVIADA', 'RECIBIDA_PARCIAL', 'RECIBIDA_TOTAL', 'CANCELADA') NOT NULL DEFAULT 'BORRADOR',
     moneda VARCHAR(3) DEFAULT 'PEN',
     total_compra_centimos BIGINT NOT NULL DEFAULT 0,
-    metodo_pago ENUM('EFECTIVO', 'TRANSFERENCIA', 'CREDITO', 'TARJETA'),
+    metodo_pago ENUM('efectivo', 'credito'),
+    monto_inicial_centimos BIGINT DEFAULT 0,
+    monto_pagado_centimos BIGINT DEFAULT 0,
+    saldo_pendiente_centimos BIGINT DEFAULT 0,
     referencia_pago VARCHAR(100) NULL,
     tipo_comprobante_proveedor ENUM('FACTURA', 'BOLETA', 'NOTA_CREDITO', 'NOTA_DEBITO'),
     serie_comprobante_proveedor VARCHAR(50) NULL,
@@ -111,3 +114,28 @@ CREATE INDEX idx_detalles_orden_pendientes
 
 CREATE INDEX idx_ordenes_compra_pendientes
     ON ordenes_compra(sede_destino_id, estado, fecha_recepcion_esperada);
+
+-- =================================
+-- TABLA DE PAGOS DE ÓRDENES DE COMPRA
+-- =================================
+
+CREATE TABLE IF NOT EXISTS pagos_orden_compra (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    orden_compra_id BIGINT NOT NULL,
+    fecha_pago DATE NOT NULL DEFAULT (CURRENT_DATE),
+    monto_pagado_centimos BIGINT NOT NULL,
+    metodo_pago VARCHAR(50),
+    referencia_pago VARCHAR(100),
+    url_foto_comprobante LONGTEXT,
+    observaciones TEXT,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    actualizado_en DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (orden_compra_id) REFERENCES ordenes_compra(id) ON DELETE CASCADE
+);
+
+-- Índices para la tabla de pagos
+CREATE INDEX idx_pagos_orden_compra
+    ON pagos_orden_compra(orden_compra_id, fecha_pago DESC);
+
+CREATE INDEX idx_pagos_fecha
+    ON pagos_orden_compra(fecha_pago DESC);

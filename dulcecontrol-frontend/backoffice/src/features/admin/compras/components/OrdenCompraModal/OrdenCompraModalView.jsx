@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Modal, Form, Input, Select, DatePicker, Row, Col, Button, InputNumber, Popconfirm, Card, Space } from 'antd';
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { Modal, Form, Input, Select, DatePicker, Row, Col, Button, InputNumber, Popconfirm, Card, Space, Upload, message } from 'antd';
+import { PlusOutlined, DeleteOutlined, UploadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ESTADO_ORDEN_COMPRA_VALUES, METODO_PAGO, TIPO_COMPROBANTE, UNIDADES_MEDIDA } from '../../constants/enums.js';
 import { formatCurrency } from '../../utils/formatters.js';
@@ -20,6 +20,7 @@ const OrdenCompraModalView = ({
   detalles,
   setDetalles,
 }) => {
+  const [metodoPagoSeleccionado, setMetodoPagoSeleccionado] = useState(null);
   // Opciones de estado según si es nueva orden o edición
   const getEstadoOptions = () => {
     if (isEditing) {
@@ -128,14 +129,15 @@ const OrdenCompraModalView = ({
       onCancel={onClose}
       onOk={onSubmit}
       confirmLoading={loading}
-      width={1000}
+      width="95%"
+      style={{ maxWidth: 1000, top: 20 }}
       okText={isEditing ? 'Actualizar' : 'Crear'}
       cancelText="Cancelar"
     >
       <Form form={form} layout="vertical" style={{ marginTop: 24 }}>
         <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Información General</div>
         <Row gutter={16}>
-          <Col span={12}>
+          <Col xs={24} sm={24} md={12}>
             <Form.Item
               name="proveedorId"
               label="Proveedor"
@@ -151,7 +153,7 @@ const OrdenCompraModalView = ({
               />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col xs={24} sm={24} md={12}>
             <Form.Item
               name="sedeDestinoId"
               label="Sede Destino"
@@ -175,7 +177,7 @@ const OrdenCompraModalView = ({
         </Form.Item>
 
         <Row gutter={16}>
-          <Col span={12}>
+          <Col xs={24} sm={24} md={12}>
             <Form.Item
               name="fechaRecepcionEsperada"
               label="Fecha Recepción Esperada"
@@ -187,7 +189,7 @@ const OrdenCompraModalView = ({
               <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col xs={24} sm={24} md={12}>
             <Form.Item
               name="estado"
               label="Estado"
@@ -199,44 +201,6 @@ const OrdenCompraModalView = ({
         </Row>
 
         <div style={{ fontSize: 16, fontWeight: 600, marginTop: 16, marginBottom: 16 }}>
-          Pago y Comprobante
-        </div>
-        <Row gutter={16}>
-          <Col span={8}>
-            <Form.Item name="metodoPago" label="Método de Pago">
-              <Select placeholder="Selecciona método" options={metodoPagoOptions} />
-            </Form.Item>
-          </Col>
-          <Col span={8}>
-            <Form.Item name="referenciaPago" label="Referencia de Pago">
-              <Input placeholder="Ej: TRANS-20241028-001" />
-            </Form.Item>
-          </Col>
-          <Col span={8}>
-            <Form.Item name="tipoComprobanteProveedor" label="Tipo Comprobante">
-              <Select placeholder="Selecciona tipo" options={tipoComprobanteOptions} />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Row gutter={16}>
-          <Col span={8}>
-            <Form.Item name="serieComprobanteProveedor" label="Serie Comprobante">
-              <Input placeholder="Ej: F001" />
-            </Form.Item>
-          </Col>
-          <Col span={8}>
-            <Form.Item name="numeroComprobanteProveedor" label="Número Comprobante">
-              <Input placeholder="Ej: 00012345" />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Form.Item name="observaciones" label="Observaciones">
-          <TextArea rows={2} placeholder="Notas adicionales sobre la orden" />
-        </Form.Item>
-
-        <div style={{ fontSize: 16, fontWeight: 600, marginTop: 24, marginBottom: 16 }}>
           Detalles de la Orden
         </div>
         
@@ -249,7 +213,7 @@ const OrdenCompraModalView = ({
             No hay insumos agregados
           </div>
         ) : (
-          <Space vertical style={{ width: '100%' }} size="middle" key={`space-${updateKey}`}>
+          <Space direction="vertical" style={{ width: '100%' }} size="middle" key={`space-${updateKey}`}>
             {detalles.map((item, idx) => (
               <Card key={`${item.key}-${updateKey}`} size="small">
                 <div style={{ marginBottom: 12, fontWeight: 500 }}>Insumo #{idx + 1}</div>
@@ -277,9 +241,18 @@ const OrdenCompraModalView = ({
                         style={{ width: '100%' }}
                         min={0.01}
                         step={0.1}
-                        precision={2}
-                        value={item.cantidadSolicitada}
-                        onChange={val => actualizarInsumo(item.key, 'cantidadSolicitada', val)}
+                        precision={4}
+                        key={`cant-${item.key}-${item.cantidadSolicitada}`}
+                        defaultValue={item.cantidadSolicitada}
+                        onBlur={(e) => {
+                          const val = parseFloat(e.target.value);
+                          if (!isNaN(val) && val !== item.cantidadSolicitada) {
+                            actualizarInsumo(item.key, 'cantidadSolicitada', val);
+                          }
+                        }}
+                        onPressEnter={(e) => {
+                          e.target.blur();
+                        }}
                       />
                     </div>
                   </Col>
@@ -303,8 +276,17 @@ const OrdenCompraModalView = ({
                         step={0.01}
                         precision={2}
                         placeholder="0.00"
-                        value={item.costoUnitarioPactado}
-                        onChange={val => actualizarInsumo(item.key, 'costoUnitarioPactado', val)}
+                        key={`costo-${item.key}-${item.costoUnitarioPactado}`}
+                        defaultValue={item.costoUnitarioPactado}
+                        onBlur={(e) => {
+                          const val = parseFloat(e.target.value);
+                          if (!isNaN(val) && val !== item.costoUnitarioPactado) {
+                            actualizarInsumo(item.key, 'costoUnitarioPactado', val);
+                          }
+                        }}
+                        onPressEnter={(e) => {
+                          e.target.blur();
+                        }}
                       />
                     </div>
                   </Col>
@@ -361,6 +343,85 @@ const OrdenCompraModalView = ({
             </Card>
           </Space>
         )}
+
+        <div style={{ fontSize: 16, fontWeight: 600, marginTop: 24, marginBottom: 16 }}>
+          Información de Pago
+        </div>
+        <Row gutter={16}>
+          <Col xs={24} sm={24} md={12}>
+            <Form.Item name="metodoPago" label="Método de Pago">
+              <Select 
+                placeholder="Selecciona método" 
+                options={metodoPagoOptions}
+                onChange={(value) => setMetodoPagoSeleccionado(value)}
+              />
+            </Form.Item>
+          </Col>
+          {metodoPagoSeleccionado === 'credito' && (
+            <Col xs={24} sm={24} md={12}>
+              <Form.Item 
+                name="montoInicialCentimos" 
+                label="Monto Inicial (S/)"
+                rules={[{ required: true, message: 'Ingresa el monto inicial' }]}
+              >
+                <InputNumber
+                  style={{ width: '100%' }}
+                  min={0}
+                  step={0.01}
+                  precision={2}
+                  placeholder="0.00"
+                  onPressEnter={(e) => {
+                    e.target.blur();
+                  }}
+                />
+              </Form.Item>
+            </Col>
+          )}
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={24}>
+            <Form.Item 
+              name="urlFotoComprobante" 
+              label="Comprobante de Pago"
+              valuePropName="fileList"
+              getValueFromEvent={(e) => {
+                if (Array.isArray(e)) {
+                  return e;
+                }
+                return e?.fileList;
+              }}
+            >
+              <Upload
+                listType="picture-card"
+                maxCount={1}
+                accept="image/*"
+                beforeUpload={(file) => {
+                  const isImage = file.type.startsWith('image/');
+                  if (!isImage) {
+                    message.error('Solo puedes subir archivos de imagen');
+                    return Upload.LIST_IGNORE;
+                  }
+                  const isLt5M = file.size / 1024 / 1024 < 5;
+                  if (!isLt5M) {
+                    message.error('La imagen debe ser menor a 5MB');
+                    return Upload.LIST_IGNORE;
+                  }
+                  return false; // Prevent auto upload - procesamos manualmente
+                }}
+              >
+                <div>
+                  <UploadOutlined />
+                  <div style={{ marginTop: 8 }}>Subir</div>
+                </div>
+              </Upload>
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Form.Item name="observaciones" label="Observaciones">
+          <TextArea rows={2} placeholder="Notas adicionales sobre la orden" />
+        </Form.Item>
       </Form>
     </Modal>
   );

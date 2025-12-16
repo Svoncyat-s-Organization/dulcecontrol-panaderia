@@ -5,9 +5,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum MetodoPago {
     EFECTIVO("efectivo"),
-    TRANSFERENCIA("transferencia"),
-    CREDITO("credito"),
-    TARJETA("tarjeta");
+    CREDITO("credito");
 
     private final String valor;
 
