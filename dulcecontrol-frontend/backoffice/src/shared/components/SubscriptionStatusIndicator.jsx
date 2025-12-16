@@ -92,17 +92,30 @@ const SubscriptionStatusIndicator = () => {
   }
 
   return (
-    <Space direction="vertical" size={0} style={{ minWidth: 220 }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+        minWidth: 220,
+        lineHeight: 1.2,
+      }}
+    >
       <Space size={6} align="center">
-        <Typography.Text strong>{planLabel}</Typography.Text>
-        <Tag color={tagColor}>{statusLabel}</Tag>
+        <Typography.Text strong style={{ margin: 0 }}>
+          {planLabel}
+        </Typography.Text>
+        <Tag color={tagColor} style={{ marginInlineStart: 0 }}>
+          {statusLabel}
+        </Tag>
       </Space>
       {secondaryText && (
-        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+        <Typography.Text type="secondary" style={{ fontSize: 12, margin: 0 }}>
           {secondaryText}
         </Typography.Text>
       )}
-    </Space>
+    </div>
   );
 };
 

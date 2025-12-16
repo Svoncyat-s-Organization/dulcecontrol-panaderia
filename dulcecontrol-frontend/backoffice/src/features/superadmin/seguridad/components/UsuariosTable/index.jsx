@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Modal, message } from 'antd';
+import { App, message } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import UsuariosTableView from './UsuariosTableView.jsx';
 import UsuarioForm from '../UsuarioForm/index.jsx';
@@ -15,6 +15,8 @@ const UsuariosTable = () => {
   const [searchText, setSearchText] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUsuario, setSelectedUsuario] = useState(null);
+
+  const { modal } = App.useApp();
 
   const usuariosQuery = useQuery({
     queryKey: SUPERADMIN_SEGURIDAD_KEYS.usuarios(),
@@ -63,7 +65,7 @@ const UsuariosTable = () => {
   };
 
   const handleDelete = (usuario) => {
-    Modal.confirm({
+    modal.confirm({
       title: '¿Eliminar superadmin?',
       content: `Se eliminará el acceso de "${usuario.nombres}" al panel corporativo.`,
       okText: 'Eliminar',

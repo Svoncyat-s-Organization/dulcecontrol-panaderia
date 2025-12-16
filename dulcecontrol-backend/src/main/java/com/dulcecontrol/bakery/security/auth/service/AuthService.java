@@ -21,6 +21,7 @@ import com.dulcecontrol.bakery.shared.exception.AuthenticationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -61,6 +62,7 @@ public class AuthService {
         return buildResponse(token, TipoUsuario.SUPERADMIN, null, usuario.getId(), null);
     }
 
+    @Transactional
     public AuthTokenResponse loginAdmin(AdminLoginRequest request) {
         String email = normalizarCorreo(request.getEmail());
         UsuarioTienda usuario = usuarioTiendaRepository.findByCorreo(email)
@@ -137,8 +139,8 @@ public class AuthService {
     private SubscriptionStatusPayload obtenerSuscripcionActiva(Long tiendaId) {
         List<Suscripcion> suscripciones = suscripcionRepository.findByTiendaId(tiendaId);
         if (suscripciones.isEmpty()) {
-            throw new AuthenticationException(
-                    "Tu tienda no cuenta con una suscripción activa. Contacta a soporte.");
+                throw new AuthenticationException(
+                    "No pudimos validar una suscripcion activa para tu tienda. Actualiza tu plan para continuar.");
         }
 
         suscripciones.sort(Comparator.comparing(Suscripcion::getFechaFin, Comparator.nullsLast(Comparator.naturalOrder())).reversed());
@@ -159,22 +161,22 @@ public class AuthService {
         LocalDateTime fechaFin = masReciente.getFechaFin();
 
         if (fechaFin != null && fechaFin.isBefore(ahora)) {
-            throw new AuthenticationException(
-                    "La suscripción de tu tienda ha vencido. Renueva tu plan para continuar.");
+                throw new AuthenticationException(
+                    "No pudimos iniciar sesion porque la suscripcion de tu tienda esta vencida. Actualiza tu plan para continuar.");
         }
 
         EstadoSuscripcion estado = masReciente.getEstado();
         if (estado == EstadoSuscripcion.CANCELADA) {
-            throw new AuthenticationException(
-                    "La suscripción de tu tienda fue cancelada. Contacta a soporte para reactivarla.");
+                throw new AuthenticationException(
+                    "No pudimos iniciar sesion porque la suscripcion de tu tienda fue cancelada. Actualiza tu plan o contacta a soporte.");
         }
         if (estado == EstadoSuscripcion.VENCIDA) {
-            throw new AuthenticationException(
-                    "La suscripción de tu tienda ha vencido. Renueva tu plan para continuar.");
+                throw new AuthenticationException(
+                    "No pudimos iniciar sesion porque la suscripcion de tu tienda esta vencida. Actualiza tu plan para continuar.");
         }
 
         throw new AuthenticationException(
-                "No encontramos una suscripción activa para tu tienda. Contacta a soporte.");
+                "No encontramos una suscripcion activa para tu tienda. Actualiza tu plan para continuar.");
     }
 
     private SubscriptionStatusPayload buildSubscriptionStatusPayload(Suscripcion suscripcion, LocalDateTime referencia) {

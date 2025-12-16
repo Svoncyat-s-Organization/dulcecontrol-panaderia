@@ -4,7 +4,7 @@ const { Text } = Typography;
 
 const UsuarioFormView = ({
   open,
-  onClose,
+  onCancel,
   form,
   onSubmit,
   loading,
@@ -17,21 +17,11 @@ const UsuarioFormView = ({
     onSubmit(values);
   };
 
-  const handleCancel = () => {
-    Modal.confirm({
-      title: '¿Cancelar cambios?',
-      content: 'Los cambios no guardados se perderán.',
-      okText: 'Sí, cancelar',
-      cancelText: 'Seguir editando',
-      onOk: onClose,
-    });
-  };
-
   return (
     <Modal
       title={isEditing ? 'Editar superadmin' : 'Nuevo superadmin'}
       open={open}
-      onCancel={handleCancel}
+      onCancel={onCancel}
       footer={null}
       width={640}
       destroyOnClose
@@ -128,7 +118,7 @@ const UsuarioFormView = ({
 
         <Form.Item style={{ textAlign: 'right', marginBottom: 0 }}>
           <Space>
-            <Button onClick={handleCancel} disabled={loading}>
+            <Button onClick={onCancel} disabled={loading}>
               Cancelar
             </Button>
             <Button type="primary" htmlType="submit" loading={loading}>

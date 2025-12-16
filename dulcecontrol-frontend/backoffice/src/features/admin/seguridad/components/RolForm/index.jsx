@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Form, Modal, message } from 'antd';
+import { App, Form, message } from 'antd';
 import { useMutation } from '@tanstack/react-query';
 import RolFormView from './RolFormView.jsx';
 import { createRol, updateRol } from '../../api/seguridad.api.js';
@@ -9,6 +9,7 @@ const RolForm = ({ open, onClose, onSuccess, tiendaId, rol, permisos }) => {
   const [form] = Form.useForm();
   const isEditing = Boolean(rol?.id);
   const selectedPermisos = Form.useWatch('permisos', form) ?? [];
+  const { modal } = App.useApp();
 
   useEffect(() => {
     if (!open) {
@@ -67,7 +68,7 @@ const RolForm = ({ open, onClose, onSuccess, tiendaId, rol, permisos }) => {
   });
 
   const handleSubmit = (values) => {
-    Modal.confirm({
+    modal.confirm({
       title: isEditing ? 'Actualizar rol' : 'Crear rol',
       content: isEditing
         ? 'Se actualizarán los permisos del rol seleccionado.'

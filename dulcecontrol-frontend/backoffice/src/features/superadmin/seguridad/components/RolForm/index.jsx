@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Form, Modal, message } from 'antd';
+import { App, Form, message } from 'antd';
 import { useMutation } from '@tanstack/react-query';
 import RolFormView from './RolFormView.jsx';
 import { createSuperadminRol, updateSuperadminRol } from '../../api/seguridad.api.js';
@@ -49,6 +49,7 @@ const RolForm = ({ open, onClose, onSuccess, rol, permisos, loadingPermisos }) =
   const [form] = Form.useForm();
   const isEditing = Boolean(rol?.id);
   const selectedPermisos = Form.useWatch('permisos', form) ?? [];
+  const { modal } = App.useApp();
 
   const permisosPorModulo = useMemo(() => {
     if (!Array.isArray(permisos)) {
@@ -153,7 +154,7 @@ const RolForm = ({ open, onClose, onSuccess, rol, permisos, loadingPermisos }) =
   });
 
   const handleSubmit = (values) => {
-    Modal.confirm({
+    modal.confirm({
       title: isEditing ? 'Actualizar rol' : 'Crear rol',
       content: isEditing
         ? 'Se actualizará la configuración del rol seleccionado.'

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Modal, message } from 'antd';
+import { App, message } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import UsuariosTableView from './UsuariosTableView.jsx';
 import UsuarioForm from '../UsuarioForm/index.jsx';
@@ -14,6 +14,8 @@ const UsuariosTable = () => {
   const [searchText, setSearchText] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUsuario, setSelectedUsuario] = useState(null);
+
+  const { modal } = App.useApp();
 
   const usuariosQuery = useQuery({
     queryKey: SEGURIDAD_KEYS.usuarios(tiendaId),
@@ -80,7 +82,7 @@ const UsuariosTable = () => {
   };
 
   const handleDelete = (usuario) => {
-    Modal.confirm({
+    modal.confirm({
       title: '¿Eliminar usuario?',
       content: `Se eliminará al usuario "${usuario.nombres}" y perderá acceso al sistema.`,
       okText: 'Eliminar',

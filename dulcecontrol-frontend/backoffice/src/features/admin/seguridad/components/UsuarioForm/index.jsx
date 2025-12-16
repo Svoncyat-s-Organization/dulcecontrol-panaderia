@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Form, Modal, message } from 'antd';
+import { App, Form, message } from 'antd';
 import { useMutation } from '@tanstack/react-query';
 import UsuarioFormView from './UsuarioFormView.jsx';
 import { createUsuario, updateUsuario } from '../../api/seguridad.api.js';
@@ -17,6 +17,7 @@ const UsuarioForm = ({
 }) => {
   const [form] = Form.useForm();
   const isEditing = Boolean(usuario?.id);
+  const { modal } = App.useApp();
 
   useEffect(() => {
     if (!open) {
@@ -112,12 +113,12 @@ const UsuarioForm = ({
       onClose?.();
     };
 
-    if (!form.isFieldsTouched()) {
+    if (!form.isFieldsTouched(true)) {
       closeModal();
       return;
     }
 
-    Modal.confirm({
+    modal.confirm({
       title: '¿Cancelar cambios?',
       content: 'Los cambios no guardados se perderán.',
       okText: 'Sí, cancelar',
@@ -129,7 +130,7 @@ const UsuarioForm = ({
   };
 
   const handleSubmit = (values) => {
-    Modal.confirm({
+    modal.confirm({
       title: isEditing ? 'Actualizar usuario' : 'Crear usuario',
       content: isEditing
         ? 'Se actualizarán los datos del usuario seleccionado.'
