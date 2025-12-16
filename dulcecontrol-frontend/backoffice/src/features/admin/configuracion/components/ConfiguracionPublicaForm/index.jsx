@@ -41,12 +41,12 @@ const ConfiguracionPublicaForm = () => {
   React.useEffect(() => {
     if (config) {
       form.setFieldsValue({
+        sloganParte1: config.sloganParte1,
+        sloganParte2: config.sloganParte2,
         bannerPrincipalUrl: config.bannerPrincipalUrl,
         mensajeBienvenida: config.mensajeBienvenida,
         horarioAtencion: config.horarioAtencion,
         redesSociales: config.redesSociales,
-        politicasEnvio: config.politicasEnvio,
-        politicasDevolucion: config.politicasDevolucion,
       });
     }
   }, [config, form]);
@@ -72,6 +72,40 @@ const ConfiguracionPublicaForm = () => {
         autoComplete="off"
       >
         <Row gutter={24}>
+          <Col span={12}>
+            <Form.Item
+              label="Slogan - Parte 1 (Estilo Normal)"
+              name="sloganParte1"
+              rules={[
+                { max: 50, message: 'Máximo 50 caracteres' },
+              ]}
+              tooltip="Primera parte del slogan que aparece con estilo normal (ej: 'Dulces')"
+            >
+              <Input 
+                placeholder="Ej: Dulces" 
+                maxLength={50}
+                showCount
+              />
+            </Form.Item>
+          </Col>
+
+          <Col span={12}>
+            <Form.Item
+              label="Slogan - Parte 2 (Estilo Itálica/Color)"
+              name="sloganParte2"
+              rules={[
+                { max: 50, message: 'Máximo 50 caracteres' },
+              ]}
+              tooltip="Segunda parte del slogan que aparece con estilo itálica y color primario (ej: 'Momentos')"
+            >
+              <Input 
+                placeholder="Ej: Momentos" 
+                maxLength={50}
+                showCount
+              />
+            </Form.Item>
+          </Col>
+
           <Col span={24}>
             <Form.Item
               label="URL del Banner Principal"
@@ -143,27 +177,6 @@ const ConfiguracionPublicaForm = () => {
                 rows={6}
                 placeholder='{"facebook": "https://facebook.com/...", "instagram": "https://instagram.com/..."}}'
               />
-            </Form.Item>
-          </Col>
-
-          <Col span={24}>
-            <Form.Item
-              label="Políticas de Envío"
-              name="politicasEnvio"
-              rules={[{ required: true, message: 'Las políticas de envío son obligatorias' }]}
-              tooltip="Información sobre tiempos y costos de envío"
-            >
-              <TextArea rows={4} placeholder="Entregas en 24-48 horas. Costo de envío: S/ 10.00..." />
-            </Form.Item>
-          </Col>
-
-          <Col span={24}>
-            <Form.Item
-              label="Políticas de Devolución"
-              name="politicasDevolucion"
-              tooltip="Condiciones para devoluciones y cambios"
-            >
-              <TextArea rows={4} placeholder="Aceptamos devoluciones dentro de las primeras 2 horas..." />
             </Form.Item>
           </Col>
         </Row>

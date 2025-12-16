@@ -118,8 +118,8 @@ VALUES
     (SELECT id FROM tiendas WHERE numero_doc = '20601234567'),
     'administrativo',
     'admin.dulcemanjar.pe',
-    'https://cdn.dulcemanjar.pe/logo-admin.png',
-    'https://cdn.dulcemanjar.pe/favicon-admin.ico',
+    'https://i.postimg.cc/7LqcWhzv/dulcemanjar.png',
+    'https://i.postimg.cc/L50YrJ5x/dulcemanjar-favicon.png',
     '#8B4513',
     '#FFE4B5'
   ),
@@ -127,8 +127,8 @@ VALUES
     (SELECT id FROM tiendas WHERE numero_doc = '20601234567'),
     'tienda_virtual',
     'tienda.dulcemanjar.pe',
-    'https://cdn.dulcemanjar.pe/logo-tienda.png',
-    'https://cdn.dulcemanjar.pe/favicon-tienda.ico',
+    'https://i.postimg.cc/7LqcWhzv/dulcemanjar.png',
+    'https://i.postimg.cc/L50YrJ5x/dulcemanjar-favicon.png',
     '#D2691E',
     '#FFF8DC'
   ),
@@ -137,8 +137,8 @@ VALUES
     (SELECT id FROM tiendas WHERE numero_doc = '20601234568'),
     'administrativo',
     'admin.panaderiasol.pe',
-    'https://cdn.panaderiasol.pe/logo-admin.png',
-    'https://cdn.panaderiasol.pe/favicon-admin.ico',
+    'https://i.postimg.cc/bvqMBrnc/panaderiaelsol.png',
+    'https://i.postimg.cc/Rhb6jWhX/panaderiaelsol-favicon.png',
     '#FF8C00',
     '#FFFACD'
   ),
@@ -146,8 +146,8 @@ VALUES
     (SELECT id FROM tiendas WHERE numero_doc = '20601234568'),
     'tienda_virtual',
     'tienda.panaderiasol.pe',
-    'https://cdn.panaderiasol.pe/logo-tienda.png',
-    'https://cdn.panaderiasol.pe/favicon-tienda.ico',
+    'https://i.postimg.cc/bvqMBrnc/panaderiaelsol.png',
+    'https://i.postimg.cc/Rhb6jWhX/panaderiaelsol-favicon.png',
     '#FFA500',
     '#FFFFE0'
   ),
@@ -156,8 +156,8 @@ VALUES
     (SELECT id FROM tiendas WHERE numero_doc = '20601234569'),
     'administrativo',
     'admin.tortasdelicias.pe',
-    'https://cdn.tortasdelicias.pe/logo-admin.png',
-    'https://cdn.tortasdelicias.pe/favicon-admin.ico',
+    'https://i.postimg.cc/GmFVKGH7/postresydelicias.png',
+    'https://i.postimg.cc/7hLJs3Hd/postresydelicias-favicon.png',
     '#FF1493',
     '#FFF0F5'
   ),
@@ -165,8 +165,8 @@ VALUES
     (SELECT id FROM tiendas WHERE numero_doc = '20601234569'),
     'tienda_virtual',
     'tienda.tortasdelicias.pe',
-    'https://cdn.tortasdelicias.pe/logo-tienda.png',
-    'https://cdn.tortasdelicias.pe/favicon-tienda.ico',
+    'https://i.postimg.cc/GmFVKGH7/postresydelicias.png',
+    'https://i.postimg.cc/7hLJs3Hd/postresydelicias-favicon.png',
     '#FF69B4',
     '#FFF5EE'
   )

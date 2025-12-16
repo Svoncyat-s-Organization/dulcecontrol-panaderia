@@ -35,7 +35,7 @@ const CartSheet = () => {
             <ScrollArea className="flex-1 -mx-6 px-6 my-4">
               <div className="space-y-4">
                 {items.map((item) => (
-                  <div key={item.id} className="flex gap-4">
+                  <div key={item.cartId} className="flex gap-4">
                     <div className="h-20 w-20 rounded-md border overflow-hidden flex-shrink-0">
                       <img 
                         src={item.image} 
@@ -46,13 +46,16 @@ const CartSheet = () => {
                     <div className="flex flex-col flex-1 gap-1">
                       <span className="font-medium line-clamp-1">{item.name}</span>
                       <span className="text-sm text-muted-foreground">S/ {item.price.toFixed(2)}</span>
+                      {item.personalizacion && (
+                        <span className="text-xs text-primary font-medium">✨ Personalizado</span>
+                      )}
                       <div className="flex items-center gap-2 mt-auto">
                         <div className="flex items-center border rounded-md h-8">
                           <Button 
                             variant="ghost" 
                             size="icon" 
                             className="h-8 w-8" 
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            onClick={() => updateQuantity(item.cartId, item.quantity - 1)}
                           >
                             <IconMinus className="h-3 w-3" />
                           </Button>
@@ -61,7 +64,7 @@ const CartSheet = () => {
                             variant="ghost" 
                             size="icon" 
                             className="h-8 w-8"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            onClick={() => updateQuantity(item.cartId, item.quantity + 1)}
                           >
                             <IconPlus className="h-3 w-3" />
                           </Button>
@@ -70,7 +73,7 @@ const CartSheet = () => {
                           variant="ghost" 
                           size="icon" 
                           className="h-8 w-8 text-muted-foreground hover:text-destructive ml-auto"
-                          onClick={() => removeItem(item.id)}
+                          onClick={() => removeItem(item.cartId)}
                         >
                           <IconTrash className="h-4 w-4" />
                         </Button>

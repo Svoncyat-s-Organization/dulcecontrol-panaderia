@@ -27,8 +27,6 @@ public class ConfiguracionTiendaResponse {
     private final String mensajeBienvenida;
     private final String horarioAtencion;
     private final String redesSociales;
-    private final String politicasEnvio;
-    private final String politicasDevolucion;
     private final String emailNotificaciones;
     private final String telegramBotToken;
     private final String telegramChatId;

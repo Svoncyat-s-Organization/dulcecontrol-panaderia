@@ -46,8 +46,6 @@ public class ConfiguracionTiendaService implements IConfiguracionTiendaService {
         configuracion.setMensajeBienvenida(request.getMensajeBienvenida());
         configuracion.setHorarioAtencion(request.getHorarioAtencion());
         configuracion.setRedesSociales(request.getRedesSociales());
-        configuracion.setPoliticasEnvio(request.getPoliticasEnvio());
-        configuracion.setPoliticasDevolucion(request.getPoliticasDevolucion());
         configuracion.setEmailNotificaciones(request.getEmailNotificaciones());
         configuracion.setTelegramBotToken(request.getTelegramBotToken());
         configuracion.setTelegramChatId(request.getTelegramChatId());
@@ -75,8 +73,6 @@ public class ConfiguracionTiendaService implements IConfiguracionTiendaService {
                 .mensajeBienvenida(configuracion.getMensajeBienvenida())
                 .horarioAtencion(configuracion.getHorarioAtencion())
                 .redesSociales(configuracion.getRedesSociales())
-                .politicasEnvio(configuracion.getPoliticasEnvio())
-                .politicasDevolucion(configuracion.getPoliticasDevolucion())
                 .emailNotificaciones(configuracion.getEmailNotificaciones())
                 .telegramBotToken(configuracion.getTelegramBotToken())
                 .telegramChatId(configuracion.getTelegramChatId())

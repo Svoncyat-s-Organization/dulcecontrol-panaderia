@@ -24,6 +24,8 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     List<Pedido> findByTiendaIdOrderByCreadoEnDesc(Long tiendaId);
 
+    List<Pedido> findByClienteIdOrderByCreadoEnDesc(Long clienteId);
+
     @Query("SELECT p FROM Pedido p WHERE p.tiendaId = :tiendaId AND (:sedeId IS NULL OR p.sedeOrigenId = :sedeId) " +
             "AND (:estadoPedido IS NULL OR p.estadoPedido = :estadoPedido) " +
             "AND (:estadoPago IS NULL OR p.estadoPago = :estadoPago) " +

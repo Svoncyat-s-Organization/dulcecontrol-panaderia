@@ -11,6 +11,7 @@ import { getProductoBySlug, formatPrecio } from '@/api/catalogo.api';
 const ProductDetailPage = () => {
   const { id: slugParam } = useParams(); // El router usa :id pero en realidad es el slug
   const [quantity, setQuantity] = React.useState(1);
+  const [selectedImage, setSelectedImage] = React.useState(0);
   const [showPersonalizacion, setShowPersonalizacion] = React.useState(false);
   const [personalizacion, setPersonalizacion] = React.useState({
     dedicatoria: '',
@@ -38,6 +39,7 @@ const ProductDetailPage = () => {
     priceOriginal: productoData.precioOfertaCentimos ? parseFloat(formatPrecio(productoData.precioBaseCentimos)) : null,
     description: productoData.descripcion || 'Sin descripción',
     category: productoData.categoria?.nombre || 'General',
+    categorySlug: productoData.categoria?.slug,
     image: productoData.urlImagenPrincipal || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=1000',
     imagenesGaleria: productoData.imagenesGaleria || [],
     esPersonalizable: productoData.esPersonalizable,
@@ -106,18 +108,63 @@ const ProductDetailPage = () => {
 
   return (
     <div className="container py-10 min-h-screen">
-      <Link to="/colecciones" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-8 transition-colors">
-        <IconArrowLeft className="mr-2 h-4 w-4" /> Volver al Catálogo
-      </Link>
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
+        <Link to="/colecciones" className="hover:text-primary transition-colors">
+          Catálogo
+        </Link>
+        <span>/</span>
+        {product.categorySlug && (
+          <>
+            <Link to={`/colecciones/${product.categorySlug}`} className="hover:text-primary transition-colors">
+              {product.category}
+            </Link>
+            <span>/</span>
+          </>
+        )}
+        <span className="text-foreground font-medium">{product.name}</span>
+      </nav>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16">
-        {/* Product Image */}
-        <div className="rounded-2xl overflow-hidden bg-muted aspect-square relative group">
-          <img 
-            src={product.image} 
-            alt={product.name} 
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
+        {/* Product Image Gallery */}
+        <div className="space-y-4">
+          {/* Main Image */}
+          <div className="rounded-2xl overflow-hidden bg-muted aspect-square relative group">
+            <img 
+              src={selectedImage === -1 || product.imagenesGaleria.length === 0 ? product.image : product.imagenesGaleria[selectedImage]} 
+              alt={product.name} 
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          </div>
+          
+          {/* Thumbnail Gallery */}
+          {product.imagenesGaleria.length > 0 && (
+            <div className="grid grid-cols-4 gap-2">
+              <button 
+                onClick={() => setSelectedImage(-1)}
+                className={`rounded-lg overflow-hidden aspect-square border-2 transition-all ${selectedImage === -1 ? 'border-primary shadow-md' : 'border-transparent hover:border-primary/50'}`}
+              >
+                <img 
+                  src={product.image} 
+                  alt="Principal" 
+                  className="w-full h-full object-cover"
+                />
+              </button>
+              {product.imagenesGaleria.map((img, idx) => (
+                <button 
+                  key={idx}
+                  onClick={() => setSelectedImage(idx)}
+                  className={`rounded-lg overflow-hidden aspect-square border-2 transition-all ${selectedImage === idx ? 'border-primary shadow-md' : 'border-transparent hover:border-primary/50'}`}
+                >
+                  <img 
+                    src={img} 
+                    alt={`Imagen ${idx + 1}`} 
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Product Info */}
@@ -138,6 +185,47 @@ const ProductDetailPage = () => {
           <p className="text-muted-foreground text-base sm:text-lg leading-relaxed">
             {product.description}
           </p>
+
+          {/* Atributos del producto */}
+          {product.atributos && Object.keys(product.atributos).length > 0 && (
+            <div className="bg-muted/30 rounded-lg p-4 space-y-2">
+              <h3 className="font-bold text-sm uppercase tracking-wider text-foreground/70 mb-3">Información del Producto</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {product.atributos.porciones && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Porciones:</span>
+                    <span className="text-sm text-muted-foreground">{product.atributos.porciones}</span>
+                  </div>
+                )}
+                {product.atributos.peso_kg && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Peso:</span>
+                    <span className="text-sm text-muted-foreground">{product.atributos.peso_kg} kg</span>
+                  </div>
+                )}
+                {product.atributos.tiempo_anticipacion && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Anticipación:</span>
+                    <span className="text-sm text-muted-foreground">{product.atributos.tiempo_anticipacion}</span>
+                  </div>
+                )}
+                {product.atributos.tamaño_ml && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Tamaño:</span>
+                    <span className="text-sm text-muted-foreground">{product.atributos.tamaño_ml} ml</span>
+                  </div>
+                )}
+              </div>
+              {product.atributos.alérgenos && product.atributos.alérgenos.length > 0 && (
+                <div className="pt-2 border-t border-border/50 mt-3">
+                  <span className="text-sm font-medium">Contiene: </span>
+                  <span className="text-sm text-muted-foreground">
+                    {product.atributos.alérgenos.join(', ')}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 🎨 SPIDERMAN LOGIC: Form de Personalización */}
           {product.esPersonalizable && (

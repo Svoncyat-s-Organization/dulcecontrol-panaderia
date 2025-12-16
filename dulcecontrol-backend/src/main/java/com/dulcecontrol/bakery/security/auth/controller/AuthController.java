@@ -3,10 +3,12 @@ package com.dulcecontrol.bakery.security.auth.controller;
 import com.dulcecontrol.bakery.security.auth.dto.AdminLoginRequest;
 import com.dulcecontrol.bakery.security.auth.dto.AuthTokenResponse;
 import com.dulcecontrol.bakery.security.auth.dto.StorefrontLoginRequest;
+import com.dulcecontrol.bakery.security.auth.dto.StorefrontRegisterRequest;
 import com.dulcecontrol.bakery.security.auth.dto.SuperadminLoginRequest;
 import com.dulcecontrol.bakery.security.auth.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -33,5 +35,10 @@ public class AuthController {
     @PostMapping("/storefront/login")
     public ResponseEntity<AuthTokenResponse> loginStorefront(@Valid @RequestBody StorefrontLoginRequest request) {
         return ResponseEntity.ok(authService.loginStorefront(request));
+    }
+
+    @PostMapping("/storefront/register")
+    public ResponseEntity<AuthTokenResponse> registerStorefront(@Valid @RequestBody StorefrontRegisterRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerStorefront(request));
     }
 }

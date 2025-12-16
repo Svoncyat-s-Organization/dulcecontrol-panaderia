@@ -66,6 +66,7 @@ public class PaginaStorefrontService implements IPaginaStorefrontService {
         pagina.setTitulo(request.getTitulo());
         pagina.setContenido(request.getContenido());
         pagina.setMetaDescripcion(request.getMetaDescripcion());
+        pagina.setTipoContenido(request.getTipoContenido());
         pagina.setOrdenMenu(request.getOrdenMenu());
         pagina.setVisibleEnMenu(request.getVisibleEnMenu());
         pagina.setActiva(request.getActiva());
@@ -89,6 +90,7 @@ public class PaginaStorefrontService implements IPaginaStorefrontService {
         pagina.setTitulo(request.getTitulo());
         pagina.setContenido(request.getContenido());
         pagina.setMetaDescripcion(request.getMetaDescripcion());
+        pagina.setTipoContenido(request.getTipoContenido());
         pagina.setOrdenMenu(request.getOrdenMenu());
         pagina.setVisibleEnMenu(request.getVisibleEnMenu());
         pagina.setActiva(request.getActiva());
@@ -121,6 +123,7 @@ public class PaginaStorefrontService implements IPaginaStorefrontService {
                 .titulo(pagina.getTitulo())
                 .contenido(pagina.getContenido())
                 .metaDescripcion(pagina.getMetaDescripcion())
+                .tipoContenido(pagina.getTipoContenido())
                 .ordenMenu(pagina.getOrdenMenu())
                 .visibleEnMenu(pagina.getVisibleEnMenu())
                 .activa(pagina.getActiva())
