@@ -14,7 +14,7 @@ import { prepareRecetaPayload } from '../../utils/recetasMappers.js';
 const RecetaForm = ({ open, onClose, receta }) => {
   const tiendaId = useTokenStore((state) => state.tiendaId);
   const queryClient = useQueryClient();
-  const isEditing = Boolean(receta);
+  const isEditing = Boolean(receta?.id);
 
   // Query para productos activos
   const { data: productos = [], isLoading: loadingProductos } = useQuery({

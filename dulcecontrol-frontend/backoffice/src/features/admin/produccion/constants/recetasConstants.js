@@ -1,13 +1,13 @@
-// Unidades de medida disponibles para recetas
+// Unidades de medida disponibles para recetas (en minúsculas para coincidir con backend)
 export const UNIDADES_MEDIDA = {
-  UNIDAD: 'UNIDAD',
-  KG: 'KG',
-  G: 'G',
-  L: 'L',
-  ML: 'ML',
-  PAQUETE: 'PAQUETE',
-  SACO: 'SACO',
-  LATA: 'LATA',
+  UNIDAD: 'unidad',
+  KG: 'kg',
+  G: 'g',
+  L: 'l',
+  ML: 'ml',
+  PAQUETE: 'paquete',
+  SACO: 'saco',
+  LATA: 'lata',
 };
 
 export const UNIDADES_MEDIDA_CONFIG = {

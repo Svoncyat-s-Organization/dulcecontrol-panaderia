@@ -69,6 +69,10 @@ const StockIdealForm = ({ open, onClose, tiendaId, sedeId, rowData }) => {
         sedeId
       );
 
+      console.log('Stock Ideal - Modo:', isEditing ? 'Edición' : 'Creación');
+      console.log('Stock Ideal - Payload:', payload);
+      console.log('Stock Ideal - StockId:', rowData.stockId);
+
       if (isEditing) {
         updateMutation.mutate({ stockId: rowData.stockId, payload });
       } else {

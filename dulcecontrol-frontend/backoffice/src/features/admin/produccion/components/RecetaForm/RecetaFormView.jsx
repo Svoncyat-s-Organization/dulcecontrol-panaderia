@@ -17,6 +17,9 @@ const RecetaFormView = ({
   loadingInsumos,
 }) => {
   const [form] = Form.useForm();
+  
+  // Detectar si es agregar insumo (tiene productoId pero no id)
+  const isAddingInsumo = initialValues && initialValues.productoId && !initialValues.id;
 
   const handleOk = () => {
     form.validateFields()
@@ -44,9 +47,23 @@ const RecetaFormView = ({
           unidadMedida: initialValues.unidadMedida,
           notasPreparacion: initialValues.notasPreparacion,
         });
+      } else if (isAddingInsumo) {
+        // Preseleccionar producto al agregar insumo
+        form.setFieldsValue({
+          productoId: initialValues.productoId,
+        });
       } else {
         form.resetFields();
       }
+    }
+  };
+
+  // Auto-cargar unidad de medida del insumo seleccionado
+  const handleInsumoChange = (insumoId) => {
+    const insumo = insumos.find(i => i.id === insumoId);
+    if (insumo && insumo.unidadBase) {
+      // El backend ahora devuelve unidades en minúsculas, usarlas directamente
+      form.setFieldValue('unidadMedida', insumo.unidadBase);
     }
   };
 
@@ -54,18 +71,24 @@ const RecetaFormView = ({
   const productoSeleccionadoId = Form.useWatch('productoId', form);
   const insumosFiltrados = insumos; // Productos e insumos son catálogos diferentes
 
+  // Determinar texto del botón
+  const getOkText = () => {
+    if (isEditing) return 'Actualizar';
+    if (isAddingInsumo) return 'Agregar Insumo';
+    return 'Crear Receta';
+  };
+
   return (
     <Modal
-      title={isEditing ? 'Editar Receta' : 'Nueva Receta'}
+      title={isEditing ? 'Editar Receta' : isAddingInsumo ? 'Agregar Insumo a Receta' : 'Nueva Receta'}
       open={open}
       onOk={handleOk}
       onCancel={handleCancel}
       confirmLoading={saving}
       width={600}
-      okText={isEditing ? 'Actualizar' : 'Crear'}
+      okText={getOkText()}
       cancelText="Cancelar"
       afterOpenChange={handleAfterOpenChange}
-      destroyOnClose
     >
       <Alert
         message="Define los insumos y cantidades requeridas para elaborar cada producto"
@@ -81,7 +104,7 @@ const RecetaFormView = ({
         requiredMark="optional"
         initialValues={{
           cantidadRequerida: 1,
-          unidadMedida: 'UNIDAD',
+          unidadMedida: 'unidad',
         }}
       >
         <Form.Item
@@ -93,7 +116,7 @@ const RecetaFormView = ({
             placeholder="Selecciona el producto a elaborar"
             showSearch
             loading={loadingProductos}
-            disabled={isEditing} // No permitir cambiar producto en edición
+            disabled={isEditing || isAddingInsumo}
             optionFilterProp="children"
             filterOption={(input, option) =>
               (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
@@ -114,7 +137,8 @@ const RecetaFormView = ({
             placeholder="Selecciona el insumo requerido"
             showSearch
             loading={loadingInsumos}
-            disabled={isEditing} // No permitir cambiar insumo en edición
+            disabled={isEditing}
+            onChange={handleInsumoChange}
             optionFilterProp="children"
             filterOption={(input, option) =>
               (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
