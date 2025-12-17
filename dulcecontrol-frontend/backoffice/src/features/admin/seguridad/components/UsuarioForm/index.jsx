@@ -28,7 +28,9 @@ const UsuarioForm = ({
     if (isEditing && usuario) {
       form.setFieldsValue({
         rolId: usuario.rolId,
-        sedeId: usuario.sedeId ?? null,
+        sedeIds: Array.isArray(usuario.sedeIds) && usuario.sedeIds.length > 0
+          ? usuario.sedeIds
+          : (usuario.sedeId ? [usuario.sedeId] : []),
         nombres: usuario.nombres,
         correo: usuario.correo,
         tipoDoc: usuario.tipoDoc,
@@ -40,7 +42,7 @@ const UsuarioForm = ({
     } else {
       form.setFieldsValue({
         rolId: roles?.[0]?.id,
-        sedeId: sedes?.[0]?.id ?? null,
+        sedeIds: sedes?.[0]?.id ? [sedes[0].id] : [],
         nombres: '',
         correo: '',
         tipoDoc: tipoDocumentoOptions?.[0]?.value ?? 'DNI',
@@ -61,7 +63,7 @@ const UsuarioForm = ({
       if (isEditing) {
         const payload = {
           rolId: values.rolId,
-          sedeId: values.sedeId,
+          sedeIds: values.sedeIds,
           correo: values.correo,
           tipoDoc: values.tipoDoc,
           numeroDoc: values.numeroDoc,
@@ -79,7 +81,7 @@ const UsuarioForm = ({
 
       const payload = {
         rolId: values.rolId,
-        sedeId: values.sedeId,
+        sedeIds: values.sedeIds,
         correo: values.correo,
         contrasena: values.contrasena,
         tipoDoc: values.tipoDoc,

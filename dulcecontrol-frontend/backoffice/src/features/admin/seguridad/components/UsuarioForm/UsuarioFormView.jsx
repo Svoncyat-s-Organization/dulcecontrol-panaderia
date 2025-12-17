@@ -1,4 +1,5 @@
 import { Button, Form, Input, Modal, Select, Space, Switch, Typography } from 'antd';
+import SedeCardSelector from './SedeCardSelector.jsx';
 
 const { Text } = Typography;
 
@@ -48,24 +49,21 @@ const UsuarioFormView = ({
             <Switch checkedChildren="Activo" unCheckedChildren="Inactivo" />
           </Form.Item>
           <Form.Item
-            label="Sede principal"
-            name="sedeId"
-            rules={[{ required: true, message: 'Selecciona la sede principal' }]}
+            label="Sedes asignadas"
+            name="sedeIds"
             style={{ gridColumn: '1 / span 2' }}
             extra={
               !sedes?.length
                 ? <Text type="secondary">Configura sedes en la sección de Configuración para poder asignarlas.</Text>
                 : null
             }
+            rules={[{
+              validator: (_, value) => (Array.isArray(value) && value.length > 0)
+                ? Promise.resolve()
+                : Promise.reject(new Error('Selecciona al menos una sede')),
+            }]}
           >
-            <Select
-              placeholder="Selecciona la sede principal"
-              loading={sedesLoading}
-              options={sedes?.map((sede) => ({ label: sede.nombre, value: sede.id }))}
-              disabled={!sedes?.length}
-              showSearch
-              optionFilterProp="label"
-            />
+            <SedeCardSelector options={sedes} loading={sedesLoading} disabled={!sedes?.length} />
           </Form.Item>
         </div>
 

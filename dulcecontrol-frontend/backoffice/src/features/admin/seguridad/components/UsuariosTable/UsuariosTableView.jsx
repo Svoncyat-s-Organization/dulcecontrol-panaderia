@@ -25,6 +25,8 @@ const UsuariosTableView = ({
   rolesReady,
   sedesLoading,
   sedesReady,
+  showInactiveOnly,
+  onToggleInactive,
 }) => {
   if (isError) {
     return (
@@ -72,24 +74,37 @@ const UsuariosTableView = ({
       width: 200,
     },
     {
-      title: 'Sede',
-      dataIndex: 'sedeNombre',
-      key: 'sede',
-      render: (sedeNombre) => (
-        <Text type={sedeNombre ? undefined : 'secondary'}>
-          {sedeNombre ?? 'Sin sede asignada'}
-        </Text>
-      ),
-      width: 220,
+      title: 'Sedes',
+      dataIndex: 'sedes',
+      key: 'sedes',
+      render: (_, record) => {
+        if (Array.isArray(record.sedes) && record.sedes.length > 0) {
+          return (
+            <Space wrap size={[4, 4]}>
+              {record.sedes
+                .filter(Boolean)
+                .map((nombre) => (
+                  <Tag key={`${record.id}-${nombre}`} color="blue">{nombre}</Tag>
+                ))}
+            </Space>
+          );
+        }
+        if (record.sedeNombre) {
+          return <Tag color="blue">{record.sedeNombre}</Tag>;
+        }
+        return <Text type="secondary">Sin sede asignada</Text>;
+      },
+      width: 240,
     },
     {
       title: 'Estado',
       dataIndex: 'activo',
       key: 'estado',
       width: 120,
-      render: (activo) => (
-        <Tag color={activo ? 'green' : 'red'}>{activo ? 'Activo' : 'Inactivo'}</Tag>
-      ),
+      render: (activo) => {
+        const isActive = activo === true;
+        return <Tag color={isActive ? 'green' : 'red'}>{isActive ? 'Activo' : 'Inactivo'}</Tag>;
+      },
     },
     {
       title: 'Último acceso',
@@ -162,7 +177,16 @@ const UsuariosTableView = ({
         </Button>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
+      <div
+        style={{
+          marginBottom: 16,
+          display: 'flex',
+          gap: 12,
+          flexWrap: 'wrap',
+          justifyContent: 'flex-start',
+          alignItems: 'center',
+        }}
+      >
         <Input
           placeholder="Buscar por nombre, rol, sede o correo..."
           prefix={<IconSearch size={16} />}
@@ -171,6 +195,9 @@ const UsuariosTableView = ({
           allowClear
           style={{ maxWidth: 420 }}
         />
+        <Button onClick={onToggleInactive} type={showInactiveOnly ? 'primary' : 'default'}>
+          {showInactiveOnly ? 'Mostrar activos' : 'Mostrar inactivos'}
+        </Button>
       </div>
 
       <Table
