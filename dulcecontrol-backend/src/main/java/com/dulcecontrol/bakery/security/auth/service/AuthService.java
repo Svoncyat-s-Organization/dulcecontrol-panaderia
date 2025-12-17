@@ -127,7 +127,7 @@ public class AuthService {
         // Generar token
         String token = jwtProvider.generarToken(cliente.getEmail(), "ROLE_CLIENTE", TipoUsuario.CLIENTE, tiendaId,
             construirClaimsNombre(cliente.getNombreDoc()), cliente.getId());
-        return buildResponse(token, TipoUsuario.CLIENTE, tiendaId, cliente.getId());
+        return buildResponse(token, TipoUsuario.CLIENTE, tiendaId, cliente.getId(), null);
     }
 
     private void validarPassword(String rawPassword, String hash) {
