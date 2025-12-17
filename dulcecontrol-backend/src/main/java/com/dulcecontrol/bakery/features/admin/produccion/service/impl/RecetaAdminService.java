@@ -43,6 +43,7 @@ public class RecetaAdminService implements IRecetaAdminService {
                 .collect(Collectors.toSet());
         Map<Long, Producto> productosMap = productoRepository.findAllById(productoIds)
                 .stream()
+                .filter(p -> p.getTiendaId().equals(tiendaId))
                 .collect(Collectors.toMap(Producto::getId, p -> p));
         
         // Batch loading de insumos
@@ -51,6 +52,7 @@ public class RecetaAdminService implements IRecetaAdminService {
                 .collect(Collectors.toSet());
         Map<Long, Insumo> insumosMap = insumoRepository.findAllById(insumoIds)
                 .stream()
+                .filter(i -> i.getTiendaId().equals(tiendaId))
                 .collect(Collectors.toMap(Insumo::getId, i -> i));
         
         return recetas.stream()

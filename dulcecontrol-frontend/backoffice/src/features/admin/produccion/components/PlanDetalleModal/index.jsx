@@ -17,9 +17,26 @@ const PlanDetalleModal = ({ open, onClose, plan, tiendaId, sedeId }) => {
 
   const updateDetalleMutation = useMutation({
     mutationFn: ({ detalleId, payload }) => patchDetallePlan(tiendaId, detalleId, payload),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       message.success('Item actualizado correctamente');
-      queryClient.invalidateQueries({ queryKey: PLAN_PRODUCCION_KEYS.lists(tiendaId, sedeId) });
+      // Actualizar solo el detalle específico sin refetch completo
+      queryClient.setQueryData(
+        PLAN_PRODUCCION_KEYS.lists(tiendaId, sedeId),
+        (oldData) => {
+          if (!oldData) return oldData;
+          return oldData.map((p) => {
+            if (p.id !== plan?.id) return p;
+            return {
+              ...p,
+              detalles: p.detalles?.map((d) => 
+                d.id === variables.detalleId 
+                  ? { ...d, ...variables.payload }
+                  : d
+              ),
+            };
+          });
+        }
+      );
       setEditingDetalle(null);
     },
     onError: (error) => {
