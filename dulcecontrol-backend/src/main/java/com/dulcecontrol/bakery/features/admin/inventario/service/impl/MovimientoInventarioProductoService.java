@@ -4,6 +4,7 @@ import com.dulcecontrol.bakery.features.admin.inventario.dto.MovimientoInventari
 import com.dulcecontrol.bakery.features.admin.inventario.dto.MovimientoInventarioProductoResponse;
 import com.dulcecontrol.bakery.features.admin.inventario.entity.InventarioProducto;
 import com.dulcecontrol.bakery.features.admin.inventario.entity.MovimientoInventarioProducto;
+import com.dulcecontrol.bakery.features.admin.inventario.entity.enums.TipoMovimientoInsumo;
 import com.dulcecontrol.bakery.features.admin.inventario.repository.InventarioProductoRepository;
 import com.dulcecontrol.bakery.features.admin.inventario.repository.MovimientoInventarioProductoRepository;
 import com.dulcecontrol.bakery.features.admin.inventario.service.IMovimientoInventarioProductoService;
@@ -11,25 +12,41 @@ import com.dulcecontrol.bakery.features.admin.catalogo.entity.Producto;
 import com.dulcecontrol.bakery.features.shared.catalogo.repository.ProductoRepository;
 import com.dulcecontrol.bakery.features.admin.seguridad.entity.UsuarioTienda;
 import com.dulcecontrol.bakery.features.admin.seguridad.repository.UsuarioTiendaRepository;
+import com.dulcecontrol.bakery.features.admin.produccion.entity.PlanProduccion;
+import com.dulcecontrol.bakery.features.admin.produccion.entity.DetallePlanProduccion;
+import com.dulcecontrol.bakery.features.admin.produccion.entity.StockIdeal;
+import com.dulcecontrol.bakery.features.admin.produccion.entity.enums.EstadoPlanProduccion;
+import com.dulcecontrol.bakery.features.admin.produccion.entity.enums.EstadoItemProduccion;
+import com.dulcecontrol.bakery.features.admin.produccion.entity.enums.OrigenItemProduccion;
+import com.dulcecontrol.bakery.features.admin.produccion.repository.StockIdealRepository;
+import com.dulcecontrol.bakery.features.admin.produccion.repository.PlanProduccionRepository;
+import com.dulcecontrol.bakery.features.admin.produccion.repository.DetallePlanProduccionRepository;
 import com.dulcecontrol.bakery.shared.exception.BadRequestException;
 import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MovimientoInventarioProductoService implements IMovimientoInventarioProductoService {
 
     private final MovimientoInventarioProductoRepository repository;
     private final InventarioProductoRepository inventarioRepository;
     private final ProductoRepository productoRepository;
     private final UsuarioTiendaRepository usuarioRepository;
+    private final StockIdealRepository stockIdealRepository;
+    private final PlanProduccionRepository planProduccionRepository;
+    private final DetallePlanProduccionRepository detallePlanProduccionRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -63,10 +80,16 @@ public class MovimientoInventarioProductoService implements IMovimientoInventari
         return toResponse(movimiento);
     }
 
+    // Variable para tracking de planificación automática
+    private ThreadLocal<Long> planGeneradoIdThreadLocal = new ThreadLocal<>();
+    
     @Override
     @Transactional
     public MovimientoInventarioProductoResponse crear(Long tiendaId,
             MovimientoInventarioProductoCreateRequest request) {
+        // Resetear variable de tracking
+        planGeneradoIdThreadLocal.remove();
+        
         // Buscar o crear inventario
         InventarioProducto inventario = inventarioRepository
                 .findBySedeIdAndProductoId(request.getSedeId(), request.getProductoId())
@@ -115,6 +138,11 @@ public class MovimientoInventarioProductoService implements IMovimientoInventari
         // Actualizar inventario
         inventario.setCantidadActual(nuevaCantidad);
         inventarioRepository.save(inventario);
+        
+        // Si es una SALIDA, verificar punto de reposición y generar planificación automática
+        if (request.getTipoMovimiento() == TipoMovimientoInsumo.SALIDA) {
+            verificarYGenerarPlanificacionAutomatica(tiendaId, inventario, cantidadAnterior, nuevaCantidad);
+        }
 
         // Crear movimiento
         MovimientoInventarioProducto movimiento = new MovimientoInventarioProducto();
@@ -131,7 +159,17 @@ public class MovimientoInventarioProductoService implements IMovimientoInventari
         movimiento.setResponsableId(request.getResponsableId());
 
         MovimientoInventarioProducto guardado = repository.save(movimiento);
-        return toResponse(guardado);
+        MovimientoInventarioProductoResponse response = toResponse(guardado);
+        
+        // Agregar información de planificación automática si se generó
+        Long planGeneradoId = planGeneradoIdThreadLocal.get();
+        response.setPlanificacionAutomaticaGenerada(planGeneradoId != null);
+        response.setPlanGeneradoId(planGeneradoId);
+        
+        // Limpiar ThreadLocal
+        planGeneradoIdThreadLocal.remove();
+        
+        return response;
     }
 
     @Override
@@ -184,5 +222,112 @@ public class MovimientoInventarioProductoService implements IMovimientoInventari
                 .usuarioResponsable(usuarioResponsable)
                 .creadoEn(entity.getCreadoEn())
                 .build();
+    }
+    
+    /**
+     * Verifica si el stock alcanzó el punto de reposición y genera automáticamente
+     * una planificación de producción para reponer el stock ideal.
+     * (Copiado de InventarioProductoService para evitar dependencia circular)
+     */
+    private void verificarYGenerarPlanificacionAutomatica(Long tiendaId, InventarioProducto inventario, 
+                                                            Integer cantidadAnterior, Integer cantidadNueva) {
+        log.info("🔎 [PLANIFICACION AUTO] Iniciando verificación - Producto: {}, Sede: {}, TiendaId: {}",
+                inventario.getProductoId(), inventario.getSedeId(), tiendaId);
+        
+        // Obtener configuración de stock ideal
+        Optional<StockIdeal> stockIdealOpt = stockIdealRepository.findByTiendaIdAndSedeIdAndProductoId(
+                tiendaId, inventario.getSedeId(), inventario.getProductoId());
+        
+        if (stockIdealOpt.isEmpty()) {
+            log.warn("❌ [PLANIFICACION AUTO] No hay stock ideal configurado para producto {} en sede {}", 
+                    inventario.getProductoId(), inventario.getSedeId());
+            return;
+        }
+        
+        StockIdeal stockIdeal = stockIdealOpt.get();
+        log.info("📋 [PLANIFICACION AUTO] Stock Ideal encontrado - Cantidad ideal: {}, Punto reposición: {}",
+                stockIdeal.getCantidadIdeal(), stockIdeal.getPuntoReposicion());
+        
+        if (stockIdeal.getPuntoReposicion() == null) {
+            log.warn("❌ [PLANIFICACION AUTO] No hay punto de reposición configurado para producto {} en sede {}", 
+                    inventario.getProductoId(), inventario.getSedeId());
+            return;
+        }
+        
+        // Verificar si el stock actual es igual o menor al punto de reposición
+        log.info("⚖️ [PLANIFICACION AUTO] Comparando: Stock nuevo ({}) vs Punto reposición ({})",
+                cantidadNueva, stockIdeal.getPuntoReposicion());
+        
+        if (cantidadNueva > stockIdeal.getPuntoReposicion()) {
+            log.info("✋ [PLANIFICACION AUTO] Stock ({}) aún está por encima del punto de reposición ({}). No se genera plan.",
+                    cantidadNueva, stockIdeal.getPuntoReposicion());
+            return;
+        }
+        
+        log.info("⚠️ Stock de producto {} en sede {} alcanzó punto de reposición. Stock actual: {}, Punto reposición: {}",
+                inventario.getProductoId(), inventario.getSedeId(), cantidadNueva, stockIdeal.getPuntoReposicion());
+        
+        // Calcular cantidad a planificar (diferencia entre stock ideal y actual)
+        Integer cantidadAPlanificar = stockIdeal.getCantidadIdeal() - cantidadNueva;
+        
+        if (cantidadAPlanificar <= 0) {
+            log.warn("La cantidad a planificar es 0 o negativa. Stock ideal: {}, Stock actual: {}",
+                    stockIdeal.getCantidadIdeal(), cantidadNueva);
+            return;
+        }
+        
+        // Generar planificación para mañana
+        LocalDate fechaProduccion = LocalDate.now().plusDays(1);
+        
+        // Buscar o crear plan de producción para mañana
+        PlanProduccion plan = planProduccionRepository.findBySedeIdAndFechaProduccion(
+                inventario.getSedeId(), fechaProduccion)
+                .orElseGet(() -> {
+                    log.info("🎆 Creando nuevo plan de producción automático para sede {} fecha {}",
+                            inventario.getSedeId(), fechaProduccion);
+                    PlanProduccion nuevoPlan = new PlanProduccion();
+                    nuevoPlan.setTiendaId(tiendaId);
+                    nuevoPlan.setSedeId(inventario.getSedeId());
+                    nuevoPlan.setFechaProduccion(fechaProduccion);
+                    nuevoPlan.setEstado(EstadoPlanProduccion.CONFIRMADO);
+                    nuevoPlan.setNotasMaestro("Plan generado automáticamente por reposición de stock");
+                    return planProduccionRepository.save(nuevoPlan);
+                });
+        
+        // Verificar si ya existe un detalle para este producto en el plan
+        List<DetallePlanProduccion> detallesExistentes = detallePlanProduccionRepository
+                .findByPlanIdOrderByIdAsc(plan.getId());
+        
+        boolean yaExisteDetalle = detallesExistentes.stream()
+                .anyMatch(d -> d.getProductoId().equals(inventario.getProductoId()) && 
+                              d.getOrigen() == OrigenItemProduccion.STOCK_DIARIO);
+        
+        if (yaExisteDetalle) {
+            log.info("ℹ️ Ya existe un detalle de planificación para producto {} en el plan {}",
+                    inventario.getProductoId(), plan.getId());
+            return;
+        }
+        
+        // Crear detalle de planificación
+        DetallePlanProduccion detalle = new DetallePlanProduccion();
+        detalle.setPlanId(plan.getId());
+        detalle.setProductoId(inventario.getProductoId());
+        detalle.setOrigen(OrigenItemProduccion.STOCK_DIARIO);
+        detalle.setEsPersonalizado(false);
+        detalle.setCantidadSugerida(cantidadAPlanificar);
+        detalle.setCantidadPlanificada(cantidadAPlanificar);
+        detalle.setCantidadProducida(0);
+        detalle.setCantidadMerma(0);
+        detalle.setEstado(EstadoItemProduccion.PENDIENTE);
+        detalle.setObservaciones(String.format("Reposición automática. Stock actual: %d, Stock ideal: %d, Punto reposición: %d",
+                cantidadNueva, stockIdeal.getCantidadIdeal(), stockIdeal.getPuntoReposicion()));
+        
+        detallePlanProduccionRepository.save(detalle);
+        
+        // Guardar ID del plan generado para retornar en la respuesta
+        planGeneradoIdThreadLocal.set(plan.getId());
+        
+        log.info("✅ 🎉 Planificación automática creada: {} unidades de producto {} para fecha {}",
+                cantidadAPlanificar, inventario.getProductoId(), fechaProduccion);
     }
 }

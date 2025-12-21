@@ -16,4 +16,6 @@ public interface RecetaRepository extends JpaRepository<Receta, Long> {
     boolean existsByTiendaIdAndProductoIdAndInsumoId(Long tiendaId, Long productoId, Long insumoId);
 
     boolean existsByTiendaIdAndProductoIdAndInsumoIdAndIdNot(Long tiendaId, Long productoId, Long insumoId, Long id);
+    
+    List<Receta> findByTiendaIdAndProductoId(Long tiendaId, Long productoId);
 }

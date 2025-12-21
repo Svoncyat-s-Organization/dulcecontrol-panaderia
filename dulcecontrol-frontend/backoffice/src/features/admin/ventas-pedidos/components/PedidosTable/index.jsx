@@ -133,13 +133,22 @@ const PedidosTable = () => {
     }, [pedidos, clientesMap, filters]);
 
     const syncInventarioTrasEntrega = async (pedidoId, sedeId, vendedorId) => {
+        console.log('📦 [VENTA] Iniciando sincronización de inventario tras entrega');
+        console.log('📦 [VENTA] Pedido ID:', pedidoId, '| Sede ID:', sedeId, '| Tienda ID:', tiendaId);
+        
         if (!sedeId || !tiendaId) {
             throw new Error('Falta información de sede o tienda para actualizar inventario');
         }
 
         const responsableId = usuarioId || vendedorId;
+        console.log('👤 [VENTA] Responsable ID:', responsableId);
+        
         const detalles = await getDetallesPedido(tiendaId, pedidoId);
+        console.log('📋 [VENTA] Detalles del pedido obtenidos:', detalles.length, 'productos');
+        console.table(detalles.map(d => ({ ProductoID: d.productoId, Cantidad: d.cantidad })));
+        
         const inventarios = await getInventarioProductosPorSede(tiendaId, sedeId);
+        console.log('📦 [VENTA] Inventarios de la sede obtenidos:', inventarios?.length || 0);
         const inventarioPorProducto = new Map(
             (Array.isArray(inventarios) ? inventarios : []).map((registro) => [String(registro.productoId), registro])
         );
@@ -149,10 +158,14 @@ const PedidosTable = () => {
         for (const detalle of detalles) {
             const registro = inventarioPorProducto.get(String(detalle.productoId));
             if (!registro) {
+                console.error('❌ [VENTA] No hay inventario configurado para Producto ID:', detalle.productoId);
                 faltantes.push(`Producto ID ${detalle.productoId}`);
                 continue;
             }
 
+            console.log(`🔄 [VENTA] Descontando producto ${detalle.productoId}: ${detalle.cantidad} unidades`);
+            console.log('   Stock antes:', registro.cantidadActual, '→ Stock después:', registro.cantidadActual - detalle.cantidad);
+            
             await crearMovimientoInventarioProducto(tiendaId, {
                 sedeId: registro.sedeId,
                 productoId: registro.productoId,
@@ -162,11 +175,17 @@ const PedidosTable = () => {
                 motivo: 'venta',
                 responsableId: responsableId,
             });
+            
+            console.log('✅ [VENTA] Movimiento de inventario creado para producto', detalle.productoId);
         }
 
         if (faltantes.length) {
+            console.error('❌ [VENTA] Error:', `Inventario no configurado para: ${faltantes.join(', ')}`);
             throw new Error(`Inventario no configurado para: ${faltantes.join(', ')}`);
         }
+        
+        console.log('✅ [VENTA] ¡Inventario sincronizado correctamente!');
+        console.log('🔔 [VENTA] IMPORTANTE: El backend debería verificar ahora si algún producto llegó al punto de reposición');
     };
 
     const paymentMutation = useMutation({
@@ -251,6 +270,11 @@ const PedidosTable = () => {
 
     const statusMutation = useMutation({
         mutationFn: async ({ pedido, nuevoEstado }) => {
+            console.log('🔄 [ESTADO PEDIDO] Cambiando estado del pedido');
+            console.log('   Pedido:', pedido.codigo);
+            console.log('   Estado anterior:', pedido.raw.estadoPedido);
+            console.log('   Estado nuevo:', nuevoEstado);
+            
             const payload = {
                 codigoPedido: pedido.raw.codigoPedido,
                 sedeOrigenId: pedido.raw.sedeOrigenId,
@@ -277,10 +301,14 @@ const PedidosTable = () => {
                 notasPedido: pedido.raw.notasPedido,
             };
 
+            console.log('📤 [ESTADO PEDIDO] Enviando actualización al backend...');
             const updated = await updatePedido(tiendaId, pedido.id, payload);
+            console.log('✅ [ESTADO PEDIDO] Pedido actualizado en el backend');
 
             if (nuevoEstado === 'entregado' && pedido.raw.estadoPedido !== 'entregado') {
+                console.log('🚚 [ENTREGA] Pedido marcado como ENTREGADO - Iniciando descuento de inventario...');
                 await syncInventarioTrasEntrega(pedido.id, pedido.raw.sedeOrigenId, pedido.raw.vendedorId);
+                console.log('🎉 [ENTREGA] ¡Proceso de entrega completado!');
             }
 
             return updated;

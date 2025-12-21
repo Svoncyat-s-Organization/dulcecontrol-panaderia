@@ -136,11 +136,18 @@ const PuntoDeVenta = () => {
     const toLocalDateTimeString = () => new Date().toISOString().split('.')[0];
 
     const syncInventarioTrasVenta = async ({ pedidoId, itemsVendidos }) => {
+        console.log('🛍️ [POS VENTA] Iniciando sincronización de inventario tras venta POS');
+        console.log('🛍️ [POS VENTA] Pedido ID:', pedidoId, '| Sede ID:', currentCaja?.sedeId, '| Tienda ID:', tiendaId);
+        console.log('🛍️ [POS VENTA] Items vendidos:', itemsVendidos.length);
+        console.table(itemsVendidos.map(i => ({ ProductoID: i.id, Nombre: i.nombre, Cantidad: i.quantity })));
+        
         if (!currentCaja?.sedeId) {
             throw new Error('No se puede ajustar inventario sin una sede activa');
         }
 
+        console.log('📦 [POS VENTA] Obteniendo inventarios de la sede...');
         const inventarios = await getInventarioProductosPorSede(tiendaId, currentCaja.sedeId);
+        console.log('📦 [POS VENTA] Inventarios obtenidos:', inventarios?.length || 0);
         const inventarioPorProducto = new Map(
             (Array.isArray(inventarios) ? inventarios : []).map((registro) => [String(registro.productoId), registro])
         );
@@ -150,11 +157,15 @@ const PuntoDeVenta = () => {
         for (const item of itemsVendidos) {
             const registro = inventarioPorProducto.get(String(item.id));
             if (!registro) {
+                console.error('❌ [POS VENTA] No hay inventario para:', item.nombre || item.sku || `ID ${item.id}`);
                 faltantes.push(item.nombre || item.sku || `ID ${item.id}`);
                 continue;
             }
 
-            await crearMovimientoInventarioProducto(tiendaId, {
+            console.log(`🔄 [POS VENTA] Creando movimiento de salida para producto ${item.id}: ${item.quantity} unidades`);
+            console.log('   Stock actual:', registro.cantidadActual, '→ Stock después:', registro.cantidadActual - item.quantity);
+            
+            const movimiento = await crearMovimientoInventarioProducto(tiendaId, {
                 sedeId: registro.sedeId,
                 productoId: registro.productoId,
                 tipoMovimiento: 'salida',
@@ -163,11 +174,25 @@ const PuntoDeVenta = () => {
                 motivo: 'venta',
                 responsableId: usuarioId,
             });
+            
+            console.log('✅ [POS VENTA] Movimiento de inventario creado para producto', item.id);
+            
+            if (movimiento.planificacionAutomaticaGenerada) {
+                console.log('🎉 [PLANIFICACIÓN AUTO] ¡Plan de producción generado automáticamente!');
+                console.log('   Plan ID:', movimiento.planGeneradoId);
+                console.log('   Stock bajó al punto de reposición - Se planificará reposición automática');
+            } else {
+                console.log('ℹ️ [PLANIFICACIÓN] Stock OK - No se requiere planificación automática');
+            }
         }
 
         if (faltantes.length) {
+            console.error('❌ [POS VENTA] Error:', `Inventario no configurado para: ${faltantes.join(', ')}`);
             throw new Error(`Inventario no configurado para: ${faltantes.join(', ')}`);
         }
+        
+        console.log('✅ [POS VENTA] ¡Inventario sincronizado correctamente!');
+        console.log('🔔 [POS VENTA] IMPORTANTE: El backend debería verificar automáticamente si algún producto llegó al punto de reposición');
     };
 
     const createPedidoMutation = useMutation({
