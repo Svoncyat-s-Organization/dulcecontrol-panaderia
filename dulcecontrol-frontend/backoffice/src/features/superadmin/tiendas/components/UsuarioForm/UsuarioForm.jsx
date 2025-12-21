@@ -2,6 +2,11 @@ import React from 'react';
 import { Modal, Form, Input, Select, Row, Col, Switch } from 'antd';
 import { USUARIO_TIPO_DOCUMENTO_OPTIONS } from '../../constants/usuarioOptions';
 
+const DOCUMENT_LENGTHS = {
+    DNI: 8,
+    RUC: 11,
+};
+
 const UsuarioForm = ({
     visible,
     onCancel,
@@ -11,7 +16,12 @@ const UsuarioForm = ({
     loading,
     roles,
     loadingRoles,
+    sedes,
+    loadingSedes,
 }) => {
+    const tipoDocSeleccionado = Form.useWatch('tipoDoc', form);
+    const numeroDocMaxLength = DOCUMENT_LENGTHS[tipoDocSeleccionado] ?? 11;
+
     const renderOptions = (options = []) => (
         options.map((option) => (
             <Select.Option key={option.value} value={option.value}>
@@ -50,6 +60,26 @@ const UsuarioForm = ({
                     </Col>
                     <Col span={12}>
                         <Form.Item
+                            name="sedeIds"
+                            label="Sedes asignadas"
+                            rules={[{ required: true, message: 'Selecciona al menos una sede' }]}
+                        >
+                            <Select
+                                mode="multiple"
+                                placeholder="Selecciona una o varias sedes"
+                                loading={loadingSedes}
+                                optionFilterProp="children"
+                                showSearch
+                            >
+                                {renderOptions(sedes)}
+                            </Select>
+                        </Form.Item>
+                    </Col>
+                </Row>
+
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <Form.Item
                             name="correo"
                             label="Correo corporativo"
                             rules={[
@@ -79,15 +109,40 @@ const UsuarioForm = ({
                         <Form.Item
                             name="numeroDoc"
                             label="Número de documento"
+                            dependencies={['tipoDoc']}
                             rules={[
                                 { required: true, message: 'Ingresa el número de documento' },
-                                {
-                                    pattern: /^[0-9A-Za-z]{6,20}$/,
-                                    message: 'Ingresa entre 6 y 20 caracteres alfanuméricos',
-                                },
+                                ({ getFieldValue }) => ({
+                                    validator(_, value) {
+                                        if (!value) {
+                                            return Promise.resolve();
+                                        }
+
+                                        const tipoDocumento = getFieldValue('tipoDoc');
+                                        if (!tipoDocumento) {
+                                            return Promise.reject(new Error('Selecciona el tipo de documento'));
+                                        }
+
+                                        if (!/^\d+$/.test(value)) {
+                                            return Promise.reject(new Error('Solo se permiten números'));
+                                        }
+
+                                        const expectedLength = DOCUMENT_LENGTHS[tipoDocumento] ?? 0;
+                                        if (expectedLength && value.length !== expectedLength) {
+                                            return Promise.reject(new Error(`El ${tipoDocumento} debe tener ${expectedLength} dígitos`));
+                                        }
+
+                                        return Promise.resolve();
+                                    },
+                                }),
                             ]}
                         >
-                            <Input autoComplete="off" maxLength={20} />
+                            <Input
+                                autoComplete="off"
+                                maxLength={numeroDocMaxLength}
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                            />
                         </Form.Item>
                     </Col>
                     <Col span={8}>

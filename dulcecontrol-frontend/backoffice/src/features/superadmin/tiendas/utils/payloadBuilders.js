@@ -1,3 +1,7 @@
+const DEFAULT_TIPO_DOC = 'RUC';
+const DEFAULT_ESTADO = 'EN_PRUEBA';
+const DEFAULT_NOMBRE_DOC = 'Nombre pendiente';
+
 const trimValue = (value) => {
     if (typeof value === 'string') {
         const trimmed = value.trim();
@@ -6,18 +10,22 @@ const trimValue = (value) => {
     return value;
 };
 
+const safeNormalize = (text) => {
+    if (!text || typeof text.normalize !== 'function') {
+        return text;
+    }
+    return text.normalize('NFD');
+};
+
 const normalizeSlug = (value) => {
     const trimmed = trimValue(value);
     if (!trimmed) {
-        return trimmed;
+        return undefined;
     }
-
-    const asciiOnly = trimmed
-        .normalize('NFD')
-        .replace(/[^\p{ASCII}]/gu, '')
-        .toLowerCase();
-
-    return asciiOnly
+    return safeNormalize(trimmed)
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^\x00-\x7F]+/g, '')
+        .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
 };
@@ -28,29 +36,82 @@ const sanitizeObject = (payload) => (
     )
 );
 
-export const buildTiendaCreatePayload = (formData) => sanitizeObject({
-    slug: normalizeSlug(formData.slug),
-    tipoDoc: formData.tipoDoc,
-    numeroDoc: trimValue(formData.numeroDoc),
-    nombreDoc: trimValue(formData.nombreDoc),
-    nombreComercial: trimValue(formData.nombreComercial) ?? null,
-    correoContacto: trimValue(formData.correoContacto),
-    telefonoContacto: trimValue(formData.telefonoContacto) ?? null,
-    contrasena: trimValue(formData.contrasena),
-    estado: formData.estado,
-});
+const generateTemporalNumeroDoc = () => {
+    const timestampPart = Date.now().toString().slice(-9);
+    const randomPart = String(Math.floor(Math.random() * 90) + 10);
+    return `${randomPart}${timestampPart}`.slice(0, 11);
+};
 
-export const buildTiendaUpdatePayload = (formData) => sanitizeObject({
-    slug: normalizeSlug(formData.slug),
-    tipoDoc: formData.tipoDoc,
-    numeroDoc: trimValue(formData.numeroDoc),
-    nombreDoc: trimValue(formData.nombreDoc),
-    nombreComercial: trimValue(formData.nombreComercial) ?? null,
-    correoContacto: trimValue(formData.correoContacto),
-    telefonoContacto: trimValue(formData.telefonoContacto) ?? null,
-    estado: formData.estado,
-    nuevaContrasena: trimValue(formData.nuevaContrasena),
-});
+const generateRandomPassword = (length = 12) => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789*@#$%';
+    return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+};
+
+const buildAutoSlug = (nombreComercial, numeroDoc) => {
+    const base = normalizeSlug(nombreComercial) || 'tienda';
+    const suffix = (numeroDoc || '').slice(-4) || Math.random().toString(36).slice(2, 6);
+    return `${base}-${suffix}`
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 100);
+};
+
+const deriveNombreLegal = (nombreComercial, fallback) => (
+    trimValue(nombreComercial) || fallback || DEFAULT_NOMBRE_DOC
+);
+
+const ensureEstado = (estado) => estado || DEFAULT_ESTADO;
+
+const normalizeIdArray = (value) => {
+    if (Array.isArray(value)) {
+        const filtered = value.map((item) => (typeof item === 'number' ? item : Number(item)))
+            .filter((item) => Number.isFinite(item));
+        return filtered.length ? filtered : undefined;
+    }
+    if (value === null || value === undefined || value === '') {
+        return undefined;
+    }
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? [numeric] : undefined;
+};
+
+export const buildTiendaCreatePayload = (formData) => {
+    const nombreComercial = trimValue(formData.nombreComercial);
+    const correoContacto = trimValue(formData.correoContacto);
+    const telefonoContacto = trimValue(formData.telefonoContacto) ?? null;
+    const numeroDoc = generateTemporalNumeroDoc();
+
+    return sanitizeObject({
+        slug: buildAutoSlug(nombreComercial, numeroDoc),
+        tipoDoc: DEFAULT_TIPO_DOC,
+        numeroDoc,
+        nombreDoc: deriveNombreLegal(nombreComercial),
+        nombreComercial: nombreComercial ?? null,
+        correoContacto,
+        telefonoContacto,
+        contrasena: generateRandomPassword(),
+        estado: ensureEstado(formData.estado),
+    });
+};
+
+export const buildTiendaUpdatePayload = (formData, initialValues = {}) => {
+    const nombreComercial = trimValue(formData.nombreComercial);
+    const correoContacto = trimValue(formData.correoContacto);
+    const telefonoContacto = trimValue(formData.telefonoContacto) ?? null;
+    const numeroDoc = initialValues.numeroDoc || generateTemporalNumeroDoc();
+    const slug = initialValues.slug || buildAutoSlug(nombreComercial, numeroDoc);
+
+    return sanitizeObject({
+        slug,
+        tipoDoc: initialValues.tipoDoc || DEFAULT_TIPO_DOC,
+        numeroDoc,
+        nombreDoc: deriveNombreLegal(nombreComercial, initialValues.nombreDoc),
+        nombreComercial: nombreComercial ?? null,
+        correoContacto,
+        telefonoContacto,
+        estado: ensureEstado(formData.estado || initialValues.estado),
+    });
+};
 
 export const buildSedePayload = (formData, { includeActivo = false } = {}) => sanitizeObject({
     codigoInterno: trimValue(formData.codigoInterno) ?? null,
@@ -80,6 +141,7 @@ export const buildUsuarioCreatePayload = (formData) => sanitizeObject({
     nombres: trimValue(formData.nombres),
     telefono: trimValue(formData.telefono) ?? null,
     activo: formData.activo ?? true,
+    sedeIds: normalizeIdArray(formData.sedeIds),
 });
 
 export const buildUsuarioUpdatePayload = (formData) => sanitizeObject({
@@ -91,4 +153,5 @@ export const buildUsuarioUpdatePayload = (formData) => sanitizeObject({
     telefono: trimValue(formData.telefono) ?? null,
     activo: formData.activo,
     nuevaContrasena: trimValue(formData.nuevaContrasena),
+    sedeIds: normalizeIdArray(formData.sedeIds),
 });
