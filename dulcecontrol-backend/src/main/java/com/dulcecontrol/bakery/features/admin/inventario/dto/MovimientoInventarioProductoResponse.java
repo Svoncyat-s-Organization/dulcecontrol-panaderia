@@ -37,4 +37,8 @@ public class MovimientoInventarioProductoResponse {
     private String usuarioResponsable;
     
     private LocalDateTime creadoEn;
+    
+    // Planificación automática generada
+    private Boolean planificacionAutomaticaGenerada;
+    private Long planGeneradoId;
 }

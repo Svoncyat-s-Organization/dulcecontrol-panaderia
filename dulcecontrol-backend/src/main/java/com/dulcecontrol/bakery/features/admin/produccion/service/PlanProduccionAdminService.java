@@ -14,24 +14,41 @@ import com.dulcecontrol.bakery.features.admin.produccion.entity.enums.EstadoPlan
 import com.dulcecontrol.bakery.features.admin.produccion.entity.enums.OrigenItemProduccion;
 import com.dulcecontrol.bakery.features.admin.produccion.repository.DetallePlanProduccionRepository;
 import com.dulcecontrol.bakery.features.admin.produccion.repository.PlanProduccionRepository;
+import com.dulcecontrol.bakery.features.admin.produccion.repository.RecetaRepository;
+import com.dulcecontrol.bakery.features.admin.produccion.entity.Receta;
+import com.dulcecontrol.bakery.features.admin.inventario.entity.InventarioInsumoSede;
+import com.dulcecontrol.bakery.features.admin.inventario.entity.InventarioProducto;
+import com.dulcecontrol.bakery.features.admin.inventario.repository.InventarioInsumoSedeRepository;
+import com.dulcecontrol.bakery.features.admin.inventario.repository.InventarioProductoRepository;
+import com.dulcecontrol.bakery.features.admin.ventas.entity.Pedido;
+import com.dulcecontrol.bakery.features.admin.ventas.entity.enums.EstadoPedido;
+import com.dulcecontrol.bakery.features.admin.ventas.repository.PedidoRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PlanProduccionAdminService {
 
     private final PlanProduccionRepository planRepository;
     private final DetallePlanProduccionRepository detalleRepository;
     private final ProductoRepository productoRepository;
+    private final RecetaRepository recetaRepository;
+    private final InventarioInsumoSedeRepository inventarioInsumoRepository;
+    private final InventarioProductoRepository inventarioProductoRepository;
+    private final PedidoRepository pedidoRepository;
 
     @Transactional
     public PlanProduccionResponse createPlan(Long tiendaId, PlanProduccionCreateRequest request) {
@@ -140,6 +157,8 @@ public class PlanProduccionAdminService {
         if (!plan.getTiendaId().equals(tiendaId)) {
             throw new RuntimeException("Plan no pertenece a la tienda especificada");
         }
+        
+        EstadoPlanProduccion estadoAnterior = plan.getEstado();
 
         if (request.getEstado() != null) {
             plan.setEstado(request.getEstado());
@@ -156,6 +175,13 @@ public class PlanProduccionAdminService {
         }
 
         planRepository.save(plan);
+        
+        // Cuando el plan cambia a FINALIZADO, sumar al inventario todos los productos TERMINADO
+        if (request.getEstado() == EstadoPlanProduccion.FINALIZADO && estadoAnterior != EstadoPlanProduccion.FINALIZADO) {
+            sumarInventarioProductosTerminados(tiendaId, plan);
+            actualizarEstadoPedidosAsociados(plan);
+        }
+        
         return getPlanBySedeAndFecha(tiendaId, plan.getSedeId(), plan.getFechaProduccion());
     }
 
@@ -170,6 +196,8 @@ public class PlanProduccionAdminService {
         if (!plan.getTiendaId().equals(tiendaId)) {
             throw new RuntimeException("Detalle no pertenece a la tienda especificada");
         }
+        
+        EstadoItemProduccion estadoAnterior = detalle.getEstado();
 
         if (request.getCantidadProducida() != null) {
             detalle.setCantidadProducida(request.getCantidadProducida());
@@ -188,6 +216,9 @@ public class PlanProduccionAdminService {
         }
 
         DetallePlanProduccion saved = detalleRepository.save(detalle);
+        
+        // Procesar cambios de estado
+        procesarCambioEstado(tiendaId, plan.getSedeId(), saved, estadoAnterior, request.getEstado());
 
         Producto producto = productoRepository.findById(saved.getProductoId()).orElse(null);
 
@@ -287,5 +318,194 @@ public class PlanProduccionAdminService {
                             .build();
                 })
                 .collect(Collectors.toList());
+    }
+    
+    /**
+     * Procesa el cambio de estado de un detalle de producción
+     * - EN_HORNO: Descuenta insumos del inventario
+     * - TERMINADO: Suma productos al inventario
+     */
+    private void procesarCambioEstado(Long tiendaId, Long sedeId, DetallePlanProduccion detalle,
+                                      EstadoItemProduccion estadoAnterior, EstadoItemProduccion estadoNuevo) {
+        if (estadoNuevo == null || estadoNuevo == estadoAnterior) {
+            return;
+        }
+        
+        // Cuando pasa a EN_HORNO, descontar insumos
+        if (estadoNuevo == EstadoItemProduccion.EN_HORNO && estadoAnterior != EstadoItemProduccion.EN_HORNO) {
+            descontarInsumosProduccion(tiendaId, sedeId, detalle);
+        }
+        
+        // Cuando pasa a TERMINADO, verificar si el plan global está FINALIZADO para sumar inventario
+        if (estadoNuevo == EstadoItemProduccion.TERMINADO && estadoAnterior != EstadoItemProduccion.TERMINADO) {
+            PlanProduccion plan = planRepository.findById(detalle.getPlanId()).orElse(null);
+            if (plan != null && plan.getEstado() == EstadoPlanProduccion.FINALIZADO) {
+                sumarProductosInventario(tiendaId, sedeId, detalle);
+            } else {
+                log.info("⏳ Producto {} marcado como TERMINADO, pero el plan aún no está FINALIZADO. No se suma al inventario todavía.", detalle.getProductoId());
+            }
+        }
+    }
+    
+    /**
+     * Descuenta los insumos necesarios del inventario según la receta del producto
+     */
+    private void descontarInsumosProduccion(Long tiendaId, Long sedeId, DetallePlanProduccion detalle) {
+        log.info("🔥 Producto {} pasa a EN_HORNO. Descontando insumos...", detalle.getProductoId());
+        
+        // Buscar todas las recetas (insumos) del producto
+        List<Receta> recetas = recetaRepository.findByTiendaIdAndProductoId(tiendaId, detalle.getProductoId());
+        
+        if (recetas.isEmpty()) {
+            log.warn("⚠️ No hay receta configurada para producto {}", detalle.getProductoId());
+            return;
+        }
+        
+        Integer cantidadAPlanificar = detalle.getCantidadPlanificada();
+        
+        for (Receta receta : recetas) {
+            // Calcular cantidad total de insumo necesaria
+            BigDecimal cantidadPorUnidad = receta.getCantidadRequerida();
+            BigDecimal cantidadTotal = cantidadPorUnidad.multiply(BigDecimal.valueOf(cantidadAPlanificar));
+            
+            // Buscar el inventario de insumo en la sede
+            Optional<InventarioInsumoSede> inventarioOpt = inventarioInsumoRepository
+                    .findBySedeIdAndInsumoId(sedeId, receta.getInsumoId());
+            
+            if (inventarioOpt.isEmpty()) {
+                log.error("❌ No se encontró inventario del insumo {} en sede {}", 
+                        receta.getInsumoId(), sedeId);
+                continue;
+            }
+            
+            InventarioInsumoSede inventario = inventarioOpt.get();
+            BigDecimal cantidadActual = inventario.getCantidadActual();
+            
+            if (cantidadActual.compareTo(cantidadTotal) < 0) {
+                log.warn("⚠️ Inventario insuficiente del insumo {}. Disponible: {}, Requerido: {}",
+                        receta.getInsumoId(), cantidadActual, cantidadTotal);
+                // Continuar de todas formas, descontar lo que hay
+            }
+            
+            // Descontar del inventario
+            inventario.setCantidadActual(cantidadActual.subtract(cantidadTotal));
+            inventarioInsumoRepository.save(inventario);
+            
+            log.info("✅ Descontado {} {} del insumo {}. Stock anterior: {}, Stock actual: {}",
+                    cantidadTotal, receta.getUnidadMedida(), receta.getInsumoId(), 
+                    cantidadActual, inventario.getCantidadActual());
+        }
+    }
+    
+    /**
+     * Suma la cantidad producida al inventario de productos
+     */
+    private void sumarProductosInventario(Long tiendaId, Long sedeId, DetallePlanProduccion detalle) {
+        log.info("✅ Producto {} TERMINADO. Sumando al inventario...", detalle.getProductoId());
+        
+        Integer cantidadProducida = detalle.getCantidadProducida();
+        
+        if (cantidadProducida == null || cantidadProducida <= 0) {
+            log.warn("⚠️ Cantidad producida no válida: {}", cantidadProducida);
+            return;
+        }
+        
+        // Buscar o crear el inventario del producto
+        Optional<InventarioProducto> inventarioOpt = inventarioProductoRepository
+                .findBySedeIdAndProductoId(sedeId, detalle.getProductoId());
+        
+        InventarioProducto inventario;
+        if (inventarioOpt.isPresent()) {
+            inventario = inventarioOpt.get();
+        } else {
+            log.info("📦 Creando nuevo registro de inventario para producto {} en sede {}",
+                    detalle.getProductoId(), sedeId);
+            inventario = new InventarioProducto();
+            inventario.setTiendaId(tiendaId);
+            inventario.setSedeId(sedeId);
+            inventario.setProductoId(detalle.getProductoId());
+            inventario.setCantidadActual(0);
+        }
+        
+        Integer cantidadAnterior = inventario.getCantidadActual();
+        inventario.setCantidadActual(cantidadAnterior + cantidadProducida);
+        inventarioProductoRepository.save(inventario);
+        
+        log.info("✅ Sumado {} unidades al inventario del producto {}. Stock anterior: {}, Stock actual: {}",
+                cantidadProducida, detalle.getProductoId(), cantidadAnterior, inventario.getCantidadActual());
+    }
+    
+    /**
+     * Suma al inventario todos los productos en estado TERMINADO cuando el plan cambia a FINALIZADO
+     */
+    private void sumarInventarioProductosTerminados(Long tiendaId, PlanProduccion plan) {
+        log.info("🏁 Plan {} cambiado a FINALIZADO. Sumando al inventario todos los productos TERMINADO...", plan.getId());
+        
+        // Obtener todos los detalles del plan
+        List<DetallePlanProduccion> detalles = detalleRepository.findByPlanIdOrderByIdAsc(plan.getId());
+        
+        // Filtrar solo los que están TERMINADO
+        List<DetallePlanProduccion> detallesTerminados = detalles.stream()
+                .filter(d -> d.getEstado() == EstadoItemProduccion.TERMINADO)
+                .collect(Collectors.toList());
+        
+        if (detallesTerminados.isEmpty()) {
+            log.warn("⚠️ El plan {} no tiene productos en estado TERMINADO", plan.getId());
+            return;
+        }
+        
+        log.info("📦 Sumando {} productos al inventario...", detallesTerminados.size());
+        
+        // Sumar cada producto al inventario
+        for (DetallePlanProduccion detalle : detallesTerminados) {
+            sumarProductosInventario(tiendaId, plan.getSedeId(), detalle);
+        }
+        
+        log.info("✅ Inventario actualizado para plan {}. {} productos sumados al stock.", 
+                plan.getId(), detallesTerminados.size());
+    }
+    
+    /**
+     * Actualiza el estado de los pedidos asociados al plan a LISTO_ENTREGA
+     * cuando el plan se marca como FINALIZADO.
+     */
+    private void actualizarEstadoPedidosAsociados(PlanProduccion plan) {
+        log.info("📋 Verificando pedidos asociados al plan {} para cambiar estado a LISTO_ENTREGA", plan.getId());
+        
+        // Obtener todos los detalles del plan que tienen origen PEDIDO_CLIENTE
+        List<DetallePlanProduccion> detalles = detalleRepository.findByPlanIdOrderByIdAsc(plan.getId());
+        
+        // Obtener IDs únicos de pedidos
+        List<Long> pedidoIds = detalles.stream()
+                .filter(d -> d.getOrigen() == OrigenItemProduccion.PEDIDO_CLIENTE)
+                .filter(d -> d.getPedidoClienteId() != null)
+                .map(DetallePlanProduccion::getPedidoClienteId)
+                .distinct()
+                .toList();
+        
+        if (pedidoIds.isEmpty()) {
+            log.info("ℹ️ No hay pedidos asociados a este plan");
+            return;
+        }
+        
+        // Actualizar estado de cada pedido a LISTO_ENTREGA
+        for (Long pedidoId : pedidoIds) {
+            Optional<Pedido> pedidoOpt = pedidoRepository.findById(pedidoId);
+            if (pedidoOpt.isPresent()) {
+                Pedido pedido = pedidoOpt.get();
+                
+                // Solo cambiar si está en EN_PREPARACION
+                if (pedido.getEstadoPedido() == EstadoPedido.EN_PREPARACION) {
+                    pedido.setEstadoPedido(EstadoPedido.LISTO_ENTREGA);
+                    pedidoRepository.save(pedido);
+                    log.info("✅ Pedido {} cambiado a LISTO_ENTREGA", pedido.getCodigoPedido());
+                } else {
+                    log.info("ℹ️ Pedido {} no está en EN_PREPARACION (estado actual: {}), no se cambia", 
+                            pedido.getCodigoPedido(), pedido.getEstadoPedido());
+                }
+            }
+        }
+        
+        log.info("✅ Procesados {} pedidos asociados al plan", pedidoIds.size());
     }
 }

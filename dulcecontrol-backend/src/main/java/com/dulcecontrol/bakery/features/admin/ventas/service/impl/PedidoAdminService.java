@@ -7,26 +7,45 @@ import com.dulcecontrol.bakery.features.admin.ventas.entity.Pedido;
 import com.dulcecontrol.bakery.features.admin.ventas.entity.enums.EstadoPagoPedido;
 import com.dulcecontrol.bakery.features.admin.ventas.entity.enums.EstadoPedido;
 import com.dulcecontrol.bakery.features.admin.ventas.entity.enums.TipoEntregaPedido;
+import com.dulcecontrol.bakery.features.admin.ventas.entity.DetallePedido;
+import com.dulcecontrol.bakery.features.admin.ventas.repository.DetallePedidoRepository;
 import com.dulcecontrol.bakery.features.admin.ventas.repository.PedidoRepository;
 import com.dulcecontrol.bakery.features.admin.ventas.repository.SesionCajaRepository;
 import com.dulcecontrol.bakery.features.admin.ventas.service.IPedidoAdminService;
 import com.dulcecontrol.bakery.features.admin.ventas.service.helper.VentasTenantValidator;
+import com.dulcecontrol.bakery.features.admin.inventario.service.IInventarioProductoService;
+import com.dulcecontrol.bakery.features.admin.inventario.dto.InventarioProductoUpdateRequest;
+import com.dulcecontrol.bakery.features.admin.inventario.dto.InventarioProductoResponse;
+import com.dulcecontrol.bakery.features.admin.produccion.entity.PlanProduccion;
+import com.dulcecontrol.bakery.features.admin.produccion.entity.DetallePlanProduccion;
+import com.dulcecontrol.bakery.features.admin.produccion.entity.enums.EstadoPlanProduccion;
+import com.dulcecontrol.bakery.features.admin.produccion.entity.enums.EstadoItemProduccion;
+import com.dulcecontrol.bakery.features.admin.produccion.entity.enums.OrigenItemProduccion;
+import com.dulcecontrol.bakery.features.admin.produccion.repository.PlanProduccionRepository;
+import com.dulcecontrol.bakery.features.admin.produccion.repository.DetallePlanProduccionRepository;
 import com.dulcecontrol.bakery.shared.exception.BadRequestException;
 import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PedidoAdminService implements IPedidoAdminService {
 
     private final PedidoRepository pedidoRepository;
     private final SesionCajaRepository sesionCajaRepository;
     private final VentasTenantValidator tenantValidator;
+    private final DetallePedidoRepository detallePedidoRepository;
+    private final IInventarioProductoService inventarioProductoService;
+    private final PlanProduccionRepository planProduccionRepository;
+    private final DetallePlanProduccionRepository detallePlanProduccionRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -107,6 +126,8 @@ public class PedidoAdminService implements IPedidoAdminService {
         tenantValidator.validarSedePerteneceATienda(tiendaId, request.sedeOrigenId());
         tenantValidator.validarClientePerteneceATienda(tiendaId, request.clienteId());
         validarSesionPerteneceATienda(tiendaId, request.sesionCajaId());
+        
+        EstadoPedido estadoAnterior = pedido.getEstadoPedido();
 
         pedido.setCodigoPedido(request.codigoPedido());
         pedido.setSedeOrigenId(request.sedeOrigenId());
@@ -135,6 +156,17 @@ public class PedidoAdminService implements IPedidoAdminService {
         pedido.setNotasPedido(request.notasPedido());
 
         Pedido actualizado = pedidoRepository.save(pedido);
+        
+        // Generar planificación cuando el pedido cambia a EN_PREPARACION
+        if (request.estadoPedido() == EstadoPedido.EN_PREPARACION && estadoAnterior != EstadoPedido.EN_PREPARACION) {
+            generarPlanificacionParaPedido(tiendaId, pedido);
+        }
+        
+        // Descontar inventario cuando el pedido se marca como ENTREGADO
+        if (request.estadoPedido() == EstadoPedido.ENTREGADO && estadoAnterior != EstadoPedido.ENTREGADO) {
+            descontarInventarioPorVenta(tiendaId, pedido);
+        }
+        
         return toResponse(actualizado);
     }
 
@@ -195,5 +227,132 @@ public class PedidoAdminService implements IPedidoAdminService {
                 .creadoEn(pedido.getCreadoEn())
                 .actualizadoEn(pedido.getActualizadoEn())
                 .build();
+    }
+    
+    /**
+     * Descuenta del inventario los productos vendidos cuando se entrega el pedido.
+     * Usa el servicio de inventario para activar automáticamente la verificación de punto 
+     * de reposición y la generación de planificación.
+     */
+    private void descontarInventarioPorVenta(Long tiendaId, Pedido pedido) {
+        log.info("📦 Pedido {} ENTREGADO. Descontando inventario de productos vendidos...", pedido.getCodigoPedido());
+        
+        // Obtener todos los detalles del pedido (productos y cantidades)
+        List<DetallePedido> detalles = detallePedidoRepository.findByPedidoId(pedido.getId());
+        
+        if (detalles.isEmpty()) {
+            log.warn("⚠️ El pedido {} no tiene detalles", pedido.getCodigoPedido());
+            return;
+        }
+        
+        Long sedeId = pedido.getSedeOrigenId();
+        
+        // Obtener todos los inventarios de la sede para buscar por producto
+        List<com.dulcecontrol.bakery.features.admin.inventario.dto.InventarioProductoResponse> inventarios = 
+                inventarioProductoService.listarPorTiendaYSede(tiendaId, sedeId);
+        
+        for (DetallePedido detalle : detalles) {
+            Long productoId = detalle.getProductoId();
+            Integer cantidadVendida = detalle.getCantidad();
+            
+            // Buscar el inventario del producto
+            Optional<com.dulcecontrol.bakery.features.admin.inventario.dto.InventarioProductoResponse> inventarioOpt = 
+                    inventarios.stream()
+                    .filter(inv -> inv.getProductoId().equals(productoId))
+                    .findFirst();
+            
+            if (inventarioOpt.isEmpty()) {
+                log.error("❌ No se encontró inventario del producto {} en sede {}. No se puede descontar.",
+                        productoId, sedeId);
+                continue;
+            }
+            
+            com.dulcecontrol.bakery.features.admin.inventario.dto.InventarioProductoResponse inventario = inventarioOpt.get();
+            Integer cantidadActual = inventario.getCantidadActual();
+            
+            if (cantidadActual < cantidadVendida) {
+                log.warn("⚠️ Inventario insuficiente del producto {}. Disponible: {}, Vendido: {}. Se descontará lo disponible.",
+                        productoId, cantidadActual, cantidadVendida);
+            }
+            
+            // Calcular nueva cantidad
+            Integer nuevaCantidad = Math.max(0, cantidadActual - cantidadVendida);
+            
+            // Usar el servicio para actualizar (esto activa la verificación de punto de reposición)
+            InventarioProductoUpdateRequest updateRequest = InventarioProductoUpdateRequest.builder()
+                    .sedeId(inventario.getSedeId())
+                    .productoId(inventario.getProductoId())
+                    .cantidadActual(nuevaCantidad)
+                    .ubicacionFisica(inventario.getUbicacionFisica())
+                    .build();
+            
+            try {
+                inventarioProductoService.actualizar(tiendaId, inventario.getId(), updateRequest);
+                log.info("✅ Descontado {} unidades del producto {}. Stock anterior: {}, Stock nuevo: {}",
+                        cantidadVendida, productoId, cantidadActual, nuevaCantidad);
+            } catch (Exception e) {
+                log.error("❌ Error al actualizar inventario del producto {}: {}", productoId, e.getMessage());
+            }
+        }
+        
+        log.info("✅ Inventario actualizado para pedido {}. {} productos procesados.",
+                pedido.getCodigoPedido(), detalles.size());
+    }
+    
+    /**
+     * Genera un plan de producción cuando un pedido cambia a EN_PREPARACION.
+     * Crea un plan con los productos del pedido marcados con origen PEDIDO_CLIENTE.
+     */
+    private void generarPlanificacionParaPedido(Long tiendaId, Pedido pedido) {
+        log.info("📋 Pedido {} cambió a EN_PREPARACION. Generando planificación de producción...", pedido.getCodigoPedido());
+        
+        List<DetallePedido> detalles = detallePedidoRepository.findByPedidoId(pedido.getId());
+        
+        if (detalles.isEmpty()) {
+            log.warn("⚠️ El pedido {} no tiene detalles", pedido.getCodigoPedido());
+            return;
+        }
+        
+        // Usar la fecha de entrega pactada o mañana
+        java.time.LocalDate fechaProduccion = pedido.getFechaEntregaPactada() != null
+                ? pedido.getFechaEntregaPactada().toLocalDate()
+                : java.time.LocalDate.now().plusDays(1);
+        
+        // Buscar o crear plan de producción para esa fecha
+        PlanProduccion plan = planProduccionRepository.findBySedeIdAndFechaProduccion(
+                pedido.getSedeOrigenId(), fechaProduccion)
+                .orElseGet(() -> {
+                    log.info("🎆 Creando nuevo plan de producción para pedido {} en fecha {}",
+                            pedido.getCodigoPedido(), fechaProduccion);
+                    PlanProduccion nuevoPlan = new PlanProduccion();
+                    nuevoPlan.setTiendaId(tiendaId);
+                    nuevoPlan.setSedeId(pedido.getSedeOrigenId());
+                    nuevoPlan.setFechaProduccion(fechaProduccion);
+                    nuevoPlan.setEstado(EstadoPlanProduccion.CONFIRMADO);
+                    nuevoPlan.setNotasMaestro("Plan generado para pedido " + pedido.getCodigoPedido());
+                    return planProduccionRepository.save(nuevoPlan);
+                });
+        
+        // Agregar cada producto del pedido al plan
+        for (DetallePedido detalle : detalles) {
+            DetallePlanProduccion detallePlan = new DetallePlanProduccion();
+            detallePlan.setPlanId(plan.getId());
+            detallePlan.setProductoId(detalle.getProductoId());
+            detallePlan.setOrigen(OrigenItemProduccion.PEDIDO_CLIENTE);
+            detallePlan.setPedidoClienteId(pedido.getId());
+            detallePlan.setDetallePedidoId(detalle.getId());
+            detallePlan.setEsPersonalizado(false);
+            detallePlan.setCantidadSugerida(detalle.getCantidad());
+            detallePlan.setCantidadPlanificada(detalle.getCantidad());
+            detallePlan.setCantidadProducida(0);
+            detallePlan.setCantidadMerma(0);
+            detallePlan.setEstado(EstadoItemProduccion.PENDIENTE);
+            detallePlan.setObservaciones("Producto del pedido " + pedido.getCodigoPedido());
+            
+            detallePlanProduccionRepository.save(detallePlan);
+        }
+        
+        log.info("✅ Planificación creada para pedido {}. {} productos agregados al plan {}",
+                pedido.getCodigoPedido(), detalles.size(), plan.getId());
     }
 }
