@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
     Card,
     Table,
@@ -17,6 +17,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, ClearOutlined } from '@ant-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
+import { useSedeStore } from '../../../../../shared/store/sedeStore.js';
 import {
     getCajas,
     createCaja,
@@ -36,6 +37,7 @@ const estadoOptions = [
 
 const CajasCatalog = () => {
     const tiendaId = useTokenStore((state) => state.tiendaId);
+    const selectedSedeId = useSedeStore((state) => state.selectedSedeId);
     const queryClient = useQueryClient();
     const { token } = theme.useToken();
     const [filterForm] = Form.useForm();
@@ -44,9 +46,9 @@ const CajasCatalog = () => {
     const [drawerState, setDrawerState] = useState({ open: false, editing: null });
 
     const cajasQuery = useQuery({
-        queryKey: CAJA_KEYS.lists(tiendaId, null),
+        queryKey: CAJA_KEYS.lists(tiendaId, selectedSedeId ?? null),
         queryFn: () => getCajas(tiendaId),
-        enabled: !!tiendaId,
+        enabled: !!tiendaId && !!selectedSedeId,
         select: (response) => Array.isArray(response) ? response : [],
     });
 
@@ -60,15 +62,25 @@ const CajasCatalog = () => {
         mutationFn: ({ mode, cajaId, payload }) =>
             mode === 'edit' ? updateCaja(tiendaId, cajaId, payload) : createCaja(tiendaId, payload),
         onSuccess: () => {
-            queryClient.invalidateQueries(CAJA_KEYS.lists(tiendaId, null));
+            queryClient.invalidateQueries(CAJA_KEYS.lists(tiendaId, selectedSedeId ?? null));
             handleCloseDrawer();
         },
     });
 
     const deleteMutation = useMutation({
         mutationFn: (cajaId) => deleteCaja(tiendaId, cajaId),
-        onSuccess: () => queryClient.invalidateQueries(CAJA_KEYS.lists(tiendaId, null)),
+        onSuccess: () => queryClient.invalidateQueries(CAJA_KEYS.lists(tiendaId, selectedSedeId ?? null)),
     });
+
+    // Mantener el filtro de sede alineado a la sede seleccionada globalmente
+    // Requisito: al estar en una sede, solo deben mostrarse cajas de esa sede.
+    useEffect(() => {
+        if (!selectedSedeId) {
+            return;
+        }
+        filterForm.setFieldsValue({ sedeId: selectedSedeId });
+        setFilters((prev) => ({ ...prev, sedeId: selectedSedeId }));
+    }, [selectedSedeId, filterForm]);
 
     const sedesMap = useMemo(() => {
         const map = new Map();
@@ -81,6 +93,9 @@ const CajasCatalog = () => {
     const filteredCajas = useMemo(() => {
         const base = cajasQuery.data || [];
         return base.filter((caja) => {
+            if (selectedSedeId && String(caja.sedeId) !== String(selectedSedeId)) {
+                return false;
+            }
             if (filters.nombre && !caja.nombre.toLowerCase().includes(filters.nombre.toLowerCase())) {
                 return false;
             }
@@ -92,7 +107,7 @@ const CajasCatalog = () => {
             }
             return true;
         });
-    }, [cajasQuery.data, filters]);
+    }, [cajasQuery.data, filters, selectedSedeId]);
 
     const tableData = filteredCajas.map((caja) => ({
         ...caja,
@@ -103,14 +118,17 @@ const CajasCatalog = () => {
     const handleFilterChange = (_, allValues) => {
         setFilters({
             nombre: allValues.nombre || '',
-            sedeId: allValues.sedeId || null,
+            sedeId: selectedSedeId || allValues.sedeId || null,
             activa: typeof allValues.activa === 'boolean' ? allValues.activa : null,
         });
     };
 
     const handleResetFilters = () => {
         filterForm.resetFields();
-        setFilters({ nombre: '', sedeId: null, activa: null });
+        setFilters({ nombre: '', sedeId: selectedSedeId || null, activa: null });
+        if (selectedSedeId) {
+            filterForm.setFieldsValue({ sedeId: selectedSedeId });
+        }
     };
 
     const handleOpenDrawer = (record = null) => {
@@ -122,7 +140,7 @@ const CajasCatalog = () => {
                 activa: record.activa,
             });
         } else {
-            drawerForm.setFieldsValue({ nombre: '', sedeId: undefined, activa: true });
+            drawerForm.setFieldsValue({ nombre: '', sedeId: selectedSedeId ?? undefined, activa: true });
         }
     };
 
@@ -134,7 +152,7 @@ const CajasCatalog = () => {
     const handleSubmit = () => {
         drawerForm.validateFields().then((values) => {
             const payload = {
-                sedeId: values.sedeId,
+                sedeId: selectedSedeId ?? values.sedeId,
                 nombre: values.nombre.trim(),
                 activa: values.activa,
             };
@@ -208,6 +226,8 @@ const CajasCatalog = () => {
         value: sede.id,
     }));
 
+    const sedeFilterDisabled = !!selectedSedeId;
+
     return (
         <Card
             style={{
@@ -237,6 +257,7 @@ const CajasCatalog = () => {
                     type="primary"
                     icon={<PlusOutlined />}
                     onClick={() => handleOpenDrawer()}
+                    disabled={!selectedSedeId}
                 >
                     Crear nueva caja
                 </Button>
@@ -253,7 +274,12 @@ const CajasCatalog = () => {
                         <Input allowClear placeholder="Buscar por nombre" />
                     </Form.Item>
                     <Form.Item name="sedeId" label="Sede" style={{ minWidth: 260 }}>
-                        <Select allowClear placeholder="Todas" options={sedeOptions} loading={sedesQuery.isLoading} />
+                        <Select
+                            disabled
+                            placeholder="Sede actual"
+                            options={sedeOptions}
+                            loading={sedesQuery.isLoading}
+                        />
                     </Form.Item>
                     <Form.Item name="activa" label="Estado" style={{ minWidth: 150 }}>
                         <Select allowClear placeholder="Todos" options={estadoOptions} />
@@ -307,19 +333,21 @@ const CajasCatalog = () => {
                     >
                         <Input placeholder="Caja principal" maxLength={100} />
                     </Form.Item>
-                    <Form.Item
-                        label="Sede"
-                        name="sedeId"
-                        rules={[{ required: true, message: 'Selecciona una sede' }]}
-                    >
-                        <Select
-                            placeholder="Selecciona una sede"
-                            options={sedeOptions}
-                            loading={sedesQuery.isLoading}
-                            showSearch
-                            optionFilterProp="label"
-                        />
-                    </Form.Item>
+                    {!selectedSedeId && (
+                        <Form.Item
+                            label="Sede"
+                            name="sedeId"
+                            rules={[{ required: true, message: 'Selecciona una sede' }]}
+                        >
+                            <Select
+                                placeholder="Selecciona una sede"
+                                options={sedeOptions}
+                                loading={sedesQuery.isLoading}
+                                showSearch
+                                optionFilterProp="label"
+                            />
+                        </Form.Item>
+                    )}
                     <Form.Item label="Activa" name="activa" valuePropName="checked" initialValue>
                         <Switch checkedChildren="Activa" unCheckedChildren="Inactiva" />
                     </Form.Item>
