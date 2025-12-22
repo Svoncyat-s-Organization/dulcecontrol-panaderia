@@ -6,7 +6,14 @@ import UnifiedStatusModal from './UnifiedStatusModal.jsx';
 import PedidoDetailDrawer from './PedidoDetailDrawer.jsx';
 import ReceiptModal from '../PuntoDeVenta/ReceiptModal.jsx';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
-import { getPedidos, updatePedido, getDetallesPedido, addPagoPedido, getPagosPedido } from '../../api/pedidos.api.js';
+import {
+    getPedidos,
+    getPedidoById,
+    updatePedido,
+    getDetallesPedido,
+    addPagoPedido,
+    getPagosPedido,
+} from '../../api/pedidos.api.js';
 import { registrarMovimientoCaja } from '../../api/cajas.api.js';
 import { getClientes } from '../../api/clientes.api.js';
 import { getUsuariosAdmin } from '../../api/usuarios.api.js';
@@ -16,6 +23,8 @@ import { mapPedidoToTable } from '../../utils/ventaMappers.js';
 import { getInventarioProductosPorSede } from '../../../inventario/api/existencias.api.js';
 import { crearMovimientoInventarioProducto } from '../../../inventario/api/movimientos.api.js';
 import { INVENTARIO_PRODUCTO_KEYS, INVENTARIO_MOVIMIENTO_KEYS } from '../../../inventario/constants/queryKeys.js';
+import { getConfiguracionTienda } from '../../api/configuracion.api.js';
+import { createComprobante, incrementarCorrelativoSerie } from '../../api/facturacion.api.js';
 
 const PedidosTable = () => {
     const tiendaId = useTokenStore((state) => state.tiendaId);
@@ -86,6 +95,28 @@ const PedidosTable = () => {
         });
         return map;
     }, [usuariosQuery.data]);
+
+    const {
+        data: facturacionConfig,
+        isLoading: isFacturacionConfigLoading,
+        error: facturacionConfigError,
+    } = useQuery({
+        queryKey: ['configuracion-tienda', tiendaId],
+        queryFn: () => getConfiguracionTienda(tiendaId),
+        enabled: !!tiendaId,
+        retry: 1,
+    });
+
+    const calcularTotalesComprobante = (importeCentimos) => {
+        const tasaIgvValor = Number(facturacionConfig?.tasaIgv ?? 18);
+        if (!tasaIgvValor || Number.isNaN(tasaIgvValor) || tasaIgvValor <= 0) {
+            return { gravado: importeCentimos, igv: 0 };
+        }
+        const rate = tasaIgvValor / 100;
+        const gravado = Math.round(importeCentimos / (1 + rate));
+        const igv = importeCentimos - gravado;
+        return { gravado, igv };
+    };
 
     const productosMap = useMemo(() => {
         const map = new Map();
@@ -337,7 +368,8 @@ const PedidosTable = () => {
     });
 
     const handleManageStatus = (pedido) => {
-        setStatusModal({ open: true, pedido });
+        const cliente = clientesMap.get(pedido?.raw?.clienteId) || null;
+        setStatusModal({ open: true, pedido, cliente });
     };
 
     const handleViewDetail = (pedido) => {
@@ -345,7 +377,7 @@ const PedidosTable = () => {
     };
 
     const handleCloseStatusModal = () => {
-        setStatusModal({ open: false, pedido: null });
+        setStatusModal({ open: false, pedido: null, cliente: null });
     };
 
     const handleCloseDetailDrawer = () => {
@@ -358,6 +390,119 @@ const PedidosTable = () => {
 
     const handleConfirmStatus = (pedido, nuevoEstado) => {
         statusMutation.mutate({ pedido, nuevoEstado });
+    };
+
+    const emitirComprobanteMutation = useMutation({
+        mutationFn: async ({ pedido, data }) => {
+            if (!tiendaId) {
+                throw new Error('No se pudo determinar la tienda.');
+            }
+            if (!pedido?.raw?.id) {
+                throw new Error('Pedido inválido.');
+            }
+
+            const pedidoId = pedido.raw.id;
+            const pedidoDetail = await getPedidoById(tiendaId, pedidoId);
+
+            const facturacionReady = !!(facturacionConfig?.ruc && facturacionConfig?.razonSocial && facturacionConfig?.direccionFiscal);
+            if (!facturacionReady) {
+                throw new Error('Configuración de facturación incompleta. Completa tus datos fiscales antes de emitir comprobantes.');
+            }
+
+            // No confiar solo en estadoPago (puede estar desfasado mientras el modal sigue abierto).
+            // Validamos por montos en centimos.
+            const totalCentimosPagoCheck = Number(pedidoDetail?.totalFinalCentimos ?? 0);
+            const pagadoCentimosPagoCheck = Number(pedidoDetail?.montoPagadoCentimos ?? 0);
+            if (totalCentimosPagoCheck > 0 && pagadoCentimosPagoCheck < totalCentimosPagoCheck) {
+                throw new Error('El pedido debe tener pago total antes de emitir comprobante.');
+            }
+
+            if (pedidoDetail?.tipoComprobante && pedidoDetail?.serieComprobante && pedidoDetail?.numeroComprobante) {
+                throw new Error('Este pedido ya tiene un comprobante emitido.');
+            }
+
+            const totalCentimos = Number(pedidoDetail?.totalFinalCentimos ?? 0);
+            const { gravado: totalGravadoCentimos, igv: totalIgvCentimos } = calcularTotalesComprobante(totalCentimos);
+
+            const comprobanteRegistrado = await createComprobante(tiendaId, {
+                tiendaId,
+                pedidoId,
+                serieId: data.serieId,
+                emisorRazonSocial: facturacionConfig.razonSocial,
+                emisorRuc: facturacionConfig.ruc,
+                emisorDireccion: facturacionConfig.direccionFiscal,
+                clienteTipoDoc: data.clienteDocTipo,
+                clienteNumeroDoc: data.clienteDocNumero,
+                clienteNombre: data.clienteNombre,
+                clienteDireccion: data.clienteDireccion,
+                tipoComprobante: data.tipoComprobante,
+                correlativo: data.correlativo,
+                moneda: (pedidoDetail?.moneda || 'PEN'),
+                totalGravadoCentimos,
+                totalInafectoCentimos: 0,
+                totalExoneradoCentimos: 0,
+                totalIgvCentimos,
+                totalImpuestosBolsaCentimos: 0,
+                totalImporteCentimos: totalCentimos,
+            });
+
+            await incrementarCorrelativoSerie(tiendaId, data.serieId);
+
+            const updatePayload = {
+                codigoPedido: pedidoDetail?.codigoPedido,
+                sedeOrigenId: pedidoDetail?.sedeOrigenId,
+                clienteId: data?.clienteId || pedidoDetail?.clienteId,
+                origen: pedidoDetail?.origen,
+                sesionCajaId: pedidoDetail?.sesionCajaId,
+                vendedorId: pedidoDetail?.vendedorId,
+                estadoPedido: pedidoDetail?.estadoPedido,
+                estadoPago: pedidoDetail?.estadoPago,
+                tipoEntrega: pedidoDetail?.tipoEntrega,
+                fechaEntregaPactada: pedidoDetail?.fechaEntregaPactada,
+                direccionEntrega: pedidoDetail?.direccionEntrega,
+                costoDeliveryCentimos: pedidoDetail?.costoDeliveryCentimos,
+                moneda: pedidoDetail?.moneda,
+                subtotalItemsCentimos: pedidoDetail?.subtotalItemsCentimos,
+                descuentoTotalCentimos: pedidoDetail?.descuentoTotalCentimos,
+                impuestosTotalesCentimos: pedidoDetail?.impuestosTotalesCentimos,
+                totalFinalCentimos: pedidoDetail?.totalFinalCentimos,
+                montoPagadoCentimos: pedidoDetail?.montoPagadoCentimos,
+                requiereComprobante: true,
+                tipoComprobante: data.tipoComprobante,
+                serieComprobante: data.serieCodigo,
+                numeroComprobante: data.correlativo,
+                notasPedido: pedidoDetail?.notasPedido,
+            };
+
+            const pedidoActualizado = await updatePedido(tiendaId, pedidoId, updatePayload);
+
+            const [detalles, pagos] = await Promise.all([
+                getDetallesPedido(tiendaId, pedidoId),
+                getPagosPedido(tiendaId, pedidoId),
+            ]);
+
+            const receiptPayload = buildReceiptPayload({
+                ...pedidoActualizado,
+                comprobante: { ...comprobanteRegistrado, serieCodigo: data.serieCodigo },
+            }, detalles, pagos);
+
+            // Force comprobante ticket layout
+            receiptPayload.receiptKind = 'comprobante';
+
+            return receiptPayload;
+        },
+        onSuccess: (payload) => {
+            queryClient.invalidateQueries(PEDIDO_KEYS.all);
+            setReceiptData(payload);
+            handleCloseStatusModal();
+        },
+        onError: (err) => {
+            console.error(err?.response?.data?.message || err.message || 'No se pudo emitir el comprobante');
+        },
+    });
+
+    const handleEmitirComprobante = (pedido, data) => {
+        emitirComprobanteMutation.mutate({ pedido, data });
     };
 
     const buildReceiptPayload = (pedido, detalles = [], pagos = []) => {
@@ -447,11 +592,18 @@ const PedidosTable = () => {
             <UnifiedStatusModal
                 open={statusModal.open}
                 pedido={statusModal.pedido}
+                cliente={statusModal.cliente}
+                clientes={clientesQuery.data || []}
                 onClose={handleCloseStatusModal}
                 onConfirmPayment={handleConfirmPayment}
                 onConfirmStatus={handleConfirmStatus}
+                onEmitirComprobante={handleEmitirComprobante}
                 loadingPayment={paymentMutation.isPending}
                 loadingStatus={statusMutation.isPending}
+                loadingEmitirComprobante={emitirComprobanteMutation.isPending}
+                facturacionConfig={facturacionConfigError ? null : facturacionConfig}
+                facturacionConfigLoading={isFacturacionConfigLoading}
+                tiendaId={tiendaId}
             />
 
             <PedidoDetailDrawer

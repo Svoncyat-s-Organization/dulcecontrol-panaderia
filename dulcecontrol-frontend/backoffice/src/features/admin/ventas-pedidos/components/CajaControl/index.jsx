@@ -9,6 +9,23 @@ import { useSedeStore } from '../../../../../shared/store/sedeStore.js';
 import { CAJA_KEYS } from '../../constants/queryKeys.js';
 import { useCartStore } from '../../hooks/useCartStore.js';
 import { computeExpectedFinalCentimos } from '../../utils/cajaCalculations.js';
+import { nowLocalApiDateTime } from '../../utils/dateTime.js';
+
+const CAJA_SESSION_BROADCAST_KEY = 'dc-caja-session-changed';
+
+const broadcastCajaSessionChange = ({ tiendaId, sedeId, usuarioId, type }) => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+    try {
+        window.localStorage.setItem(
+            CAJA_SESSION_BROADCAST_KEY,
+            JSON.stringify({ at: Date.now(), tiendaId: tiendaId ?? null, sedeId: sedeId ?? null, usuarioId: usuarioId ?? null, type })
+        );
+    } catch {
+        // ignore
+    }
+};
 
 const CajaControl = ({ children }) => {
     const { message } = AntdApp.useApp();
@@ -60,6 +77,8 @@ const CajaControl = ({ children }) => {
                 usuarioAperturaId: usuarioId,
                 montoInicialCentimos,
                 montoFinalEsperadoCentimos: montoInicialCentimos,
+                fechaApertura: nowLocalApiDateTime(),
+                estaAbierta: true,
             });
         },
         onSuccess: () => {
@@ -68,6 +87,9 @@ const CajaControl = ({ children }) => {
             setActionType(null);
             queryClient.invalidateQueries(CAJA_KEYS.base(tiendaId, selectedSedeId));
             queryClient.invalidateQueries(CAJA_KEYS.lists(tiendaId, selectedSedeId));
+            queryClient.invalidateQueries(CAJA_KEYS.sesionActive(tiendaId, selectedSedeId, usuarioId));
+            queryClient.invalidateQueries(CAJA_KEYS.sesiones(tiendaId, selectedSedeId));
+            broadcastCajaSessionChange({ tiendaId, sedeId: selectedSedeId, usuarioId, type: 'open' });
         },
         onError: (err) => message.error(err?.response?.data?.message || err.message || 'Error al abrir caja')
     });
@@ -79,13 +101,23 @@ const CajaControl = ({ children }) => {
             usuarioCierreId: usuarioId,
             montoFinalRealCentimos: Math.round(values.montoFinal * 100),
             montoFinalEsperadoCentimos,
+            fechaCierre: nowLocalApiDateTime(),
+            estaAbierta: false,
         }),
         onSuccess: () => {
             setIsModalOpen(false);
+            // Limpieza inmediata del carrito, incluso si la sesión tarda en refrescar
+            clearCart();
             refetchSession();
             setActionType(null);
             queryClient.invalidateQueries(CAJA_KEYS.base(tiendaId, selectedSedeId));
             queryClient.invalidateQueries(CAJA_KEYS.lists(tiendaId, selectedSedeId));
+            queryClient.invalidateQueries(CAJA_KEYS.sesionActive(tiendaId, selectedSedeId, usuarioId));
+            queryClient.invalidateQueries(CAJA_KEYS.sesiones(tiendaId, selectedSedeId));
+            if (session?.id) {
+                queryClient.invalidateQueries(CAJA_KEYS.movimientos(tiendaId, session.id));
+            }
+            broadcastCajaSessionChange({ tiendaId, sedeId: selectedSedeId, usuarioId, type: 'close' });
         },
         onError: (err) => message.error(err?.response?.data?.message || err.message || 'Error al cerrar caja')
     });

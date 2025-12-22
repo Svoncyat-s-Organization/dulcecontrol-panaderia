@@ -1,10 +1,12 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTokenStore } from '../../../../shared/store/tokenStore.js';
 import { useSedeStore } from '../../../../shared/store/sedeStore.js';
 import { getCajas, getSesionesCaja } from '../api/cajas.api.js';
 import { CAJA_KEYS } from '../constants/queryKeys.js';
 import { useCurrentUsuarioTienda } from './useCurrentUsuarioTienda.js';
+
+const CAJA_SESSION_BROADCAST_KEY = 'dc-caja-session-changed';
 
 export const useCajaSession = () => {
     const tiendaId = useTokenStore((state) => state.tiendaId);
@@ -26,8 +28,25 @@ export const useCajaSession = () => {
             sedeId: selectedSedeId ?? undefined,
         }),
         enabled: !!tiendaId && !!usuarioId,
-        select: (data) => data.filter((s) => s.estaAbierta && String(s.usuarioAperturaId) === String(usuarioId))
+        select: (data) => data.filter((s) => s.estaAbierta && String(s.usuarioAperturaId) === String(usuarioId)),
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
     });
+
+    useEffect(() => {
+        if (typeof window === 'undefined') {
+            return;
+        }
+        const handler = (event) => {
+            if (event?.key !== CAJA_SESSION_BROADCAST_KEY) {
+                return;
+            }
+            // Refrescar la sesión activa en cualquier pestaña/ventana
+            refetch();
+        };
+        window.addEventListener('storage', handler);
+        return () => window.removeEventListener('storage', handler);
+    }, [refetch]);
 
     const sortedCajas = useMemo(() => {
         if (!Array.isArray(cajas)) {

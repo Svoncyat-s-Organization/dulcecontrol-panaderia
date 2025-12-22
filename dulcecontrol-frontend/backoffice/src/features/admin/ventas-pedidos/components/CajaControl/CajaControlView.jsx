@@ -5,6 +5,7 @@ import { getClientes } from '../../api/clientes.api.js';
 import { useCartStore } from '../../hooks/useCartStore.js';
 import { useEffect, useState } from 'react';
 import MoneyInput from '../../../../../shared/components/MoneyInput.jsx';
+import { toLocaleStringApiDateTime } from '../../utils/dateTime.js';
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -132,7 +133,7 @@ const CajaControlView = ({
                 <>
                     <Form.Item label="Fecha de Apertura">
                         <Input
-                            value={new Date(session?.fechaApertura).toLocaleString()}
+                            value={toLocaleStringApiDateTime(session?.fechaApertura)}
                             readOnly
                             style={{
                                 background: '#f0f5ff',
