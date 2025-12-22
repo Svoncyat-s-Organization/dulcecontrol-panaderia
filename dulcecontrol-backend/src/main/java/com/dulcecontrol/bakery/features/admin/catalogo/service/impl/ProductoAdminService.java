@@ -7,6 +7,11 @@ import com.dulcecontrol.bakery.features.admin.catalogo.entity.Producto;
 import com.dulcecontrol.bakery.features.shared.catalogo.repository.CategoriaRepository;
 import com.dulcecontrol.bakery.features.shared.catalogo.repository.ProductoRepository;
 import com.dulcecontrol.bakery.features.admin.catalogo.service.IProductoAdminService;
+import com.dulcecontrol.bakery.features.admin.catalogo.entity.enums.TipoProducto;
+import com.dulcecontrol.bakery.features.admin.inventario.entity.InventarioProducto;
+import com.dulcecontrol.bakery.features.admin.inventario.repository.InventarioProductoRepository;
+import com.dulcecontrol.bakery.features.superadmin.tiendas.repository.SedeRepository;
+import com.dulcecontrol.bakery.features.superadmin.tiendas.entity.Sede;
 import com.dulcecontrol.bakery.shared.exception.BadRequestException;
 import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +29,8 @@ public class ProductoAdminService implements IProductoAdminService {
 
     private final ProductoRepository productoRepository;
     private final CategoriaRepository categoriaRepository;
+    private final SedeRepository sedeRepository;
+    private final InventarioProductoRepository inventarioProductoRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -74,7 +81,42 @@ public class ProductoAdminService implements IProductoAdminService {
         producto.setActivo(request.getActivo() == null ? Boolean.TRUE : request.getActivo());
 
         Producto guardado = productoRepository.save(producto);
+
+        // Diseño: el inventario de productos se maneja por sede (tabla inventario_productos).
+        // Para que un producto recién creado aparezca en "Existencias", se crea un registro por sede con stock 0.
+        // Nota: para servicios no se crea inventario.
+        if (request.getTipo() != TipoProducto.SERVICIO) {
+            crearInventarioPorSedes(tiendaId, guardado.getId());
+        }
+
         return toResponse(guardado);
+    }
+
+    private void crearInventarioPorSedes(Long tiendaId, Long productoId) {
+        List<Sede> sedes = sedeRepository.findByTiendaId(tiendaId).stream()
+                .filter(sede -> Boolean.TRUE.equals(sede.getActivo()))
+                .toList();
+
+        if (sedes.isEmpty()) {
+            return;
+        }
+
+        List<InventarioProducto> nuevos = sedes.stream()
+                .filter(sede -> !inventarioProductoRepository.existsBySedeIdAndProductoId(sede.getId(), productoId))
+                .map(sede -> {
+                    InventarioProducto inv = new InventarioProducto();
+                    inv.setTiendaId(tiendaId);
+                    inv.setSedeId(sede.getId());
+                    inv.setProductoId(productoId);
+                    inv.setCantidadActual(0);
+                    inv.setUbicacionFisica(null);
+                    return inv;
+                })
+                .toList();
+
+        if (!nuevos.isEmpty()) {
+            inventarioProductoRepository.saveAll(nuevos);
+        }
     }
 
     @Override

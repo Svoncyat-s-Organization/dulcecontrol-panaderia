@@ -44,13 +44,17 @@ const CategoriasTableView = ({
         <Avatar
           shape="square"
           size={56}
-          src={record.urlImagen}
+          src={record.urlImagen ?? record.url_imagen}
           icon={<IconPhoto size={18} />}
           style={{ 
             backgroundColor: token.colorFillQuaternary,
             border: `1px solid ${token.colorBorderSecondary}`,
           }}
-        />
+        >
+          {(!record.urlImagen && !record.url_imagen && record.icono)
+            ? String(record.icono).slice(0, 2).toUpperCase()
+            : null}
+        </Avatar>
       ),
     },
     {

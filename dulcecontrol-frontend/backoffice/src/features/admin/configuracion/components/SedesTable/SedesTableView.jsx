@@ -171,7 +171,6 @@ export default function SedesTableView({
         onOk={() => form.submit()}
         confirmLoading={isSaving}
         width={800}
-        destroyOnClose
       >
         <Form
           form={form}

@@ -9,7 +9,7 @@ const needsDecimals = (unidadMedida) => DECIMAL_UNITS.includes((unidadMedida ?? 
 
 const formatCantidad = (cantidad, unidadMedida) => {
   const rawValue = Number(cantidad ?? 0);
-  const precision = needsDecimals(unidadMedida) ? 1 : 0;
+  const precision = needsDecimals(unidadMedida) ? 3 : 0;
   const formatted = Number.isFinite(rawValue)
     ? rawValue.toLocaleString('es-PE', {
         minimumFractionDigits: precision,

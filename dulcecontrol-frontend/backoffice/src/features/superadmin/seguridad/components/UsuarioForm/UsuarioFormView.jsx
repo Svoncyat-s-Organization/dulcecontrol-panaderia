@@ -24,7 +24,6 @@ const UsuarioFormView = ({
       onCancel={onCancel}
       footer={null}
       width={640}
-      destroyOnClose
       maskClosable={false}
     >
       <Form form={form} layout="vertical" autoComplete="off" onFinish={handleFinish}>

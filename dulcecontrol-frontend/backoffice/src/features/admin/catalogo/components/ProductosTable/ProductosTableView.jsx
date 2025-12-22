@@ -74,7 +74,7 @@ const ProductosTableView = ({
         <Avatar
           shape="square"
           size={56}
-          src={record.urlImagenPrincipal}
+          src={record.urlImagenPrincipal?.trim() ? record.urlImagenPrincipal.trim() : undefined}
           icon={<IconPhoto size={18} />}
           style={{ 
             backgroundColor: token.colorFillQuaternary,

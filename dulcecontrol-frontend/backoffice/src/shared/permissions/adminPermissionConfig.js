@@ -310,6 +310,11 @@ export const ADMIN_MENU_BLUEPRINT = [
         label: 'Movimientos',
         permissionPrefixes: ['inventario'],
       },
+      {
+        key: `${BASE_PATH}/inventario/transferencias`,
+        label: 'Transferencias',
+        permissionPrefixes: ['inventario'],
+      },
     ],
   },
   {
@@ -400,6 +405,7 @@ export const ADMIN_ROUTE_PERMISSIONS = {
   'inventario/existencias': ['inventario.view'],
   'inventario/insumos': ['inventario.view', 'insumos.view'],
   'inventario/movimientos': ['inventario.view'],
+  'inventario/transferencias': ['inventario.view'],
   'produccion': ['produccion.view', 'recetas.view'],
   'produccion/planificacion': ['produccion.view'],
   'produccion/stock-ideal': ['produccion.view'],

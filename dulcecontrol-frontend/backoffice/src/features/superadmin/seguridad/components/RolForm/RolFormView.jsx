@@ -39,7 +39,6 @@ const RolFormView = ({
       onCancel={handleCancel}
       footer={null}
       width={600}
-      destroyOnClose
       maskClosable={false}
     >
       <Form form={form} layout="vertical" autoComplete="off" onFinish={handleFinish}>

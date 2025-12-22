@@ -169,7 +169,7 @@ const ReceiptModal = ({ open, onClose, pedido }) => {
 	const loadingData = isTiendaLoading || isConfigLoading || (sedeId ? isSedesLoading : false);
 
 	return (
-		<Modal open={open} onCancel={onClose} footer={null} width={420} closable={false} destroyOnClose>
+		<Modal open={open} onCancel={onClose} footer={null} width={420} closable={false}>
 			{!pedido ? (
 				<Empty description="No hay recibo disponible" />
 			) : (

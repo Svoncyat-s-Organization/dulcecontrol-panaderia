@@ -27,3 +27,14 @@ export const updateInventarioInsumo = async (tiendaId, inventarioId, payload) =>
   );
   return data;
 };
+
+export const updateUbicacionInventarioInsumo = async (tiendaId, inventarioId, ubicacionFisica) => {
+  if (!tiendaId || !inventarioId) {
+    throw new Error('tiendaId e inventarioId son requeridos para actualizar ubicación');
+  }
+  const { data } = await apiClient.patch(
+    buildInventarioInsumosUrl(tiendaId, `/${inventarioId}/ubicacion`),
+    { ubicacionFisica }
+  );
+  return data;
+};

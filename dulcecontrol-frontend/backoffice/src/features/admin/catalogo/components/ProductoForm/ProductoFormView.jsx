@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Button, Col, Drawer, Form, Input, InputNumber, Row, Select, Space, Switch, theme } from 'antd';
+import { Button, Col, Drawer, Form, Input, InputNumber, Row, Select, Space, Switch, message, theme } from 'antd';
 
 const tipoOptions = [
   { label: 'Producto terminado', value: 'PRODUCTO_TERMINADO' },
@@ -29,7 +29,6 @@ const ProductoFormView = ({
       open={open}
       onClose={onClose}
       width={520}
-      destroyOnClose
       styles={{
         body: {
           paddingBottom: 24,
@@ -52,6 +51,12 @@ const ProductoFormView = ({
         form={form}
         layout="vertical"
         onFinish={onSubmit}
+        onFinishFailed={({ errorFields }) => {
+          if (errorFields?.length) {
+            message.error('Revisa los campos obligatorios');
+            form.scrollToField(errorFields[0].name);
+          }
+        }}
         disabled={loading}
         requiredMark={false}
       >
@@ -85,7 +90,6 @@ const ProductoFormView = ({
             <Form.Item 
               label="Categoría" 
               name="categoriaId"
-              rules={[{ required: true, message: 'Selecciona una categoría' }]}
             >
               <Select
                 placeholder="Selecciona una categoría"
@@ -104,13 +108,15 @@ const ProductoFormView = ({
           name="precioBase"
           rules={[{ required: true, message: 'Ingresa el precio base' }]}
         >
-          <InputNumber
-            addonBefore="S/."
-            min={0}
-            step={0.1}
-            style={{ width: '100%' }}
-            placeholder="0.00"
-          />
+          <Space.Compact block>
+            <Input value="S/." disabled style={{ width: 72 }} />
+            <InputNumber
+              min={0}
+              step={0.1}
+              style={{ width: '100%' }}
+              placeholder="0.00"
+            />
+          </Space.Compact>
         </Form.Item>
 
         <Form.Item
@@ -119,9 +125,9 @@ const ProductoFormView = ({
           rules={[
             ({ getFieldValue }) => ({
               validator(_, value) {
-                if (!value) return Promise.resolve();
+                if (value === undefined || value === null) return Promise.resolve();
                 const precioBase = getFieldValue('precioBase');
-                if (!precioBase) return Promise.resolve();
+                if (precioBase === undefined || precioBase === null) return Promise.resolve();
                 if (value < precioBase) return Promise.resolve();
                 return Promise.reject(new Error('El precio oferta debe ser menor al precio base'));
               },
@@ -129,13 +135,15 @@ const ProductoFormView = ({
           ]}
           tooltip="Precio promocional. Debe ser menor al precio base"
         >
-          <InputNumber
-            addonBefore="S/."
-            min={0}
-            step={0.1}
-            style={{ width: '100%' }}
-            placeholder="0.00"
-          />
+          <Space.Compact block>
+            <Input value="S/." disabled style={{ width: 72 }} />
+            <InputNumber
+              min={0}
+              step={0.1}
+              style={{ width: '100%' }}
+              placeholder="0.00"
+            />
+          </Space.Compact>
         </Form.Item>
 
         <Form.Item label="URL Imagen principal" name="urlImagenPrincipal">

@@ -22,7 +22,6 @@ const CategoriaFormView = ({ open, onClose, form, onSubmit, loading, isEditing }
       onOk={() => form.submit()}
       okText={isEditing ? 'Guardar cambios' : 'Crear categoría'}
       confirmLoading={loading}
-      destroyOnClose
       width={520}
     >
       <Form

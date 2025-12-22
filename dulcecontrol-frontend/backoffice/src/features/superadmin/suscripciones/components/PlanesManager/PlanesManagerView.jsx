@@ -187,7 +187,6 @@ const PlanesManagerView = ({
                 onCancel={onCloseModal}
                 footer={null}
                 width={700}
-                destroyOnClose
             >
                 <Form
                     form={form}
