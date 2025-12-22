@@ -256,8 +256,26 @@ public class PlanProduccionAdminService {
                 .build();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<PlanProduccionResponse> listPlanesByTienda(Long tiendaId, Long sedeId) {
+        // Verificar si existe plan para mañana, si no existe crearlo automáticamente
+        LocalDate manana = LocalDate.now().plusDays(1);
+        
+        if (sedeId != null) {
+            Optional<PlanProduccion> planMananaOpt = planRepository.findBySedeIdAndFechaProduccion(sedeId, manana);
+            if (planMananaOpt.isEmpty()) {
+                log.info("🎆 No existe plan para mañana ({}) en sede {}. Generando automáticamente...", manana, sedeId);
+                PlanProduccion planManana = new PlanProduccion();
+                planManana.setTiendaId(tiendaId);
+                planManana.setSedeId(sedeId);
+                planManana.setFechaProduccion(manana);
+                planManana.setEstado(EstadoPlanProduccion.BORRADOR);
+                planManana.setNotasMaestro("Plan generado automáticamente para el día siguiente");
+                planRepository.save(planManana);
+                log.info("✅ Plan para mañana generado automáticamente");
+            }
+        }
+        
         List<PlanProduccion> planes = sedeId != null
                 ? planRepository.findByTiendaIdAndSedeIdOrderByFechaProduccionDesc(tiendaId, sedeId)
                 : planRepository.findByTiendaIdOrderByFechaProduccionDesc(tiendaId);
