@@ -1,5 +1,12 @@
 package com.dulcecontrol.bakery.features.admin.seguridad.service.impl;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.dulcecontrol.bakery.features.admin.seguridad.dto.RolCreateRequest;
 import com.dulcecontrol.bakery.features.admin.seguridad.dto.RolResponse;
 import com.dulcecontrol.bakery.features.admin.seguridad.dto.RolUpdateRequest;
@@ -10,15 +17,11 @@ import com.dulcecontrol.bakery.features.admin.seguridad.repository.RolPermisoRep
 import com.dulcecontrol.bakery.features.admin.seguridad.repository.RolRepository;
 import com.dulcecontrol.bakery.features.admin.seguridad.repository.UsuarioTiendaRepository;
 import com.dulcecontrol.bakery.features.admin.seguridad.service.IRolAdminService;
+import com.dulcecontrol.bakery.features.admin.seguridad.service.RolSistemaBootstrapService;
 import com.dulcecontrol.bakery.shared.exception.BadRequestException;
 import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -28,10 +31,12 @@ public class RolAdminService implements IRolAdminService {
     private final PermisoRepository permisoRepository;
     private final RolPermisoRepository rolPermisoRepository;
     private final UsuarioTiendaRepository usuarioTiendaRepository;
+    private final RolSistemaBootstrapService rolSistemaBootstrapService;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public List<RolResponse> listarPorTienda(Long tiendaId) {
+        rolSistemaBootstrapService.ensureDefaultRoles(tiendaId);
         return rolRepository.findByTiendaId(tiendaId)
                 .stream()
                 .map(rol -> toResponse(rol, new HashSet<>(rolPermisoRepository.findPermisoIdsByRolId(rol.getId()))))

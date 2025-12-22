@@ -45,7 +45,7 @@ const TiendaFormContainer = ({ visible, onCancel, initialValues }) => {
 
     const handleSubmit = (values) => {
         const payload = initialValues
-            ? buildTiendaUpdatePayload(values)
+            ? buildTiendaUpdatePayload(values, initialValues)
             : buildTiendaCreatePayload(values);
         mutation.mutate(payload);
     };

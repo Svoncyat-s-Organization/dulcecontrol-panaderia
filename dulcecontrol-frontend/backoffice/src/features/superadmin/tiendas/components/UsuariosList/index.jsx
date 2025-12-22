@@ -37,6 +37,9 @@ const UsuariosListContainer = ({ tiendaId, onCreate, onEdit }) => {
             tipoDoc: usuario.tipoDoc ?? usuario.tipo_doc ?? '',
             numeroDoc: usuario.numeroDoc ?? usuario.numero_doc ?? '',
             telefono: usuario.telefono ?? usuario.telefono_contacto ?? '',
+            sedeIds: usuario.sedeIds
+                ?? usuario.sedesIds
+                ?? (usuario.sedeId ? [usuario.sedeId] : []),
             activo: usuario.activo ?? (usuario.estado !== undefined ? usuario.estado === 'ACTIVO' : true),
             creadoEn: usuario.creadoEn ?? usuario.creado_en ?? null,
         }))

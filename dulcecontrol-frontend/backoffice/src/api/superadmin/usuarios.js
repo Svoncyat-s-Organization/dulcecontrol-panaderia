@@ -16,6 +16,7 @@ export const getUsuariosByTiendaId = async (tiendaId) => {
 export const createUsuario = async (tiendaId, data) => {
     const payload = sanitizePayload({
         rolId: data.rolId,
+        sedeIds: data.sedeIds,
         correo: data.correo,
         contrasena: data.contrasena,
         tipoDoc: data.tipoDoc,
@@ -31,6 +32,7 @@ export const createUsuario = async (tiendaId, data) => {
 export const updateUsuario = async (tiendaId, usuarioId, data) => {
     const payload = sanitizePayload({
         rolId: data.rolId,
+        sedeIds: data.sedeIds,
         correo: data.correo,
         tipoDoc: data.tipoDoc,
         numeroDoc: data.numeroDoc,

@@ -1,5 +1,12 @@
 package com.dulcecontrol.bakery.features.superadmin.tiendas.service.impl;
 
+import java.util.List;
+
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.dulcecontrol.bakery.features.admin.seguridad.service.RolSistemaBootstrapService;
 import com.dulcecontrol.bakery.features.superadmin.tiendas.dto.TiendaCreateRequest;
 import com.dulcecontrol.bakery.features.superadmin.tiendas.dto.TiendaResponse;
 import com.dulcecontrol.bakery.features.superadmin.tiendas.dto.TiendaUpdateRequest;
@@ -9,12 +16,8 @@ import com.dulcecontrol.bakery.features.superadmin.tiendas.repository.TiendaRepo
 import com.dulcecontrol.bakery.features.superadmin.tiendas.service.ITiendaSuperAdminService;
 import com.dulcecontrol.bakery.shared.exception.BadRequestException;
 import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +25,7 @@ public class TiendaSuperAdminService implements ITiendaSuperAdminService {
 
     private final TiendaRepository tiendaRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final RolSistemaBootstrapService rolSistemaBootstrapService;
 
     @Override
     @Transactional(readOnly = true)
@@ -58,6 +62,7 @@ public class TiendaSuperAdminService implements ITiendaSuperAdminService {
                 .build();
 
         Tienda guardada = tiendaRepository.save(tienda);
+        rolSistemaBootstrapService.ensureDefaultRoles(guardada.getId());
         return toResponse(guardada);
     }
 
