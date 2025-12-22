@@ -104,18 +104,6 @@ VALUES
     'Siempre pide tortas personalizadas para cumpleaños',
     TRUE
   ),
-  (
-    (SELECT id FROM tiendas WHERE numero_doc = '20601234567'),
-    NULL,
-    NULL,
-    'Cliente Genérico',
-    NULL,
-    NULL,
-    FALSE,
-    NULL,
-    'Cliente sin documento - ventas mostrador',
-    TRUE
-  ),
   -- Clientes Panadería El Sol (RUC 20601234568)
   (
     (SELECT id FROM tiendas WHERE numero_doc = '20601234568'),
@@ -141,18 +129,6 @@ VALUES
     'Compra pan integral todas las mañanas',
     TRUE
   ),
-  (
-    (SELECT id FROM tiendas WHERE numero_doc = '20601234568'),
-    NULL,
-    NULL,
-    'Cliente Genérico',
-    NULL,
-    NULL,
-    FALSE,
-    NULL,
-    'Cliente sin documento',
-    TRUE
-  ),
   -- Clientes Tortas & Delicias (RUC 20601234569)
   (
     (SELECT id FROM tiendas WHERE numero_doc = '20601234569'),
@@ -176,18 +152,6 @@ VALUES
     FALSE,
     NULL,
     'Cliente corporativo - pedidos semanales',
-    TRUE
-  ),
-  (
-    (SELECT id FROM tiendas WHERE numero_doc = '20601234569'),
-    NULL,
-    NULL,
-    'Cliente Genérico',
-    NULL,
-    NULL,
-    FALSE,
-    NULL,
-    'Cliente sin documento',
     TRUE
   )
 ON DUPLICATE KEY UPDATE
