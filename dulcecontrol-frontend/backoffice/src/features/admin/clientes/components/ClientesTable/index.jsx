@@ -85,6 +85,12 @@ const ClientesTable = () => {
       return;
     }
 
+    // Prevenir eliminación del cliente genérico
+    if (cliente.numeroDoc === '00000000' || cliente.nombreDoc === 'CLIENTE GENÉRICO') {
+      message.error('El cliente genérico no puede ser eliminado');
+      return;
+    }
+
     setClienteToDelete(cliente);
     setIsDeleteModalOpen(true);
   };

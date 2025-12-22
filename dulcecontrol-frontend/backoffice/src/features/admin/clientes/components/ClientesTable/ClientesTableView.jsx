@@ -38,14 +38,20 @@ const ClientesTableView = ({
       title: 'Cliente',
       dataIndex: 'nombreDoc',
       key: 'nombreDoc',
-      render: (_, record) => (
-        <Space orientation="vertical" size={0}>
-          <Text strong>{record.nombreDoc}</Text>
-          <Text type="secondary">
-            {record.tipoDoc}: {record.numeroDoc}
-          </Text>
-        </Space>
-      ),
+      render: (_, record) => {
+        const isGenerico = record.numeroDoc === '00000000' || record.nombreDoc === 'CLIENTE GENÉRICO';
+        return (
+          <Space orientation="vertical" size={0}>
+            <Space>
+              <Text strong>{record.nombreDoc}</Text>
+              {isGenerico && <Tag color="purple">GENÉRICO</Tag>}
+            </Space>
+            <Text type="secondary">
+              {record.tipoDoc}: {record.numeroDoc}
+            </Text>
+          </Space>
+        );
+      },
     },
     {
       title: 'Contacto',
@@ -84,33 +90,38 @@ const ClientesTableView = ({
       title: 'Acciones',
       key: 'acciones',
       width: 220,
-      render: (_, record) => (
-        <Space>
-          <Button
-            type="link"
-            icon={<IconEye size={16} />}
-            onClick={() => onView(record)}
-          >
-            Ver
-          </Button>
-          <Button
-            type="link"
-            icon={<IconEdit size={16} />}
-            onClick={() => onEdit(record)}
-          >
-            Editar
-          </Button>
-          <Button
-            type="link"
-            danger
-            icon={<IconTrash size={16} />}
-            onClick={() => onDelete(record)}
-            loading={deletingId === record.id}
-          >
-            Eliminar
-          </Button>
-        </Space>
-      ),
+      render: (_, record) => {
+        const isGenerico = record.numeroDoc === '00000000' || record.nombreDoc === 'CLIENTE GENÉRICO';
+        return (
+          <Space>
+            <Button
+              type="link"
+              icon={<IconEye size={16} />}
+              onClick={() => onView(record)}
+            >
+              Ver
+            </Button>
+            <Button
+              type="link"
+              icon={<IconEdit size={16} />}
+              onClick={() => onEdit(record)}
+            >
+              Editar
+            </Button>
+            {!isGenerico && (
+              <Button
+                type="link"
+                danger
+                icon={<IconTrash size={16} />}
+                onClick={() => onDelete(record)}
+                loading={deletingId === record.id}
+              >
+                Eliminar
+              </Button>
+            )}
+          </Space>
+        );
+      },
     },
   ];
 

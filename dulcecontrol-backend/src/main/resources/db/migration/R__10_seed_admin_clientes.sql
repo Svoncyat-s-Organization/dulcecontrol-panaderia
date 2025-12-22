@@ -3,6 +3,29 @@
 -- ============================================================================
 
 -- =================================
+-- CLIENTE GENÉRICO (para todas las tiendas)
+-- =================================
+-- Cliente genérico para ventas rápidas sin documento
+INSERT IGNORE INTO clientes (tienda_id, tipo_doc, numero_doc, nombre_doc, email, telefono, es_usuario_virtual, hash_contrasena, notas, activo)
+SELECT 
+    t.id as tienda_id,
+    NULL as tipo_doc,
+    '00000000' as numero_doc,
+    'CLIENTE GENÉRICO' as nombre_doc,
+    NULL as email,
+    NULL as telefono,
+    FALSE as es_usuario_virtual,
+    NULL as hash_contrasena,
+    'Cliente genérico para ventas sin identificación. Creado automáticamente por el sistema.' as notas,
+    TRUE as activo
+FROM tiendas t
+WHERE NOT EXISTS (
+    SELECT 1 FROM clientes c 
+    WHERE c.tienda_id = t.id 
+    AND c.numero_doc = '00000000'
+);
+
+-- =================================
 -- CLIENTES
 -- =================================
 

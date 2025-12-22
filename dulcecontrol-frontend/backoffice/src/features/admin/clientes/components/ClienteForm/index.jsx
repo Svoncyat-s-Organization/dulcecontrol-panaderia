@@ -14,6 +14,10 @@ const ClienteForm = ({ open, onClose, tiendaId, cliente }) => {
   const isEditing = Boolean(cliente?.id);
   const [buscandoDocumento, setBuscandoDocumento] = useState(false);
 
+  // Detectar si es cliente genérico
+  const isClienteGenerico = isEditing && 
+    (cliente?.numeroDoc === '00000000' || cliente?.nombreDoc === 'CLIENTE GENÉRICO');
+
   // Cargar datos del cliente si estamos editando
   const { data: clienteData } = useQuery({
     queryKey: CLIENTE_KEYS.detail(tiendaId, cliente?.id),
@@ -95,6 +99,11 @@ const ClienteForm = ({ open, onClose, tiendaId, cliente }) => {
   });
 
   const handleSubmit = (values) => {
+    // Prevenir edición de cliente genérico
+    if (isClienteGenerico) {
+      message.error('El cliente genérico no puede ser modificado');
+      return;
+    }
     mutation.mutate(values);
   };
 
@@ -132,6 +141,7 @@ const ClienteForm = ({ open, onClose, tiendaId, cliente }) => {
       onSubmit={handleSubmit}
       loading={mutation.isPending}
       isEditing={isEditing}
+      isClienteGenerico={isClienteGenerico}
       onBuscarDocumento={handleBuscarDocumento}
       buscandoDocumento={buscandoDocumento}
     />

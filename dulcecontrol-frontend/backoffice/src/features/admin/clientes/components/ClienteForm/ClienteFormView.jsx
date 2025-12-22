@@ -1,12 +1,22 @@
 import React, { useState } from 'react';
-import { Form, Input, Select, Switch, Button, Modal, Space, Typography, message } from 'antd';
+import { Form, Input, Select, Switch, Button, Modal, Space, Typography, message, Alert } from 'antd';
 import { IconX, IconSearch } from '@tabler/icons-react';
 
 const { TextArea } = Input;
 const { Option } = Select;
 const { Text } = Typography;
 
-const ClienteFormView = ({ open, onClose, form, onSubmit, loading, isEditing, onBuscarDocumento, buscandoDocumento }) => {
+const ClienteFormView = ({ 
+  open, 
+  onClose, 
+  form, 
+  onSubmit, 
+  loading, 
+  isEditing, 
+  isClienteGenerico, 
+  onBuscarDocumento, 
+  buscandoDocumento 
+}) => {
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [submitValues, setSubmitValues] = useState(null);
   const [tipoDocSeleccionado, setTipoDocSeleccionado] = useState(null);
@@ -90,6 +100,16 @@ const ClienteFormView = ({ open, onClose, form, onSubmit, loading, isEditing, on
       destroyOnHidden
       maskClosable={false}
     >
+      {isClienteGenerico && (
+        <Alert
+          message="Cliente Genérico del Sistema"
+          description="Este cliente es generado automáticamente y no puede ser modificado. Se utiliza para ventas rápidas sin documento del cliente."
+          type="warning"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
+      
       <Form
         form={form}
         layout="vertical"
@@ -100,11 +120,12 @@ const ClienteFormView = ({ open, onClose, form, onSubmit, loading, isEditing, on
           <Form.Item
             label="Tipo de Documento"
             name="tipoDoc"
-            rules={[{ required: true, message: 'Selecciona el tipo de documento' }]}
+            rules={[{ required: !isClienteGenerico, message: 'Selecciona el tipo de documento' }]}
           >
             <Select
               placeholder="Selecciona"
               onChange={(value) => setTipoDocSeleccionado(value)}
+              disabled={isClienteGenerico}
             >
               <Option value="DNI">DNI</Option>
               <Option value="RUC">RUC</Option>
@@ -115,14 +136,15 @@ const ClienteFormView = ({ open, onClose, form, onSubmit, loading, isEditing, on
             label="Número de Documento"
             name="numeroDoc"
             rules={[
-              { required: true, message: 'Ingresa el número de documento' },
+              { required: !isClienteGenerico, message: 'Ingresa el número de documento' },
               { pattern: /^[0-9]+$/, message: 'Solo números' }
             ]}
           >
             <Input 
               placeholder="Número de documento"
+              disabled={isClienteGenerico}
               suffix={
-                !isEditing && (
+                !isEditing && !isClienteGenerico && (
                   <Button
                     type="text"
                     size="small"
@@ -140,9 +162,12 @@ const ClienteFormView = ({ open, onClose, form, onSubmit, loading, isEditing, on
         <Form.Item
           label={tipoDocSeleccionado === 'RUC' ? 'Razón Social' : 'Nombre Completo'}
           name="nombreDoc"
-          rules={[{ required: true, message: `Ingresa ${tipoDocSeleccionado === 'RUC' ? 'la razón social' : 'el nombre completo'}` }]}
+          rules={[{ required: !isClienteGenerico, message: `Ingresa ${tipoDocSeleccionado === 'RUC' ? 'la razón social' : 'el nombre completo'}` }]}
         >
-          <Input placeholder={tipoDocSeleccionado === 'RUC' ? 'Razón social del cliente' : 'Nombre completo del cliente'} />
+          <Input 
+            placeholder={tipoDocSeleccionado === 'RUC' ? 'Razón social del cliente' : 'Nombre completo del cliente'} 
+            disabled={isClienteGenerico}
+          />
         </Form.Item>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -153,14 +178,20 @@ const ClienteFormView = ({ open, onClose, form, onSubmit, loading, isEditing, on
               { type: 'email', message: 'Ingresa un email válido' }
             ]}
           >
-            <Input placeholder="cliente@email.com" />
+            <Input 
+              placeholder="cliente@email.com" 
+              disabled={isClienteGenerico}
+            />
           </Form.Item>
 
           <Form.Item
             label="Teléfono"
             name="telefono"
           >
-            <Input placeholder="Número de teléfono" />
+            <Input 
+              placeholder="Número de teléfono" 
+              disabled={isClienteGenerico}
+            />
           </Form.Item>
         </div>
 
@@ -173,6 +204,7 @@ const ClienteFormView = ({ open, onClose, form, onSubmit, loading, isEditing, on
             <Switch
               checkedChildren="Virtual"
               unCheckedChildren="Físico"
+              disabled={isClienteGenerico}
             />
           </Form.Item>
 
@@ -184,6 +216,7 @@ const ClienteFormView = ({ open, onClose, form, onSubmit, loading, isEditing, on
             <Switch
               checkedChildren="Activo"
               unCheckedChildren="Inactivo"
+              disabled={isClienteGenerico}
             />
           </Form.Item>
         </div>
@@ -205,19 +238,30 @@ const ClienteFormView = ({ open, onClose, form, onSubmit, loading, isEditing, on
           <TextArea
             placeholder="Notas adicionales sobre el cliente"
             rows={3}
+            disabled={isClienteGenerico}
           />
         </Form.Item>
 
-        <Form.Item style={{ marginTop: 24, marginBottom: 0, textAlign: 'right' }}>
-          <Space>
-            <Button onClick={handleCancel} disabled={loading}>
-              Cancelar
+        {!isClienteGenerico && (
+          <Form.Item style={{ marginTop: 24, marginBottom: 0, textAlign: 'right' }}>
+            <Space>
+              <Button onClick={handleCancel} disabled={loading}>
+                Cancelar
+              </Button>
+              <Button type="primary" onClick={handleSubmitClick} loading={loading}>
+                {isEditing ? 'Actualizar' : 'Crear'} Cliente
+              </Button>
+            </Space>
+          </Form.Item>
+        )}
+
+        {isClienteGenerico && (
+          <Form.Item style={{ marginTop: 24, marginBottom: 0, textAlign: 'right' }}>
+            <Button onClick={handleCancel}>
+              Cerrar
             </Button>
-            <Button type="primary" onClick={handleSubmitClick} loading={loading}>
-              {isEditing ? 'Actualizar' : 'Crear'} Cliente
-            </Button>
-          </Space>
-        </Form.Item>
+          </Form.Item>
+        )}
       </Form>
 
       {/* Modal de confirmación para submit */}
