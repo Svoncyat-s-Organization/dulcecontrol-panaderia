@@ -23,6 +23,8 @@ import com.dulcecontrol.bakery.features.admin.produccion.entity.enums.EstadoItem
 import com.dulcecontrol.bakery.features.admin.produccion.entity.enums.OrigenItemProduccion;
 import com.dulcecontrol.bakery.features.admin.produccion.repository.PlanProduccionRepository;
 import com.dulcecontrol.bakery.features.admin.produccion.repository.DetallePlanProduccionRepository;
+import com.dulcecontrol.bakery.features.admin.inventario.entity.InventarioProducto;
+import com.dulcecontrol.bakery.features.admin.inventario.repository.InventarioProductoRepository;
 import com.dulcecontrol.bakery.shared.exception.BadRequestException;
 import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +48,7 @@ public class PedidoAdminService implements IPedidoAdminService {
     private final IInventarioProductoService inventarioProductoService;
     private final PlanProduccionRepository planProduccionRepository;
     private final DetallePlanProduccionRepository detallePlanProduccionRepository;
+    private final InventarioProductoRepository inventarioProductoRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -318,36 +321,108 @@ public class PedidoAdminService implements IPedidoAdminService {
                 ? pedido.getFechaEntregaPactada().toLocalDate()
                 : java.time.LocalDate.now().plusDays(1);
         
-        // Buscar o crear plan de producción para esa fecha
-        PlanProduccion plan = planProduccionRepository.findBySedeIdAndFechaProduccion(
-                pedido.getSedeOrigenId(), fechaProduccion)
-                .orElseGet(() -> {
-                    log.info("🎆 Creando nuevo plan de producción para pedido {} en fecha {}",
-                            pedido.getCodigoPedido(), fechaProduccion);
-                    PlanProduccion nuevoPlan = new PlanProduccion();
-                    nuevoPlan.setTiendaId(tiendaId);
-                    nuevoPlan.setSedeId(pedido.getSedeOrigenId());
-                    nuevoPlan.setFechaProduccion(fechaProduccion);
-                    nuevoPlan.setEstado(EstadoPlanProduccion.CONFIRMADO);
-                    nuevoPlan.setNotasMaestro("Plan generado para pedido " + pedido.getCodigoPedido());
-                    return planProduccionRepository.save(nuevoPlan);
-                });
+        log.info("📅 Fecha de producción calculada: {} (Fecha entrega pactada: {})", 
+                fechaProduccion, pedido.getFechaEntregaPactada());
+        
+        // Buscar plan de producción para esa fecha
+        java.util.Optional<PlanProduccion> planOpt = planProduccionRepository.findBySedeIdAndFechaProduccion(
+                pedido.getSedeOrigenId(), fechaProduccion);
+        
+        PlanProduccion plan;
+        if (planOpt.isPresent()) {
+            plan = planOpt.get();
+            
+            // Si el plan está FINALIZADO, reabrirlo a CONFIRMADO
+            if (plan.getEstado() == EstadoPlanProduccion.FINALIZADO) {
+                log.info("🔄 Plan para {} está FINALIZADO. Reabriendo a CONFIRMADO para agregar pedido {}...", 
+                        fechaProduccion, pedido.getCodigoPedido());
+                plan.setEstado(EstadoPlanProduccion.CONFIRMADO);
+                plan.setNotasMaestro((plan.getNotasMaestro() != null ? plan.getNotasMaestro() + " | " : "") + 
+                        "Reabierto para pedido " + pedido.getCodigoPedido());
+                plan = planProduccionRepository.save(plan);
+            } else {
+                log.info("📋 Plan existente encontrado para fecha {} (estado: {})", fechaProduccion, plan.getEstado());
+            }
+        } else {
+            // No existe plan, crear uno nuevo
+            log.info("🎆 Creando nuevo plan de producción para pedido {} en fecha {}",
+                    pedido.getCodigoPedido(), fechaProduccion);
+            plan = new PlanProduccion();
+            plan.setTiendaId(tiendaId);
+            plan.setSedeId(pedido.getSedeOrigenId());
+            plan.setFechaProduccion(fechaProduccion);
+            plan.setEstado(EstadoPlanProduccion.CONFIRMADO);
+            plan.setNotasMaestro("Plan generado para pedido " + pedido.getCodigoPedido());
+            plan = planProduccionRepository.save(plan);
+        }
+        
+        // Obtener detalles existentes del plan
+        List<DetallePlanProduccion> detallesExistentes = detallePlanProduccionRepository
+                .findByPlanIdOrderByIdAsc(plan.getId());
         
         // Agregar cada producto del pedido al plan
         for (DetallePedido detalle : detalles) {
-            DetallePlanProduccion detallePlan = new DetallePlanProduccion();
-            detallePlan.setPlanId(plan.getId());
-            detallePlan.setProductoId(detalle.getProductoId());
-            detallePlan.setOrigen(OrigenItemProduccion.PEDIDO_CLIENTE);
-            detallePlan.setPedidoClienteId(pedido.getId());
-            detallePlan.setDetallePedidoId(detalle.getId());
-            detallePlan.setEsPersonalizado(false);
-            detallePlan.setCantidadSugerida(detalle.getCantidad());
-            detallePlan.setCantidadPlanificada(detalle.getCantidad());
-            detallePlan.setCantidadProducida(0);
-            detallePlan.setCantidadMerma(0);
-            detallePlan.setEstado(EstadoItemProduccion.PENDIENTE);
-            detallePlan.setObservaciones("Producto del pedido " + pedido.getCodigoPedido());
+            // Buscar si ya existe un detalle para este producto del mismo pedido
+            java.util.Optional<DetallePlanProduccion> detalleExistenteOpt = detallesExistentes.stream()
+                    .filter(d -> d.getProductoId().equals(detalle.getProductoId()) && 
+                                  d.getOrigen() == OrigenItemProduccion.PEDIDO_CLIENTE &&
+                                  d.getPedidoClienteId() != null &&
+                                  d.getPedidoClienteId().equals(pedido.getId()))
+                    .findFirst();
+            
+            DetallePlanProduccion detallePlan;
+            if (detalleExistenteOpt.isPresent()) {
+                // Ya existe, actualizar cantidades y resetear estado
+                detallePlan = detalleExistenteOpt.get();
+                Integer cantidadPlanificadaAnterior = detallePlan.getCantidadPlanificada();
+                Integer cantidadProducidaAnterior = detallePlan.getCantidadProducida();
+                
+                log.info("🔄 Detalle existente encontrado para producto {} del pedido {}. Actualizando...", 
+                        detalle.getProductoId(), pedido.getCodigoPedido());
+                log.info("   Planificado anterior: {}, Producido anterior: {}", cantidadPlanificadaAnterior, cantidadProducidaAnterior);
+                
+                // Ajustar inventario: restar lo que ya se había producido antes
+                if (cantidadProducidaAnterior != null && cantidadProducidaAnterior > 0) {
+                    java.util.Optional<InventarioProducto> inventarioOpt = 
+                            inventarioProductoRepository.findBySedeIdAndProductoId(pedido.getSedeOrigenId(), detalle.getProductoId());
+                    
+                    if (inventarioOpt.isPresent()) {
+                        InventarioProducto inventario = inventarioOpt.get();
+                        Integer stockActual = inventario.getCantidadActual();
+                        inventario.setCantidadActual(stockActual - cantidadProducidaAnterior);
+                        inventarioProductoRepository.save(inventario);
+                        
+                        log.info("⬅️ Ajustando inventario: restando {} unidades producidas anteriormente. Stock: {} -> {}", 
+                                cantidadProducidaAnterior, stockActual, inventario.getCantidadActual());
+                    }
+                }
+                
+                // Actualizar cantidades
+                detallePlan.setCantidadSugerida(detallePlan.getCantidadSugerida() + detalle.getCantidad());
+                detallePlan.setCantidadPlanificada(detallePlan.getCantidadPlanificada() + detalle.getCantidad());
+                detallePlan.setCantidadProducida(0);
+                detallePlan.setCantidadMerma(0);
+                detallePlan.setEstado(EstadoItemProduccion.PENDIENTE);
+                detallePlan.setObservaciones("Producto del pedido " + pedido.getCodigoPedido() + " (actualizado)");
+                
+                log.info("✏️ Planificado actualizado: {} -> {}", cantidadPlanificadaAnterior, detallePlan.getCantidadPlanificada());
+            } else {
+                // No existe, crear uno nuevo
+                log.info("➕ Creando nuevo detalle para producto {} del pedido {}", detalle.getProductoId(), pedido.getCodigoPedido());
+                detallePlan = new DetallePlanProduccion();
+                detallePlan.setPlanId(plan.getId());
+                detallePlan.setProductoId(detalle.getProductoId());
+                detallePlan.setOrigen(OrigenItemProduccion.PEDIDO_CLIENTE);
+                detallePlan.setPedidoClienteId(pedido.getId());
+                detallePlan.setDetallePedidoId(detalle.getId());
+                detallePlan.setEsPersonalizado(false);
+                detallePlan.setCantidadSugerida(detalle.getCantidad());
+                detallePlan.setCantidadPlanificada(detalle.getCantidad());
+                detallePlan.setCantidadProducida(0);
+                detallePlan.setCantidadMerma(0);
+                detallePlan.setEstado(EstadoItemProduccion.PENDIENTE);
+                detallePlan.setObservaciones("Producto del pedido " + pedido.getCodigoPedido());
+            }
             
             detallePlanProduccionRepository.save(detallePlan);
         }
