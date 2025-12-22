@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Form, Input, Select, Switch, Button, Modal, Space, Typography } from 'antd';
 import { IconX } from '@tabler/icons-react';
 
@@ -9,12 +9,24 @@ const { Text } = Typography;
 const ClienteFormView = ({ open, onClose, form, onSubmit, loading, isEditing }) => {
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [submitValues, setSubmitValues] = useState(null);
+  const [tipoDocSeleccionado, setTipoDocSeleccionado] = useState(null);
+
+  // Initialize tipoDocSeleccionado when form opens for editing
+  React.useEffect(() => {
+    if (open && isEditing) {
+      const tipoDocValue = form.getFieldValue('tipoDoc');
+      setTipoDocSeleccionado(tipoDocValue);
+    } else if (open && !isEditing) {
+      setTipoDocSeleccionado(null);
+    }
+  }, [open, isEditing, form]);
 
   const handleFinish = (values) => {
     onSubmit(values);
   };
 
   const handleCancel = () => {
+    setTipoDocSeleccionado(null);
     onClose();
   };
 
@@ -63,7 +75,10 @@ const ClienteFormView = ({ open, onClose, form, onSubmit, loading, isEditing }) 
             name="tipoDoc"
             rules={[{ required: true, message: 'Selecciona el tipo de documento' }]}
           >
-            <Select placeholder="Selecciona">
+            <Select
+              placeholder="Selecciona"
+              onChange={(value) => setTipoDocSeleccionado(value)}
+            >
               <Option value="DNI">DNI</Option>
               <Option value="RUC">RUC</Option>
             </Select>
@@ -82,11 +97,11 @@ const ClienteFormView = ({ open, onClose, form, onSubmit, loading, isEditing }) 
         </div>
 
         <Form.Item
-          label="Nombre Completo"
+          label={tipoDocSeleccionado === 'RUC' ? 'Razón Social' : 'Nombre Completo'}
           name="nombreDoc"
-          rules={[{ required: true, message: 'Ingresa el nombre completo' }]}
+          rules={[{ required: true, message: `Ingresa ${tipoDocSeleccionado === 'RUC' ? 'la razón social' : 'el nombre completo'}` }]}
         >
-          <Input placeholder="Nombre completo del cliente" />
+          <Input placeholder={tipoDocSeleccionado === 'RUC' ? 'Razón social del cliente' : 'Nombre completo del cliente'} />
         </Form.Item>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -151,78 +166,6 @@ const ClienteFormView = ({ open, onClose, form, onSubmit, loading, isEditing }) 
             rows={3}
           />
         </Form.Item>
-
-        <div style={{ marginTop: 24, marginBottom: 16 }}>
-          <Text strong style={{ fontSize: 16 }}>Dirección del Cliente</Text>
-        </div>
-
-        <Form.Item
-          label="Etiqueta (opcional)"
-          name="direccionEtiqueta"
-        >
-          <Input placeholder="Ej: Casa, Oficina, Trabajo" />
-        </Form.Item>
-
-        <Form.Item
-          label="Dirección Completa"
-          name="direccionCompleta"
-          rules={[{ required: true, message: 'Ingresa la dirección completa' }]}
-        >
-          <TextArea
-            placeholder="Dirección completa del cliente"
-            rows={2}
-          />
-        </Form.Item>
-
-        <Form.Item
-          label="Referencia (opcional)"
-          name="direccionReferencia"
-        >
-          <TextArea
-            placeholder="Referencias adicionales para ubicar la dirección"
-            rows={2}
-          />
-        </Form.Item>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <Form.Item
-            label="Código Postal (opcional)"
-            name="direccionCodigoPostal"
-          >
-            <Input placeholder="Código postal" />
-          </Form.Item>
-
-          <Form.Item
-            label="Distrito ID (opcional)"
-            name="direccionDistritoId"
-          >
-            <Input placeholder="ID del distrito" type="number" />
-          </Form.Item>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <Form.Item
-            label="Dirección Fiscal"
-            name="direccionEsFiscal"
-            valuePropName="checked"
-          >
-            <Switch
-              checkedChildren="Sí"
-              unCheckedChildren="No"
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="Dirección de Entrega"
-            name="direccionEsEntrega"
-            valuePropName="checked"
-          >
-            <Switch
-              checkedChildren="Sí"
-              unCheckedChildren="No"
-            />
-          </Form.Item>
-        </div>
 
         <Form.Item style={{ marginTop: 24, marginBottom: 0, textAlign: 'right' }}>
           <Space>

@@ -3,8 +3,8 @@ import { Form, message, Modal } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import ClienteFormView from './ClienteFormView.jsx';
 import { createCliente, updateCliente, getCliente } from '../../api/clientes.api.js';
-import { getDireccionesCliente } from '../../api/direcciones-cliente.api.js';
-import { CLIENTE_KEYS, DIRECCION_CLIENTE_KEYS } from '../../constants/queryKeys.js';
+// import { getDireccionesCliente } from '../../api/direcciones-cliente.api.js';
+import { CLIENTE_KEYS } from '../../constants/queryKeys.js';
 import { mapClienteResponse, mapDireccionesClienteResponse } from '../../utils/clienteMappers.js';
 
 const ClienteForm = ({ open, onClose, tiendaId, cliente }) => {
@@ -20,19 +20,19 @@ const ClienteForm = ({ open, onClose, tiendaId, cliente }) => {
     select: mapClienteResponse,
   });
 
-  // Cargar direcciones del cliente si estamos editando
-  const { data: direccionesData = [] } = useQuery({
-    queryKey: DIRECCION_CLIENTE_KEYS.lists(tiendaId, cliente?.id),
-    queryFn: () => getDireccionesCliente(tiendaId, cliente?.id),
-    enabled: open && isEditing && Boolean(tiendaId) && Boolean(cliente?.id),
-    select: mapDireccionesClienteResponse,
-  });
+  // Direcciones removidas del formulario
+  // const { data: direccionesData = [] } = useQuery({
+  //   queryKey: DIRECCION_CLIENTE_KEYS.lists(tiendaId, cliente?.id),
+  //   queryFn: () => getDireccionesCliente(tiendaId, cliente?.id),
+  //   enabled: open && isEditing && Boolean(tiendaId) && Boolean(cliente?.id),
+  //   select: mapDireccionesClienteResponse,
+  // });
+  const direccionesData = [];
 
   useEffect(() => {
     if (open) {
       if (isEditing && clienteData) {
-        // Valores iniciales para edición - cargar primera dirección si existe
-        const primeraDireccion = direccionesData.length > 0 ? direccionesData[0] : null;
+        // Valores iniciales para edición
         form.setFieldsValue({
           tipoDoc: clienteData.tipoDoc,
           numeroDoc: clienteData.numeroDoc,
@@ -43,14 +43,6 @@ const ClienteForm = ({ open, onClose, tiendaId, cliente }) => {
           hashContrasena: clienteData.hashContrasena,
           notas: clienteData.notas,
           activo: clienteData.activo,
-          // Cargar primera dirección para edición
-          direccionEtiqueta: primeraDireccion?.etiqueta || '',
-          direccionCompleta: primeraDireccion?.direccionCompleta || '',
-          direccionReferencia: primeraDireccion?.referencia || '',
-          direccionDistritoId: primeraDireccion?.distritoId || '',
-          direccionCodigoPostal: primeraDireccion?.codigoPostal || '',
-          direccionEsFiscal: primeraDireccion?.esFiscal || false,
-          direccionEsEntrega: primeraDireccion?.esEntrega || false,
         });
       } else {
         // Valores iniciales para creación
@@ -58,20 +50,12 @@ const ClienteForm = ({ open, onClose, tiendaId, cliente }) => {
           tipoDoc: 'DNI',
           esUsuarioVirtual: false,
           activo: true,
-          // Campos de dirección vacíos para creación
-          direccionEtiqueta: '',
-          direccionCompleta: '',
-          direccionReferencia: '',
-          direccionDistritoId: '',
-          direccionCodigoPostal: '',
-          direccionEsFiscal: false,
-          direccionEsEntrega: false,
         });
       }
     } else {
       form.resetFields();
     }
-  }, [open, isEditing, clienteData, direccionesData, form]);
+  }, [open, isEditing, clienteData, form]);
 
   const mutation = useMutation({
     mutationFn: async (values) => {
@@ -90,14 +74,6 @@ const ClienteForm = ({ open, onClose, tiendaId, cliente }) => {
         hashContrasena: values.hashContrasena,
         notas: values.notas,
         activo: values.activo,
-        // Dirección del cliente
-        direccionEtiqueta: values.direccionEtiqueta,
-        direccionCompleta: values.direccionCompleta,
-        direccionReferencia: values.direccionReferencia,
-        direccionDistritoId: values.direccionDistritoId,
-        direccionCodigoPostal: values.direccionCodigoPostal,
-        direccionEsFiscal: values.direccionEsFiscal,
-        direccionEsEntrega: values.direccionEsEntrega,
       };
 
       if (isEditing) {
@@ -108,11 +84,6 @@ const ClienteForm = ({ open, onClose, tiendaId, cliente }) => {
     onSuccess: (response) => {
       message.success(`Cliente ${isEditing ? 'actualizado' : 'creado'} correctamente`);
       queryClient.invalidateQueries({ queryKey: CLIENTE_KEYS.lists(tiendaId) });
-      // Invalidar direcciones del cliente (tanto para edición como creación)
-      const clienteId = isEditing ? cliente?.id : response?.id;
-      if (clienteId) {
-        queryClient.invalidateQueries({ queryKey: DIRECCION_CLIENTE_KEYS.lists(tiendaId, clienteId) });
-      }
       onClose();
     },
     onError: (error) => {
