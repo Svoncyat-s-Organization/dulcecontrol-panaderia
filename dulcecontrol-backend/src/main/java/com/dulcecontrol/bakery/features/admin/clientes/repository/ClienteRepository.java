@@ -40,4 +40,6 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
     List<Cliente> buscarPorTiendaYTexto(@Param("tiendaId") Long tiendaId, @Param("busqueda") String busqueda);
 
     List<Cliente> findByTiendaIdAndEsUsuarioVirtual(Long tiendaId, Boolean esUsuarioVirtual);
+
+    boolean existsByTiendaIdAndNumeroDoc(Long tiendaId, String numeroDoc);
 }

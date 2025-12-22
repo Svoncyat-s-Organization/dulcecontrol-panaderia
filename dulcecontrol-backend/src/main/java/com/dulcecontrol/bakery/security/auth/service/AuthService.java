@@ -18,7 +18,10 @@ import com.dulcecontrol.bakery.security.auth.dto.StorefrontLoginRequest;
 import com.dulcecontrol.bakery.security.auth.dto.SubscriptionStatusPayload;
 import com.dulcecontrol.bakery.security.auth.dto.StorefrontRegisterRequest;
 import com.dulcecontrol.bakery.security.auth.dto.SuperadminLoginRequest;
+import com.dulcecontrol.bakery.features.storefront.auth.dto.ActivarCuentaRequest;
+import com.dulcecontrol.bakery.features.storefront.auth.dto.VerificarEmailResponse;
 import com.dulcecontrol.bakery.shared.exception.AuthenticationException;
+import com.dulcecontrol.bakery.shared.exception.BadRequestException;
 import com.dulcecontrol.bakery.shared.exception.ResourceConflictException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -231,5 +234,77 @@ public class AuthService {
                 .remainingSeconds(remainingSeconds)
                 .enPeriodoPrueba(suscripcion.getEstado() == EstadoSuscripcion.EN_PRUEBA)
                 .build();
+    }
+
+    /**
+     * Verifica si un email existe y si pertenece a un cliente físico
+     */
+    public VerificarEmailResponse verificarEmail(Long tiendaId, String email) {
+        String emailNormalizado = normalizarCorreo(email);
+        
+        return clienteRepository.findByTiendaIdAndEmail(tiendaId, emailNormalizado)
+                .map(cliente -> {
+                    if (Boolean.TRUE.equals(cliente.getEsUsuarioVirtual())) {
+                        return VerificarEmailResponse.builder()
+                                .existe(true)
+                                .esClienteFisico(false)
+                                .mensaje("Este email ya está registrado como cliente virtual")
+                                .build();
+                    } else {
+                        return VerificarEmailResponse.builder()
+                                .existe(true)
+                                .esClienteFisico(true)
+                                .mensaje("Este email pertenece a un cliente físico. Puedes activar tu cuenta.")
+                                .build();
+                    }
+                })
+                .orElse(VerificarEmailResponse.builder()
+                        .existe(false)
+                        .esClienteFisico(false)
+                        .mensaje("Email disponible")
+                        .build());
+    }
+
+    /**
+     * Activa la cuenta de un cliente físico para que pueda acceder al storefront
+     */
+    @Transactional
+    public AuthTokenResponse activarCuenta(Long tiendaId, ActivarCuentaRequest request) {
+        String emailNormalizado = normalizarCorreo(request.getEmail());
+        
+        // 1. Buscar cliente por email
+        Cliente cliente = clienteRepository.findByTiendaIdAndEmail(tiendaId, emailNormalizado)
+                .orElseThrow(() -> new BadRequestException("No existe un cliente con este email"));
+        
+        // 2. Verificar que NO sea virtual aún
+        if (Boolean.TRUE.equals(cliente.getEsUsuarioVirtual())) {
+            throw new BadRequestException("Esta cuenta ya está activada como virtual");
+        }
+        
+        // 3. Verificar identidad: tipo y número de documento deben coincidir
+        if (!request.getTipoDoc().equals(cliente.getTipoDoc().name())) {
+            throw new BadRequestException("El tipo de documento no coincide con nuestros registros");
+        }
+        
+        if (!request.getNumeroDoc().equals(cliente.getNumeroDoc())) {
+            throw new BadRequestException("El número de documento no coincide con nuestros registros");
+        }
+        
+        // 4. Activar cuenta: marcar como virtual y establecer contraseña
+        cliente.setEsUsuarioVirtual(true);
+        cliente.setHashContrasena(passwordEncoder.encode(request.getContrasena()));
+        clienteRepository.save(cliente);
+        
+        // 5. Generar token y hacer login automático
+        String token = jwtProvider.generarToken(
+                cliente.getEmail(), 
+                "ROLE_CLIENTE", 
+                TipoUsuario.CLIENTE, 
+                tiendaId,
+                construirClaimsNombre(cliente.getNombreDoc()), 
+                cliente.getId()
+        );
+        
+        return buildResponse(token, TipoUsuario.CLIENTE, tiendaId, cliente.getId(), null);
     }
 }

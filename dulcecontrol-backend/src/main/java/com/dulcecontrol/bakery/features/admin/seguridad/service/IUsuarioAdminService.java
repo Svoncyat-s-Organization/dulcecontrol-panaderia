@@ -1,5 +1,6 @@
 package com.dulcecontrol.bakery.features.admin.seguridad.service;
 
+import com.dulcecontrol.bakery.features.admin.seguridad.dto.PerfilUpdateRequest;
 import com.dulcecontrol.bakery.features.admin.seguridad.dto.UsuarioCreateRequest;
 import com.dulcecontrol.bakery.features.admin.seguridad.dto.UsuarioResponse;
 import com.dulcecontrol.bakery.features.admin.seguridad.dto.UsuarioUpdateRequest;
@@ -17,4 +18,8 @@ public interface IUsuarioAdminService {
     UsuarioResponse actualizar(Long tiendaId, Long usuarioId, UsuarioUpdateRequest request);
 
     void eliminar(Long tiendaId, Long usuarioId);
+    
+    UsuarioResponse obtenerMiPerfil(Long usuarioId);
+    
+    UsuarioResponse actualizarMiPerfil(Long usuarioId, PerfilUpdateRequest request);
 }

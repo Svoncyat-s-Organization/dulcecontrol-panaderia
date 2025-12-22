@@ -6,6 +6,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dulcecontrol.bakery.features.admin.clientes.entity.Cliente;
+import com.dulcecontrol.bakery.features.admin.clientes.repository.ClienteRepository;
 import com.dulcecontrol.bakery.features.admin.seguridad.service.RolSistemaBootstrapService;
 import com.dulcecontrol.bakery.features.superadmin.tiendas.dto.TiendaCreateRequest;
 import com.dulcecontrol.bakery.features.superadmin.tiendas.dto.TiendaResponse;
@@ -18,14 +20,17 @@ import com.dulcecontrol.bakery.shared.exception.BadRequestException;
 import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TiendaSuperAdminService implements ITiendaSuperAdminService {
 
     private final TiendaRepository tiendaRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final RolSistemaBootstrapService rolSistemaBootstrapService;
+    private final ClienteRepository clienteRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -63,7 +68,35 @@ public class TiendaSuperAdminService implements ITiendaSuperAdminService {
 
         Tienda guardada = tiendaRepository.save(tienda);
         rolSistemaBootstrapService.ensureDefaultRoles(guardada.getId());
+        crearClienteGenerico(guardada.getId());
         return toResponse(guardada);
+    }
+
+    /**
+     * Crea un cliente genérico para la tienda.
+     * Este cliente se usa para ventas rápidas sin documento del cliente.
+     */
+    private void crearClienteGenerico(Long tiendaId) {
+        // Verificar si ya existe cliente genérico
+        if (clienteRepository.existsByTiendaIdAndNumeroDoc(tiendaId, "00000000")) {
+            log.info("Cliente genérico ya existe para tienda {}", tiendaId);
+            return;
+        }
+
+        Cliente clienteGenerico = new Cliente();
+        clienteGenerico.setTiendaId(tiendaId);
+        clienteGenerico.setTipoDoc(null);
+        clienteGenerico.setNumeroDoc("00000000");
+        clienteGenerico.setNombreDoc("CLIENTE GENÉRICO");
+        clienteGenerico.setEmail(null);
+        clienteGenerico.setTelefono(null);
+        clienteGenerico.setEsUsuarioVirtual(false);
+        clienteGenerico.setHashContrasena(null);
+        clienteGenerico.setNotas("Cliente genérico para ventas sin identificación. Creado automáticamente por el sistema.");
+        clienteGenerico.setActivo(true);
+
+        clienteRepository.save(clienteGenerico);
+        log.info("Cliente genérico creado automáticamente para tienda {}", tiendaId);
     }
 
     @Override

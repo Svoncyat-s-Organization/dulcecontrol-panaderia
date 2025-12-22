@@ -1,6 +1,7 @@
 package com.dulcecontrol.bakery.features.admin.seguridad.service.impl;
 
 import com.dulcecontrol.bakery.features.admin.configuracion.repository.SedeAdminRepository;
+import com.dulcecontrol.bakery.features.admin.seguridad.dto.PerfilUpdateRequest;
 import com.dulcecontrol.bakery.features.admin.seguridad.dto.UsuarioCreateRequest;
 import com.dulcecontrol.bakery.features.admin.seguridad.dto.UsuarioResponse;
 import com.dulcecontrol.bakery.features.admin.seguridad.dto.UsuarioUpdateRequest;
@@ -349,5 +350,71 @@ public class UsuarioAdminService implements IUsuarioAdminService {
                         .comparing((UsuarioSede asignacion) -> Boolean.TRUE.equals(asignacion.getEsSedePrincipal()) ? 0 : 1)
                         .thenComparing(asignacion -> asignacion.getId().getSedeId()))
                 .toList();
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public UsuarioResponse obtenerMiPerfil(Long usuarioId) {
+        UsuarioTienda usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        
+        Rol rol = rolRepository.findById(usuario.getRolId())
+                .orElseThrow(() -> new ResourceNotFoundException("Rol no encontrado"));
+        
+        List<UsuarioSede> asignaciones = usuarioSedeRepository.findByIdUsuarioId(usuarioId);
+        Map<Long, Sede> sedes = cargarSedesDetalle(usuario.getTiendaId(), asignaciones);
+        
+        return toResponse(usuario, rol, asignaciones, sedes);
+    }
+    
+    @Override
+    @Transactional
+    public UsuarioResponse actualizarMiPerfil(Long usuarioId, PerfilUpdateRequest request) {
+        UsuarioTienda usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        
+        // Validar correo si cambió
+        if (request.getCorreo() != null && !request.getCorreo().isBlank()) {
+            String correoNormalizado = request.getCorreo().toLowerCase();
+            if (!usuario.getCorreo().equalsIgnoreCase(request.getCorreo()) &&
+                usuarioRepository.existsByTiendaIdAndCorreoAndIdNot(usuario.getTiendaId(), correoNormalizado, usuarioId)) {
+                throw new BadRequestException("El correo ya está registrado");
+            }
+            usuario.setCorreo(correoNormalizado);
+        }
+        
+        // Actualizar nombres si se proporcionó
+        if (request.getNombres() != null && !request.getNombres().isBlank()) {
+            usuario.setNombres(request.getNombres());
+        }
+        
+        // Actualizar teléfono si se proporcionó
+        if (request.getTelefono() != null && !request.getTelefono().isBlank()) {
+            usuario.setTelefono(request.getTelefono());
+        }
+        
+        // Actualizar contraseña si se proporcionó
+        if (request.getNuevaContrasena() != null && !request.getNuevaContrasena().isBlank()) {
+            // Validar contraseña actual primero
+            if (request.getContrasenaActual() == null || request.getContrasenaActual().isBlank()) {
+                throw new BadRequestException("Debes proporcionar tu contraseña actual para cambiarla");
+            }
+            
+            if (!passwordEncoder.matches(request.getContrasenaActual(), usuario.getHashContrasena())) {
+                throw new BadRequestException("La contraseña actual es incorrecta");
+            }
+            
+            usuario.setHashContrasena(passwordEncoder.encode(request.getNuevaContrasena()));
+        }
+        
+        UsuarioTienda guardado = usuarioRepository.save(usuario);
+        
+        Rol rol = rolRepository.findById(guardado.getRolId())
+                .orElseThrow(() -> new ResourceNotFoundException("Rol no encontrado"));
+        
+        List<UsuarioSede> asignaciones = usuarioSedeRepository.findByIdUsuarioId(usuarioId);
+        Map<Long, Sede> sedes = cargarSedesDetalle(guardado.getTiendaId(), asignaciones);
+        
+        return toResponse(guardado, rol, asignaciones, sedes);
     }
 }

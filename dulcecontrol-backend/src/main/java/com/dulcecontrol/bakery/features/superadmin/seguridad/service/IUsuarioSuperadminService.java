@@ -1,5 +1,6 @@
 package com.dulcecontrol.bakery.features.superadmin.seguridad.service;
 
+import com.dulcecontrol.bakery.features.superadmin.seguridad.dto.PerfilUpdateRequest;
 import com.dulcecontrol.bakery.features.superadmin.seguridad.dto.UsuarioSuperadminCreateRequest;
 import com.dulcecontrol.bakery.features.superadmin.seguridad.dto.UsuarioSuperadminResponse;
 import com.dulcecontrol.bakery.features.superadmin.seguridad.dto.UsuarioSuperadminUpdateRequest;
@@ -17,4 +18,8 @@ public interface IUsuarioSuperadminService {
     UsuarioSuperadminResponse actualizar(Long id, UsuarioSuperadminUpdateRequest request);
 
     void eliminar(Long id);
+    
+    UsuarioSuperadminResponse obtenerMiPerfil(Long usuarioId);
+    
+    UsuarioSuperadminResponse actualizarMiPerfil(Long usuarioId, PerfilUpdateRequest request);
 }
