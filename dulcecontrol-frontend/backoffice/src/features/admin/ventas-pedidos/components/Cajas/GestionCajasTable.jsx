@@ -56,13 +56,22 @@ const GestionCajasTable = () => {
         enabled: !!tiendaId,
     });
 
+    const cajasForSede = useMemo(() => {
+        const base = Array.isArray(cajasQuery.data) ? cajasQuery.data : [];
+        if (!selectedSedeId) {
+            return base;
+        }
+        const objetivo = String(selectedSedeId);
+        return base.filter((caja) => String(caja?.sedeId) === objetivo);
+    }, [cajasQuery.data, selectedSedeId]);
+
     const cajasMap = useMemo(() => {
         const map = new Map();
-        (cajasQuery.data || []).forEach((caja) => {
+        (cajasForSede || []).forEach((caja) => {
             map.set(caja.id, caja.nombre);
         });
         return map;
-    }, [cajasQuery.data]);
+    }, [cajasForSede]);
 
     const usuariosMap = useMemo(() => {
         const map = new Map();
@@ -77,11 +86,11 @@ const GestionCajasTable = () => {
     }, [usuariosQuery.data]);
 
     const cajaOptions = useMemo(() => {
-        return (cajasQuery.data || []).map((caja) => ({
+        return (cajasForSede || []).map((caja) => ({
             label: caja.nombre,
             value: caja.id,
         }));
-    }, [cajasQuery.data]);
+    }, [cajasForSede]);
 
     const usuarioOptions = useMemo(() => {
         return (usuariosQuery.data || []).map((usuario) => {
@@ -100,6 +109,21 @@ const GestionCajasTable = () => {
         const base = sesionesQuery.data || [];
         return base
             .filter((sesion) => {
+                // Asegurar que las sesiones correspondan a la sede seleccionada
+                if (selectedSedeId) {
+                    const objetivo = String(selectedSedeId);
+                    if (sesion?.sedeId != null && String(sesion.sedeId) !== objetivo) {
+                        return false;
+                    }
+                    // Fallback: si la sesión no trae sedeId, inferirla por la caja asociada
+                    if (sesion?.sedeId == null && sesion?.cajaId != null) {
+                        const caja = (cajasForSede || []).find((c) => String(c?.id) === String(sesion.cajaId));
+                        if (!caja) {
+                            return false;
+                        }
+                    }
+                }
+
                 // Filtro por rango de fechas
                 if (range && range[0] && range[1] && sesion.fechaApertura) {
                     const fecha = parseApiDateTime(sesion.fechaApertura);
@@ -135,11 +159,11 @@ const GestionCajasTable = () => {
                 fechaAperturaDisplay: formatApiDateTime(sesion.fechaApertura),
                 fechaCierreDisplay: formatApiDateTime(sesion.fechaCierre),
             }));
-    }, [sesionesQuery.data, range, filters, cajasMap, usuariosMap]);
+    }, [sesionesQuery.data, range, filters, cajasMap, usuariosMap, selectedSedeId, cajasForSede]);
 
     const movimientosQueries = useQueries({
         queries: filteredSesiones.map((sesion) => ({
-            queryKey: CAJA_KEYS.movimientos(tiendaId, sesion.id),
+            queryKey: CAJA_KEYS.movimientos(tiendaId, selectedSedeId, sesion.id),
             queryFn: () => getMovimientosCaja(tiendaId, sesion.id),
             enabled: !!tiendaId && !!sesion.id,
             select: (response) => Array.isArray(response) ? response : [],

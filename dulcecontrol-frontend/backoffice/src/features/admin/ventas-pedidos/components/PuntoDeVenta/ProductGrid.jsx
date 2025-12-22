@@ -42,7 +42,7 @@ const ProductGrid = () => {
     });
 
     // Fetch Inventory for current sede
-    const { data: inventario = [] } = useQuery({
+    const { data: inventario = [], isLoading: isInventarioLoading, isFetching: isInventarioFetching } = useQuery({
         queryKey: ['inventario', 'pos', tiendaId, currentCaja?.sedeId],
         queryFn: () => getInventarioProductosPorSede(tiendaId, currentCaja.sedeId),
         enabled: !!tiendaId && !!currentCaja?.sedeId,
@@ -55,9 +55,23 @@ const ProductGrid = () => {
         stockMap.set(inv.productoId, inv.cantidadActual ?? 0);
     });
 
+    const inventarioProductoIds = new Set(
+        (Array.isArray(inventario) ? inventario : []).map((inv) => String(inv?.productoId))
+    );
+
     const filteredProducts = productos.filter(p => {
-        const matchesSearch = p.nombre.toLowerCase().includes(searchText.toLowerCase()) ||
-            p.sku.toLowerCase().includes(searchText.toLowerCase());
+        if (currentCaja?.sedeId) {
+            // Requisito: solo productos pertenecientes a la sede.
+            // Se interpreta como: productos que tienen inventario configurado para esa sede.
+            if (!inventarioProductoIds.has(String(p?.id))) {
+                return false;
+            }
+        }
+
+        const nombre = (p?.nombre || '').toLowerCase();
+        const sku = (p?.sku || '').toLowerCase();
+        const input = (searchText || '').toLowerCase();
+        const matchesSearch = nombre.includes(input) || sku.includes(input);
         const matchesCategory = selectedCategory === 'ALL' || p.categoriaId === selectedCategory;
         return matchesSearch && matchesCategory;
     });
@@ -85,7 +99,7 @@ const ProductGrid = () => {
             />
 
             <div style={{ flex: 1, overflowY: 'auto', paddingRight: 8 }}>
-                {isLoading ? (
+                {(isLoading || isInventarioLoading || isInventarioFetching) ? (
                     <div style={{ textAlign: 'center', padding: 40 }}><Spin size="large" /></div>
                 ) : filteredProducts.length === 0 ? (
                     <Empty description="No se encontraron productos" />
