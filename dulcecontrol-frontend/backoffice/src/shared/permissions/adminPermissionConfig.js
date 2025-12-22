@@ -322,6 +322,18 @@ export const ADMIN_MENU_BLUEPRINT = [
     label: 'Reportes',
     icon: IconReport,
     permissionPrefixes: ['reportes'],
+    children: [
+      {
+        key: `${BASE_PATH}/reportes/ventas`,
+        label: 'Ventas y cobranzas',
+        permissionPrefixes: ['reportes.view', 'reportes'],
+      },
+      {
+        key: `${BASE_PATH}/reportes/pedidos`,
+        label: 'Pedidos y canales',
+        permissionPrefixes: ['reportes.view', 'reportes'],
+      },
+    ],
   },
   {
     key: `${BASE_PATH}/seguridad`,
@@ -416,7 +428,9 @@ export const ADMIN_ROUTE_PERMISSIONS = {
   'facturacion': ['facturacion.view'],
   'facturacion/series-correlativos': ['facturacion.view'],
   'facturacion/comprobantes': ['facturacion.view'],
-  'reportes': ['reportes.ventas', 'reportes.produccion', 'reportes.inventario', 'reportes.financiero'],
+  'reportes': ['reportes.view', 'reportes'],
+  'reportes/ventas': ['reportes.view', 'reportes.ventas', 'reportes'],
+  'reportes/pedidos': ['reportes.view', 'reportes.ventas', 'reportes'],
   'configuracion': ['config.view'],
   'configuracion/datos-empresa': ['config.view'],
   'configuracion/preferencias': ['config.view'],
