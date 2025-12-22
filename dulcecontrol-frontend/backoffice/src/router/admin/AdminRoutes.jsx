@@ -18,6 +18,7 @@ import SedesPage from '../../features/admin/configuracion/pages/SedesPage.jsx';
 import TiendaVirtualPage from '../../features/admin/configuracion/pages/TiendaVirtualPage.jsx';
 import SeguridadUsuariosPage from '../../features/admin/seguridad/pages/UsuariosPage.jsx';
 import SeguridadRolesPage from '../../features/admin/seguridad/pages/RolesPage.jsx';
+import SoportePage from '../../features/admin/soporte/pages/SoportePage.jsx';
 
 const guard = (key, element) => {
   const perms = ADMIN_ROUTE_PERMISSIONS[key] ?? [];
@@ -75,6 +76,8 @@ const adminRoutes = (
     <Route path="configuracion/datos-empresa" element={<DatosEmpresaPage />} />
     <Route path="configuracion/sedes" element={<SedesPage />} />
     <Route path="configuracion/tienda-virtual" element={<TiendaVirtualPage />} />
+
+    <Route path="soporte" element={guard('soporte', <SoportePage />)} />
     
     {PLACEHOLDERS.map(({ path, title, description }) => (
       <Route key={path} path={path} element={guard(path, <PlaceholderPage title={title} description={description} />)} />

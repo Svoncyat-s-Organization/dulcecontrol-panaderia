@@ -11,6 +11,7 @@ import {
   IconReport,
   IconShieldLock,
   IconSettings,
+  IconHeartHandshake,
 } from '@tabler/icons-react';
 import { createPermissionSet, hasAnyPermission, normalizePermission } from '../utils/permissionUtils.js';
 
@@ -124,6 +125,15 @@ export const ADMIN_PERMISSION_GROUPS = [
     slugPrefixes: ['cms'],
     menuPath: `${BASE_PATH}/cms`,
     order: 12,
+  },
+  {
+    key: 'soporte',
+    label: 'Soporte',
+    description: 'Comunicación directa con el equipo de DulceControl.',
+    modules: ['soporte'],
+    slugPrefixes: ['soporte'],
+    menuPath: `${BASE_PATH}/soporte`,
+    order: 13,
   },
 ];
 
@@ -364,6 +374,12 @@ export const ADMIN_MENU_BLUEPRINT = [
       },
     ],
   },
+  {
+    key: `${BASE_PATH}/soporte`,
+    label: 'Soporte',
+    icon: IconHeartHandshake,
+    permissionPrefixes: [],
+  },
 ];
 
 const buildMenuItemsRecursive = (items, permissionSet) =>
@@ -425,6 +441,7 @@ export const ADMIN_ROUTE_PERMISSIONS = {
   'seguridad': ['usuarios.view', 'usuarios.roles'],
   'seguridad/usuarios': ['usuarios.view'],
   'seguridad/roles': ['usuarios.roles'],
+  'soporte': [],
 };
 
 const ADMIN_ACCESS_PERMISSION_SLUGS = new Set();
