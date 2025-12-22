@@ -18,8 +18,14 @@ import com.dulcecontrol.bakery.features.admin.produccion.repository.RecetaReposi
 import com.dulcecontrol.bakery.features.admin.produccion.entity.Receta;
 import com.dulcecontrol.bakery.features.admin.inventario.entity.InventarioInsumoSede;
 import com.dulcecontrol.bakery.features.admin.inventario.entity.InventarioProducto;
+import com.dulcecontrol.bakery.features.admin.inventario.entity.MovimientoInventarioInsumo;
+import com.dulcecontrol.bakery.features.admin.inventario.entity.MovimientoInventarioProducto;
+import com.dulcecontrol.bakery.features.admin.inventario.entity.enums.MotivoMovimientoProducto;
+import com.dulcecontrol.bakery.features.admin.inventario.entity.enums.TipoMovimientoInsumo;
 import com.dulcecontrol.bakery.features.admin.inventario.repository.InventarioInsumoSedeRepository;
 import com.dulcecontrol.bakery.features.admin.inventario.repository.InventarioProductoRepository;
+import com.dulcecontrol.bakery.features.admin.inventario.repository.MovimientoInventarioInsumoRepository;
+import com.dulcecontrol.bakery.features.admin.inventario.repository.MovimientoInventarioProductoRepository;
 import com.dulcecontrol.bakery.features.admin.ventas.entity.Pedido;
 import com.dulcecontrol.bakery.features.admin.ventas.entity.enums.EstadoPedido;
 import com.dulcecontrol.bakery.features.admin.ventas.repository.PedidoRepository;
@@ -48,6 +54,8 @@ public class PlanProduccionAdminService {
     private final RecetaRepository recetaRepository;
     private final InventarioInsumoSedeRepository inventarioInsumoRepository;
     private final InventarioProductoRepository inventarioProductoRepository;
+    private final MovimientoInventarioInsumoRepository movimientoInsumoRepository;
+    private final MovimientoInventarioProductoRepository movimientoProductoRepository;
     private final PedidoRepository pedidoRepository;
 
     @Transactional
@@ -420,12 +428,26 @@ public class PlanProduccionAdminService {
             }
             
             // Descontar del inventario
-            inventario.setCantidadActual(cantidadActual.subtract(cantidadTotal));
+            BigDecimal cantidadNueva = cantidadActual.subtract(cantidadTotal);
+            inventario.setCantidadActual(cantidadNueva);
             inventarioInsumoRepository.save(inventario);
+            
+            // Registrar movimiento de inventario SALIDA por producción
+            MovimientoInventarioInsumo movimiento = new MovimientoInventarioInsumo();
+            movimiento.setTiendaId(tiendaId);
+            movimiento.setSedeId(sedeId);
+            movimiento.setInsumoId(receta.getInsumoId());
+            movimiento.setTipoMovimiento(TipoMovimientoInsumo.SALIDA);
+            movimiento.setCantidad(cantidadTotal);
+            movimiento.setCantidadAnterior(cantidadActual);
+            movimiento.setCantidadPosterior(cantidadNueva);
+            movimiento.setPlanProduccionId(detalle.getPlanId());
+            movimiento.setMotivo("Consumo para producción de " + cantidadAPlanificar + " unidades del producto #" + detalle.getProductoId());
+            movimientoInsumoRepository.save(movimiento);
             
             log.info("✅ Descontado {} {} del insumo {}. Stock anterior: {}, Stock actual: {}",
                     cantidadTotal, receta.getUnidadMedida(), receta.getInsumoId(), 
-                    cantidadActual, inventario.getCantidadActual());
+                    cantidadActual, cantidadNueva);
         }
     }
     
@@ -460,11 +482,25 @@ public class PlanProduccionAdminService {
         }
         
         Integer cantidadAnterior = inventario.getCantidadActual();
-        inventario.setCantidadActual(cantidadAnterior + cantidadProducida);
+        Integer cantidadNueva = cantidadAnterior + cantidadProducida;
+        inventario.setCantidadActual(cantidadNueva);
         inventarioProductoRepository.save(inventario);
         
+        // Registrar movimiento de inventario ENTRADA por producción
+        MovimientoInventarioProducto movimiento = new MovimientoInventarioProducto();
+        movimiento.setTiendaId(tiendaId);
+        movimiento.setSedeId(sedeId);
+        movimiento.setProductoId(detalle.getProductoId());
+        movimiento.setTipoMovimiento(TipoMovimientoInsumo.ENTRADA);
+        movimiento.setCantidad(cantidadProducida);
+        movimiento.setCantidadAnterior(cantidadAnterior);
+        movimiento.setCantidadPosterior(cantidadNueva);
+        movimiento.setPlanProduccionId(detalle.getPlanId());
+        movimiento.setMotivo(MotivoMovimientoProducto.PRODUCCION);
+        movimientoProductoRepository.save(movimiento);
+        
         log.info("✅ Sumado {} unidades al inventario del producto {}. Stock anterior: {}, Stock actual: {}",
-                cantidadProducida, detalle.getProductoId(), cantidadAnterior, inventario.getCantidadActual());
+                cantidadProducida, detalle.getProductoId(), cantidadAnterior, cantidadNueva);
     }
     
     /**

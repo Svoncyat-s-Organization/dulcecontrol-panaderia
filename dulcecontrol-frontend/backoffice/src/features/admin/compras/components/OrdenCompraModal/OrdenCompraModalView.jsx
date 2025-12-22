@@ -380,41 +380,27 @@ const OrdenCompraModalView = ({
         </Row>
 
         <Row gutter={16}>
-          <Col span={24}>
+          <Col xs={24} sm={24} md={12}>
             <Form.Item 
-              name="urlFotoComprobante" 
-              label="Comprobante de Pago"
-              valuePropName="fileList"
-              getValueFromEvent={(e) => {
-                if (Array.isArray(e)) {
-                  return e;
-                }
-                return e?.fileList;
-              }}
+              name="tipoPagoInicial" 
+              label="Tipo de Pago Inicial"
             >
-              <Upload
-                listType="picture-card"
-                maxCount={1}
-                accept="image/*"
-                beforeUpload={(file) => {
-                  const isImage = file.type.startsWith('image/');
-                  if (!isImage) {
-                    message.error('Solo puedes subir archivos de imagen');
-                    return Upload.LIST_IGNORE;
-                  }
-                  const isLt5M = file.size / 1024 / 1024 < 5;
-                  if (!isLt5M) {
-                    message.error('La imagen debe ser menor a 5MB');
-                    return Upload.LIST_IGNORE;
-                  }
-                  return false; // Prevent auto upload - procesamos manualmente
-                }}
-              >
-                <div>
-                  <UploadOutlined />
-                  <div style={{ marginTop: 8 }}>Subir</div>
-                </div>
-              </Upload>
+              <Select placeholder="Selecciona tipo de pago">
+                <Select.Option value="efectivo">Efectivo</Select.Option>
+                <Select.Option value="transferencia">Transferencia</Select.Option>
+                <Select.Option value="tarjeta">Tarjeta</Select.Option>
+                <Select.Option value="cheque">Cheque</Select.Option>
+                <Select.Option value="yape">Yape</Select.Option>
+                <Select.Option value="plin">Plin</Select.Option>
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={24} md={12}>
+            <Form.Item 
+              name="referenciaPagoInicial" 
+              label="Referencia de Comprobante"
+            >
+              <Input placeholder="Ej: Boleta B001-123, Factura F001-456, etc." />
             </Form.Item>
           </Col>
         </Row>
