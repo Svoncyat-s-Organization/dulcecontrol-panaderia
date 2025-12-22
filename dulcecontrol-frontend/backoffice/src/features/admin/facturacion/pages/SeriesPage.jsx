@@ -181,7 +181,6 @@ const SeriesPage = () => {
             key: 'acciones',
             render: (_, record) => {
                 const hasComprobantes = record.correlativoActual > 0;
-                const isDeactivationBlocked = record.activa && hasComprobantes;
 
                 return (
                     <Space>
@@ -195,20 +194,22 @@ const SeriesPage = () => {
                             onConfirm={() => handleEliminar(record)}
                             okText="Sí"
                             cancelText="No"
-                            disabled={record.correlativoActual > 0}
+                            disabled={hasComprobantes}
                         >
                             <Button
                                 icon={<DeleteOutlined />}
                                 danger
                                 size="small"
-                                disabled={record.correlativoActual > 0}
+                                disabled={hasComprobantes}
+                                title={hasComprobantes ? "No se puede eliminar con comprobantes" : "Eliminar"}
                             />
                         </Popconfirm>
-                        {isDeactivationBlocked ? (
-                            <Tooltip title="No se puede desactivar una serie con comprobantes emitidos">
+                        {hasComprobantes ? (
+                            <Tooltip title="No se puede cambiar el estado de una serie con comprobantes emitidos">
                                 <Button
                                     icon={<PoweroffOutlined />}
-                                    danger
+                                    danger={record.activa}
+                                    type={record.activa ? 'default' : 'primary'}
                                     disabled
                                     size="small"
                                 />

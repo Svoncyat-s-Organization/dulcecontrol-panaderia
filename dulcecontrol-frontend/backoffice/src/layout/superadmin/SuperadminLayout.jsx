@@ -18,24 +18,24 @@ const BASE_PATH = '/superadmin';
 const getItem = (label, key, icon, children) => ({ key, icon, label, children });
 
 const menuItems = [
-    getItem('Tablero', BASE_PATH, <IconLayoutGrid size={20} />),
-    getItem('Gestión de Tiendas', `${BASE_PATH}/tiendas`, <IconBuildingStore size={20} />),
-    getItem('Suscripciones', `${BASE_PATH}/suscripciones`, <IconRosetteDiscountCheck size={20} />, [
-        getItem('Planes', `${BASE_PATH}/suscripciones/planes`),
-        getItem('Suscripciones', `${BASE_PATH}/suscripciones/activas`),
-        getItem('Historial', `${BASE_PATH}/suscripciones/historial`),
-    ]),
+    // getItem('Tablero', BASE_PATH, <IconLayoutGrid size={20} />),
+    // getItem('Gestión de Tiendas', `${BASE_PATH}/tiendas`, <IconBuildingStore size={20} />),
+    // getItem('Suscripciones', `${BASE_PATH}/suscripciones`, <IconRosetteDiscountCheck size={20} />, [
+    //     getItem('Planes', `${BASE_PATH}/suscripciones/planes`),
+    //     getItem('Suscripciones', `${BASE_PATH}/suscripciones/activas`),
+    //     getItem('Historial', `${BASE_PATH}/suscripciones/historial`),
+    // ]),
     getItem('Facturación', `${BASE_PATH}/facturacion`, <IconInvoice size={20} />, [
         getItem('Comprobantes', `${BASE_PATH}/facturacion/comprobantes`),
         getItem('Métodos de Pago', `${BASE_PATH}/facturacion/metodos-pago`),
         getItem('Configuración Fiscal', `${BASE_PATH}/facturacion/configuracion-fiscal`),
     ]),
-    getItem('Soporte', `${BASE_PATH}/soporte`, <IconHeartHandshake size={20} />),
-    getItem('Seguridad', `${BASE_PATH}/seguridad`, <IconShieldLock size={20} />, [
-        getItem('Usuarios', `${BASE_PATH}/seguridad/usuarios`),
-        getItem('Roles y Permisos', `${BASE_PATH}/seguridad/roles`),
-        getItem('Bitácora', `${BASE_PATH}/seguridad/bitacora`),
-    ]),
+    // getItem('Soporte', `${BASE_PATH}/soporte`, <IconHeartHandshake size={20} />),
+    // getItem('Seguridad', `${BASE_PATH}/seguridad`, <IconShieldLock size={20} />, [
+    //     getItem('Usuarios', `${BASE_PATH}/seguridad/usuarios`),
+    //     getItem('Roles y Permisos', `${BASE_PATH}/seguridad/roles`),
+    //     getItem('Bitácora', `${BASE_PATH}/seguridad/bitacora`),
+    // ]),
 ];
 
 const SuperadminLayout = () => {
