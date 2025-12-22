@@ -13,6 +13,7 @@ import { ExistenciasPage, InsumosPage, MovimientosPage, TransferenciasPage } fro
 import { StockIdealPage, RecetasPage, PlanificacionPage } from '../../features/admin/produccion/index.js';
 import { ProductosPage, CategoriasPage } from '../../features/admin/catalogo/index.js';
 import { FacturacionPage, FacturacionDetallePage, SeriesPage } from '../../features/admin/facturacion/index.js';
+import { ReportesVentasPage, ReportesPedidosPage } from '../../features/admin/reportes/index.js';
 import DatosEmpresaPage from '../../features/admin/configuracion/pages/DatosEmpresaPage.jsx';
 import SedesPage from '../../features/admin/configuracion/pages/SedesPage.jsx';
 import TiendaVirtualPage from '../../features/admin/configuracion/pages/TiendaVirtualPage.jsx';
@@ -30,7 +31,6 @@ const PLACEHOLDERS = [
   { path: 'compras', title: 'Compras', description: 'Gestiona insumos y proveedores.' },
   { path: 'inventario', title: 'Inventario', description: 'Control de existencias por sede.' },
   { path: 'catalogo', title: 'Catálogo', description: 'Productos y categorías.' },
-  { path: 'reportes', title: 'Reportes', description: 'KPIs y alertas.' },
   { path: 'configuracion/preferencias', title: 'Preferencias', description: 'Horarios y parámetros.' },
 ];
 
@@ -68,6 +68,10 @@ const adminRoutes = (
     <Route path="facturacion/comprobantes/:id" element={<FacturacionDetallePage />} />
     <Route path="facturacion/series-correlativos" element={<SeriesPage />} />
     
+    <Route path="reportes" element={<Navigate to="ventas" replace />} />
+    <Route path="reportes/ventas" element={guard('reportes/ventas', <ReportesVentasPage />)} />
+    <Route path="reportes/pedidos" element={guard('reportes/pedidos', <ReportesPedidosPage />)} />
+
     <Route path="seguridad" element={<Navigate to="seguridad/usuarios" replace />} />
     <Route path="seguridad/usuarios" element={guard('seguridad/usuarios', <SeguridadUsuariosPage />)} />
     <Route path="seguridad/roles" element={guard('seguridad/roles', <SeguridadRolesPage />)} />
