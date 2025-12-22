@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Form, Input, Select, Switch, Button, Modal, Space, Typography } from 'antd';
-import { IconX } from '@tabler/icons-react';
+import { Form, Input, Select, Switch, Button, Modal, Space, Typography, message } from 'antd';
+import { IconX, IconSearch } from '@tabler/icons-react';
 
 const { TextArea } = Input;
 const { Option } = Select;
 const { Text } = Typography;
 
-const ClienteFormView = ({ open, onClose, form, onSubmit, loading, isEditing }) => {
+const ClienteFormView = ({ open, onClose, form, onSubmit, loading, isEditing, onBuscarDocumento, buscandoDocumento }) => {
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [submitValues, setSubmitValues] = useState(null);
   const [tipoDocSeleccionado, setTipoDocSeleccionado] = useState(null);
@@ -53,6 +53,33 @@ const ClienteFormView = ({ open, onClose, form, onSubmit, loading, isEditing }) 
     setSubmitValues(null);
   };
 
+  const handleBuscarDocumento = async () => {
+    const tipoDoc = form.getFieldValue('tipoDoc');
+    const numeroDoc = form.getFieldValue('numeroDoc');
+
+    if (!tipoDoc) {
+      message.warning('Selecciona el tipo de documento primero');
+      return;
+    }
+
+    if (!numeroDoc) {
+      message.warning('Ingresa el número de documento');
+      return;
+    }
+
+    if (tipoDoc === 'DNI' && !/^\d{8}$/.test(numeroDoc)) {
+      message.warning('El DNI debe tener exactamente 8 dígitos');
+      return;
+    }
+
+    if (tipoDoc === 'RUC' && !/^\d{11}$/.test(numeroDoc)) {
+      message.warning('El RUC debe tener exactamente 11 dígitos');
+      return;
+    }
+
+    onBuscarDocumento(tipoDoc, numeroDoc);
+  };
+
   return (
     <Modal
       title={isEditing ? 'Editar Cliente' : 'Nuevo Cliente'}
@@ -92,7 +119,21 @@ const ClienteFormView = ({ open, onClose, form, onSubmit, loading, isEditing }) 
               { pattern: /^[0-9]+$/, message: 'Solo números' }
             ]}
           >
-            <Input placeholder="Número de documento" />
+            <Input 
+              placeholder="Número de documento"
+              suffix={
+                !isEditing && (
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<IconSearch size={16} />}
+                    loading={buscandoDocumento}
+                    onClick={handleBuscarDocumento}
+                    title="Buscar en RENIEC/SUNAT"
+                  />
+                )
+              }
+            />
           </Form.Item>
         </div>
 
