@@ -143,6 +143,7 @@ public class InventarioInsumoSedeService implements IInventarioInsumoSedeService
                 .codigoInterno(insumo.getCodigoInterno())
                 .unidadMedida(insumo.getUnidadBase() != null ? insumo.getUnidadBase().name() : "UNIDAD")
                 .stockMinimo(insumo.getStockMinimoGlobal())
+                .activo(insumo.getActivo())
                 .cantidadActual(entity.getCantidadActual())
                 .estadoStock(estadoStock)
                 .ubicacionFisica(entity.getUbicacionFisica())

@@ -21,4 +21,8 @@ public interface IInsumoService {
     InsumoResponse actualizar(Long tiendaId, Long insumoId, InsumoUpdateRequest request);
 
     void eliminar(Long tiendaId, Long insumoId);
+
+    void desactivar(Long tiendaId, Long insumoId);
+
+    void reactivar(Long tiendaId, Long insumoId);
 }

@@ -49,7 +49,7 @@ public class DatosEmpresaUpdateRequest {
     private String certificadoDigitalUrl;
 
     @NotBlank(message = "El modo SUNAT es obligatorio")
-    @Pattern(regexp = "^(PRUEBAS|PRODUCCION)$", message = "El modo debe ser PRUEBAS o PRODUCCION")
+    @Pattern(regexp = "^(?i)(PRUEBAS|PRODUCCION)$", message = "El modo debe ser PRUEBAS o PRODUCCION")
     private String modoSunat;
 
     // Parámetros Globales

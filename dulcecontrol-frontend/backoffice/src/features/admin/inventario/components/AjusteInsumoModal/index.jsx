@@ -228,8 +228,8 @@ const AjusteInsumoModal = ({ open, onClose, tiendaId, sedeId, registro }) => {
               <Text>Stock actual:</Text>
               <Text strong>
                 {cantidadActual.toLocaleString('es-PE', { 
-                  minimumFractionDigits: needsDecimals ? 3 : 0,
-                  maximumFractionDigits: needsDecimals ? 3 : 0
+                  minimumFractionDigits: needsDecimals ? 1 : 0,
+                  maximumFractionDigits: needsDecimals ? 2 : 0
                 })} {unidadMedida}
               </Text>
             </div>
@@ -242,8 +242,8 @@ const AjusteInsumoModal = ({ open, onClose, tiendaId, sedeId, registro }) => {
                 }}
               >
                 {nuevaCantidad.toLocaleString('es-PE', { 
-                  minimumFractionDigits: needsDecimals ? 3 : 0,
-                  maximumFractionDigits: needsDecimals ? 3 : 0
+                  minimumFractionDigits: needsDecimals ? 1 : 0,
+                  maximumFractionDigits: needsDecimals ? 2 : 0
                 })} {unidadMedida}
               </Text>
             </div>

@@ -70,4 +70,20 @@ public class InsumoController {
         insumoService.eliminar(tiendaId, insumoId);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{insumoId}/desactivar")
+    public ResponseEntity<Void> desactivar(
+            @PathVariable Long tiendaId,
+            @PathVariable Long insumoId) {
+        insumoService.desactivar(tiendaId, insumoId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{insumoId}/reactivar")
+    public ResponseEntity<Void> reactivar(
+            @PathVariable Long tiendaId,
+            @PathVariable Long insumoId) {
+        insumoService.reactivar(tiendaId, insumoId);
+        return ResponseEntity.noContent().build();
+    }
 }

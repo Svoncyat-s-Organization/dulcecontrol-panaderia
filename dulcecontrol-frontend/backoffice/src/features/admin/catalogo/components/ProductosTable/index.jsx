@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Modal, message } from 'antd';
+import { App } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import ProductosTableView from './ProductosTableView.jsx';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
@@ -10,6 +10,7 @@ import { mapProductosResponse } from '../../utils/productoMappers.js';
 import ProductoForm from '../ProductoForm/index.jsx';
 
 const ProductosTable = () => {
+  const { modal, message } = App.useApp();
   const tiendaId = useTokenStore((state) => state.tiendaId);
   const queryClient = useQueryClient();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -67,7 +68,7 @@ const ProductosTable = () => {
       message.error('No se pudo identificar la tienda activa');
       return;
     }
-    Modal.confirm({
+    modal.confirm({
       title: `Eliminar ${producto.nombre}?`,
       content: 'Esta acción no se puede deshacer.',
       okText: 'Eliminar',

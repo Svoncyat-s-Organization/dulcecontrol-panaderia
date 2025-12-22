@@ -26,7 +26,7 @@ const RecetaForm = ({ open, onClose, receta }) => {
   // Query para insumos activos
   const { data: insumos = [], isLoading: loadingInsumos } = useQuery({
     queryKey: INSUMOS_KEYS.lists(tiendaId),
-    queryFn: () => getInsumos(tiendaId),
+    queryFn: () => getInsumos(tiendaId, true), // Solo cargar insumos activos
     enabled: Boolean(tiendaId && open),
   });
 

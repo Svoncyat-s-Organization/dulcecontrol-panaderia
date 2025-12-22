@@ -1,4 +1,5 @@
-import { Alert, Button, Card, Col, Divider, Form, Input, InputNumber, Row, Select, Spin, Upload } from 'antd';
+import { useEffect } from 'react';
+import { Alert, Button, Card, Col, Divider, Form, Input, InputNumber, Row, Select, Spin, Upload, message } from 'antd';
 import { SaveOutlined, UploadOutlined } from '@ant-design/icons';
 
 const { TextArea } = Input;
@@ -7,8 +8,14 @@ const { Option } = Select;
 const DatosEmpresaFormView = ({ datosEmpresa, isLoading, isError, error, isSubmitting, onSubmit }) => {
   const [form] = Form.useForm();
 
-  // Cuando los datos cargan, setear valores iniciales
-  if (datosEmpresa && !form.isFieldsTouched()) {
+  // Cuando los datos cargan, setear valores iniciales (evita setState en render)
+  useEffect(() => {
+    if (!datosEmpresa) return;
+    if (form.isFieldsTouched(true)) return;
+
+    const tasaIgvRaw = datosEmpresa.tasaIgv ?? 18.0;
+    const tasaIgvNum = Number(tasaIgvRaw);
+
     form.setFieldsValue({
       numeroDoc: datosEmpresa.numeroDoc,
       nombreDoc: datosEmpresa.nombreDoc,
@@ -21,10 +28,10 @@ const DatosEmpresaFormView = ({ datosEmpresa, isLoading, isError, error, isSubmi
       claveSunatSol: '', // Nunca se muestra la clave actual
       certificadoDigitalUrl: datosEmpresa.certificadoDigitalUrl,
       modoSunat: datosEmpresa.modoSunat || 'PRUEBAS',
-      tasaIgv: datosEmpresa.tasaIgv || 18.0,
+      tasaIgv: Number.isFinite(tasaIgvNum) ? tasaIgvNum : 18.0,
       logoUrl: datosEmpresa.logoUrl,
     });
-  }
+  }, [datosEmpresa, form]);
 
   const handleFinish = (values) => {
     // Solo enviar claveSunatSol si el usuario escribió algo
@@ -55,7 +62,19 @@ const DatosEmpresaFormView = ({ datosEmpresa, isLoading, isError, error, isSubmi
   }
 
   return (
-    <Form form={form} layout="vertical" onFinish={handleFinish}>
+    <Form
+      form={form}
+      layout="vertical"
+      onFinish={handleFinish}
+      onFinishFailed={({ errorFields }) => {
+        message.error('Revisa los campos requeridos antes de guardar');
+        const first = errorFields?.[0];
+        if (first?.name) {
+          form.scrollToField(first.name, { block: 'center' });
+        }
+      }}
+      scrollToFirstError
+    >
       {/* SECCIÓN 1: IDENTIDAD LEGAL */}
       <Card title="📋 Identidad Legal" style={{ marginBottom: 16 }}>
         <Row gutter={16}>

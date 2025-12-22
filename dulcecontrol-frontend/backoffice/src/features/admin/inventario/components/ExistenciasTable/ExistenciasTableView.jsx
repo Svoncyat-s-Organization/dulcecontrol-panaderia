@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Avatar, Badge, Button, Card, Input, Result, Select, Space, Table, Tag, Typography, theme } from 'antd';
-import { IconEdit, IconSearch } from '@tabler/icons-react';
+import { Avatar, Badge, Button, Card, Input, Result, Select, Space, Table, Tag, Typography, theme, App } from 'antd';
+import { IconEdit, IconSearch, IconMapPin, IconCheck, IconX } from '@tabler/icons-react';
 
 const { Text, Title } = Typography;
 
@@ -21,11 +21,36 @@ const getEstadoBadge = (estadoStock, stockIdeal) => {
   }
 };
 
-const ExistenciasTableView = ({ inventarios, loading, isError, onRetry, onAdjust, sedeId, categorias = [] }) => {
+const ExistenciasTableView = ({ inventarios, loading, isError, onRetry, onAdjust, onUpdateUbicacion, sedeId, categorias = [] }) => {
   const { token } = theme.useToken();
+  const { message } = App.useApp();
   const [searchText, setSearchText] = useState('');
   const [categoriaFilter, setCategoriaFilter] = useState(null);
   const [estadoFilter, setEstadoFilter] = useState(null);
+  const [editingUbicacionId, setEditingUbicacionId] = useState(null);
+  const [tempUbicacion, setTempUbicacion] = useState('');
+  
+  const handleEditUbicacion = (record) => {
+    setEditingUbicacionId(record.id);
+    setTempUbicacion(record.ubicacionFisica || '');
+  };
+
+  const handleSaveUbicacion = async (record) => {
+    if (!onUpdateUbicacion) {
+      message.error('No se puede actualizar la ubicación');
+      return;
+    }
+    const success = await onUpdateUbicacion(record.id, tempUbicacion.trim() || null);
+    if (success) {
+      setEditingUbicacionId(null);
+      setTempUbicacion('');
+    }
+  };
+
+  const handleCancelUbicacion = () => {
+    setEditingUbicacionId(null);
+    setTempUbicacion('');
+  };
   
   // Filtrar datos
   const filteredData = inventarios?.filter(item => {
@@ -85,8 +110,56 @@ const ExistenciasTableView = ({ inventarios, loading, isError, onRetry, onAdjust
       title: 'Ubicación',
       dataIndex: 'ubicacionFisica',
       key: 'ubicacion',
-      width: 150,
-      render: (ubicacion) => ubicacion || <Text type="secondary">Sin ubicación</Text>,
+      width: 200,
+      render: (ubicacion, record) => {
+        const isEditing = editingUbicacionId === record.id;
+        
+        if (isEditing) {
+          return (
+            <Space.Compact style={{ width: '100%' }}>
+              <Input
+                size="small"
+                value={tempUbicacion}
+                onChange={(e) => setTempUbicacion(e.target.value)}
+                placeholder="Ej: Estante A1"
+                autoFocus
+                onPressEnter={() => handleSaveUbicacion(record)}
+                maxLength={100}
+              />
+              <Button
+                size="small"
+                type="primary"
+                icon={<IconCheck size={14} />}
+                onClick={() => handleSaveUbicacion(record)}
+              />
+              <Button
+                size="small"
+                icon={<IconX size={14} />}
+                onClick={handleCancelUbicacion}
+              />
+            </Space.Compact>
+          );
+        }
+        
+        return (
+          <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+            <Space size={4}>
+              <IconMapPin size={14} style={{ color: token.colorTextTertiary }} />
+              {ubicacion ? (
+                <Text>{ubicacion}</Text>
+              ) : (
+                <Text type="secondary" italic>Sin ubicación</Text>
+              )}
+            </Space>
+            <Button
+              type="text"
+              size="small"
+              icon={<IconEdit size={14} />}
+              onClick={() => handleEditUbicacion(record)}
+            />
+          </Space>
+        );
+      },
     },
     {
       title: 'Stock Actual',

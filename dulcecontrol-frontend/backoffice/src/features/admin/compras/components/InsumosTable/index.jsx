@@ -33,11 +33,12 @@ const InsumosTable = ({ tiendaId }) => {
   const deleteMutation = useMutation({
     mutationFn: (insumoId) => deleteInsumo(tiendaId, insumoId),
     onSuccess: () => {
-      message.success('Insumo desactivado correctamente');
+      message.success('Insumo eliminado correctamente');
       queryClient.invalidateQueries({ queryKey: INSUMOS_KEYS.all(tiendaId) });
     },
     onError: (error) => {
-      message.error(error?.response?.data?.message ?? 'No se pudo desactivar el insumo');
+      const detail = error?.response?.data?.mensaje ?? error?.message ?? 'No se pudo eliminar el insumo';
+      message.error(detail, 5);
     },
   });
 

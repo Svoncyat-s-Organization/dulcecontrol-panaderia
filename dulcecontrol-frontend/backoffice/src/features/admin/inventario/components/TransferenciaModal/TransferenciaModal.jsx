@@ -185,7 +185,7 @@ const TransferenciaModal = ({
                           <InputNumber
                             min={isProducto ? 1 : 0.01}
                             step={isProducto ? 1 : 0.01}
-                            precision={isProducto ? 0 : 4}
+                            precision={isProducto ? 0 : 2}
                             style={{ width: '100%' }}
                             placeholder="Cantidad"
                           />

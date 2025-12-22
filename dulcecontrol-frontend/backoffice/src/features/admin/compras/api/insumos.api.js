@@ -55,3 +55,19 @@ export const deleteInsumo = async (tiendaId, insumoId) => {
   const { data } = await apiClient.delete(buildInsumosUrl(tiendaId, `/${insumoId}`));
   return data;
 };
+
+export const desactivarInsumo = async (tiendaId, insumoId) => {
+  if (!tiendaId || !insumoId) {
+    throw new Error('tiendaId e insumoId son requeridos para desactivar');
+  }
+  const { data } = await apiClient.patch(buildInsumosUrl(tiendaId, `/${insumoId}/desactivar`));
+  return data;
+};
+
+export const reactivarInsumo = async (tiendaId, insumoId) => {
+  if (!tiendaId || !insumoId) {
+    throw new Error('tiendaId e insumoId son requeridos para reactivar');
+  }
+  const { data } = await apiClient.patch(buildInsumosUrl(tiendaId, `/${insumoId}/reactivar`));
+  return data;
+};

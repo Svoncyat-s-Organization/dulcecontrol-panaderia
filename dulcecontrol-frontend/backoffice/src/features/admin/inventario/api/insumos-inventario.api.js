@@ -38,3 +38,14 @@ export const updateUbicacionInventarioInsumo = async (tiendaId, inventarioId, ub
   );
   return data;
 };
+
+export const createInventarioInsumo = async (tiendaId, payload) => {
+  if (!tiendaId) {
+    throw new Error('tiendaId es requerido para crear inventario de insumos');
+  }
+  const { data } = await apiClient.post(
+    buildInventarioInsumosUrl(tiendaId),
+    payload
+  );
+  return data;
+};
