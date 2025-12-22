@@ -184,7 +184,7 @@ const SeriesPage = () => {
                         label="Serie (Ej: F001, B001)"
                         rules={[
                             { required: true, message: 'Ingrese la serie' },
-                            { pattern: /^[FB][0-9]{3}$|^[FBN][C0-9][0-9]{2}$/, message: 'Formato inválido. Ej: F001, B001' }
+                            { pattern: /^[FB][A-Z0-9]{3}$/, message: 'Formato inválido. Debe empezar con F (Factura) o B (Boleta). Ej: F001, B001' }
                         ]}
                     >
                         <Input placeholder="F001" maxLength={4} disabled={!!editingSerie} />
@@ -198,8 +198,8 @@ const SeriesPage = () => {
                         <Select disabled={!!editingSerie}>
                             <Option value="FACTURA">FACTURA</Option>
                             <Option value="BOLETA">BOLETA</Option>
-                            <Option value="NOTA_CREDITO">NOTA DE CRÉDITO</Option>
-                            <Option value="NOTA_DEBITO">NOTA DE DÉBITO</Option>
+                            {editingSerie && <Option value="NOTA_CREDITO">NOTA DE CRÉDITO</Option>}
+                            {editingSerie && <Option value="NOTA_DEBITO">NOTA DE DÉBITO</Option>}
                         </Select>
                     </Form.Item>
 

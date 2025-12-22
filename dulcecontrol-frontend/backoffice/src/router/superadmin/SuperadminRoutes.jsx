@@ -7,7 +7,7 @@ import { PlanesManager, SuscripcionesManager, HistorialManager } from '../../fea
 import GestionTiendasPage from '../../features/superadmin/tiendas/pages/GestionTiendasPage.jsx';
 import { SoporteTicketsPage } from '../../features/superadmin/soporte/index.js';
 import { SeguridadUsuariosPage, SeguridadRolesPage, SeguridadBitacoraPage } from '../../features/superadmin/seguridad/index.js';
-import { FacturacionPage, FacturacionDetallePage, SeriesPage, MetodosPagoPage } from '../../features/superadmin/facturacion/index.js';
+import { FacturacionPage, FacturacionDetallePage, SeriesPage } from '../../features/superadmin/facturacion/index.js';
 import ObtenerTokenPage from '../../features/superadmin/token/pages/ObtenerTokenPage.jsx';
 
 const superadminRoutes = (
@@ -23,10 +23,10 @@ const superadminRoutes = (
     <Route path="facturacion/comprobantes" element={<FacturacionPage />} />
     <Route path="facturacion/comprobantes/:id" element={<FacturacionDetallePage />} />
     <Route path="facturacion/configuracion-fiscal" element={<SeriesPage />} />
-    <Route path="facturacion/metodos-pago" element={<MetodosPagoPage />} />
+
 
     <Route path="soporte" element={<SoporteTicketsPage />} />
-    
+
     <Route path="seguridad" element={<Navigate to="seguridad/usuarios" replace />} />
     <Route path="seguridad/usuarios" element={<SeguridadUsuariosPage />} />
     <Route path="seguridad/roles" element={<SeguridadRolesPage />} />

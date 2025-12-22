@@ -27,7 +27,6 @@ const menuItems = [
     ]),
     getItem('Facturación', `${BASE_PATH}/facturacion`, <IconInvoice size={20} />, [
         getItem('Comprobantes', `${BASE_PATH}/facturacion/comprobantes`),
-        getItem('Métodos de Pago', `${BASE_PATH}/facturacion/metodos-pago`),
         getItem('Configuración Fiscal', `${BASE_PATH}/facturacion/configuracion-fiscal`),
     ]),
     getItem('Soporte', `${BASE_PATH}/soporte`, <IconHeartHandshake size={20} />),
