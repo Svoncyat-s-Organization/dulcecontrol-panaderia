@@ -9,7 +9,7 @@ import { DashboardPage as AdminDashboardPage } from '../../features/admin/tabler
 import { ClientesPage } from '../../features/admin/clientes/index.js';
 import { VentasPage, CajasPage } from '../../features/admin/ventas-pedidos/index.js';
 import { InsumosPage as ComprasInsumosPage, ProveedoresPage, OrdenesCompraPage } from '../../features/admin/compras/index.js';
-import { ExistenciasPage, InsumosPage, MovimientosPage } from '../../features/admin/inventario/index.js';
+import { ExistenciasPage, InsumosPage, MovimientosPage, TransferenciasPage } from '../../features/admin/inventario/index.js';
 import { StockIdealPage, RecetasPage, PlanificacionPage } from '../../features/admin/produccion/index.js';
 import { ProductosPage, CategoriasPage } from '../../features/admin/catalogo/index.js';
 import { FacturacionPage, FacturacionDetallePage, SeriesPage } from '../../features/admin/facturacion/index.js';
@@ -53,6 +53,7 @@ const adminRoutes = (
     <Route path="inventario/existencias" element={guard('inventario/existencias', <ExistenciasPage />)} />
     <Route path="inventario/insumos" element={guard('inventario/insumos', <InsumosPage />)} />
     <Route path="inventario/movimientos" element={guard('inventario/movimientos', <MovimientosPage />)} />
+    <Route path="inventario/transferencias" element={guard('inventario/transferencias', <TransferenciasPage />)} />
     
     <Route path="produccion" element={<Navigate to="planificacion" replace />} />
     <Route path="produccion/planificacion" element={<PlanificacionPage />} />

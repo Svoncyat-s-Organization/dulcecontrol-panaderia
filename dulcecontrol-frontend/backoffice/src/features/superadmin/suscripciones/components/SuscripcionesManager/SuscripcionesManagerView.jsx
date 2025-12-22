@@ -371,7 +371,6 @@ const SuscripcionesManagerView = ({
                 onCancel={onCloseEdit}
                 footer={null}
                 width={720}
-                destroyOnClose
             >
                 <Form
                     form={editForm}
@@ -471,7 +470,6 @@ const SuscripcionesManagerView = ({
                 onCancel={onCloseCreate}
                 footer={null}
                 width={720}
-                destroyOnClose
             >
                 <Form
                     form={createForm}

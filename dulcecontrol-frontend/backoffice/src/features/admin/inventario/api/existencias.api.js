@@ -42,3 +42,11 @@ export const updateInventarioProducto = async (tiendaId, inventarioId, payload) 
   );
   return data;
 };
+
+export const updateUbicacionInventarioProducto = async (tiendaId, inventarioId, ubicacionFisica) => {
+  const { data } = await apiClient.patch(
+    buildInventarioProductosUrl(tiendaId, `/${inventarioId}/ubicacion`),
+    { ubicacionFisica }
+  );
+  return data;
+};

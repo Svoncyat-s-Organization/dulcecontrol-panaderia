@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
-import { Form, Input, InputNumber, Modal, Select, Typography, message, Alert, Space } from 'antd';
+import { useEffect, useMemo, useState } from 'react';
+import { Alert, Button, Form, Input, InputNumber, Modal, Select, Space, Typography, message } from 'antd';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { crearMovimientoProducto } from '../../api/movimientos.api.js';
+import { updateUbicacionInventarioProducto } from '../../api/existencias.api.js';
 import { INVENTARIO_PRODUCTO_KEYS } from '../../constants/queryKeys.js';
+import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 
 const { Paragraph, Text } = Typography;
 
@@ -11,14 +13,21 @@ const AjusteInventarioModal = ({ open, onClose, tiendaId, sedeId, registro }) =>
   const queryClient = useQueryClient();
   const [tipoMovimiento, setTipoMovimiento] = useState('ENTRADA');
   const [cantidad, setCantidad] = useState(1);
+  const ubicacionActual = useMemo(() => registro?.ubicacionFisica ?? '', [registro]);
+  const responsableIdRaw = useTokenStore((state) => state.user?.id ?? null);
+  const responsableId =
+    typeof responsableIdRaw === 'number' && Number.isFinite(responsableIdRaw) && responsableIdRaw > 0
+      ? responsableIdRaw
+      : null;
 
   useEffect(() => {
     if (open && registro) {
       form.resetFields();
+      form.setFieldsValue({ ubicacionFisica: ubicacionActual });
       setTipoMovimiento('ENTRADA');
       setCantidad(1);
     }
-  }, [open, registro, form]);
+  }, [open, registro, form, ubicacionActual]);
 
   const calcularNuevaCantidad = () => {
     const actual = registro?.cantidadActual ?? 0;
@@ -41,7 +50,7 @@ const AjusteInventarioModal = ({ open, onClose, tiendaId, sedeId, registro }) =>
         tipoMovimiento: values.tipoMovimiento,
         cantidad: Number(values.cantidad),
         motivo: 'AJUSTE',
-        descripcionMotivo: values.descripcionMotivo,
+        responsableId,
       });
     },
     onSuccess: () => {
@@ -55,8 +64,39 @@ const AjusteInventarioModal = ({ open, onClose, tiendaId, sedeId, registro }) =>
     },
   });
 
+  const ubicacionMutation = useMutation({
+    mutationFn: async (values) => {
+      if (!tiendaId || !registro?.id) {
+        throw new Error('Faltan datos requeridos para actualizar la ubicación');
+      }
+      const ubicacionFisica = (values?.ubicacionFisica ?? '').trim();
+      return updateUbicacionInventarioProducto(
+        tiendaId,
+        registro.id,
+        ubicacionFisica.length ? ubicacionFisica : null
+      );
+    },
+    onSuccess: () => {
+      message.success('Ubicación actualizada');
+      queryClient.invalidateQueries({ queryKey: INVENTARIO_PRODUCTO_KEYS.lists(tiendaId, sedeId) });
+    },
+    onError: (error) => {
+      const detail = error?.response?.data?.message ?? error?.message ?? 'No se pudo actualizar la ubicación';
+      message.error(detail);
+    },
+  });
+
   const handleOk = () => {
     form.submit();
+  };
+
+  const handleGuardarUbicacion = async () => {
+    try {
+      const values = await form.validateFields(['ubicacionFisica']);
+      ubicacionMutation.mutate(values);
+    } catch {
+      // AntD ya muestra el error del campo
+    }
   };
 
   const handleFinish = (values) => {
@@ -71,11 +111,28 @@ const AjusteInventarioModal = ({ open, onClose, tiendaId, sedeId, registro }) =>
       title={`Ajustar inventario${registro?.nombreProducto ? ` · ${registro.nombreProducto}` : ''}`}
       open={open}
       onCancel={onClose}
-      onOk={handleOk}
-      okText="Registrar ajuste"
-      okButtonProps={{ disabled: esInsuficiente }}
-      confirmLoading={mutation.isPending}
-      destroyOnClose
+      footer={[
+        <Button key="cancel" onClick={onClose} disabled={mutation.isPending || ubicacionMutation.isPending}>
+          Cancelar
+        </Button>,
+        <Button
+          key="saveLocation"
+          onClick={handleGuardarUbicacion}
+          loading={ubicacionMutation.isPending}
+          disabled={!registro?.id || mutation.isPending}
+        >
+          Guardar ubicación
+        </Button>,
+        <Button
+          key="ok"
+          type="primary"
+          onClick={handleOk}
+          loading={mutation.isPending}
+          disabled={esInsuficiente || ubicacionMutation.isPending}
+        >
+          Registrar ajuste
+        </Button>,
+      ]}
       width={560}
     >
       <Paragraph type="secondary" style={{ marginBottom: 16 }}>
@@ -121,6 +178,14 @@ const AjusteInventarioModal = ({ open, onClose, tiendaId, sedeId, registro }) =>
         onFinish={handleFinish}
       >
         <Form.Item
+          label="Ubicación física"
+          name="ubicacionFisica"
+          rules={[{ max: 100, message: 'Máximo 100 caracteres' }]}
+        >
+          <Input placeholder="Ej: Estante A1, Cámara fría, Depósito" allowClear />
+        </Form.Item>
+
+        <Form.Item
           label="Tipo de movimiento"
           name="tipoMovimiento"
           rules={[{ required: true, message: 'Selecciona el tipo' }]}
@@ -148,19 +213,6 @@ const AjusteInventarioModal = ({ open, onClose, tiendaId, sedeId, registro }) =>
             style={{ width: '100%' }}
             addonAfter="unidades"
             onChange={(value) => setCantidad(value || 1)}
-          />
-        </Form.Item>
-
-        <Form.Item
-          label="Motivo del ajuste"
-          name="descripcionMotivo"
-          rules={[{ required: true, message: 'Describe el motivo' }]}
-        >
-          <Input.TextArea 
-            rows={3}
-            placeholder="Ej: Error de conteo en inventario físico, producto caído, regalo a cliente VIP"
-            showCount
-            maxLength={255}
           />
         </Form.Item>
       </Form>

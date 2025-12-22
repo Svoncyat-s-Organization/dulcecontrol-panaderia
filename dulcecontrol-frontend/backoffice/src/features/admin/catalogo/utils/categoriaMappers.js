@@ -1,3 +1,5 @@
+import { getApiUrl } from '../../../../config/api.config.js';
+
 export const CATEGORIA_FORM_DEFAULTS = {
   nombre: '',
   slug: '',
@@ -7,14 +9,31 @@ export const CATEGORIA_FORM_DEFAULTS = {
   activa: true,
 };
 
+const normalizeImageUrl = (value) => {
+  const raw = (value ?? '').toString().trim();
+  if (!raw) return '';
+  if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:')) {
+    return raw;
+  }
+  if (raw.startsWith('/')) {
+    const base = getApiUrl()?.replace(/\/$/, '');
+    return base ? `${base}${raw}` : raw;
+  }
+  return raw;
+};
+
 export const mapCategoriasResponse = (categorias = []) =>
-  categorias.map((categoria) => ({
-    ...categoria,
-    ordenVisual: Number.isFinite(Number(categoria.ordenVisual))
-      ? Number(categoria.ordenVisual)
-      : 0,
-    productosCount: categoria.productosCount ?? 0,
-  }));
+  categorias.map((categoria) => {
+    const urlImagen = normalizeImageUrl(categoria?.urlImagen ?? categoria?.url_imagen);
+    return {
+      ...categoria,
+      urlImagen,
+      ordenVisual: Number.isFinite(Number(categoria.ordenVisual))
+        ? Number(categoria.ordenVisual)
+        : 0,
+      productosCount: categoria.productosCount ?? categoria.productos_count ?? 0,
+    };
+  });
 
 export const getCategoriaFormInitialValues = (categoria) => ({
   ...CATEGORIA_FORM_DEFAULTS,
@@ -30,7 +49,7 @@ export const buildCategoriaPayload = (values) => ({
   nombre: values.nombre?.trim() ?? '',
   slug: values.slug?.trim() ?? '',
   descripcion: values.descripcion ?? '',
-  urlImagen: values.urlImagen ?? '',
+  urlImagen: values.urlImagen?.trim() ?? '',
   activa: values.activa ?? true,
   ordenVisual: Number.isFinite(Number(values.ordenVisual))
     ? Number(values.ordenVisual)

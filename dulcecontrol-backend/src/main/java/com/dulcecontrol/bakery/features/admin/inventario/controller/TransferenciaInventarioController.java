@@ -3,6 +3,7 @@ package com.dulcecontrol.bakery.features.admin.inventario.controller;
 import com.dulcecontrol.bakery.features.admin.inventario.dto.TransferenciaInventarioCreateRequest;
 import com.dulcecontrol.bakery.features.admin.inventario.dto.TransferenciaInventarioUpdateRequest;
 import com.dulcecontrol.bakery.features.admin.inventario.dto.TransferenciaInventarioResponse;
+import com.dulcecontrol.bakery.features.admin.inventario.dto.TransferenciaRecepcionRequest;
 import com.dulcecontrol.bakery.features.admin.inventario.entity.enums.EstadoTransferencia;
 import com.dulcecontrol.bakery.features.admin.inventario.service.ITransferenciaInventarioService;
 import jakarta.validation.Valid;
@@ -64,6 +65,15 @@ public class TransferenciaInventarioController {
             @PathVariable Long id,
             @RequestParam EstadoTransferencia nuevoEstado) {
         TransferenciaInventarioResponse actualizado = service.cambiarEstado(tiendaId, id, nuevoEstado);
+        return ResponseEntity.ok(actualizado);
+    }
+
+    @PatchMapping("/{id}/recibir")
+    public ResponseEntity<TransferenciaInventarioResponse> recibir(
+            @PathVariable Long tiendaId,
+            @PathVariable Long id,
+            @Valid @RequestBody TransferenciaRecepcionRequest request) {
+        TransferenciaInventarioResponse actualizado = service.recibir(tiendaId, id, request);
         return ResponseEntity.ok(actualizado);
     }
 

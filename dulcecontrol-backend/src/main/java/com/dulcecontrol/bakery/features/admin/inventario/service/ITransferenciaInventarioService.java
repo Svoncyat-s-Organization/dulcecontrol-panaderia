@@ -3,6 +3,7 @@ package com.dulcecontrol.bakery.features.admin.inventario.service;
 import com.dulcecontrol.bakery.features.admin.inventario.dto.TransferenciaInventarioCreateRequest;
 import com.dulcecontrol.bakery.features.admin.inventario.dto.TransferenciaInventarioUpdateRequest;
 import com.dulcecontrol.bakery.features.admin.inventario.dto.TransferenciaInventarioResponse;
+import com.dulcecontrol.bakery.features.admin.inventario.dto.TransferenciaRecepcionRequest;
 import com.dulcecontrol.bakery.features.admin.inventario.entity.enums.EstadoTransferencia;
 
 import java.util.List;
@@ -20,6 +21,8 @@ public interface ITransferenciaInventarioService {
     TransferenciaInventarioResponse actualizar(Long tiendaId, Long id, TransferenciaInventarioUpdateRequest request);
 
     TransferenciaInventarioResponse cambiarEstado(Long tiendaId, Long id, EstadoTransferencia nuevoEstado);
+
+    TransferenciaInventarioResponse recibir(Long tiendaId, Long id, TransferenciaRecepcionRequest request);
 
     void eliminar(Long tiendaId, Long id);
 }

@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { useState, useMemo } from 'react';
-import { Button, Card, DatePicker, Empty, Result, Select, Space, Table, Tag, Typography } from 'antd';
-import { IconArrowDownRight, IconArrowUpRight, IconDownload, IconRepeat } from '@tabler/icons-react';
+import { Button, Card, DatePicker, Empty, Input, Result, Select, Space, Table, Tag, Typography, message } from 'antd';
+import { IconArrowDownRight, IconArrowUpRight, IconDownload, IconRepeat, IconSearch } from '@tabler/icons-react';
 
 const { Text, Title } = Typography;
 const { RangePicker } = DatePicker;
@@ -25,6 +25,25 @@ const MOTIVO_CONFIG = {
 const formatFecha = (value) => {
   const fecha = dayjs(value);
   return fecha.isValid() ? fecha.format('DD/MM/YYYY HH:mm') : '—';
+};
+
+const escapeCsvValue = (value) => {
+  const raw = value === undefined || value === null ? '' : String(value);
+  const escaped = raw.replace(/\r?\n/g, ' ').replace(/"/g, '""');
+  return `"${escaped}"`;
+};
+
+const downloadCsv = (filename, rows) => {
+  const csv = rows.map((row) => row.map(escapeCsvValue).join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 };
 
 const MovimientosProductosTableView = ({ movimientos, loading, isError, sedeId, onRetry }) => {
@@ -201,12 +220,20 @@ const MovimientosProductosTableView = ({ movimientos, loading, isError, sedeId, 
           placeholder={['Fecha inicio', 'Fecha fin']}
           onChange={setDateRange}
         />
+        <Input
+          placeholder="Buscar por producto, SKU o responsable"
+          prefix={<IconSearch size={16} />}
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          style={{ width: 280 }}
+          allowClear
+        />
         <Select
           placeholder="Tipo de movimiento"
           style={{ width: 180 }}
           options={[
-            { label: 'Entrada', value: 'entrada' },
-            { label: 'Salida', value: 'salida' },
+            { label: 'Entrada', value: 'ENTRADA' },
+            { label: 'Salida', value: 'SALIDA' },
           ]}
           onChange={setTipoFiltro}
           allowClear
@@ -227,7 +254,29 @@ const MovimientosProductosTableView = ({ movimientos, loading, isError, sedeId, 
         />
         <Button
           icon={<IconDownload size={16} />}
-          onClick={() => alert('Exportación en desarrollo')}
+          onClick={() => {
+            if (!movimientosFiltrados.length) {
+              message.info('No hay movimientos para exportar');
+              return;
+            }
+            const timestamp = dayjs().format('YYYYMMDD_HHmm');
+            const filename = `kardex_productos_sede_${sedeId}_${timestamp}.csv`;
+            const rows = [
+              ['fecha', 'producto', 'sku', 'tipo', 'motivo', 'saldo_anterior', 'movimiento', 'saldo_posterior', 'responsable'],
+              ...movimientosFiltrados.map((mov) => [
+                formatFecha(mov.creadoEn),
+                mov.nombreProducto ?? '',
+                mov.sku ?? '',
+                mov.tipoMovimiento ?? '',
+                mov.motivo ?? '',
+                mov.cantidadAnterior ?? 0,
+                mov.cantidad ?? 0,
+                mov.cantidadPosterior ?? 0,
+                mov.usuarioResponsable ?? '',
+              ]),
+            ];
+            downloadCsv(filename, rows);
+          }}
         >
           Exportar
         </Button>

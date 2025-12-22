@@ -31,7 +31,7 @@ const ProductoForm = ({ open, onClose, tiendaId, producto }) => {
 
   const mutation = useMutation({
     mutationFn: async (values) => {
-      const payload = buildProductoPayload(values, producto);
+      const payload = buildProductoPayload(values, producto ?? {});
       if (isEditing) {
         return putProducto(tiendaId, producto.id, payload);
       }
@@ -43,7 +43,18 @@ const ProductoForm = ({ open, onClose, tiendaId, producto }) => {
       onClose();
     },
     onError: (error) => {
-      const detail = error?.response?.data?.message ?? error?.message ?? 'Ocurrió un error';
+      const status = error?.response?.status;
+      const backendMessage = error?.response?.data?.message;
+      const fallback = error?.message ?? 'Ocurrió un error';
+      const detail = backendMessage || (status ? `Error ${status}: ${fallback}` : fallback);
+      // Dejar rastro para depuración (Network/Response)
+      // eslint-disable-next-line no-console
+      console.error('Error creando/actualizando producto', {
+        status,
+        data: error?.response?.data,
+        message: error?.message,
+        error,
+      });
       message.error(detail);
     },
   });

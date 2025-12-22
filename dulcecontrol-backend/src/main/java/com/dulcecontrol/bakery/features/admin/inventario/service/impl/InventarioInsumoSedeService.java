@@ -3,6 +3,7 @@ package com.dulcecontrol.bakery.features.admin.inventario.service.impl;
 import com.dulcecontrol.bakery.features.admin.inventario.dto.InventarioInsumoSedeCreateRequest;
 import com.dulcecontrol.bakery.features.admin.inventario.dto.InventarioInsumoSedeUpdateRequest;
 import com.dulcecontrol.bakery.features.admin.inventario.dto.InventarioInsumoSedeResponse;
+import com.dulcecontrol.bakery.features.admin.inventario.dto.UbicacionFisicaUpdateRequest;
 import com.dulcecontrol.bakery.features.admin.inventario.entity.InventarioInsumoSede;
 import com.dulcecontrol.bakery.features.admin.inventario.repository.InventarioInsumoSedeRepository;
 import com.dulcecontrol.bakery.features.admin.inventario.service.IInventarioInsumoSedeService;
@@ -78,6 +79,25 @@ public class InventarioInsumoSedeService implements IInventarioInsumoSedeService
         inventario.setCantidadActual(request.getCantidadActual());
         inventario.setUbicacionFisica(request.getUbicacionFisica());
 
+        InventarioInsumoSede actualizado = repository.save(inventario);
+        return toResponse(actualizado);
+    }
+
+    @Override
+    @Transactional
+    public InventarioInsumoSedeResponse actualizarUbicacion(Long tiendaId, Long id, UbicacionFisicaUpdateRequest request) {
+        InventarioInsumoSede inventario = repository.findByIdAndTiendaId(id, tiendaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Inventario de insumo no encontrado"));
+
+        String ubicacion = request != null ? request.getUbicacionFisica() : null;
+        if (ubicacion != null) {
+            ubicacion = ubicacion.trim();
+            if (ubicacion.isBlank()) {
+                ubicacion = null;
+            }
+        }
+
+        inventario.setUbicacionFisica(ubicacion);
         InventarioInsumoSede actualizado = repository.save(inventario);
         return toResponse(actualizado);
     }

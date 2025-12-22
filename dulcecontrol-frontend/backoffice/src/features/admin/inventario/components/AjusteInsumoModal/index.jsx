@@ -1,14 +1,21 @@
 import { useEffect, useMemo } from 'react';
-import { Form, Input, InputNumber, Modal, Radio, Typography, message, Space } from 'antd';
+import { Button, Form, Input, InputNumber, Modal, Radio, Space, Typography, message } from 'antd';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { crearMovimientoInsumo } from '../../api/movimientos.api.js';
+import { updateUbicacionInventarioInsumo } from '../../api/insumos-inventario.api.js';
 import { INVENTARIO_INSUMO_KEYS } from '../../constants/queryKeys.js';
+import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 
 const { Paragraph, Text } = Typography;
 
 const AjusteInsumoModal = ({ open, onClose, tiendaId, sedeId, registro }) => {
   const [form] = Form.useForm();
   const queryClient = useQueryClient();
+  const responsableIdRaw = useTokenStore((state) => state.user?.id ?? null);
+  const responsableId =
+    typeof responsableIdRaw === 'number' && Number.isFinite(responsableIdRaw) && responsableIdRaw > 0
+      ? responsableIdRaw
+      : null;
   
   const tipoMovimiento = Form.useWatch('tipoMovimiento', form);
   const cantidad = Form.useWatch('cantidad', form);
@@ -26,18 +33,20 @@ const AjusteInsumoModal = ({ open, onClose, tiendaId, sedeId, registro }) => {
 
   const unidadMedida = registro?.unidadMedida ?? 'UNIDAD';
   const needsDecimals = ['KG', 'L', 'LT', 'ML'].includes(unidadMedida.toUpperCase());
+  const minCantidad = needsDecimals ? 0.01 : 1;
 
   useEffect(() => {
     if (open && registro) {
       form.setFieldsValue({
         tipoMovimiento: 'ENTRADA',
-        cantidad: 0,
+        cantidad: minCantidad,
         motivo: '',
+        ubicacionFisica: registro?.ubicacionFisica ?? '',
       });
     } else {
       form.resetFields();
     }
-  }, [open, registro, form]);
+  }, [open, registro, form, minCantidad]);
 
   const mutation = useMutation({
     mutationFn: async (values) => {
@@ -50,7 +59,7 @@ const AjusteInsumoModal = ({ open, onClose, tiendaId, sedeId, registro }) => {
         tipoMovimiento: values.tipoMovimiento,
         cantidad: Number(values.cantidad),
         motivo: values.motivo || `Ajuste manual de inventario`,
-        responsableId: null,
+        responsableId,
       });
     },
     onSuccess: () => {
@@ -64,8 +73,39 @@ const AjusteInsumoModal = ({ open, onClose, tiendaId, sedeId, registro }) => {
     },
   });
 
+  const ubicacionMutation = useMutation({
+    mutationFn: async (values) => {
+      if (!tiendaId || !registro?.id) {
+        throw new Error('Faltan datos requeridos para actualizar la ubicación');
+      }
+      const ubicacionFisica = (values?.ubicacionFisica ?? '').trim();
+      return updateUbicacionInventarioInsumo(
+        tiendaId,
+        registro.id,
+        ubicacionFisica.length ? ubicacionFisica : null
+      );
+    },
+    onSuccess: () => {
+      message.success('Ubicación actualizada');
+      queryClient.invalidateQueries({ queryKey: INVENTARIO_INSUMO_KEYS.lists(tiendaId, sedeId) });
+    },
+    onError: (error) => {
+      const detail = error?.response?.data?.message ?? error?.message ?? 'No se pudo actualizar la ubicación';
+      message.error(detail);
+    },
+  });
+
   const handleOk = () => {
     form.submit();
+  };
+
+  const handleGuardarUbicacion = async () => {
+    try {
+      const values = await form.validateFields(['ubicacionFisica']);
+      ubicacionMutation.mutate(values);
+    } catch {
+      // AntD ya muestra el error del campo
+    }
   };
 
   const handleFinish = (values) => {
@@ -77,10 +117,28 @@ const AjusteInsumoModal = ({ open, onClose, tiendaId, sedeId, registro }) => {
       title={`Ajustar insumo${registro?.nombreInsumo ? ` · ${registro.nombreInsumo}` : ''}`}
       open={open}
       onCancel={onClose}
-      onOk={handleOk}
-      okText="Registrar movimiento"
-      confirmLoading={mutation.isPending}
-      destroyOnClose
+      footer={[
+        <Button key="cancel" onClick={onClose} disabled={mutation.isPending || ubicacionMutation.isPending}>
+          Cancelar
+        </Button>,
+        <Button
+          key="saveLocation"
+          onClick={handleGuardarUbicacion}
+          loading={ubicacionMutation.isPending}
+          disabled={!registro?.id || mutation.isPending}
+        >
+          Guardar ubicación
+        </Button>,
+        <Button
+          key="ok"
+          type="primary"
+          onClick={handleOk}
+          loading={mutation.isPending}
+          disabled={ubicacionMutation.isPending}
+        >
+          Registrar movimiento
+        </Button>,
+      ]}
       width={520}
     >
       <Paragraph type="secondary" style={{ marginBottom: 16 }}>
@@ -91,8 +149,16 @@ const AjusteInsumoModal = ({ open, onClose, tiendaId, sedeId, registro }) => {
         layout="vertical" 
         form={form} 
         onFinish={handleFinish} 
-        initialValues={{ tipoMovimiento: 'ENTRADA', cantidad: 0 }}
+        initialValues={{ tipoMovimiento: 'ENTRADA', cantidad: minCantidad }}
       >
+        <Form.Item
+          label="Ubicación física"
+          name="ubicacionFisica"
+          rules={[{ max: 100, message: 'Máximo 100 caracteres' }]}
+        >
+          <Input placeholder="Ej: Almacén, Estante B2, Cámara fría" allowClear />
+        </Form.Item>
+
         <Form.Item
           label="Tipo de movimiento"
           name="tipoMovimiento"
@@ -111,7 +177,15 @@ const AjusteInsumoModal = ({ open, onClose, tiendaId, sedeId, registro }) => {
             { required: true, message: 'Ingresa la cantidad' },
             { 
               validator: (_, value) => {
-                if (tipoMovimiento === 'SALIDA' && value > cantidadActual) {
+                const numericValue = Number(value ?? 0);
+                if (!Number.isFinite(numericValue) || numericValue < minCantidad) {
+                  return Promise.reject(
+                    needsDecimals
+                      ? `La cantidad mínima es ${minCantidad}`
+                      : `La cantidad mínima es ${minCantidad} unidad`
+                  );
+                }
+                if (tipoMovimiento === 'SALIDA' && numericValue > cantidadActual) {
                   return Promise.reject('Stock insuficiente para esta salida');
                 }
                 return Promise.resolve();
@@ -120,9 +194,9 @@ const AjusteInsumoModal = ({ open, onClose, tiendaId, sedeId, registro }) => {
           ]}
         >
           <InputNumber
-            min={0}
-            step={needsDecimals ? 0.001 : 1}
-            precision={needsDecimals ? 3 : 0}
+            min={minCantidad}
+            step={needsDecimals ? 0.01 : 1}
+            precision={needsDecimals ? 2 : 0}
             style={{ width: '100%' }}
             stringMode={needsDecimals}
             addonAfter={unidadMedida}

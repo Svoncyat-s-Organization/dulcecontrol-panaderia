@@ -102,12 +102,14 @@ const ProductosTable = () => {
         categorias={categorias}
       />
 
-      <ProductoForm
-        open={isDrawerOpen}
-        onClose={handleCloseDrawer}
-        tiendaId={tiendaId}
-        producto={selectedProducto}
-      />
+      {isDrawerOpen && (
+        <ProductoForm
+          open={isDrawerOpen}
+          onClose={handleCloseDrawer}
+          tiendaId={tiendaId}
+          producto={selectedProducto}
+        />
+      )}
     </>
   );
 };

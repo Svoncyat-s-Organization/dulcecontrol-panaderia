@@ -1,10 +1,13 @@
 import dayjs from 'dayjs';
 import { useState, useMemo } from 'react';
-import { Button, Card, DatePicker, Empty, Result, Select, Space, Table, Tag, Typography } from 'antd';
-import { IconArrowDownRight, IconArrowUpRight, IconDownload, IconRepeat } from '@tabler/icons-react';
+import { Button, Card, DatePicker, Empty, Input, Result, Select, Space, Table, Tag, Typography, message } from 'antd';
+import { IconArrowDownRight, IconArrowUpRight, IconDownload, IconRepeat, IconSearch } from '@tabler/icons-react';
 
 const { Text, Title } = Typography;
 const { RangePicker } = DatePicker;
+
+const DECIMAL_UNITS = ['KG', 'KILOGRAMOS', 'KILOGRAMO', 'L', 'LT', 'LTS', 'LITROS'];
+const needsDecimals = (unidadMedida) => DECIMAL_UNITS.includes((unidadMedida ?? '').toUpperCase());
 
 const TIPO_CONFIG = {
   ENTRADA: { color: 'green', icon: <IconArrowUpRight size={14} />, label: 'Entrada' },
@@ -33,17 +36,36 @@ const formatFecha = (value) => {
 
 const formatCantidad = (cantidad, unidad) => {
   const valor = Number(cantidad ?? 0);
+  const precision = needsDecimals(unidad) ? 3 : 0;
   const formatted = Number.isFinite(valor)
-    ? valor.toLocaleString('es-PE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-    : '0.0';
+    ? valor.toLocaleString('es-PE', { minimumFractionDigits: precision, maximumFractionDigits: precision })
+    : precision ? '0.000' : '0';
   return `${formatted} ${unidad ?? ''}`.trim();
+};
+
+const escapeCsvValue = (value) => {
+  const raw = value === undefined || value === null ? '' : String(value);
+  const escaped = raw.replace(/\r?\n/g, ' ').replace(/"/g, '""');
+  return `"${escaped}"`;
+};
+
+const downloadCsv = (filename, rows) => {
+  const csv = rows.map((row) => row.map(escapeCsvValue).join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 };
 
 const MovimientosInsumosTableView = ({ movimientos, loading, isError, sedeId, onRetry }) => {
   // Filtros avanzados
   const [dateRange, setDateRange] = useState([null, null]);
   const [tipoFiltro, setTipoFiltro] = useState(null);
-  const [motivoFiltro, setMotivoFiltro] = useState(null);
   const [busqueda, setBusqueda] = useState('');
 
   // Aplicar filtros
@@ -60,9 +82,6 @@ const MovimientosInsumosTableView = ({ movimientos, loading, isError, sedeId, on
       // Filtro de tipo
       if (tipoFiltro && mov.tipoMovimiento !== tipoFiltro) return false;
 
-      // Filtro de motivo
-      if (motivoFiltro && mov.motivo !== motivoFiltro) return false;
-
       // Búsqueda por insumo o responsable
       if (busqueda) {
         const search = busqueda.toLowerCase();
@@ -74,7 +93,7 @@ const MovimientosInsumosTableView = ({ movimientos, loading, isError, sedeId, on
 
       return true;
     });
-  }, [movimientos, dateRange, tipoFiltro, motivoFiltro, busqueda]);
+  }, [movimientos, dateRange, tipoFiltro, busqueda]);
 
   if (!sedeId) {
     return (
@@ -213,19 +232,50 @@ const MovimientosInsumosTableView = ({ movimientos, loading, isError, sedeId, on
           placeholder={['Fecha inicio', 'Fecha fin']}
           onChange={setDateRange}
         />
+        <Input
+          placeholder="Buscar por insumo, código o responsable"
+          prefix={<IconSearch size={16} />}
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          style={{ width: 280 }}
+          allowClear
+        />
         <Select
           placeholder="Tipo de movimiento"
           style={{ width: 180 }}
           options={[
-            { label: 'Entrada', value: 'entrada' },
-            { label: 'Salida', value: 'salida' },
+            { label: 'Entrada', value: 'ENTRADA' },
+            { label: 'Salida', value: 'SALIDA' },
           ]}
           onChange={setTipoFiltro}
           allowClear
         />
         <Button
           icon={<IconDownload size={16} />}
-          onClick={() => alert('Exportación en desarrollo')}
+          onClick={() => {
+            if (!movimientosFiltrados.length) {
+              message.info('No hay movimientos para exportar');
+              return;
+            }
+            const timestamp = dayjs().format('YYYYMMDD_HHmm');
+            const filename = `kardex_insumos_sede_${sedeId}_${timestamp}.csv`;
+            const rows = [
+              ['fecha', 'insumo', 'codigo', 'tipo', 'motivo', 'saldo_anterior', 'movimiento', 'saldo_posterior', 'unidad', 'responsable'],
+              ...movimientosFiltrados.map((mov) => [
+                formatFecha(mov.creadoEn),
+                mov.nombreInsumo ?? '',
+                mov.codigoInterno ?? '',
+                mov.tipoMovimiento ?? '',
+                mov.motivo ?? '',
+                mov.cantidadAnterior ?? 0,
+                mov.cantidad ?? 0,
+                mov.cantidadPosterior ?? 0,
+                mov.unidadMedida ?? '',
+                mov.usuarioResponsable ?? '',
+              ]),
+            ];
+            downloadCsv(filename, rows);
+          }}
         >
           Exportar
         </Button>

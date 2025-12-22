@@ -3,6 +3,7 @@ package com.dulcecontrol.bakery.features.admin.inventario.controller;
 import com.dulcecontrol.bakery.features.admin.inventario.dto.InventarioInsumoSedeCreateRequest;
 import com.dulcecontrol.bakery.features.admin.inventario.dto.InventarioInsumoSedeUpdateRequest;
 import com.dulcecontrol.bakery.features.admin.inventario.dto.InventarioInsumoSedeResponse;
+import com.dulcecontrol.bakery.features.admin.inventario.dto.UbicacionFisicaUpdateRequest;
 import com.dulcecontrol.bakery.features.admin.inventario.service.IInventarioInsumoSedeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -63,6 +64,15 @@ public class InventarioInsumoSedeController {
             @PathVariable Long id,
             @Valid @RequestBody InventarioInsumoSedeUpdateRequest request) {
         InventarioInsumoSedeResponse actualizado = service.actualizar(tiendaId, id, request);
+        return ResponseEntity.ok(actualizado);
+    }
+
+    @PatchMapping("/{id}/ubicacion")
+    public ResponseEntity<InventarioInsumoSedeResponse> actualizarUbicacion(
+            @PathVariable Long tiendaId,
+            @PathVariable Long id,
+            @Valid @RequestBody UbicacionFisicaUpdateRequest request) {
+        InventarioInsumoSedeResponse actualizado = service.actualizarUbicacion(tiendaId, id, request);
         return ResponseEntity.ok(actualizado);
     }
 

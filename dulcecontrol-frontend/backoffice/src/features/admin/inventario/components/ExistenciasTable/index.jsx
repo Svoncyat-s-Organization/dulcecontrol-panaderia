@@ -2,9 +2,10 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { message } from 'antd';
 import ExistenciasTableView from './ExistenciasTableView.jsx';
-import { getInventarioProductos } from '../../api/existencias.api.js';
+import { getInventarioProductosPorSede } from '../../api/existencias.api.js';
 import { INVENTARIO_PRODUCTO_KEYS } from '../../constants/queryKeys.js';
 import AjusteInventarioModal from '../AjusteInventarioModal/index.jsx';
+import { getProductos } from '../../../catalogo/api/productos.api.js';
 
 const ExistenciasTable = ({ tiendaId, sedeId }) => {
   const [registroSeleccionado, setRegistroSeleccionado] = useState(null);
@@ -18,17 +19,41 @@ const ExistenciasTable = ({ tiendaId, sedeId }) => {
   } = useQuery({
     queryKey: INVENTARIO_PRODUCTO_KEYS.lists(tiendaId, sedeId),
     queryFn: () =>
-      getInventarioProductos(tiendaId, sedeId ? { sedeId } : undefined).catch((error) => {
+      getInventarioProductosPorSede(tiendaId, sedeId).catch((error) => {
         message.error(
           error?.response?.data?.message ?? 'No se pudo obtener el inventario de productos'
         );
         throw error;
       }),
-    enabled: Boolean(tiendaId),
+    enabled: Boolean(tiendaId && sedeId),
     select: (response) => response ?? [],
   });
 
-  const inventarios = useMemo(() => data, [data]);
+  const productosQuery = useQuery({
+    queryKey: ['catalogo-productos', tiendaId],
+    queryFn: () =>
+      getProductos(tiendaId).catch((error) => {
+        message.error(
+          error?.response?.data?.message ?? 'No se pudo obtener el catálogo de productos'
+        );
+        throw error;
+      }),
+    enabled: Boolean(tiendaId),
+    staleTime: 60 * 1000,
+    select: (response) => response ?? [],
+  });
+
+  const inventarios = useMemo(() => {
+    const productos = productosQuery.data ?? [];
+    const imagenPorProductoId = new Map(
+      productos.map((producto) => [String(producto.id), producto.urlImagenPrincipal ?? null])
+    );
+
+    return (data ?? []).map((registro) => ({
+      ...registro,
+      imagenUrl: imagenPorProductoId.get(String(registro.productoId)) ?? null,
+    }));
+  }, [data, productosQuery.data]);
 
   const manejarAjuste = (registro) => {
     setRegistroSeleccionado(registro);

@@ -1225,7 +1225,6 @@ const CheckoutModal = ({
                 okText="Guardar"
                 cancelText="Cancelar"
                 confirmLoading={savingAddress}
-                destroyOnClose
             >
                 {!clienteId ? (
                     <Alert type="warning" showIcon message="Selecciona primero un cliente" />

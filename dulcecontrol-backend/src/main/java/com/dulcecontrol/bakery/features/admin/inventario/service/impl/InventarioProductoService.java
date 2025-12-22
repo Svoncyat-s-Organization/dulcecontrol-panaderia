@@ -3,6 +3,7 @@ package com.dulcecontrol.bakery.features.admin.inventario.service.impl;
 import com.dulcecontrol.bakery.features.admin.inventario.dto.InventarioProductoCreateRequest;
 import com.dulcecontrol.bakery.features.admin.inventario.dto.InventarioProductoUpdateRequest;
 import com.dulcecontrol.bakery.features.admin.inventario.dto.InventarioProductoResponse;
+import com.dulcecontrol.bakery.features.admin.inventario.dto.UbicacionFisicaUpdateRequest;
 import com.dulcecontrol.bakery.features.admin.inventario.entity.InventarioProducto;
 import com.dulcecontrol.bakery.features.admin.inventario.repository.InventarioProductoRepository;
 import com.dulcecontrol.bakery.features.admin.inventario.service.IInventarioProductoService;
@@ -108,6 +109,25 @@ public class InventarioProductoService implements IInventarioProductoService {
         
         return toResponse(actualizado);
     }
+
+        @Override
+        @Transactional
+        public InventarioProductoResponse actualizarUbicacion(Long tiendaId, Long id, UbicacionFisicaUpdateRequest request) {
+                InventarioProducto inventario = repository.findByIdAndTiendaId(id, tiendaId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Inventario de producto no encontrado"));
+
+                String ubicacion = request != null ? request.getUbicacionFisica() : null;
+                if (ubicacion != null) {
+                        ubicacion = ubicacion.trim();
+                        if (ubicacion.isBlank()) {
+                                ubicacion = null;
+                        }
+                }
+
+                inventario.setUbicacionFisica(ubicacion);
+                InventarioProducto actualizado = repository.save(inventario);
+                return toResponse(actualizado);
+        }
 
     @Override
     @Transactional

@@ -80,6 +80,7 @@ export const getProductoFormInitialValues = (producto) => ({
 });
 
 export const buildProductoPayload = (values, productoBase = {}) => {
+  const safeProductoBase = productoBase ?? {};
   const nombre = values.nombre?.trim() ?? '';
   const slug = values.slug?.trim() ?? slugify(nombre);
 
@@ -90,20 +91,20 @@ export const buildProductoPayload = (values, productoBase = {}) => {
     sku: values.sku?.trim() ?? '',
     descripcion: values.descripcion ?? '',
     tipo: values.tipo ?? 'PRODUCTO_TERMINADO',
-    esPersonalizable: values.esPersonalizable ?? productoBase.esPersonalizable ?? false,
+    esPersonalizable: values.esPersonalizable ?? safeProductoBase.esPersonalizable ?? false,
     precioBaseCentimos: toCentimos(values.precioBase),
     precioOfertaCentimos:
       values.precioOferta !== undefined && values.precioOferta !== null
         ? toCentimos(values.precioOferta)
-        : productoBase.precioOfertaCentimos ?? null,
-    visibleEnPos: values.visibleEnPos ?? productoBase.visibleEnPos ?? true,
+        : safeProductoBase.precioOfertaCentimos ?? null,
+    visibleEnPos: values.visibleEnPos ?? safeProductoBase.visibleEnPos ?? true,
     visibleEnStorefront:
-      values.visibleEnStorefront ?? productoBase.visibleEnStorefront ?? true,
+      values.visibleEnStorefront ?? safeProductoBase.visibleEnStorefront ?? true,
     destacadoStorefront:
-      values.destacadoStorefront ?? productoBase.destacadoStorefront ?? false,
-    urlImagenPrincipal: values.urlImagenPrincipal ?? productoBase.urlImagenPrincipal ?? '',
-    imagenesGaleria: productoBase.imagenesGaleria ?? [],
-    atributos: productoBase.atributos ?? {},
-    activo: values.activo ?? productoBase.activo ?? true,
+      values.destacadoStorefront ?? safeProductoBase.destacadoStorefront ?? false,
+    urlImagenPrincipal: values.urlImagenPrincipal ?? safeProductoBase.urlImagenPrincipal ?? '',
+    imagenesGaleria: safeProductoBase.imagenesGaleria ?? [],
+    atributos: safeProductoBase.atributos ?? {},
+    activo: values.activo ?? safeProductoBase.activo ?? true,
   };
 };
