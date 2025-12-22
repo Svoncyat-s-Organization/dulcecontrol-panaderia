@@ -20,9 +20,9 @@ export const getTicketById = async (ticketId) => {
 export const createTicket = async (data) => {
     const payload = sanitize({
         tiendaId: data.tiendaId,
-        asignadoAId: data.asignadoAId,
         asunto: data.asunto,
         prioridad: data.prioridad,
+        mensaje: data.mensaje,
     });
     const response = await apiClient.post(BASE_PATH, payload);
     return response.data;

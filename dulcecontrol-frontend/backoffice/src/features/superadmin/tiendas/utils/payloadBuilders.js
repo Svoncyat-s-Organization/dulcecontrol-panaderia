@@ -79,6 +79,8 @@ export const buildTiendaCreatePayload = (formData) => {
     const nombreComercial = trimValue(formData.nombreComercial);
     const correoContacto = trimValue(formData.correoContacto);
     const telefonoContacto = trimValue(formData.telefonoContacto) ?? null;
+    const direccionFiscal = trimValue(formData.direccionFiscal);
+    const ubigeoFiscal = trimValue(formData.ubigeoFiscal);
     const numeroDoc = generateTemporalNumeroDoc();
 
     return sanitizeObject({
@@ -89,6 +91,8 @@ export const buildTiendaCreatePayload = (formData) => {
         nombreComercial: nombreComercial ?? null,
         correoContacto,
         telefonoContacto,
+        direccionFiscal: direccionFiscal ?? null,
+        ubigeoFiscal,
         contrasena: generateRandomPassword(),
         estado: ensureEstado(formData.estado),
     });
@@ -98,6 +102,8 @@ export const buildTiendaUpdatePayload = (formData, initialValues = {}) => {
     const nombreComercial = trimValue(formData.nombreComercial);
     const correoContacto = trimValue(formData.correoContacto);
     const telefonoContacto = trimValue(formData.telefonoContacto) ?? null;
+    const direccionFiscal = trimValue(formData.direccionFiscal);
+    const ubigeoFiscal = trimValue(formData.ubigeoFiscal);
     const numeroDoc = initialValues.numeroDoc || generateTemporalNumeroDoc();
     const slug = initialValues.slug || buildAutoSlug(nombreComercial, numeroDoc);
 
@@ -109,6 +115,8 @@ export const buildTiendaUpdatePayload = (formData, initialValues = {}) => {
         nombreComercial: nombreComercial ?? null,
         correoContacto,
         telefonoContacto,
+        direccionFiscal: direccionFiscal ?? initialValues.direccionFiscal ?? null,
+        ubigeoFiscal: ubigeoFiscal ?? initialValues.ubigeoFiscal,
         estado: ensureEstado(formData.estado || initialValues.estado),
     });
 };

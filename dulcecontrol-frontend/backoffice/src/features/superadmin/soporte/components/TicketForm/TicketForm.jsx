@@ -60,27 +60,14 @@ const TicketForm = ({ open, onCancel, onSubmit, submitting, tiendaOptions }) => 
                 </Form.Item>
 
                 <Form.Item
-                    name="asignadoAId"
-                    label="Asignado a (ID opcional)"
-                    tooltip="Si ya asignaste este ticket a un superadmin, coloca su ID numérico."
+                    name="mensaje"
+                    label="Mensaje"
                     rules={[
-                        {
-                            validator: (_, value) => {
-                                if (!value || !value.trim()) {
-                                    return Promise.resolve();
-                                }
-
-                                const trimmed = value.trim();
-                                if (/^\d+$/.test(trimmed)) {
-                                    return Promise.resolve();
-                                }
-
-                                return Promise.reject(new Error('Ingresa solo números positivos.'));
-                            },
-                        },
+                        { required: true, message: 'Describe el detalle del ticket.' },
+                        { min: 20, message: 'Detalla al menos 20 caracteres para dar contexto.' },
                     ]}
                 >
-                    <Input placeholder="Ej. 102" inputMode="numeric" />
+                    <Input.TextArea rows={4} showCount maxLength={1000} placeholder="Describe el incidente o solicitud" />
                 </Form.Item>
             </Form>
         </Modal>
