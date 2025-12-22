@@ -1,6 +1,5 @@
 import React from 'react';
-import { Modal, Table, Empty, Tag, Image } from 'antd';
-import { EyeOutlined } from '@ant-design/icons';
+import { Modal, Table, Empty, Tag } from 'antd';
 import { formatCurrency, formatDate } from '../../utils/formatters.js';
 
 const HistorialPagosModalView = ({ open, onClose, pagos, loading, ordenCompra }) => {
@@ -20,40 +19,22 @@ const HistorialPagosModalView = ({ open, onClose, pagos, loading, ordenCompra })
       render: (monto) => <span style={{ fontWeight: 600, color: '#52c41a' }}>{formatCurrency(monto)}</span>,
     },
     {
-      title: 'Comprobante',
-      dataIndex: 'urlFotoComprobante',
-      key: 'comprobante',
+      title: 'Tipo de Pago',
+      dataIndex: 'metodoPago',
+      key: 'metodoPago',
       width: 130,
-      align: 'center',
-      render: (url) => {
-        if (!url) {
-          return <span style={{ color: '#999' }}>Sin imagen</span>;
-        }
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-            <Image
-              src={url}
-              alt="Comprobante"
-              width={50}
-              height={50}
-              style={{ 
-                objectFit: 'cover', 
-                borderRadius: 4, 
-                cursor: 'pointer',
-                border: '2px solid #d9d9d9'
-              }}
-              preview={{
-                mask: (
-                  <div style={{ fontSize: 11, textAlign: 'center' }}>
-                    <EyeOutlined style={{ fontSize: 16 }} />
-                    <div>Click para ver</div>
-                  </div>
-                ),
-              }}
-            />
-          </div>
-        );
+      render: (tipo) => {
+        if (!tipo) return '-';
+        return <Tag color="blue">{tipo.charAt(0).toUpperCase() + tipo.slice(1)}</Tag>;
       },
+    },
+    {
+      title: 'Referencia',
+      dataIndex: 'referenciaPago',
+      key: 'referencia',
+      width: 150,
+      ellipsis: true,
+      render: (ref) => ref || '-',
     },
     {
       title: 'Observaciones',

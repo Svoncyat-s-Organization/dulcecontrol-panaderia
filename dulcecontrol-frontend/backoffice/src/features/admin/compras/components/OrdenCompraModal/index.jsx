@@ -94,6 +94,8 @@ const OrdenCompraModal = ({ open, onClose, tiendaId, sedeId, orden }) => {
       
       const payload = {
         ...values,
+        tipoPagoInicial: values.tipoPagoInicial,
+        referenciaPago: values.referenciaPagoInicial,
         detalles: detalles.map((d) => ({
           insumoId: d.insumoId,
           cantidadSolicitada: d.cantidadSolicitada,
