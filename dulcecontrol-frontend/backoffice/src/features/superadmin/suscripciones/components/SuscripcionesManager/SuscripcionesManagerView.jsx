@@ -71,6 +71,10 @@ const SuscripcionesManagerView = ({
         createForm.setFieldsValue(values);
     }, [createForm]);
 
+    const setEditFormValues = useCallback((values) => {
+        editForm.setFieldsValue(values);
+    }, [editForm]);
+
     const getPlanPrecioByCiclo = (planId, ciclo) => {
         const selectedPlan = planMap.get(planId);
         if (!selectedPlan) return null;
@@ -95,11 +99,29 @@ const SuscripcionesManagerView = ({
         setCreateFormValues({ precioPactadoSoles: precio });
     };
 
-    const syncFechaFin = (fechaInicio, ciclo) => {
+    const syncCreateFechaFin = (fechaInicio, ciclo) => {
         if (!fechaInicio) return;
-        const dias = ciclo === 'ANUAL' ? 365 : 30;
-        const nuevaFechaFin = dayjs(fechaInicio).add(dias, 'day');
+        const nuevaFechaFin = ciclo === 'ANUAL'
+            ? dayjs(fechaInicio).add(1, 'year')
+            : dayjs(fechaInicio).add(1, 'month');
         setCreateFormValues({ fechaFin: nuevaFechaFin });
+    };
+
+    const syncEditPrecio = (planId, ciclo) => {
+        const precio = getPlanPrecioByCiclo(planId, ciclo);
+        if (precio === null) {
+            setEditFormValues({ precioPactadoSoles: undefined });
+            return;
+        }
+        setEditFormValues({ precioPactadoSoles: precio });
+    };
+
+    const syncEditFechaFin = (fechaInicio, ciclo) => {
+        if (!fechaInicio) return;
+        const nuevaFechaFin = ciclo === 'ANUAL'
+            ? dayjs(fechaInicio).add(1, 'year')
+            : dayjs(fechaInicio).add(1, 'month');
+        setEditFormValues({ fechaFin: nuevaFechaFin });
     };
 
 
@@ -135,7 +157,7 @@ const SuscripcionesManagerView = ({
             estado: SUBSCRIPTION_STATES.EN_PRUEBA,
             autorenovar: true,
             fechaInicio,
-            fechaFin: fechaInicio.add(30, 'day'),
+            fechaFin: fechaInicio.add(1, 'month'),
         });
     }, [isCreateModalOpen, createForm, setCreateFormValues]);
 
@@ -153,9 +175,28 @@ const SuscripcionesManagerView = ({
         if (Object.prototype.hasOwnProperty.call(changedValues, 'fechaInicio')
             || Object.prototype.hasOwnProperty.call(changedValues, 'ciclo')) {
             if (allValues.fechaInicio) {
-                syncFechaFin(allValues.fechaInicio, ciclo);
+                syncCreateFechaFin(allValues.fechaInicio, ciclo);
             } else {
                 setCreateFormValues({ fechaFin: null });
+            }
+        }
+    };
+
+    const handleEditFormChange = (changedValues, allValues) => {
+        const planId = allValues.planId;
+        const ciclo = allValues.ciclo || 'MENSUAL';
+
+        if (Object.prototype.hasOwnProperty.call(changedValues, 'planId')
+            || Object.prototype.hasOwnProperty.call(changedValues, 'ciclo')) {
+            syncEditPrecio(planId, ciclo);
+        }
+
+        if (Object.prototype.hasOwnProperty.call(changedValues, 'fechaInicio')
+            || Object.prototype.hasOwnProperty.call(changedValues, 'ciclo')) {
+            if (allValues.fechaInicio) {
+                syncEditFechaFin(allValues.fechaInicio, ciclo);
+            } else {
+                setEditFormValues({ fechaFin: null });
             }
         }
     };
@@ -376,6 +417,7 @@ const SuscripcionesManagerView = ({
                     form={editForm}
                     layout="vertical"
                     onFinish={onSaveEdit}
+                    onValuesChange={handleEditFormChange}
                     disabled={isSavingEdit}
                 >
                     <Form.Item
@@ -435,6 +477,7 @@ const SuscripcionesManagerView = ({
                             precision={2}
                             addonBefore="S/"
                             style={{ width: 200 }}
+                            readOnly
                         />
                     </Form.Item>
 
@@ -443,7 +486,7 @@ const SuscripcionesManagerView = ({
                             <DatePicker format="DD/MM/YYYY" allowClear style={{ width: '100%' }} />
                         </Form.Item>
                         <Form.Item label="Fecha de Fin" name="fechaFin" style={{ flex: 1, minWidth: 200 }}>
-                            <DatePicker format="DD/MM/YYYY" allowClear style={{ width: '100%' }} />
+                            <DatePicker format="DD/MM/YYYY" allowClear style={{ width: '100%' }} disabled />
                         </Form.Item>
                     </Space>
 
