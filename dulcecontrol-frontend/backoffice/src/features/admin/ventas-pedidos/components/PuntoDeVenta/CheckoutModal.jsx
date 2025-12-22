@@ -68,6 +68,8 @@ const CheckoutModal = ({
     ), [facturacionConfig]);
 
     const isPedido = posMode === POS_MODES.PEDIDO;
+    const tipoPagoPedidoValue = Form.useWatch('tipoPagoPedido', form) || 'adelanto';
+    const requiereComprobante = !isPedido || tipoPagoPedidoValue === 'completo';
     const tipoComprobanteValue = Form.useWatch('tipoComprobante', form) || (isRuc ? 'factura' : 'boleta');
     const serieIdValue = Form.useWatch('serieId', form);
     const tipoEntregaValue = Form.useWatch('tipoEntrega', form) || (isPedido ? TIPOS_ENTREGA.RECOJO_TIENDA : TIPOS_ENTREGA.CONSUMO_LOCAL);
@@ -197,6 +199,9 @@ const CheckoutModal = ({
     const docTipoLocked = false; // Allow changing doc type for generic clients
     const docTipoOptions = ['DNI', 'RUC'];
     const facturacionBlockingMessage = useMemo(() => {
+        if (!requiereComprobante) {
+            return null;
+        }
         if (!sedeId) {
             return 'No se pudo determinar la sede activa de la caja. Selecciona una caja vinculada a una sede para emitir comprobantes.';
         }
@@ -232,6 +237,7 @@ const CheckoutModal = ({
         form.setFieldsValue({
             tipoComprobante: defaultComprobante,
             metodoPago: isPedido ? 'yape' : CASH_METHOD,
+            tipoPagoPedido: isPedido ? 'adelanto' : undefined,
             tipoEntrega: isPedido ? TIPOS_ENTREGA.RECOJO_TIENDA : TIPOS_ENTREGA.CONSUMO_LOCAL,
             montoPagado: defaultMonto,
             fechaEntrega: isPedido ? dayjs().add(1, 'day').hour(12).minute(0) : dayjs(),
@@ -249,6 +255,17 @@ const CheckoutModal = ({
         setMetodoPago(isPedido ? 'yape' : CASH_METHOD);
         setShippingUbigeoLabels(EMPTY_UBIGEO_LABELS);
     }, [open, cliente, posMode, total, isPedido, form]);
+
+    useEffect(() => {
+        if (!open || !isPedido) {
+            return;
+        }
+        if (tipoPagoPedidoValue === 'completo') {
+            form.setFieldsValue({ montoPagado: total });
+        } else {
+            form.setFieldsValue({ montoPagado: 0 });
+        }
+    }, [open, isPedido, tipoPagoPedidoValue, total, form]);
 
     useEffect(() => {
         if (!open) {
@@ -385,27 +402,48 @@ const CheckoutModal = ({
                 ]);
                 return;
             }
-            if (isPedido && values.montoPagado > total) {
-                form.setFields([
-                    { name: 'montoPagado', errors: ['El adelanto no puede superar el total del pedido'] },
-                ]);
-                return;
+            if (isPedido) {
+                const monto = Number(values.montoPagado || 0);
+                if (tipoPagoPedidoValue === 'adelanto') {
+                    if (monto > total) {
+                        form.setFields([
+                            { name: 'montoPagado', errors: ['El adelanto no puede superar el total del pedido'] },
+                        ]);
+                        return;
+                    }
+                } else {
+                    if (monto < total) {
+                        form.setFields([
+                            { name: 'montoPagado', errors: ['El pago completo debe cubrir el total del pedido'] },
+                        ]);
+                        return;
+                    }
+                    if (values.metodoPago !== CASH_METHOD && monto > total) {
+                        form.setFields([
+                            { name: 'montoPagado', errors: ['Con este método no se permite cambio. Ingresa el monto exacto.'] },
+                        ]);
+                        return;
+                    }
+                }
             }
-            if (!selectedSerie || !correlativoPreview) {
-                form.setFields([
-                    { name: 'serieId', errors: ['Selecciona una serie válida'] },
-                ]);
-                return;
-            }
-            if (facturacionConfigLoading) {
-                return;
-            }
-            if (!facturacionReady) {
-                Modal.error({
-                    title: 'Configuración fiscal incompleta',
-                    content: 'Debes registrar el RUC, razón social y dirección fiscal en Configuración > Facturación antes de emitir comprobantes.',
-                });
-                return;
+
+            if (requiereComprobante) {
+                if (!selectedSerie || !correlativoPreview) {
+                    form.setFields([
+                        { name: 'serieId', errors: ['Selecciona una serie válida'] },
+                    ]);
+                    return;
+                }
+                if (facturacionConfigLoading) {
+                    return;
+                }
+                if (!facturacionReady) {
+                    Modal.error({
+                        title: 'Configuración fiscal incompleta',
+                        content: 'Debes registrar el RUC, razón social y dirección fiscal en Configuración > Facturación antes de emitir comprobantes.',
+                    });
+                    return;
+                }
             }
 
             const normalizedDocTipo = (values.clienteDocTipo || (isRuc ? 'RUC' : 'DNI')).toUpperCase();
@@ -460,9 +498,10 @@ const CheckoutModal = ({
                 shippingContactoNombre: showDeliveryFields ? values.shippingContactoNombre?.trim() || cliente?.nombreDoc || '' : null,
                 shippingContactoTelefono: showDeliveryFields ? values.shippingContactoTelefono?.trim() || cliente?.telefono || '' : null,
                 fechaEntrega: values.fechaEntrega ? dayjs(values.fechaEntrega).format('YYYY-MM-DDTHH:mm:ss') : null,
-                comprobanteSerieId: selectedSerie.id,
-                comprobanteSerieCodigo: selectedSerie.serie,
-                comprobanteCorrelativo: Number(values.comprobanteCorrelativo),
+                comprobanteSerieId: requiereComprobante ? selectedSerie?.id : null,
+                comprobanteSerieCodigo: requiereComprobante ? selectedSerie?.serie : null,
+                comprobanteCorrelativo: requiereComprobante ? Number(values.comprobanteCorrelativo) : null,
+                tipoComprobante: requiereComprobante ? values.tipoComprobante : null,
                 clienteDocTipo: normalizedDocTipo,
                 clienteDocNumero: normalizedDocNumero,
                 clienteNombre,
@@ -671,7 +710,6 @@ const CheckoutModal = ({
     const entregaOptions = [
         { value: TIPOS_ENTREGA.CONSUMO_LOCAL, label: 'Consumo en local' },
         { value: TIPOS_ENTREGA.RECOJO_TIENDA, label: 'Recojo en tienda' },
-        ...(isPedido ? [{ value: TIPOS_ENTREGA.DELIVERY, label: 'Delivery' }] : []),
     ];
 
     return (
@@ -694,7 +732,7 @@ const CheckoutModal = ({
                         type="primary"
                         loading={loading}
                         onClick={handleOk}
-                        disabled={loading || !canEmitirComprobante}
+                        disabled={loading || (requiereComprobante ? !canEmitirComprobante : false)}
                     >
                         {actionLabel}
                     </Button>
@@ -769,53 +807,57 @@ const CheckoutModal = ({
                     </Form.Item>
                 )}
 
-                <Form.Item
-                    name="tipoComprobante"
-                    label="Tipo de Comprobante"
-                    rules={[{ required: true, message: 'Seleccione tipo de comprobante' }]}
-                >
-                    <Radio.Group buttonStyle="solid" style={{ width: '100%' }}>
-                        <Radio.Button value="boleta" style={{ width: '50%', textAlign: 'center' }}>BOLETA</Radio.Button>
-                        <Radio.Button value="factura" style={{ width: '50%', textAlign: 'center' }} disabled={!isRuc}>
-                            FACTURA
-                        </Radio.Button>
-                    </Radio.Group>
-                </Form.Item>
+                {requiereComprobante && (
+                    <>
+                        <Form.Item
+                            name="tipoComprobante"
+                            label="Tipo de Comprobante"
+                            rules={[{ required: true, message: 'Seleccione tipo de comprobante' }]}
+                        >
+                            <Radio.Group buttonStyle="solid" style={{ width: '100%' }}>
+                                <Radio.Button value="boleta" style={{ width: '50%', textAlign: 'center' }}>BOLETA</Radio.Button>
+                                <Radio.Button value="factura" style={{ width: '50%', textAlign: 'center' }} disabled={!isRuc}>
+                                    FACTURA
+                                </Radio.Button>
+                            </Radio.Group>
+                        </Form.Item>
 
-                {seriesWarningMessage && (
-                    <Alert
-                        type="warning"
-                        showIcon
-                        style={{ marginBottom: 12 }}
-                        message={seriesWarningMessage}
-                    />
+                        {seriesWarningMessage && (
+                            <Alert
+                                type="warning"
+                                showIcon
+                                style={{ marginBottom: 12 }}
+                                message={seriesWarningMessage}
+                            />
+                        )}
+
+                        <Form.Item
+                            name="serieId"
+                            label="Serie de comprobante"
+                            rules={[{ required: true, message: 'Seleccione una serie' }]}
+                        >
+                            <Select
+                                placeholder={seriesLoading ? 'Cargando series...' : 'Selecciona la serie'}
+                                loading={seriesLoading || isSeriesFetching}
+                                disabled={seriesLoading || isSeriesFetching || !tipoComprobanteValue}
+                            >
+                                {seriesDisponibles.map((serie) => (
+                                    <Option key={serie.id} value={serie.id}>
+                                        {serie.serie}
+                                    </Option>
+                                ))}
+                            </Select>
+                        </Form.Item>
+
+                        <Form.Item
+                            name="comprobanteCorrelativo"
+                            label="Correlativo"
+                            rules={[{ required: true, message: 'El correlativo es requerido' }]}
+                        >
+                            <Input />
+                        </Form.Item>
+                    </>
                 )}
-
-                <Form.Item
-                    name="serieId"
-                    label="Serie de comprobante"
-                    rules={[{ required: true, message: 'Seleccione una serie' }]}
-                >
-                    <Select
-                        placeholder={seriesLoading ? 'Cargando series...' : 'Selecciona la serie'}
-                        loading={seriesLoading || isSeriesFetching}
-                        disabled={seriesLoading || isSeriesFetching || !tipoComprobanteValue}
-                    >
-                        {seriesDisponibles.map((serie) => (
-                            <Option key={serie.id} value={serie.id}>
-                                {serie.serie}
-                            </Option>
-                        ))}
-                    </Select>
-                </Form.Item>
-
-                <Form.Item
-                    name="comprobanteCorrelativo"
-                    label="Correlativo"
-                    rules={[{ required: true, message: 'El correlativo es requerido' }]}
-                >
-                    <Input />
-                </Form.Item>
 
                 <div style={{ border: '1px solid #f0f0f0', borderRadius: 12, padding: 16, marginBottom: 24 }}>
                     <Text strong>Datos del cliente para el comprobante</Text>
@@ -905,14 +947,18 @@ const CheckoutModal = ({
                 <Form.Item
                     name="metodoPago"
                     label="Método de Pago"
-                    dependencies={['montoPagado']}
+                    dependencies={['montoPagado', 'tipoPagoPedido']}
                     rules={[({ getFieldValue }) => ({
                         validator(_, value) {
                             if (!isPedido) {
                                 return value ? Promise.resolve() : Promise.reject(new Error('Seleccione método de pago'));
                             }
-                            const adelanto = Number(getFieldValue('montoPagado') || 0);
-                            if (adelanto > 0 && !value) {
+                            const tipoPago = (getFieldValue('tipoPagoPedido') || 'adelanto').toString().toLowerCase();
+                            const monto = Number(getFieldValue('montoPagado') || 0);
+                            if (tipoPago === 'completo' && !value) {
+                                return Promise.reject(new Error('Seleccione método de pago'));
+                            }
+                            if (tipoPago === 'adelanto' && monto > 0 && !value) {
                                 return Promise.reject(new Error('Seleccione método de pago para registrar el adelanto'));
                             }
                             return Promise.resolve();
@@ -932,6 +978,23 @@ const CheckoutModal = ({
                         </Row>
                     </Radio.Group>
                 </Form.Item>
+
+                {isPedido && (
+                    <Form.Item
+                        name="tipoPagoPedido"
+                        label="Tipo de pago"
+                        rules={[{ required: true, message: 'Seleccione el tipo de pago' }]}
+                    >
+                        <Radio.Group buttonStyle="solid" style={{ width: '100%' }}>
+                            <Radio.Button value="completo" style={{ width: '50%', textAlign: 'center' }}>
+                                Pago completo
+                            </Radio.Button>
+                            <Radio.Button value="adelanto" style={{ width: '50%', textAlign: 'center' }}>
+                                Adelanto
+                            </Radio.Button>
+                        </Radio.Group>
+                    </Form.Item>
+                )}
 
                 {showDeliveryFields && (
                     <div style={{ border: '1px solid #f0f0f0', borderRadius: 12, padding: 16, marginBottom: 24 }}>
@@ -1096,7 +1159,8 @@ const CheckoutModal = ({
                     </div>
                 )}
 
-                {isPedido && (
+
+                {isPedido && tipoPagoPedidoValue === 'adelanto' && (
                     <div style={{ background: '#fff', padding: 16, borderRadius: 8, border: '1px dashed #d9d9d9', marginBottom: 24 }}>
                         <Row gutter={16} align="middle">
                             <Col span={12}>
@@ -1122,6 +1186,29 @@ const CheckoutModal = ({
                         <Text type="secondary" style={{ fontSize: 12 }}>
                             Si no se recibió adelanto, deje el valor en 0.
                         </Text>
+                    </div>
+                )}
+
+                {isPedido && tipoPagoPedidoValue === 'completo' && (
+                    <div style={{ background: '#ffffff', padding: 16, borderRadius: 8, border: '1px solid #d9d9d9', marginBottom: 24 }}>
+                        <Row gutter={16} align="middle">
+                            <Col span={12}>
+                                <Form.Item
+                                    name="montoPagado"
+                                    label="Monto recibido"
+                                    rules={[{ required: true, message: 'Ingrese monto' }]}
+                                    style={{ marginBottom: 0 }}
+                                >
+                                    <MoneyInput style={{ width: '100%' }} size="large" />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12} style={{ textAlign: 'right' }}>
+                                <Text type="secondary">Vuelto / Cambio</Text>
+                                <Title level={3} style={{ margin: 0, color: cambio > 0 ? '#faad14' : '#595959' }}>
+                                    S/ {(metodoPago === CASH_METHOD ? cambio : 0).toFixed(2)}
+                                </Title>
+                            </Col>
+                        </Row>
                     </div>
                 )}
 

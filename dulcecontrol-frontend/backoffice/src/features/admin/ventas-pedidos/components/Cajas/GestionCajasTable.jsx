@@ -13,6 +13,7 @@ import { getUsuariosAdmin } from '../../api/usuarios.api.js';
 import { CAJA_KEYS } from '../../constants/queryKeys.js';
 import StatusDot from './StatusDot.jsx';
 import { computeExpectedFinalCentimos } from '../../utils/cajaCalculations.js';
+import { formatApiDateTime, parseApiDateTime } from '../../utils/dateTime.js';
 
 const { RangePicker } = DatePicker;
 const { Text } = Typography;
@@ -101,7 +102,10 @@ const GestionCajasTable = () => {
             .filter((sesion) => {
                 // Filtro por rango de fechas
                 if (range && range[0] && range[1] && sesion.fechaApertura) {
-                    const fecha = dayjs(sesion.fechaApertura);
+                    const fecha = parseApiDateTime(sesion.fechaApertura);
+                    if (!fecha) {
+                        return false;
+                    }
                     if (!fecha.isBetween(range[0].startOf('day'), range[1].endOf('day'), null, '[]')) {
                         return false;
                     }
@@ -128,8 +132,8 @@ const GestionCajasTable = () => {
                 ...sesion,
                 cajaNombre: cajasMap.get(sesion.cajaId) || `Caja ${sesion.cajaId}`,
                 usuarioNombre: usuariosMap.get(sesion.usuarioAperturaId) || 'Usuario no identificado',
-                fechaAperturaDisplay: sesion.fechaApertura ? dayjs(sesion.fechaApertura).format('DD/MM/YYYY HH:mm') : '-',
-                fechaCierreDisplay: sesion.fechaCierre ? dayjs(sesion.fechaCierre).format('DD/MM/YYYY HH:mm') : '-',
+                fechaAperturaDisplay: formatApiDateTime(sesion.fechaApertura),
+                fechaCierreDisplay: formatApiDateTime(sesion.fechaCierre),
             }));
     }, [sesionesQuery.data, range, filters, cajasMap, usuariosMap]);
 

@@ -200,10 +200,6 @@ const PuntoDeVenta = () => {
             if (!ensureContextReady()) {
                 throw new Error('Contexto de caja incompleto');
             }
-            const facturacionReady = !!(facturacionConfig?.ruc && facturacionConfig?.razonSocial && facturacionConfig?.direccionFiscal);
-            if (!facturacionReady) {
-                throw new Error('Configuración de facturación incompleta. Completa tus datos fiscales antes de registrar ventas.');
-            }
 
             const total = getTotal();
             const itemsSnapshot = items.map((item) => ({ ...item }));
@@ -211,6 +207,16 @@ const PuntoDeVenta = () => {
             const totalCentimos = Math.round(total * 100);
             const checkoutMode = checkoutData.posMode || posMode;
             const isPedido = checkoutMode === POS_MODES.PEDIDO;
+            const tipoPagoPedido = isPedido
+                ? String(checkoutData.tipoPagoPedido || 'adelanto').toLowerCase()
+                : 'completo';
+            const requiereComprobante = !isPedido || tipoPagoPedido === 'completo';
+
+            const facturacionReady = !!(facturacionConfig?.ruc && facturacionConfig?.razonSocial && facturacionConfig?.direccionFiscal);
+            if (requiereComprobante && !facturacionReady) {
+                throw new Error('Configuración de facturación incompleta. Completa tus datos fiscales antes de emitir comprobantes.');
+            }
+
             const isDelivery = checkoutData.tipoEntrega === TIPOS_ENTREGA.DELIVERY;
             const rawMontoPagado = typeof checkoutData.montoPagado === 'number'
                 ? checkoutData.montoPagado
@@ -253,10 +259,10 @@ const PuntoDeVenta = () => {
             const contactoDocTipo = normalizeDocumentoContacto(cliente?.tipoDoc ?? cliente?.tipo_doc);
             const contactoDocNumero = cliente?.numeroDoc ?? cliente?.numero_doc ?? null;
             const contactoEmail = cliente?.correo ?? cliente?.email ?? null;
-            const serieIdSeleccionada = checkoutData.comprobanteSerieId;
-            const serieCodigoSeleccionada = checkoutData.comprobanteSerieCodigo;
-            const correlativoSeleccionado = checkoutData.comprobanteCorrelativo;
-            if (!serieIdSeleccionada || !correlativoSeleccionado) {
+            const serieIdSeleccionada = requiereComprobante ? checkoutData.comprobanteSerieId : null;
+            const serieCodigoSeleccionada = requiereComprobante ? checkoutData.comprobanteSerieCodigo : null;
+            const correlativoSeleccionado = requiereComprobante ? checkoutData.comprobanteCorrelativo : null;
+            if (requiereComprobante && (!serieIdSeleccionada || !correlativoSeleccionado)) {
                 throw new Error('No se pudo determinar la serie y correlativo del comprobante. Refresca las series e inténtalo nuevamente.');
             }
             const clienteDocTipo = (checkoutData.clienteDocTipo || 'DNI').toUpperCase();
@@ -284,10 +290,10 @@ const PuntoDeVenta = () => {
                 impuestosTotalesCentimos: 0,
                 totalFinalCentimos: totalCentimos,
                 montoPagadoCentimos,
-                requiereComprobante: true,
-                tipoComprobante: checkoutData.tipoComprobante,
-                serieComprobante: serieCodigoSeleccionada || null,
-                numeroComprobante: correlativoSeleccionado || null,
+                requiereComprobante,
+                tipoComprobante: requiereComprobante ? checkoutData.tipoComprobante : null,
+                serieComprobante: requiereComprobante ? (serieCodigoSeleccionada || null) : null,
+                numeroComprobante: requiereComprobante ? (correlativoSeleccionado || null) : null,
                 notasPedido: checkoutData.notasPedido?.trim() || null,
             };
 
@@ -364,32 +370,34 @@ const PuntoDeVenta = () => {
             }
 
             let comprobanteRegistrado = null;
-            try {
-                comprobanteRegistrado = await createComprobante(tiendaId, {
-                    tiendaId,
-                    pedidoId,
-                    serieId: serieIdSeleccionada,
-                    emisorRazonSocial: facturacionConfig.razonSocial,
-                    emisorRuc: facturacionConfig.ruc,
-                    emisorDireccion: facturacionConfig.direccionFiscal,
-                    clienteTipoDoc: clienteDocTipo,
-                    clienteNumeroDoc: clienteDocNumero,
-                    clienteNombre,
-                    clienteDireccion,
-                    tipoComprobante: checkoutData.tipoComprobante,
-                    correlativo: correlativoSeleccionado,
-                    moneda: 'PEN',
-                    totalGravadoCentimos,
-                    totalInafectoCentimos: 0,
-                    totalExoneradoCentimos: 0,
-                    totalIgvCentimos,
-                    totalImpuestosBolsaCentimos: 0,
-                    totalImporteCentimos: totalCentimos,
-                });
-                await incrementarCorrelativoSerie(tiendaId, serieIdSeleccionada);
-            } catch (error) {
-                console.error('No se pudo registrar el comprobante electrónico', error);
-                throw new Error(error?.response?.data?.message || 'No se pudo registrar el comprobante electrónico');
+            if (requiereComprobante) {
+                try {
+                    comprobanteRegistrado = await createComprobante(tiendaId, {
+                        tiendaId,
+                        pedidoId,
+                        serieId: serieIdSeleccionada,
+                        emisorRazonSocial: facturacionConfig.razonSocial,
+                        emisorRuc: facturacionConfig.ruc,
+                        emisorDireccion: facturacionConfig.direccionFiscal,
+                        clienteTipoDoc: clienteDocTipo,
+                        clienteNumeroDoc: clienteDocNumero,
+                        clienteNombre,
+                        clienteDireccion,
+                        tipoComprobante: checkoutData.tipoComprobante,
+                        correlativo: correlativoSeleccionado,
+                        moneda: 'PEN',
+                        totalGravadoCentimos,
+                        totalInafectoCentimos: 0,
+                        totalExoneradoCentimos: 0,
+                        totalIgvCentimos,
+                        totalImpuestosBolsaCentimos: 0,
+                        totalImporteCentimos: totalCentimos,
+                    });
+                    await incrementarCorrelativoSerie(tiendaId, serieIdSeleccionada);
+                } catch (error) {
+                    console.error('No se pudo registrar el comprobante electrónico', error);
+                    throw new Error(error?.response?.data?.message || 'No se pudo registrar el comprobante electrónico');
+                }
             }
 
             const clienteResumen = {
@@ -406,6 +414,9 @@ const PuntoDeVenta = () => {
             // Retornar objeto completo para el recibo
             return {
                 ...pedidoCreado,
+                receiptKind: isPedido && !requiereComprobante ? 'adelanto' : 'comprobante',
+                tipoPagoPedido: tipoPagoPedido,
+                requiereComprobante,
                 items: itemsSnapshot.map(item => ({
                     ...item,
                     subtotalLineaCentimos: item.precioBaseCentimos * item.quantity
@@ -415,7 +426,7 @@ const PuntoDeVenta = () => {
                 metodoPago: pagoPayloadResumen?.metodoPago || null,
                 pagos: pagoRegistrado ? [pagoRegistrado] : [],
                 fechaCreacion: pedidoCreado.fechaCreacion || pedidoCreado.creadoEn || new Date().toISOString(),
-                tipoComprobante: checkoutData.tipoComprobante,
+                tipoComprobante: requiereComprobante ? checkoutData.tipoComprobante : null,
                 notasPedido: pedidoPayload.notasPedido,
                 tipoEntrega: pedidoPayload.tipoEntrega,
                 direccionEntrega,
@@ -430,8 +441,8 @@ const PuntoDeVenta = () => {
                     contactoNombre: shippingContactoNombre,
                     contactoTelefono: shippingContactoTelefono,
                 } : null,
-                serieComprobante: serieCodigoSeleccionada,
-                numeroComprobante: correlativoSeleccionado,
+                serieComprobante: requiereComprobante ? serieCodigoSeleccionada : null,
+                numeroComprobante: requiereComprobante ? correlativoSeleccionado : null,
                 comprobante: comprobanteResumen,
                 cliente: clienteResumen,
             };

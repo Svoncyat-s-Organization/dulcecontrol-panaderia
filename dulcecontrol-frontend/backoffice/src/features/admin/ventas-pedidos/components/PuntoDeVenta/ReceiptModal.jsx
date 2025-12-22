@@ -66,6 +66,8 @@ const ReceiptModal = ({ open, onClose, pedido }) => {
 	const printAreaRef = useRef(null);
 	const tiendaId = useTokenStore((state) => state.tiendaId);
 	const sedeId = pedido?.sedeOrigenId || pedido?.sede_origen_id;
+	const receiptKind = (pedido?.receiptKind || '').toString().toLowerCase();
+	const isAdelantoTicket = receiptKind === 'adelanto';
 
 	// Fetch Store Details
 	const {
@@ -175,7 +177,7 @@ const ReceiptModal = ({ open, onClose, pedido }) => {
 			) : (
 				<div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 					<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-						<Text strong>Comprobante de Pago</Text>
+						<Text strong>{isAdelantoTicket ? 'Ticket de adelanto' : 'Comprobante de Pago'}</Text>
 						<Button type="text" icon={<CloseOutlined />} onClick={onClose} aria-label="Cerrar" />
 					</div>
 
@@ -200,9 +202,9 @@ const ReceiptModal = ({ open, onClose, pedido }) => {
 									<Title level={4} style={{ margin: 0, marginBottom: 4 }}>{tiendaNombre}</Title>
 									{sedeNombre && <Text style={{ display: 'block', fontSize: 12 }}>{sedeNombre}</Text>}
 									{sedeDireccion && <Text style={{ display: 'block', fontSize: 12 }}>{sedeDireccion}</Text>}
-									{ruc && <Text style={{ display: 'block', fontWeight: 600, marginTop: 4 }}>RUC: {ruc}</Text>}
+									{!isAdelantoTicket && ruc && <Text style={{ display: 'block', fontWeight: 600, marginTop: 4 }}>RUC: {ruc}</Text>}
 
-									{tipoComprobante && (
+									{!isAdelantoTicket && tipoComprobante && (
 										<div
 											style={{
 												marginTop: 12,
@@ -219,6 +221,20 @@ const ReceiptModal = ({ open, onClose, pedido }) => {
 													Serie {serieCodigo} · Nº {correlativoTexto}
 												</span>
 											)}
+										</div>
+									)}
+
+									{isAdelantoTicket && (
+										<div
+											style={{
+												marginTop: 12,
+												display: 'inline-block',
+												border: '1px dashed #0f172a',
+												padding: '4px 12px',
+												fontWeight: 700,
+											}}
+										>
+											TICKET DE ADELANTO
 										</div>
 									)}
 								</div>
@@ -296,6 +312,18 @@ const ReceiptModal = ({ open, onClose, pedido }) => {
 										<span>Total</span>
 										<span>{formatMoney(totalCentimos)}</span>
 									</div>
+									{isAdelantoTicket && (
+										<>
+											<div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontWeight: 600 }}>
+											<span>Adelanto</span>
+											<span>{formatMoney(totalPagado)}</span>
+										</div>
+										<div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontWeight: 600 }}>
+											<span>Faltante</span>
+											<span>{formatMoney(Math.max(0, totalCentimos - totalPagado))}</span>
+										</div>
+									</>
+									)}
 									<Divider style={{ margin: '12px 0' }} />
 									<div>
 										<Text strong>Pagos</Text>
@@ -318,7 +346,7 @@ const ReceiptModal = ({ open, onClose, pedido }) => {
 								</div>
 
 								<div style={{ textAlign: 'center', marginTop: 16, fontSize: 10, color: '#64748b' }}>
-									<div>Representación impresa del comprobante electrónico.</div>
+									{!isAdelantoTicket && <div>Representación impresa del comprobante electrónico.</div>}
 									<div>¡Gracias por su preferencia!</div>
 								</div>
 							</div>

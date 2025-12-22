@@ -1,4 +1,5 @@
 import apiClient from '../../../../api/apiClient.js';
+import { nowLocalApiDateTime } from '../utils/dateTime.js';
 
 const buildCajasUrl = (tiendaId, suffix = '') => {
     if (!tiendaId) {
@@ -51,7 +52,7 @@ export const abrirCaja = async (tiendaId, payload) => {
         usuarioAperturaId: payload.usuarioAperturaId,
         montoInicialCentimos: payload.montoInicialCentimos,
         montoFinalEsperadoCentimos: payload.montoFinalEsperadoCentimos,
-        fechaApertura: payload.fechaApertura,
+        fechaApertura: payload.fechaApertura ?? nowLocalApiDateTime(),
         estaAbierta: payload.estaAbierta ?? true,
     };
     const { data } = await apiClient.post(buildSesionesUrl(tiendaId), apiPayload);
@@ -65,7 +66,7 @@ export const cerrarCaja = async (tiendaId, sesionId, payload) => {
         usuarioCierreId: payload.usuarioCierreId,
         montoFinalRealCentimos: payload.montoFinalRealCentimos,
         montoFinalEsperadoCentimos: payload.montoFinalEsperadoCentimos,
-        fechaCierre: payload.fechaCierre ?? new Date().toISOString(),
+        fechaCierre: payload.fechaCierre ?? nowLocalApiDateTime(),
         estaAbierta: false,
     };
     const { data } = await apiClient.put(buildSesionesUrl(tiendaId, `/${sesionId}`), apiPayload);

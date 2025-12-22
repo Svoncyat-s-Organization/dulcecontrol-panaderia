@@ -1,18 +1,35 @@
-import { Modal, Form, Select, Alert, Divider, Row, Col, Radio, Typography, Button, Input } from 'antd';
+import { Modal, Form, Select, Alert, Divider, Row, Col, Radio, Typography, Button } from 'antd';
 import { CheckCircleOutlined, WarningOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
 import MoneyInput from '../../../../../shared/components/MoneyInput.jsx';
 import { useCajaSession } from '../../hooks/useCajaSession.js';
+import EmitirComprobanteModal from './EmitirComprobanteModal.jsx';
 
 const { Option } = Select;
 const { Title, Text } = Typography;
 
-const UnifiedStatusModal = ({ open, onClose, pedido, onConfirmPayment, onConfirmStatus, loadingPayment, loadingStatus }) => {
+const UnifiedStatusModal = ({
+    open,
+    onClose,
+    pedido,
+    cliente,
+    clientes,
+    onConfirmPayment,
+    onConfirmStatus,
+    onEmitirComprobante,
+    loadingPayment,
+    loadingStatus,
+    loadingEmitirComprobante,
+    facturacionConfig,
+    facturacionConfigLoading,
+    tiendaId,
+}) => {
     const [form] = Form.useForm();
     const [selectedOrderStatus, setSelectedOrderStatus] = useState(null);
     const [montoPagar, setMontoPagar] = useState(0);
     const [localSaldoPendiente, setLocalSaldoPendiente] = useState(0);
     const [localIsPaymentComplete, setLocalIsPaymentComplete] = useState(false);
+    const [emitirComprobanteOpen, setEmitirComprobanteOpen] = useState(false);
 
     const { isOpen: isCajaOpen, session: cajaSession } = useCajaSession();
 
@@ -35,6 +52,12 @@ const UnifiedStatusModal = ({ open, onClose, pedido, onConfirmPayment, onConfirm
             setSelectedOrderStatus(pedido.raw?.estadoPedido);
         }
     }, [open, pedido, form]);
+
+    useEffect(() => {
+        if (!open) {
+            setEmitirComprobanteOpen(false);
+        }
+    }, [open]);
 
     const handleFinish = (values) => {
         onConfirmStatus(pedido, values.estadoPedido);
@@ -94,6 +117,19 @@ const UnifiedStatusModal = ({ open, onClose, pedido, onConfirmPayment, onConfirm
     };
 
     const showStockWarning = selectedOrderStatus === 'entregado' && !isOrderDelivered;
+
+    const pedidoYaTieneComprobante = Boolean(
+        pedido?.raw?.tipoComprobante
+        && pedido?.raw?.serieComprobante
+        && pedido?.raw?.numeroComprobante
+    );
+
+    const puedeEmitirComprobante = Boolean(
+        localIsPaymentComplete
+        && !pedidoYaTieneComprobante
+        && !loadingPayment
+        && !!onEmitirComprobante
+    );
 
     return (
         <Modal
@@ -211,14 +247,38 @@ const UnifiedStatusModal = ({ open, onClose, pedido, onConfirmPayment, onConfirm
 
                 {/* Alert de pago completo - Solo si está pagado pero NO entregado */}
                 {!isOrderDelivered && localIsPaymentComplete && (
-                    <Alert
-                        message="Pago Completo"
-                        description="Este pedido ya tiene el pago total registrado."
-                        type="success"
-                        showIcon
-                        icon={<CheckCircleOutlined />}
-                        style={{ marginBottom: 20 }}
-                    />
+                    <>
+                        <Alert
+                            message="Pago Completo"
+                            description="Este pedido ya tiene el pago total registrado."
+                            type="success"
+                            showIcon
+                            icon={<CheckCircleOutlined />}
+                            style={{ marginBottom: 12 }}
+                        />
+
+                        {pedidoYaTieneComprobante ? (
+                            <Alert
+                                type="info"
+                                showIcon
+                                message="Comprobante emitido"
+                                description={`${String(pedido.raw.tipoComprobante || '').toUpperCase()} ${pedido.raw.serieComprobante || ''}-${String(pedido.raw.numeroComprobante || '').toString().padStart(8, '0')}`}
+                                style={{ marginBottom: 20 }}
+                            />
+                        ) : (
+                            <div style={{ marginBottom: 20 }}>
+                                <Button
+                                    type="primary"
+                                    block
+                                    onClick={() => setEmitirComprobanteOpen(true)}
+                                    disabled={!puedeEmitirComprobante}
+                                    loading={loadingEmitirComprobante}
+                                >
+                                    Emitir Boleta / Factura
+                                </Button>
+                            </div>
+                        )}
+                    </>
                 )}
 
                 <Divider>Estado del Pedido</Divider>
@@ -274,6 +334,21 @@ const UnifiedStatusModal = ({ open, onClose, pedido, onConfirmPayment, onConfirm
                     />
                 )}
             </Form>
+
+            <EmitirComprobanteModal
+                open={emitirComprobanteOpen}
+                onClose={() => setEmitirComprobanteOpen(false)}
+                loading={loadingEmitirComprobante}
+                tiendaId={tiendaId}
+                sedeId={pedido?.raw?.sedeOrigenId}
+                pedido={pedido?.raw}
+                cliente={cliente}
+                clientes={clientes}
+                facturacionConfig={facturacionConfig}
+                facturacionConfigLoading={facturacionConfigLoading}
+                isCajaOpen={isCajaOpen}
+                onConfirm={(data) => onEmitirComprobante?.(pedido, data)}
+            />
         </Modal>
     );
 };

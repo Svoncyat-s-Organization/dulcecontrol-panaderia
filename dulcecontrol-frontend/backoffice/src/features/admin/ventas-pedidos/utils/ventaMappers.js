@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import { formatApiDateTime } from './dateTime.js';
 
 export const mapPedidoToTable = (pedido, clientesMap = new Map()) => {
     const clienteNombre = clientesMap.get(pedido.clienteId)?.nombreDoc
@@ -26,8 +27,8 @@ export const mapSesionToTable = (sesion) => ({
     caja: sesion.cajaNombre,
     usuarioApertura: sesion.usuarioAperturaNombre,
     usuarioCierre: sesion.usuarioCierreNombre || '-',
-    fechaApertura: dayjs(sesion.fechaApertura).format('DD/MM/YYYY HH:mm'),
-    fechaCierre: sesion.fechaCierre ? dayjs(sesion.fechaCierre).format('DD/MM/YYYY HH:mm') : '-',
+    fechaApertura: formatApiDateTime(sesion.fechaApertura),
+    fechaCierre: formatApiDateTime(sesion.fechaCierre),
     estado: sesion.estaAbierta ? 'Abierta' : 'Cerrada',
     montoInicial: sesion.montoInicialCentimos / 100,
     montoFinal: sesion.montoFinalRealCentimos ? sesion.montoFinalRealCentimos / 100 : 0,
