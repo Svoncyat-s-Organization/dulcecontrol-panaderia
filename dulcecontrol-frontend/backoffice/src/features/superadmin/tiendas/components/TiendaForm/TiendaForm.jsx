@@ -2,6 +2,26 @@ import React from 'react';
 import { Modal, Form, Input, Select, Row, Col } from 'antd';
 import { TIENDA_ESTADO_OPTIONS } from '../../constants/tiendaOptions';
 
+const TELEFONO_MIN_DIGITS = 9;
+const TELEFONO_MAX_DIGITS = 15;
+
+const telefonoValidator = (_, value) => {
+    if (!value) {
+        return Promise.resolve();
+    }
+
+    const digitsOnly = value.replace(/\D/g, '');
+    if (
+        digitsOnly.length < TELEFONO_MIN_DIGITS ||
+        digitsOnly.length > TELEFONO_MAX_DIGITS ||
+        !/^\d+$/.test(digitsOnly)
+    ) {
+        return Promise.reject(new Error(`Ingresa un teléfono válido (ej. +51 987 678 456, ${TELEFONO_MIN_DIGITS}-${TELEFONO_MAX_DIGITS} dígitos)`));
+    }
+
+    return Promise.resolve();
+};
+
 const TiendaForm = ({ visible, onCancel, onSubmit, initialValues, form, loading }) => {
     const renderSelectOptions = (options) =>
         options.map((option) => (
@@ -53,7 +73,10 @@ const TiendaForm = ({ visible, onCancel, onSubmit, initialValues, form, loading 
                         <Form.Item
                             name="telefonoContacto"
                             label="Teléfono de contacto"
-                            rules={[{ max: 50, message: 'Máximo 50 caracteres' }]}
+                            rules={[
+                                { max: 50, message: 'Máximo 50 caracteres' },
+                                { validator: telefonoValidator },
+                            ]}
                         >
                             <Input autoComplete="off" maxLength={50} />
                         </Form.Item>

@@ -7,6 +7,26 @@ const DOCUMENT_LENGTHS = {
     RUC: 11,
 };
 
+const TELEFONO_MIN_DIGITS = 9;
+const TELEFONO_MAX_DIGITS = 15;
+
+const telefonoValidator = (_, value) => {
+    if (!value) {
+        return Promise.resolve();
+    }
+
+    const digitsOnly = value.replace(/\D/g, '');
+    if (
+        digitsOnly.length < TELEFONO_MIN_DIGITS ||
+        digitsOnly.length > TELEFONO_MAX_DIGITS ||
+        !/^\d+$/.test(digitsOnly)
+    ) {
+        return Promise.reject(new Error(`Ingresa un telefono valido (ej. +51 987 678 456, ${TELEFONO_MIN_DIGITS}-${TELEFONO_MAX_DIGITS} digitos)`));
+    }
+
+    return Promise.resolve();
+};
+
 const UsuarioForm = ({
     visible,
     onCancel,
@@ -149,7 +169,10 @@ const UsuarioForm = ({
                         <Form.Item
                             name="telefono"
                             label="Teléfono"
-                            rules={[{ max: 50, message: 'Máximo 50 caracteres' }]}
+                            rules={[
+                                { max: 50, message: 'Maximo 50 caracteres' },
+                                { validator: telefonoValidator },
+                            ]}
                         >
                             <Input autoComplete="off" maxLength={50} />
                         </Form.Item>
