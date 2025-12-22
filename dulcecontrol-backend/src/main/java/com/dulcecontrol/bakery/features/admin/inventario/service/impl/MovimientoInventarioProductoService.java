@@ -279,48 +279,91 @@ public class MovimientoInventarioProductoService implements IMovimientoInventari
         // Generar planificación para mañana
         LocalDate fechaProduccion = LocalDate.now().plusDays(1);
         
-        // Buscar o crear plan de producción para mañana
-        PlanProduccion plan = planProduccionRepository.findBySedeIdAndFechaProduccion(
-                inventario.getSedeId(), fechaProduccion)
-                .orElseGet(() -> {
-                    log.info("🎆 Creando nuevo plan de producción automático para sede {} fecha {}",
-                            inventario.getSedeId(), fechaProduccion);
-                    PlanProduccion nuevoPlan = new PlanProduccion();
-                    nuevoPlan.setTiendaId(tiendaId);
-                    nuevoPlan.setSedeId(inventario.getSedeId());
-                    nuevoPlan.setFechaProduccion(fechaProduccion);
-                    nuevoPlan.setEstado(EstadoPlanProduccion.CONFIRMADO);
-                    nuevoPlan.setNotasMaestro("Plan generado automáticamente por reposición de stock");
-                    return planProduccionRepository.save(nuevoPlan);
-                });
+        // Buscar plan de producción para mañana
+        Optional<PlanProduccion> planOpt = planProduccionRepository.findBySedeIdAndFechaProduccion(
+                inventario.getSedeId(), fechaProduccion);
+        
+        PlanProduccion plan;
+        if (planOpt.isPresent()) {
+            plan = planOpt.get();
+            
+            // Si el plan está FINALIZADO, reabrirlo a CONFIRMADO para agregar nuevos productos
+            if (plan.getEstado() == EstadoPlanProduccion.FINALIZADO) {
+                log.info("🔄 Plan para {} está FINALIZADO. Reabriendo a CONFIRMADO para agregar nuevos productos...", fechaProduccion);
+                plan.setEstado(EstadoPlanProduccion.CONFIRMADO);
+                plan.setNotasMaestro((plan.getNotasMaestro() != null ? plan.getNotasMaestro() + " | " : "") + 
+                        "Reabierto automáticamente por reposición de stock");
+                plan = planProduccionRepository.save(plan);
+            } else {
+                log.info("📋 Plan existente encontrado para fecha {} (estado: {})", fechaProduccion, plan.getEstado());
+            }
+        } else {
+            // No existe plan, crear uno nuevo
+            log.info("🎆 Creando nuevo plan de producción automático para sede {} fecha {}",
+                    inventario.getSedeId(), fechaProduccion);
+            plan = new PlanProduccion();
+            plan.setTiendaId(tiendaId);
+            plan.setSedeId(inventario.getSedeId());
+            plan.setFechaProduccion(fechaProduccion);
+            plan.setEstado(EstadoPlanProduccion.CONFIRMADO);
+            plan.setNotasMaestro("Plan generado automáticamente por reposición de stock");
+            plan = planProduccionRepository.save(plan);
+        }
         
         // Verificar si ya existe un detalle para este producto en el plan
         List<DetallePlanProduccion> detallesExistentes = detallePlanProduccionRepository
                 .findByPlanIdOrderByIdAsc(plan.getId());
         
-        boolean yaExisteDetalle = detallesExistentes.stream()
-                .anyMatch(d -> d.getProductoId().equals(inventario.getProductoId()) && 
-                              d.getOrigen() == OrigenItemProduccion.STOCK_DIARIO);
+        Optional<DetallePlanProduccion> detalleExistenteOpt = detallesExistentes.stream()
+                .filter(d -> d.getProductoId().equals(inventario.getProductoId()) && 
+                              d.getOrigen() == OrigenItemProduccion.STOCK_DIARIO)
+                .findFirst();
         
-        if (yaExisteDetalle) {
-            log.info("ℹ️ Ya existe un detalle de planificación para producto {} en el plan {}",
-                    inventario.getProductoId(), plan.getId());
-            return;
+        DetallePlanProduccion detalle;
+        if (detalleExistenteOpt.isPresent()) {
+            // Ya existe, actualizar cantidades y resetear estado
+            detalle = detalleExistenteOpt.get();
+            Integer cantidadPlanificadaAnterior = detalle.getCantidadPlanificada();
+            Integer cantidadProducidaAnterior = detalle.getCantidadProducida();
+            
+            log.info("🔄 Detalle existente encontrado para producto {}. Actualizando cantidades...", inventario.getProductoId());
+            log.info("   Planificado anterior: {}, Producido anterior: {}", cantidadPlanificadaAnterior, cantidadProducidaAnterior);
+            
+            // Ajustar inventario: restar lo que ya se había producido antes
+            if (cantidadProducidaAnterior != null && cantidadProducidaAnterior > 0) {
+                Integer stockActual = inventario.getCantidadActual();
+                inventario.setCantidadActual(stockActual - cantidadProducidaAnterior);
+                inventarioRepository.save(inventario);
+                log.info("⬅️ Ajustando inventario: restando {} unidades producidas anteriormente. Stock: {} -> {}", 
+                        cantidadProducidaAnterior, stockActual, inventario.getCantidadActual());
+            }
+            
+            // Actualizar cantidades
+            detalle.setCantidadSugerida(detalle.getCantidadSugerida() + cantidadAPlanificar);
+            detalle.setCantidadPlanificada(detalle.getCantidadPlanificada() + cantidadAPlanificar);
+            detalle.setCantidadProducida(0);
+            detalle.setCantidadMerma(0);
+            detalle.setEstado(EstadoItemProduccion.PENDIENTE);
+            detalle.setObservaciones(String.format("Reposición automática (actualizado). Stock actual: %d, Stock ideal: %d, Punto reposición: %d",
+                    cantidadNueva, stockIdeal.getCantidadIdeal(), stockIdeal.getPuntoReposicion()));
+            
+            log.info("✏️ Planificado actualizado: {} -> {}", cantidadPlanificadaAnterior, detalle.getCantidadPlanificada());
+        } else {
+            // No existe, crear uno nuevo
+            log.info("➕ Creando nuevo detalle de planificación para producto {}", inventario.getProductoId());
+            detalle = new DetallePlanProduccion();
+            detalle.setPlanId(plan.getId());
+            detalle.setProductoId(inventario.getProductoId());
+            detalle.setOrigen(OrigenItemProduccion.STOCK_DIARIO);
+            detalle.setEsPersonalizado(false);
+            detalle.setCantidadSugerida(cantidadAPlanificar);
+            detalle.setCantidadPlanificada(cantidadAPlanificar);
+            detalle.setCantidadProducida(0);
+            detalle.setCantidadMerma(0);
+            detalle.setEstado(EstadoItemProduccion.PENDIENTE);
+            detalle.setObservaciones(String.format("Reposición automática. Stock actual: %d, Stock ideal: %d, Punto reposición: %d",
+                    cantidadNueva, stockIdeal.getCantidadIdeal(), stockIdeal.getPuntoReposicion()));
         }
-        
-        // Crear detalle de planificación
-        DetallePlanProduccion detalle = new DetallePlanProduccion();
-        detalle.setPlanId(plan.getId());
-        detalle.setProductoId(inventario.getProductoId());
-        detalle.setOrigen(OrigenItemProduccion.STOCK_DIARIO);
-        detalle.setEsPersonalizado(false);
-        detalle.setCantidadSugerida(cantidadAPlanificar);
-        detalle.setCantidadPlanificada(cantidadAPlanificar);
-        detalle.setCantidadProducida(0);
-        detalle.setCantidadMerma(0);
-        detalle.setEstado(EstadoItemProduccion.PENDIENTE);
-        detalle.setObservaciones(String.format("Reposición automática. Stock actual: %d, Stock ideal: %d, Punto reposición: %d",
-                cantidadNueva, stockIdeal.getCantidadIdeal(), stockIdeal.getPuntoReposicion()));
         
         detallePlanProduccionRepository.save(detalle);
         

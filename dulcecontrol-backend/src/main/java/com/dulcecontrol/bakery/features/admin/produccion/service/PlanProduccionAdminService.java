@@ -176,9 +176,8 @@ public class PlanProduccionAdminService {
 
         planRepository.save(plan);
         
-        // Cuando el plan cambia a FINALIZADO, sumar al inventario todos los productos TERMINADO
+        // Cuando el plan cambia a FINALIZADO, solo actualizar estado de pedidos (NO sumar inventario)
         if (request.getEstado() == EstadoPlanProduccion.FINALIZADO && estadoAnterior != EstadoPlanProduccion.FINALIZADO) {
-            sumarInventarioProductosTerminados(tiendaId, plan);
             actualizarEstadoPedidosAsociados(plan);
         }
         
@@ -197,7 +196,13 @@ public class PlanProduccionAdminService {
             throw new RuntimeException("Detalle no pertenece a la tienda especificada");
         }
         
+        // Validar que el plan esté EN_PROCESO para permitir edición
+        if (plan.getEstado() != EstadoPlanProduccion.EN_PROCESO) {
+            throw new RuntimeException("Solo se pueden editar detalles cuando el plan está EN_PROCESO. Estado actual: " + plan.getEstado());
+        }
+        
         EstadoItemProduccion estadoAnterior = detalle.getEstado();
+        Integer cantidadProducidaAnterior = detalle.getCantidadProducida();
 
         if (request.getCantidadProducida() != null) {
             detalle.setCantidadProducida(request.getCantidadProducida());
@@ -217,8 +222,17 @@ public class PlanProduccionAdminService {
 
         DetallePlanProduccion saved = detalleRepository.save(detalle);
         
-        // Procesar cambios de estado
-        procesarCambioEstado(tiendaId, plan.getSedeId(), saved, estadoAnterior, request.getEstado());
+        // Si cambió la cantidad producida, actualizar inventario
+        if (request.getCantidadProducida() != null && !request.getCantidadProducida().equals(cantidadProducidaAnterior)) {
+            actualizarInventarioPorCambioProduccion(tiendaId, plan.getSedeId(), saved, cantidadProducidaAnterior);
+        }
+        
+        // Procesar cambios de estado (descuento de insumos cuando pasa a EN_HORNO)
+        if (request.getEstado() != null && request.getEstado() != estadoAnterior) {
+            if (request.getEstado() == EstadoItemProduccion.EN_HORNO && estadoAnterior != EstadoItemProduccion.EN_HORNO) {
+                descontarInsumosProduccion(tiendaId, plan.getSedeId(), saved);
+            }
+        }
 
         Producto producto = productoRepository.findById(saved.getProductoId()).orElse(null);
 
@@ -436,33 +450,55 @@ public class PlanProduccionAdminService {
     }
     
     /**
-     * Suma al inventario todos los productos en estado TERMINADO cuando el plan cambia a FINALIZADO
+     * Actualiza el inventario cuando cambia la cantidad producida de un detalle.
+     * La diferencia entre la cantidad anterior y la nueva se suma o resta del inventario.
      */
-    private void sumarInventarioProductosTerminados(Long tiendaId, PlanProduccion plan) {
-        log.info("🏁 Plan {} cambiado a FINALIZADO. Sumando al inventario todos los productos TERMINADO...", plan.getId());
+    private void actualizarInventarioPorCambioProduccion(Long tiendaId, Long sedeId, DetallePlanProduccion detalle, Integer cantidadProducidaAnterior) {
+        Integer cantidadNueva = detalle.getCantidadProducida();
         
-        // Obtener todos los detalles del plan
-        List<DetallePlanProduccion> detalles = detalleRepository.findByPlanIdOrderByIdAsc(plan.getId());
-        
-        // Filtrar solo los que están TERMINADO
-        List<DetallePlanProduccion> detallesTerminados = detalles.stream()
-                .filter(d -> d.getEstado() == EstadoItemProduccion.TERMINADO)
-                .collect(Collectors.toList());
-        
-        if (detallesTerminados.isEmpty()) {
-            log.warn("⚠️ El plan {} no tiene productos en estado TERMINADO", plan.getId());
+        if (cantidadNueva == null || cantidadNueva <= 0) {
+            log.warn("⚠️ Cantidad producida no válida: {}", cantidadNueva);
             return;
         }
         
-        log.info("📦 Sumando {} productos al inventario...", detallesTerminados.size());
-        
-        // Sumar cada producto al inventario
-        for (DetallePlanProduccion detalle : detallesTerminados) {
-            sumarProductosInventario(tiendaId, plan.getSedeId(), detalle);
+        if (cantidadProducidaAnterior == null) {
+            cantidadProducidaAnterior = 0;
         }
         
-        log.info("✅ Inventario actualizado para plan {}. {} productos sumados al stock.", 
-                plan.getId(), detallesTerminados.size());
+        // Calcular diferencia
+        Integer diferencia = cantidadNueva - cantidadProducidaAnterior;
+        
+        if (diferencia == 0) {
+            log.info("ℹ️ No hay cambio en la cantidad producida para producto {}", detalle.getProductoId());
+            return;
+        }
+        
+        log.info("📊 Actualizando inventario por cambio en producción. Producto: {}, Anterior: {}, Nueva: {}, Diferencia: {}", 
+                detalle.getProductoId(), cantidadProducidaAnterior, cantidadNueva, diferencia);
+        
+        // Buscar o crear el inventario del producto
+        Optional<InventarioProducto> inventarioOpt = inventarioProductoRepository
+                .findBySedeIdAndProductoId(sedeId, detalle.getProductoId());
+        
+        InventarioProducto inventario;
+        if (inventarioOpt.isPresent()) {
+            inventario = inventarioOpt.get();
+        } else {
+            log.info("📦 Creando nuevo registro de inventario para producto {} en sede {}",
+                    detalle.getProductoId(), sedeId);
+            inventario = new InventarioProducto();
+            inventario.setTiendaId(tiendaId);
+            inventario.setSedeId(sedeId);
+            inventario.setProductoId(detalle.getProductoId());
+            inventario.setCantidadActual(0);
+        }
+        
+        Integer cantidadAnterior = inventario.getCantidadActual();
+        inventario.setCantidadActual(cantidadAnterior + diferencia);
+        inventarioProductoRepository.save(inventario);
+        
+        log.info("✅ Inventario actualizado para producto {}. Stock anterior: {}, Stock nuevo: {}", 
+                detalle.getProductoId(), cantidadAnterior, inventario.getCantidadActual());
     }
     
     /**
