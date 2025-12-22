@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Form, Input, Select, Switch, Button, Modal, Space, Typography, message, Alert } from 'antd';
-import { IconX, IconSearch } from '@tabler/icons-react';
+import { Form, Input, Select, Switch, Button, Modal, Space, message, Alert } from 'antd';
+import { IconSearch } from '@tabler/icons-react';
 
 const { TextArea } = Input;
 const { Option } = Select;
-const { Text } = Typography;
 
 const ClienteFormView = ({ 
   open, 
@@ -97,7 +96,7 @@ const ClienteFormView = ({
       onCancel={handleCancel}
       footer={null}
       width={600}
-      destroyOnHidden
+      destroyOnClose
       maskClosable={false}
     >
       {isClienteGenerico && (
@@ -124,7 +123,11 @@ const ClienteFormView = ({
           >
             <Select
               placeholder="Selecciona"
-              onChange={(value) => setTipoDocSeleccionado(value)}
+              onChange={(value) => {
+                setTipoDocSeleccionado(value);
+                // Limpiar número de documento al cambiar tipo
+                form.setFieldsValue({ numeroDoc: '' });
+              }}
               disabled={isClienteGenerico}
             >
               <Option value="DNI">DNI</Option>
@@ -132,69 +135,110 @@ const ClienteFormView = ({
             </Select>
           </Form.Item>
 
-          <Form.Item
-            label="Número de Documento"
-            name="numeroDoc"
-            rules={[
-              { required: !isClienteGenerico, message: 'Ingresa el número de documento' },
-              { pattern: /^[0-9]+$/, message: 'Solo números' }
-            ]}
-          >
-            <Input 
-              placeholder="Número de documento"
-              disabled={isClienteGenerico}
-              suffix={
-                !isEditing && !isClienteGenerico && (
-                  <Button
-                    type="text"
-                    size="small"
-                    icon={<IconSearch size={16} />}
-                    loading={buscandoDocumento}
-                    onClick={handleBuscarDocumento}
-                    title="Buscar en RENIEC/SUNAT"
+          <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.tipoDoc !== currentValues.tipoDoc}>
+            {({ getFieldValue }) => {
+              const tipoDoc = getFieldValue('tipoDoc');
+              return (
+                <Form.Item
+                  label="Número de Documento"
+                  name="numeroDoc"
+                  rules={[
+                    { required: !isClienteGenerico, message: 'Ingresa el número de documento' },
+                    { pattern: /^[0-9]+$/, message: 'Solo números' },
+                    ...(tipoDoc === 'DNI' ? [
+                      { len: 8, message: 'El DNI debe tener exactamente 8 dígitos' }
+                    ] : []),
+                    ...(tipoDoc === 'RUC' ? [
+                      { len: 11, message: 'El RUC debe tener exactamente 11 dígitos' }
+                    ] : [])
+                  ]}
+                >
+                  <Input 
+                    placeholder={tipoDoc === 'DNI' ? '12345678' : tipoDoc === 'RUC' ? '20123456789' : 'Número de documento'}
+                    maxLength={tipoDoc === 'DNI' ? 8 : tipoDoc === 'RUC' ? 11 : undefined}
+                    disabled={isClienteGenerico}
+                    suffix={
+                      !isEditing && !isClienteGenerico && tipoDoc && (
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<IconSearch size={16} />}
+                          loading={buscandoDocumento}
+                          onClick={handleBuscarDocumento}
+                          title="Buscar en RENIEC/SUNAT"
+                        />
+                      )
+                    }
                   />
-                )
-              }
-            />
+                </Form.Item>
+              );
+            }}
           </Form.Item>
         </div>
 
-        <Form.Item
-          label={tipoDocSeleccionado === 'RUC' ? 'Razón Social' : 'Nombre Completo'}
-          name="nombreDoc"
-          rules={[{ required: !isClienteGenerico, message: `Ingresa ${tipoDocSeleccionado === 'RUC' ? 'la razón social' : 'el nombre completo'}` }]}
-        >
-          <Input 
-            placeholder={tipoDocSeleccionado === 'RUC' ? 'Razón social del cliente' : 'Nombre completo del cliente'} 
-            disabled={isClienteGenerico}
-          />
+        <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.tipoDoc !== currentValues.tipoDoc}>
+          {({ getFieldValue }) => {
+            const tipoDoc = getFieldValue('tipoDoc');
+            return (
+              <Form.Item
+                label={tipoDoc === 'RUC' ? 'Razón Social' : 'Nombre Completo'}
+                name="nombreDoc"
+                rules={[
+                  { required: !isClienteGenerico, message: `Ingresa ${tipoDoc === 'RUC' ? 'la razón social' : 'el nombre completo'}` },
+                  { min: 3, message: 'Mínimo 3 caracteres' },
+                  { max: 255, message: 'Máximo 255 caracteres' }
+                ]}
+              >
+                <Input 
+                  placeholder={tipoDoc === 'RUC' ? 'Razón social del cliente' : 'Nombre completo del cliente'} 
+                  disabled={isClienteGenerico}
+                />
+              </Form.Item>
+            );
+          }}
         </Form.Item>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <Form.Item
-            label="Email"
-            name="email"
-            rules={[
-              { type: 'email', message: 'Ingresa un email válido' }
-            ]}
-          >
-            <Input 
-              placeholder="cliente@email.com" 
-              disabled={isClienteGenerico}
-            />
+          <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.esUsuarioVirtual !== currentValues.esUsuarioVirtual}>
+            {({ getFieldValue }) => {
+              const esVirtual = getFieldValue('esUsuarioVirtual');
+              return (
+                <Form.Item
+                  label="Email"
+                  name="email"
+                  rules={[
+                    ...(esVirtual ? [{ required: true, message: 'El email es obligatorio para usuarios virtuales' }] : []),
+                    { type: 'email', message: 'Ingresa un email válido' },
+                    { max: 255, message: 'Máximo 255 caracteres' }
+                  ]}
+                >
+                  <Input 
+                    placeholder="cliente@email.com"
+                    type="email"
+                    disabled={isClienteGenerico}
+                  />
+                </Form.Item>
+              );
+            }}
           </Form.Item>
 
           <Form.Item
             label="Teléfono"
             name="telefono"
+            rules={[
+              { pattern: /^[0-9+\-\s()]+$/, message: 'Solo números y caracteres (+, -, espacio, paréntesis)' },
+              { min: 7, message: 'Mínimo 7 caracteres' },
+              { max: 50, message: 'Máximo 50 caracteres' }
+            ]}
           >
             <Input 
-              placeholder="Número de teléfono" 
+              placeholder="+51 987 654 321"
               disabled={isClienteGenerico}
             />
           </Form.Item>
         </div>
 
+        {/* Tipo de Cliente y Estado */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <Form.Item
             label="Tipo de Cliente"
@@ -221,16 +265,27 @@ const ClienteFormView = ({
           </Form.Item>
         </div>
 
-        {form.getFieldValue('esUsuarioVirtual') && (
-          <Form.Item
-            label="Contraseña"
-            name="hashContrasena"
-            rules={[{ required: true, message: 'La contraseña es requerida para usuarios virtuales' }]}
-          >
-            <Input.Password placeholder="Contraseña" />
-          </Form.Item>
-        )}
+        {/* Contraseña (solo para usuarios virtuales) */}
+        <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.esUsuarioVirtual !== currentValues.esUsuarioVirtual}>
+          {({ getFieldValue }) => {
+            const esVirtual = getFieldValue('esUsuarioVirtual');
+            return esVirtual ? (
+              <Form.Item
+                label="Contraseña"
+                name="hashContrasena"
+                rules={[
+                  { required: true, message: 'La contraseña es requerida para usuarios virtuales' },
+                  { min: 6, message: 'Mínimo 6 caracteres' },
+                  { max: 100, message: 'Máximo 100 caracteres' }
+                ]}
+              >
+                <Input.Password placeholder="Contraseña temporal" />
+              </Form.Item>
+            ) : null;
+          }}
+        </Form.Item>
 
+        {/* Notas */}
         <Form.Item
           label="Notas"
           name="notas"
@@ -238,6 +293,8 @@ const ClienteFormView = ({
           <TextArea
             placeholder="Notas adicionales sobre el cliente"
             rows={3}
+            maxLength={1000}
+            showCount
             disabled={isClienteGenerico}
           />
         </Form.Item>

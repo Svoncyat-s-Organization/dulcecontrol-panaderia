@@ -41,15 +41,15 @@ const ClientesTableView = ({
       render: (_, record) => {
         const isGenerico = record.numeroDoc === '00000000' || record.nombreDoc === 'CLIENTE GENÉRICO';
         return (
-          <Space orientation="vertical" size={0}>
-            <Space>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div>
               <Text strong>{record.nombreDoc}</Text>
-              {isGenerico && <Tag color="purple">GENÉRICO</Tag>}
-            </Space>
-            <Text type="secondary">
+              {isGenerico && <Tag color="purple" style={{ marginLeft: 8 }}>GENÉRICO</Tag>}
+            </div>
+            <Text type="secondary" style={{ fontSize: '12px' }}>
               {record.tipoDoc}: {record.numeroDoc}
             </Text>
-          </Space>
+          </div>
         );
       },
     },
@@ -58,10 +58,10 @@ const ClientesTableView = ({
       dataIndex: 'email',
       key: 'contacto',
       render: (_, record) => (
-        <Space orientation="vertical" size={0}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {record.email && <Text>{record.email}</Text>}
-          {record.telefono && <Text type="secondary">{record.telefono}</Text>}
-        </Space>
+          {record.telefono && <Text type="secondary" style={{ fontSize: '12px' }}>{record.telefono}</Text>}
+        </div>
       ),
     },
     {
