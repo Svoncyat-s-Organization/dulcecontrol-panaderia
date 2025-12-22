@@ -41,6 +41,7 @@ const UsuarioForm = ({
 }) => {
     const tipoDocSeleccionado = Form.useWatch('tipoDoc', form);
     const numeroDocMaxLength = DOCUMENT_LENGTHS[tipoDocSeleccionado] ?? 11;
+    const esRuc = tipoDocSeleccionado === 'RUC';
 
     const renderOptions = (options = []) => (
         options.map((option) => (
@@ -49,6 +50,12 @@ const UsuarioForm = ({
             </Select.Option>
         ))
     );
+
+    const nombreLabel = esRuc ? 'Razón social' : 'Nombre y apellidos';
+    const nombrePlaceholder = esRuc ? 'Razón social registrada en SUNAT' : 'Nombre del usuario';
+    const nombreRequiredMessage = esRuc
+        ? 'Ingresa la razón social'
+        : 'Ingresa el nombre completo';
 
     return (
         <Modal
@@ -181,13 +188,13 @@ const UsuarioForm = ({
 
                 <Form.Item
                     name="nombres"
-                    label="Nombre y apellidos"
+                    label={nombreLabel}
                     rules={[
-                        { required: true, message: 'Ingresa el nombre completo' },
+                        { required: true, message: nombreRequiredMessage },
                         { max: 255, message: 'Máximo 255 caracteres' },
                     ]}
                 >
-                    <Input placeholder="Nombre del usuario" autoComplete="off" />
+                    <Input placeholder={nombrePlaceholder} autoComplete="off" />
                 </Form.Item>
 
                 {!initialValues ? (

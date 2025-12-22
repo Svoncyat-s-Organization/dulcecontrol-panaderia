@@ -4,6 +4,7 @@ import { TIENDA_ESTADO_OPTIONS } from '../../constants/tiendaOptions';
 
 const TELEFONO_MIN_DIGITS = 9;
 const TELEFONO_MAX_DIGITS = 15;
+const UBIGEO_LENGTH = 6;
 
 const telefonoValidator = (_, value) => {
     if (!value) {
@@ -17,6 +18,19 @@ const telefonoValidator = (_, value) => {
         !/^\d+$/.test(digitsOnly)
     ) {
         return Promise.reject(new Error(`Ingresa un teléfono válido (ej. +51 987 678 456, ${TELEFONO_MIN_DIGITS}-${TELEFONO_MAX_DIGITS} dígitos)`));
+    }
+
+    return Promise.resolve();
+};
+
+const ubigeoValidator = (_, value) => {
+    if (!value) {
+        return Promise.reject(new Error('Ingresa el ubigeo fiscal (6 dígitos)'));
+    }
+
+    const sanitized = value.trim();
+    if (!/^\d+$/.test(sanitized) || sanitized.length !== UBIGEO_LENGTH) {
+        return Promise.reject(new Error('El ubigeo debe tener exactamente 6 dígitos numéricos'));
     }
 
     return Promise.resolve();
@@ -79,6 +93,30 @@ const TiendaForm = ({ visible, onCancel, onSubmit, initialValues, form, loading 
                             ]}
                         >
                             <Input autoComplete="off" maxLength={50} />
+                        </Form.Item>
+                    </Col>
+                </Row>
+
+                <Row gutter={16}>
+                    <Col span={16}>
+                        <Form.Item
+                            name="direccionFiscal"
+                            label="Dirección fiscal"
+                            rules={[
+                                { required: true, message: 'Ingresa la dirección fiscal' },
+                                { max: 500, message: 'Máximo 500 caracteres' },
+                            ]}
+                        >
+                            <Input.TextArea rows={3} showCount maxLength={500} autoComplete="off" placeholder="Av. Principal 123, Lima" />
+                        </Form.Item>
+                    </Col>
+                    <Col span={8}>
+                        <Form.Item
+                            name="ubigeoFiscal"
+                            label="Ubigeo fiscal (6 dígitos)"
+                            rules={[{ validator: ubigeoValidator }]}
+                        >
+                            <Input autoComplete="off" maxLength={UBIGEO_LENGTH} placeholder="150101" />
                         </Form.Item>
                     </Col>
                 </Row>
