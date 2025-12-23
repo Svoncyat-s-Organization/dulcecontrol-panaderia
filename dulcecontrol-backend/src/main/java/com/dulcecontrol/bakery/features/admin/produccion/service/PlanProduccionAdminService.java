@@ -367,7 +367,7 @@ public class PlanProduccionAdminService {
     private void registrarMovimientosInventarioAlFinalizar(Long tiendaId, PlanProduccion plan) {
         log.info("📦 Plan {} finalizado. Registrando movimientos de inventario...", plan.getId());
         
-        List<DetallePlanProduccion> detalles = detalleRepository.findByPlanId(plan.getId());
+        List<DetallePlanProduccion> detalles = detalleRepository.findByPlanIdOrderByIdAsc(plan.getId());
         
         for (DetallePlanProduccion detalle : detalles) {
             if (detalle.getEstado() == EstadoItemProduccion.TERMINADO && detalle.getCantidadProducida() != null && detalle.getCantidadProducida() > 0) {
