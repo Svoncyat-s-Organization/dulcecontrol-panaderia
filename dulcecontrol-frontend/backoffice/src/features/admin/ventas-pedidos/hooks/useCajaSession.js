@@ -27,7 +27,7 @@ export const useCajaSession = () => {
             estaAbierta: true,
             sedeId: selectedSedeId ?? undefined,
         }),
-        enabled: !!tiendaId && !!usuarioId,
+        enabled: !!tiendaId && !!usuarioId && !!selectedSedeId,
         select: (data) => data.filter((s) => s.estaAbierta && String(s.usuarioAperturaId) === String(usuarioId)),
         refetchOnWindowFocus: true,
         refetchOnReconnect: true,
@@ -64,7 +64,24 @@ export const useCajaSession = () => {
         return sortedCajas.filter((c) => String(c?.sedeId) === objetivo);
     }, [sortedCajas, selectedSedeId]);
 
-    const activeSession = sesiones.length > 0 ? sesiones[0] : null;
+    const sesionesForSelectedSede = useMemo(() => {
+        if (!Array.isArray(sesiones)) {
+            return [];
+        }
+        if (!selectedSedeId) {
+            return sesiones;
+        }
+        const objetivo = String(selectedSedeId);
+        return sesiones.filter((s) => {
+            if (s?.sedeId != null) {
+                return String(s.sedeId) === objetivo;
+            }
+            const caja = sortedCajas.find((c) => String(c?.id) === String(s?.cajaId));
+            return caja ? String(caja?.sedeId) === objetivo : false;
+        });
+    }, [sesiones, selectedSedeId, sortedCajas]);
+
+    const activeSession = sesionesForSelectedSede.length > 0 ? sesionesForSelectedSede[0] : null;
     const currentCaja = activeSession
         ? sortedCajas.find((c) => String(c.id) === String(activeSession.cajaId)) || null
         : null;

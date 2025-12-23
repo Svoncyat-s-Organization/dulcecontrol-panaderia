@@ -21,6 +21,7 @@ public class InventarioInsumoSedeResponse {
     private String codigoInterno;
     private String unidadMedida;
     private BigDecimal stockMinimo;
+    private Boolean activo;
     
     // Datos del inventario
     private BigDecimal cantidadActual;

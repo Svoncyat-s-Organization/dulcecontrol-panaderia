@@ -6,6 +6,7 @@ import UnifiedStatusModal from './UnifiedStatusModal.jsx';
 import PedidoDetailDrawer from './PedidoDetailDrawer.jsx';
 import ReceiptModal from '../PuntoDeVenta/ReceiptModal.jsx';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
+import { useSedeStore } from '../../../../../shared/store/sedeStore.js';
 import {
     getPedidos,
     getPedidoById,
@@ -28,6 +29,7 @@ import { createComprobante, incrementarCorrelativoSerie } from '../../api/factur
 
 const PedidosTable = () => {
     const tiendaId = useTokenStore((state) => state.tiendaId);
+    const selectedSedeId = useSedeStore((state) => state.selectedSedeId);
     const user = useTokenStore((state) => state.user);
     const usuarioId = user?.id;
     const queryClient = useQueryClient();
@@ -44,10 +46,14 @@ const PedidosTable = () => {
         rangoFechas: null,
     });
 
+    const pedidosParams = useMemo(() => ({
+        sedeId: selectedSedeId ?? undefined,
+    }), [selectedSedeId]);
+
     const { data: pedidos = [], isLoading, isError, refetch } = useQuery({
-        queryKey: PEDIDO_KEYS.lists(tiendaId, {}),
-        queryFn: () => getPedidos(tiendaId),
-        enabled: !!tiendaId,
+        queryKey: PEDIDO_KEYS.lists(tiendaId, selectedSedeId ?? null, pedidosParams),
+        queryFn: () => getPedidos(tiendaId, pedidosParams),
+        enabled: !!tiendaId && !!selectedSedeId,
     });
 
     const clientesQuery = useQuery({
@@ -131,6 +137,15 @@ const PedidosTable = () => {
             .map(pedido => mapPedidoToTable(pedido, clientesMap))
             .filter(pedido => pedido.codigo?.startsWith('PED'));
 
+        if (selectedSedeId) {
+            const objetivo = String(selectedSedeId);
+            filtered = filtered.filter((p) => {
+                const raw = p?.raw || {};
+                const sedeRaw = raw.sedeOrigenId ?? raw.sedeId ?? raw.sede_origen_id ?? null;
+                return sedeRaw != null ? String(sedeRaw) === objetivo : true;
+            });
+        }
+
         // Apply filters
         if (filters.codigoPedido) {
             filtered = filtered.filter(p =>
@@ -161,7 +176,7 @@ const PedidosTable = () => {
         }
 
         return filtered;
-    }, [pedidos, clientesMap, filters]);
+    }, [pedidos, clientesMap, filters, selectedSedeId]);
 
     const syncInventarioTrasEntrega = async (pedidoId, sedeId, vendedorId) => {
         console.log('📦 [VENTA] Iniciando sincronización de inventario tras entrega');
@@ -234,12 +249,6 @@ const PedidosTable = () => {
 
             // Registrar movimiento de caja
             if (paymentData.sesionCajaId) {
-                const comprobanteRef = [
-                    pedido.raw.tipoComprobante,
-                    pedido.raw.serieComprobante,
-                    pedido.raw.numeroComprobante
-                ].filter(Boolean).join(' ');
-
                 await registrarMovimientoCaja(tiendaId, paymentData.sesionCajaId, {
                     tipoMovimiento: 'venta',
                     montoCentimos: montoPagadoCentimos,
@@ -356,13 +365,13 @@ const PedidosTable = () => {
     });
 
     const detailDetallesQuery = useQuery({
-        queryKey: PEDIDO_KEYS.detalles(tiendaId, detailDrawer.pedido?.id),
+        queryKey: PEDIDO_KEYS.detalles(tiendaId, selectedSedeId ?? null, detailDrawer.pedido?.id),
         queryFn: () => getDetallesPedido(tiendaId, detailDrawer.pedido.id),
         enabled: !!detailDrawer.pedido && !!tiendaId,
     });
 
     const detailPagosQuery = useQuery({
-        queryKey: PEDIDO_KEYS.pagos(tiendaId, detailDrawer.pedido?.id),
+        queryKey: PEDIDO_KEYS.pagos(tiendaId, selectedSedeId ?? null, detailDrawer.pedido?.id),
         queryFn: () => getPagosPedido(tiendaId, detailDrawer.pedido.id),
         enabled: !!detailDrawer.pedido && !!tiendaId,
     });

@@ -21,10 +21,15 @@ const ProveedoresTableView = ({
   if (!proveedores || proveedores.length === 0) {
     return (
       <Card>
-        <Empty
-          description={emptyConfig.description}
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-        />
+        <Space direction="vertical" align="center" style={{ width: '100%', padding: '20px 0' }}>
+          <Empty
+            description={emptyConfig.description}
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+          />
+          <Button type="primary" icon={<IconPlus size={18} />} onClick={onCreate}>
+            Agregar Primer Proveedor
+          </Button>
+        </Space>
       </Card>
     );
   }

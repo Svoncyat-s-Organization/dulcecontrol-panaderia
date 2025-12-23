@@ -115,8 +115,41 @@ public class InsumoService implements IInsumoService {
         Insumo insumo = insumoRepository.findByIdAndTiendaId(insumoId, tiendaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Insumo no encontrado"));
 
-        // Soft delete
+        // Verificar si tiene relaciones que impidan la eliminación
+        try {
+            insumoRepository.delete(insumo);
+            insumoRepository.flush();
+        } catch (Exception e) {
+            // Si falla por restricción de FK, dar mensaje claro
+            String mensaje = "No se puede eliminar el insumo porque está siendo usado en: ";
+            if (e.getMessage().contains("recetas")) {
+                mensaje += "recetas de productos";
+            } else if (e.getMessage().contains("detalles_orden_compra")) {
+                mensaje += "órdenes de compra";
+            } else if (e.getMessage().contains("movimientos_inventario_insumos")) {
+                mensaje += "historial de movimientos";
+            } else {
+                mensaje += "otros registros del sistema";
+            }
+            throw new IllegalStateException(mensaje + ". Debe eliminar primero esas referencias.");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void desactivar(Long tiendaId, Long insumoId) {
+        Insumo insumo = insumoRepository.findByIdAndTiendaId(insumoId, tiendaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Insumo no encontrado"));
         insumo.setActivo(Boolean.FALSE);
+        insumoRepository.save(insumo);
+    }
+
+    @Override
+    @Transactional
+    public void reactivar(Long tiendaId, Long insumoId) {
+        Insumo insumo = insumoRepository.findByIdAndTiendaId(insumoId, tiendaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Insumo no encontrado"));
+        insumo.setActivo(Boolean.TRUE);
         insumoRepository.save(insumo);
     }
 

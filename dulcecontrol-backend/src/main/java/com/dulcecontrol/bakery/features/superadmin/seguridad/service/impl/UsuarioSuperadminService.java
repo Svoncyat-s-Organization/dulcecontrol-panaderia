@@ -1,5 +1,6 @@
 package com.dulcecontrol.bakery.features.superadmin.seguridad.service.impl;
 
+import com.dulcecontrol.bakery.features.superadmin.seguridad.dto.PerfilUpdateRequest;
 import com.dulcecontrol.bakery.features.superadmin.seguridad.dto.RolSuperadminSummaryResponse;
 import com.dulcecontrol.bakery.features.superadmin.seguridad.dto.UsuarioSuperadminCreateRequest;
 import com.dulcecontrol.bakery.features.superadmin.seguridad.dto.UsuarioSuperadminResponse;
@@ -173,5 +174,57 @@ public class UsuarioSuperadminService implements IUsuarioSuperadminService {
                                 .build())
                         .collect(Collectors.toCollection(LinkedHashSet::new)))
                 .build();
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public UsuarioSuperadminResponse obtenerMiPerfil(Long usuarioId) {
+        UsuarioSuperadmin usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        return toResponse(usuario);
+    }
+    
+    @Override
+    @Transactional
+    public UsuarioSuperadminResponse actualizarMiPerfil(Long usuarioId, PerfilUpdateRequest request) {
+        UsuarioSuperadmin usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        
+        // Validar correo si cambió
+        if (request.getCorreo() != null && !request.getCorreo().isBlank()) {
+            String correoNormalizado = request.getCorreo().toLowerCase();
+            if (!usuario.getCorreo().equalsIgnoreCase(request.getCorreo()) &&
+                usuarioRepository.existsByCorreoAndIdNot(correoNormalizado, usuarioId)) {
+                throw new BadRequestException("El correo ya está registrado");
+            }
+            usuario.setCorreo(correoNormalizado);
+        }
+        
+        // Actualizar nombres si se proporcionó
+        if (request.getNombres() != null && !request.getNombres().isBlank()) {
+            usuario.setNombres(request.getNombres());
+        }
+        
+        // Actualizar teléfono si se proporcionó
+        if (request.getTelefono() != null && !request.getTelefono().isBlank()) {
+            usuario.setTelefono(request.getTelefono());
+        }
+        
+        // Actualizar contraseña si se proporcionó
+        if (request.getNuevaContrasena() != null && !request.getNuevaContrasena().isBlank()) {
+            // Validar contraseña actual primero
+            if (request.getContrasenaActual() == null || request.getContrasenaActual().isBlank()) {
+                throw new BadRequestException("Debes proporcionar tu contraseña actual para cambiarla");
+            }
+            
+            if (!passwordEncoder.matches(request.getContrasenaActual(), usuario.getHashContrasena())) {
+                throw new BadRequestException("La contraseña actual es incorrecta");
+            }
+            
+            usuario.setHashContrasena(passwordEncoder.encode(request.getNuevaContrasena()));
+        }
+        
+        UsuarioSuperadmin guardado = usuarioRepository.save(usuario);
+        return toResponse(guardado);
     }
 }

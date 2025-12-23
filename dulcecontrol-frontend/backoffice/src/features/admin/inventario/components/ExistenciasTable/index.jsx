@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { message } from 'antd';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { App } from 'antd';
 import ExistenciasTableView from './ExistenciasTableView.jsx';
-import { getInventarioProductosPorSede } from '../../api/existencias.api.js';
+import { getInventarioProductosPorSede, updateUbicacionInventarioProducto } from '../../api/existencias.api.js';
 import { INVENTARIO_PRODUCTO_KEYS } from '../../constants/queryKeys.js';
 import AjusteInventarioModal from '../AjusteInventarioModal/index.jsx';
 import { getProductos } from '../../../catalogo/api/productos.api.js';
 
 const ExistenciasTable = ({ tiendaId, sedeId }) => {
+  const { message } = App.useApp();
+  const queryClient = useQueryClient();
   const [registroSeleccionado, setRegistroSeleccionado] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
 
@@ -55,6 +57,28 @@ const ExistenciasTable = ({ tiendaId, sedeId }) => {
     }));
   }, [data, productosQuery.data]);
 
+  const ubicacionMutation = useMutation({
+    mutationFn: ({ inventarioId, ubicacion }) =>
+      updateUbicacionInventarioProducto(tiendaId, inventarioId, ubicacion),
+    onSuccess: () => {
+      message.success('Ubicación actualizada');
+      queryClient.invalidateQueries({ queryKey: INVENTARIO_PRODUCTO_KEYS.lists(tiendaId, sedeId) });
+    },
+    onError: (error) => {
+      const detail = error?.response?.data?.mensaje ?? error?.message ?? 'No se pudo actualizar la ubicación';
+      message.error(detail);
+    },
+  });
+
+  const manejarActualizarUbicacion = async (inventarioId, ubicacion) => {
+    try {
+      await ubicacionMutation.mutateAsync({ inventarioId, ubicacion });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const manejarAjuste = (registro) => {
     setRegistroSeleccionado(registro);
     setModalAbierto(true);
@@ -73,6 +97,7 @@ const ExistenciasTable = ({ tiendaId, sedeId }) => {
         isError={isError}
         onRetry={refetch}
         onAdjust={manejarAjuste}
+        onUpdateUbicacion={manejarActualizarUbicacion}
         sedeId={sedeId}
       />
 

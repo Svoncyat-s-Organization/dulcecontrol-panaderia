@@ -36,10 +36,13 @@ const formatFecha = (value) => {
 
 const formatCantidad = (cantidad, unidad) => {
   const valor = Number(cantidad ?? 0);
-  const precision = needsDecimals(unidad) ? 3 : 0;
+  const usesDecimals = needsDecimals(unidad);
   const formatted = Number.isFinite(valor)
-    ? valor.toLocaleString('es-PE', { minimumFractionDigits: precision, maximumFractionDigits: precision })
-    : precision ? '0.000' : '0';
+    ? valor.toLocaleString('es-PE', { 
+        minimumFractionDigits: usesDecimals ? 1 : 0, 
+        maximumFractionDigits: usesDecimals ? 2 : 0 
+      })
+    : usesDecimals ? '0.0' : '0';
   return `${formatted} ${unidad ?? ''}`.trim();
 };
 

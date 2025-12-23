@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import { useQuery, useQueries } from '@tanstack/react-query';
 import HistorialView from './HistorialView.jsx';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
+import { useSedeStore } from '../../../../../shared/store/sedeStore.js';
 import { getPedidos, getPagosPedido, getPedidoById, getDetallesPedido } from '../../api/pedidos.api.js';
 import { getClientes } from '../../api/clientes.api.js';
 import { getUsuariosAdmin } from '../../api/usuarios.api.js';
@@ -33,6 +34,7 @@ const formatMoney = (value = 0) => `S/ ${(value / 100).toFixed(2)}`;
 
 const HistorialVentas = () => {
     const tiendaId = useTokenStore((state) => state.tiendaId);
+    const selectedSedeId = useSedeStore((state) => state.selectedSedeId);
     const [filters, setFilters] = useState(initialFilters);
     const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
     const [printingId, setPrintingId] = useState(null);
@@ -51,10 +53,15 @@ const HistorialVentas = () => {
         };
     }, [filters.rangoFechas]);
 
+    const pedidosParams = useMemo(() => ({
+        ...fechaParams,
+        sedeId: selectedSedeId ?? undefined,
+    }), [fechaParams, selectedSedeId]);
+
     const pedidosQuery = useQuery({
-        queryKey: PEDIDO_KEYS.lists(tiendaId, fechaParams),
-        queryFn: () => getPedidos(tiendaId, fechaParams),
-        enabled: !!tiendaId,
+        queryKey: PEDIDO_KEYS.lists(tiendaId, selectedSedeId ?? null, pedidosParams),
+        queryFn: () => getPedidos(tiendaId, pedidosParams),
+        enabled: !!tiendaId && !!selectedSedeId,
         select: (response) => Array.isArray(response) ? response : [],
     });
 
@@ -77,11 +84,21 @@ const HistorialVentas = () => {
         staleTime: 1000 * 60 * 5,
     });
 
-    const pedidos = pedidosQuery.data || [];
+    const pedidos = useMemo(() => {
+        const base = pedidosQuery.data || [];
+        if (!selectedSedeId) {
+            return base;
+        }
+        const objetivo = String(selectedSedeId);
+        return base.filter((p) => {
+            const sedeRaw = p?.sedeOrigenId ?? p?.sedeId ?? p?.sede_origen_id ?? null;
+            return sedeRaw != null ? String(sedeRaw) === objetivo : true;
+        });
+    }, [pedidosQuery.data, selectedSedeId]);
 
     const pagosQueries = useQueries({
         queries: (pedidos || []).map((pedido) => ({
-            queryKey: PEDIDO_KEYS.pagos(tiendaId, pedido.id),
+            queryKey: PEDIDO_KEYS.pagos(tiendaId, selectedSedeId ?? null, pedido.id),
             queryFn: () => getPagosPedido(tiendaId, pedido.id),
             enabled: !!tiendaId,
             staleTime: 1000 * 60,
@@ -283,13 +300,13 @@ const HistorialVentas = () => {
     };
 
     const detailDetallesQuery = useQuery({
-        queryKey: PEDIDO_KEYS.detalles(tiendaId, detailPedido?.id),
+        queryKey: PEDIDO_KEYS.detalles(tiendaId, selectedSedeId ?? null, detailPedido?.id),
         queryFn: () => getDetallesPedido(tiendaId, detailPedido.id),
         enabled: !!detailPedido && !!tiendaId,
     });
 
     const detailPagosQuery = useQuery({
-        queryKey: PEDIDO_KEYS.pagos(tiendaId, detailPedido?.id),
+        queryKey: PEDIDO_KEYS.pagos(tiendaId, selectedSedeId ?? null, detailPedido?.id),
         queryFn: () => getPagosPedido(tiendaId, detailPedido.id),
         enabled: !!detailPedido && !!tiendaId,
     });

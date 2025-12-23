@@ -9,6 +9,9 @@ import com.dulcecontrol.bakery.features.admin.compras.entity.enums.MetodoPago;
 import com.dulcecontrol.bakery.features.admin.compras.repository.DetalleOrdenCompraRepository;
 import com.dulcecontrol.bakery.features.admin.compras.repository.OrdenCompraRepository;
 import com.dulcecontrol.bakery.features.admin.compras.service.IOrdenCompraService;
+import com.dulcecontrol.bakery.features.admin.inventario.entity.MovimientoInventarioInsumo;
+import com.dulcecontrol.bakery.features.admin.inventario.entity.enums.TipoMovimientoInsumo;
+import com.dulcecontrol.bakery.features.admin.inventario.repository.MovimientoInventarioInsumoRepository;
 import com.dulcecontrol.bakery.shared.exception.BadRequestException;
 import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +34,7 @@ public class OrdenCompraService implements IOrdenCompraService {
     private final com.dulcecontrol.bakery.features.admin.compras.repository.InsumoRepository insumoRepository;
     private final com.dulcecontrol.bakery.features.admin.inventario.repository.InventarioInsumoSedeRepository inventarioInsumoSedeRepository;
     private final com.dulcecontrol.bakery.features.admin.compras.repository.PagoOrdenCompraRepository pagoOrdenCompraRepository;
+    private final MovimientoInventarioInsumoRepository movimientoInventarioInsumoRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -171,8 +175,9 @@ public class OrdenCompraService implements IOrdenCompraService {
             pagoInicial.setOrdenCompraId(guardada.getId());
             pagoInicial.setFechaPago(request.getFechaEmision() != null ? request.getFechaEmision() : LocalDate.now());
             pagoInicial.setMontoPagadoCentimos(request.getMontoInicialCentimos());
-            pagoInicial.setUrlFotoComprobante(request.getUrlFotoComprobante());
+            pagoInicial.setMetodoPago(request.getTipoPagoInicial());
             pagoInicial.setReferenciaPago(request.getReferenciaPago());
+            pagoInicial.setUrlFotoComprobante(request.getUrlFotoComprobante());
             pagoInicial.setObservaciones("Pago inicial al crear la orden");
             
             pagoOrdenCompraRepository.save(pagoInicial);
@@ -415,6 +420,21 @@ public class OrdenCompraService implements IOrdenCompraService {
 
             // Actualizar inventario en la sede destino
             actualizarInventario(orden.getTiendaId(), orden.getSedeDestinoId(), detalle.getInsumoId(), cantidadRecibidaAhora);
+            
+            System.out.println("=== REGISTRANDO MOVIMIENTO INVENTARIO ===");
+            System.out.println("TiendaId: " + orden.getTiendaId());
+            System.out.println("SedeId: " + orden.getSedeDestinoId());
+            System.out.println("InsumoId: " + detalle.getInsumoId());
+            System.out.println("Cantidad recibida: " + cantidadRecibidaAhora);
+            System.out.println("Orden ID: " + orden.getId());
+            
+            // Registrar movimiento de inventario ENTRADA por compra
+            registrarMovimientoInventario(orden.getTiendaId(), orden.getSedeDestinoId(), 
+                detalle.getInsumoId(), cantidadRecibidaAhora, orden.getId(), 
+                "Recepción de orden de compra #" + orden.getId());
+                
+            System.out.println("✅ Movimiento registrado exitosamente");
+            System.out.println("=========================================");
         }
 
         // Verificar si todos los detalles están completos
@@ -464,6 +484,21 @@ public class OrdenCompraService implements IOrdenCompraService {
 
                 // Actualizar inventario
                 actualizarInventario(orden.getTiendaId(), orden.getSedeDestinoId(), detalle.getInsumoId(), cantidadFaltante);
+                
+                System.out.println("=== REGISTRANDO MOVIMIENTO INVENTARIO (TOTAL) ===");
+                System.out.println("TiendaId: " + orden.getTiendaId());
+                System.out.println("SedeId: " + orden.getSedeDestinoId());
+                System.out.println("InsumoId: " + detalle.getInsumoId());
+                System.out.println("Cantidad faltante recibida: " + cantidadFaltante);
+                System.out.println("Orden ID: " + orden.getId());
+                
+                // Registrar movimiento de inventario ENTRADA por compra
+                registrarMovimientoInventario(orden.getTiendaId(), orden.getSedeDestinoId(), 
+                    detalle.getInsumoId(), cantidadFaltante, orden.getId(), 
+                    "Recepción total de orden de compra #" + orden.getId());
+                    
+                System.out.println("✅ Movimiento registrado exitosamente");
+                System.out.println("==================================================");
             }
         }
 
@@ -473,6 +508,29 @@ public class OrdenCompraService implements IOrdenCompraService {
         OrdenCompra ordenActualizada = ordenCompraRepository.save(orden);
 
         return toResponse(ordenActualizada);
+    }
+
+    private void registrarMovimientoInventario(Long tiendaId, Long sedeId, Long insumoId, 
+                                                BigDecimal cantidad, Long ordenCompraId, String motivo) {
+        var inventarioOpt = inventarioInsumoSedeRepository.findBySedeIdAndInsumoId(sedeId, insumoId);
+        
+        BigDecimal cantidadAnterior = inventarioOpt.map(inv -> inv.getCantidadActual()).orElse(BigDecimal.ZERO);
+        BigDecimal cantidadPosterior = cantidadAnterior.add(cantidad);
+        
+        MovimientoInventarioInsumo movimiento = new MovimientoInventarioInsumo();
+        movimiento.setTiendaId(tiendaId);
+        movimiento.setSedeId(sedeId);
+        movimiento.setInsumoId(insumoId);
+        movimiento.setTipoMovimiento(TipoMovimientoInsumo.ENTRADA);
+        movimiento.setCantidad(cantidad);
+        movimiento.setCantidadAnterior(cantidadAnterior);
+        movimiento.setCantidadPosterior(cantidadPosterior);
+        movimiento.setOrdenCompraId(ordenCompraId);
+        movimiento.setMotivo(motivo);
+        
+        movimientoInventarioInsumoRepository.save(movimiento);
+        
+        System.out.println("✅ Movimiento de inventario registrado: ENTRADA de " + cantidad + " unidades de insumo #" + insumoId);
     }
 
     private void actualizarInventario(Long tiendaId, Long sedeId, Long insumoId, BigDecimal cantidadASumar) {

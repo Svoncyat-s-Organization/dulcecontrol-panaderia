@@ -30,14 +30,11 @@ const TicketFormContainer = ({ open, onCancel, onCreated }) => {
     });
 
     const handleSubmit = (values) => {
-        const asignadoATrim = values.asignadoAId?.trim();
-        const asignadoAId = asignadoATrim ? Number(asignadoATrim) : undefined;
-
         const payload = {
             tiendaId: Number(values.tiendaId),
-            asignadoAId: Number.isFinite(asignadoAId) ? asignadoAId : undefined,
             asunto: values.asunto?.trim(),
             prioridad: values.prioridad,
+            mensaje: values.mensaje?.trim(),
         };
 
         if (!Number.isFinite(payload.tiendaId)) {

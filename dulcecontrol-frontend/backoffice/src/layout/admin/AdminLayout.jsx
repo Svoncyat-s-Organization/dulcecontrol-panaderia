@@ -1,15 +1,17 @@
-import { useEffect, useMemo } from 'react';
-import { Button, Result, Space, Spin, theme } from 'antd';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
+import { Button, Result, Space, Spin, theme, message } from 'antd';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconLogout, IconRefresh } from '@tabler/icons-react';
 import { useTokenStore } from '../../shared/store/tokenStore.js';
 import SedeSelector from '../../shared/components/SedeSelector.jsx';
 import SubscriptionStatusIndicator from '../../shared/components/SubscriptionStatusIndicator.jsx';
+import PerfilModal from '../../shared/components/PerfilModal.jsx';
 import MainLayout from '../shared/MainLayout.jsx';
 import { buildInitials, buildPreferredName } from '../../shared/utils/nameUtils.js';
 import { useAuthorizationStore } from '../../shared/store/authorizationStore.js';
 import { buildAdminMenuItems } from '../../shared/permissions/adminPermissionConfig.js';
 import { getPermisos, getRol, getUsuario } from '../../features/admin/seguridad/api/seguridad.api.js';
+import { perfilApi } from '../../api/admin/perfil.js';
 import { SEGURIDAD_KEYS } from '../../features/admin/seguridad/constants/queryKeys.js';
 import { createPermissionSet } from '../../shared/utils/permissionUtils.js';
 import { DEV_AUTH_TOKEN, DEV_PERMISSION_SLUGS } from '../../shared/constants/devAuth.js';
@@ -28,6 +30,29 @@ const AdminLayout = () => {
   const permissions = useAuthorizationStore((state) => state.permissions);
   const isAuthLoading = useAuthorizationStore((state) => state.isLoading);
   const { token: themeToken } = theme.useToken();
+  const queryClient = useQueryClient();
+  const [perfilModalOpen, setPerfilModalOpen] = useState(false);
+
+  const perfilQuery = useQuery({
+    queryKey: ['admin', 'perfil', 'me'],
+    queryFn: perfilApi.obtenerMiPerfil,
+    enabled: perfilModalOpen && !isDevToken,
+    staleTime: 60 * 1000,
+  });
+
+  const actualizarPerfilMutation = useMutation({
+    mutationFn: perfilApi.actualizarMiPerfil,
+    onSuccess: () => {
+      message.success('Perfil actualizado correctamente');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'perfil', 'me'] });
+      queryClient.invalidateQueries({ queryKey: SEGURIDAD_KEYS.usuario(tiendaId, userId) });
+      setPerfilModalOpen(false);
+    },
+    onError: (error) => {
+      const errorMsg = error?.response?.data?.message || 'Error al actualizar el perfil';
+      message.error(errorMsg);
+    },
+  });
 
   const permisosQuery = useQuery({
     queryKey: SEGURIDAD_KEYS.permisos(),
@@ -129,6 +154,8 @@ const AdminLayout = () => {
   const handleProfileClick = ({ key }) => {
     if (key === 'logout') {
       logout();
+    } else if (key === 'profile') {
+      setPerfilModalOpen(true);
     }
   };
 
@@ -178,18 +205,29 @@ const AdminLayout = () => {
   );
 
   return (
-    <MainLayout
-      basePath={BASE_PATH}
-      menuItems={dynamicMenuItems}
-      headerTitle="Panel Administrativo"
-      brandLabel="DulceControl Admin"
-      profileMenu={{ items: profileMenuItems, onClick: handleProfileClick }}
-      profileName={profileName}
-      profileInitials={profileInitials}
-      headerExtras={headerExtras}
-      footerText="DulceControl Admin ©2025"
-      headerStyle={{ borderBottom: `2px solid ${themeToken.colorPrimary}` }}
-    />
+    <>
+      <MainLayout
+        basePath={BASE_PATH}
+        menuItems={dynamicMenuItems}
+        headerTitle="Panel Administrativo"
+        brandLabel="DulceControl Admin"
+        profileMenu={{ items: profileMenuItems, onClick: handleProfileClick }}
+        profileName={profileName}
+        profileInitials={profileInitials}
+        headerExtras={headerExtras}
+        footerText="DulceControl Admin ©2025"
+        headerStyle={{ borderBottom: `2px solid ${themeToken.colorPrimary}` }}
+      />
+      
+      <PerfilModal
+        open={perfilModalOpen}
+        onClose={() => setPerfilModalOpen(false)}
+        perfil={perfilQuery.data}
+        onSubmit={(values) => actualizarPerfilMutation.mutate(values)}
+        loading={actualizarPerfilMutation.isPending}
+        isAdmin={true}
+      />
+    </>
   );
 };
 

@@ -16,6 +16,10 @@ import com.dulcecontrol.bakery.features.admin.ventas.service.helper.VentasTenant
 import com.dulcecontrol.bakery.features.admin.inventario.service.IInventarioProductoService;
 import com.dulcecontrol.bakery.features.admin.inventario.dto.InventarioProductoUpdateRequest;
 import com.dulcecontrol.bakery.features.admin.inventario.dto.InventarioProductoResponse;
+import com.dulcecontrol.bakery.features.admin.inventario.entity.MovimientoInventarioProducto;
+import com.dulcecontrol.bakery.features.admin.inventario.entity.enums.MotivoMovimientoProducto;
+import com.dulcecontrol.bakery.features.admin.inventario.entity.enums.TipoMovimientoInsumo;
+import com.dulcecontrol.bakery.features.admin.inventario.repository.MovimientoInventarioProductoRepository;
 import com.dulcecontrol.bakery.features.admin.produccion.entity.PlanProduccion;
 import com.dulcecontrol.bakery.features.admin.produccion.entity.DetallePlanProduccion;
 import com.dulcecontrol.bakery.features.admin.produccion.entity.enums.EstadoPlanProduccion;
@@ -49,6 +53,7 @@ public class PedidoAdminService implements IPedidoAdminService {
     private final PlanProduccionRepository planProduccionRepository;
     private final DetallePlanProduccionRepository detallePlanProduccionRepository;
     private final InventarioProductoRepository inventarioProductoRepository;
+    private final MovimientoInventarioProductoRepository movimientoProductoRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -281,6 +286,21 @@ public class PedidoAdminService implements IPedidoAdminService {
             // Calcular nueva cantidad
             Integer nuevaCantidad = Math.max(0, cantidadActual - cantidadVendida);
             
+            // Registrar movimiento de inventario SALIDA por venta
+            MovimientoInventarioProducto movimiento = new MovimientoInventarioProducto();
+            movimiento.setTiendaId(tiendaId);
+            movimiento.setSedeId(sedeId);
+            movimiento.setProductoId(productoId);
+            movimiento.setTipoMovimiento(TipoMovimientoInsumo.SALIDA);
+            movimiento.setCantidad(cantidadVendida);
+            movimiento.setCantidadAnterior(cantidadActual);
+            movimiento.setCantidadPosterior(nuevaCantidad);
+            movimiento.setPedidoId(pedido.getId());
+            movimiento.setMotivo(MotivoMovimientoProducto.VENTA);
+            movimientoProductoRepository.save(movimiento);
+            
+            log.info("✅ Movimiento registrado: VENTA de {} unidades del producto #{}", cantidadVendida, productoId);
+            
             // Usar el servicio para actualizar (esto activa la verificación de punto de reposición)
             InventarioProductoUpdateRequest updateRequest = InventarioProductoUpdateRequest.builder()
                     .sedeId(inventario.getSedeId())
@@ -397,15 +417,16 @@ public class PedidoAdminService implements IPedidoAdminService {
                     }
                 }
                 
-                // Actualizar cantidades
-                detallePlan.setCantidadSugerida(detallePlan.getCantidadSugerida() + detalle.getCantidad());
-                detallePlan.setCantidadPlanificada(detallePlan.getCantidadPlanificada() + detalle.getCantidad());
+                // Actualizar cantidades: REEMPLAZAR con la cantidad del pedido, NO sumar
+                detallePlan.setCantidadSugerida(detalle.getCantidad());
+                detallePlan.setCantidadPlanificada(detalle.getCantidad());
                 detallePlan.setCantidadProducida(0);
                 detallePlan.setCantidadMerma(0);
                 detallePlan.setEstado(EstadoItemProduccion.PENDIENTE);
                 detallePlan.setObservaciones("Producto del pedido " + pedido.getCodigoPedido() + " (actualizado)");
                 
-                log.info("✏️ Planificado actualizado: {} -> {}", cantidadPlanificadaAnterior, detallePlan.getCantidadPlanificada());
+                log.info("✏️ Planificado actualizado: {} -> {} (cantidad del pedido)", 
+                        cantidadPlanificadaAnterior, detallePlan.getCantidadPlanificada());
             } else {
                 // No existe, crear uno nuevo
                 log.info("➕ Creando nuevo detalle para producto {} del pedido {}", detalle.getProductoId(), pedido.getCodigoPedido());

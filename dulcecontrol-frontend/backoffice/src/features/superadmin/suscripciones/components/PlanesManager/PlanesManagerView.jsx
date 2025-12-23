@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Button, Table, Tag, Alert, Modal, Form, Input, InputNumber, Switch, Space, Card, Typography, theme } from 'antd';
-import { PlusOutlined, EditOutlined, MinusCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined } from '@ant-design/icons';
 import { centimosToPEN } from '../../utils/currencyFormatter.js';
 
 const { TextArea } = Input;
@@ -29,10 +29,20 @@ const PlanesManagerView = ({
 
     useEffect(() => {
         if (isModalOpen && selectedPlan) {
-            const limitesEntries = Object.entries(selectedPlan.limites || {}).map(([clave, valor]) => ({
-                clave,
-                valor: typeof valor === 'number' ? valor : `${valor ?? ''}`,
-            }));
+            const limites = selectedPlan.limites || {};
+            const usuarios = limites.usuarios;
+            const sedes = limites.sedes;
+
+            const limitesEntries = [
+                {
+                    clave: 'usuarios',
+                    valor: typeof usuarios === 'number' ? usuarios : Number(usuarios ?? 0),
+                },
+                {
+                    clave: 'sedes',
+                    valor: typeof sedes === 'number' ? sedes : Number(sedes ?? 0),
+                },
+            ];
 
             form.setFieldsValue({
                 codigo: selectedPlan.codigo,
@@ -44,7 +54,7 @@ const PlanesManagerView = ({
                 precioAnualSoles: typeof selectedPlan.precioAnualCentimos === 'number'
                     ? selectedPlan.precioAnualCentimos / 100
                     : undefined,
-                limitesEntries: limitesEntries.length > 0 ? limitesEntries : [{ clave: '', valor: '' }],
+                limitesEntries,
                 activo: selectedPlan.activo,
             });
         } else if (isModalOpen) {
@@ -267,7 +277,7 @@ const PlanesManagerView = ({
                             },
                         ]}
                     >
-                        {(fields, { add, remove }, { errors }) => (
+                        {(fields, _operations, { errors }) => (
                             <div>
                                 <label style={{ fontWeight: 500 }}>Límites del Plan</label>
                                 {fields.map(({ key, name, ...restField }) => (
@@ -283,7 +293,7 @@ const PlanesManagerView = ({
                                             rules={[{ required: true, message: 'Campo requerido' }]}
                                             style={{ flex: 1 }}
                                         >
-                                            <Input placeholder="Recurso (ej. usuarios)" />
+                                            <Input disabled />
                                         </Form.Item>
                                         <Form.Item
                                             {...restField}
@@ -291,24 +301,11 @@ const PlanesManagerView = ({
                                             rules={[{ required: true, message: 'Campo requerido' }]}
                                             style={{ flex: 1 }}
                                         >
-                                            <Input placeholder="Cantidad (ej. 5)" />
+                                            <InputNumber min={0} style={{ width: '100%' }} />
                                         </Form.Item>
-                                        {fields.length > 1 && (
-                                            <Button
-                                                type="text"
-                                                icon={<MinusCircleOutlined />}
-                                                danger
-                                                onClick={() => remove(name)}
-                                            />
-                                        )}
                                     </Space>
                                 ))}
                                 <Form.ErrorList errors={errors} />
-                                <Button type="dashed" onClick={() => add()} icon={<PlusOutlined />}
-                                    style={{ width: '100%' }}
-                                >
-                                    Agregar Límite
-                                </Button>
                             </div>
                         )}
                     </Form.List>

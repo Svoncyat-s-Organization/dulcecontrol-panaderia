@@ -36,12 +36,6 @@ const sanitizeObject = (payload) => (
     )
 );
 
-const generateTemporalNumeroDoc = () => {
-    const timestampPart = Date.now().toString().slice(-9);
-    const randomPart = String(Math.floor(Math.random() * 90) + 10);
-    return `${randomPart}${timestampPart}`.slice(0, 11);
-};
-
 const generateRandomPassword = (length = 12) => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789*@#$%';
     return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
@@ -77,18 +71,23 @@ const normalizeIdArray = (value) => {
 
 export const buildTiendaCreatePayload = (formData) => {
     const nombreComercial = trimValue(formData.nombreComercial);
+    const numeroDoc = trimValue(formData.numeroDoc);
+    const nombreDoc = trimValue(formData.nombreDoc);
     const correoContacto = trimValue(formData.correoContacto);
     const telefonoContacto = trimValue(formData.telefonoContacto) ?? null;
-    const numeroDoc = generateTemporalNumeroDoc();
+    const direccionFiscal = trimValue(formData.direccionFiscal);
+    const ubigeoFiscal = trimValue(formData.ubigeoFiscal);
 
     return sanitizeObject({
         slug: buildAutoSlug(nombreComercial, numeroDoc),
         tipoDoc: DEFAULT_TIPO_DOC,
         numeroDoc,
-        nombreDoc: deriveNombreLegal(nombreComercial),
+        nombreDoc: nombreDoc || deriveNombreLegal(nombreComercial),
         nombreComercial: nombreComercial ?? null,
         correoContacto,
         telefonoContacto,
+        direccionFiscal: direccionFiscal ?? null,
+        ubigeoFiscal,
         contrasena: generateRandomPassword(),
         estado: ensureEstado(formData.estado),
     });
@@ -96,19 +95,24 @@ export const buildTiendaCreatePayload = (formData) => {
 
 export const buildTiendaUpdatePayload = (formData, initialValues = {}) => {
     const nombreComercial = trimValue(formData.nombreComercial);
+    const numeroDoc = trimValue(formData.numeroDoc) || initialValues.numeroDoc;
+    const nombreDoc = trimValue(formData.nombreDoc) || initialValues.nombreDoc;
     const correoContacto = trimValue(formData.correoContacto);
     const telefonoContacto = trimValue(formData.telefonoContacto) ?? null;
-    const numeroDoc = initialValues.numeroDoc || generateTemporalNumeroDoc();
+    const direccionFiscal = trimValue(formData.direccionFiscal);
+    const ubigeoFiscal = trimValue(formData.ubigeoFiscal);
     const slug = initialValues.slug || buildAutoSlug(nombreComercial, numeroDoc);
 
     return sanitizeObject({
         slug,
         tipoDoc: initialValues.tipoDoc || DEFAULT_TIPO_DOC,
         numeroDoc,
-        nombreDoc: deriveNombreLegal(nombreComercial, initialValues.nombreDoc),
+        nombreDoc: nombreDoc || deriveNombreLegal(nombreComercial, initialValues.nombreDoc),
         nombreComercial: nombreComercial ?? null,
         correoContacto,
         telefonoContacto,
+        direccionFiscal: direccionFiscal ?? initialValues.direccionFiscal ?? null,
+        ubigeoFiscal: ubigeoFiscal ?? initialValues.ubigeoFiscal,
         estado: ensureEstado(formData.estado || initialValues.estado),
     });
 };

@@ -41,6 +41,7 @@ const UsuarioForm = ({
 }) => {
     const tipoDocSeleccionado = Form.useWatch('tipoDoc', form);
     const numeroDocMaxLength = DOCUMENT_LENGTHS[tipoDocSeleccionado] ?? 11;
+    const esRuc = tipoDocSeleccionado === 'RUC';
 
     const renderOptions = (options = []) => (
         options.map((option) => (
@@ -49,6 +50,15 @@ const UsuarioForm = ({
             </Select.Option>
         ))
     );
+
+    const nombreLabel = esRuc ? 'Razón social' : 'Nombre y apellidos';
+    const nombrePlaceholder = esRuc ? 'Razón social registrada en SUNAT' : 'Nombre del usuario';
+    const nombreRequiredMessage = esRuc
+        ? 'Ingresa la razón social'
+        : 'Ingresa el nombre completo';
+    const numeroDocLabel = esRuc ? 'RUC' : 'Número de documento';
+    const numeroDocPlaceholder = esRuc ? '20123456789' : 'Ingresa el número de documento';
+    const numeroDocRequiredMessage = esRuc ? 'Ingresa el RUC' : 'Ingresa el número de documento';
 
     return (
         <Modal
@@ -128,10 +138,10 @@ const UsuarioForm = ({
                     <Col span={8}>
                         <Form.Item
                             name="numeroDoc"
-                            label="Número de documento"
+                            label={numeroDocLabel}
                             dependencies={['tipoDoc']}
                             rules={[
-                                { required: true, message: 'Ingresa el número de documento' },
+                                { required: true, message: numeroDocRequiredMessage },
                                 ({ getFieldValue }) => ({
                                     validator(_, value) {
                                         if (!value) {
@@ -162,6 +172,7 @@ const UsuarioForm = ({
                                 maxLength={numeroDocMaxLength}
                                 inputMode="numeric"
                                 pattern="[0-9]*"
+                                placeholder={numeroDocPlaceholder}
                             />
                         </Form.Item>
                     </Col>
@@ -181,13 +192,13 @@ const UsuarioForm = ({
 
                 <Form.Item
                     name="nombres"
-                    label="Nombre y apellidos"
+                    label={nombreLabel}
                     rules={[
-                        { required: true, message: 'Ingresa el nombre completo' },
+                        { required: true, message: nombreRequiredMessage },
                         { max: 255, message: 'Máximo 255 caracteres' },
                     ]}
                 >
-                    <Input placeholder="Nombre del usuario" autoComplete="off" />
+                    <Input placeholder={nombrePlaceholder} autoComplete="off" />
                 </Form.Item>
 
                 {!initialValues ? (

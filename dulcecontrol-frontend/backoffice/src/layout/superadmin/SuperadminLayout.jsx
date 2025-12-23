@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
-import { theme } from 'antd';
+import { useMemo, useState } from 'react';
+import { theme, message } from 'antd';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     IconLayoutGrid,
     IconBuildingStore,
@@ -10,8 +11,10 @@ import {
     IconLogout,
 } from '@tabler/icons-react';
 import { useTokenStore } from '../../shared/store/tokenStore.js';
+import PerfilModal from '../../shared/components/PerfilModal.jsx';
 import MainLayout from '../shared/MainLayout.jsx';
 import { buildInitials, buildPreferredName } from '../../shared/utils/nameUtils.js';
+import { perfilSuperadminApi } from '../../api/superadmin/perfil.js';
 
 const BASE_PATH = '/superadmin';
 
@@ -42,6 +45,28 @@ const SuperadminLayout = () => {
     const logout = useTokenStore((state) => state.logout);
     const user = useTokenStore((state) => state.user);
     const { token: themeToken } = theme.useToken();
+    const queryClient = useQueryClient();
+    const [perfilModalOpen, setPerfilModalOpen] = useState(false);
+
+    const perfilQuery = useQuery({
+        queryKey: ['superadmin', 'perfil', 'me'],
+        queryFn: perfilSuperadminApi.obtenerMiPerfil,
+        enabled: perfilModalOpen,
+        staleTime: 60 * 1000,
+    });
+
+    const actualizarPerfilMutation = useMutation({
+        mutationFn: perfilSuperadminApi.actualizarMiPerfil,
+        onSuccess: () => {
+            message.success('Perfil actualizado correctamente');
+            queryClient.invalidateQueries({ queryKey: ['superadmin', 'perfil', 'me'] });
+            setPerfilModalOpen(false);
+        },
+        onError: (error) => {
+            const errorMsg = error?.response?.data?.message || 'Error al actualizar el perfil';
+            message.error(errorMsg);
+        },
+    });
 
     const profileMenuItems = useMemo(
         () => [
@@ -55,6 +80,8 @@ const SuperadminLayout = () => {
     const handleProfileClick = ({ key }) => {
         if (key === 'logout') {
             logout();
+        } else if (key === 'profile') {
+            setPerfilModalOpen(true);
         }
     };
 
@@ -63,19 +90,30 @@ const SuperadminLayout = () => {
     const profileInitials = buildInitials(profileName, user?.sub || 'Superadmin');
 
     return (
-        <MainLayout
-            basePath={BASE_PATH}
-            menuItems={menuItems}
-            headerTitle="Panel Corporativo"
-            brandLabel="DulceControl"
-            profileMenu={{ items: profileMenuItems, onClick: handleProfileClick }}
-            profileName={profileName}
-            profileInitials={profileInitials}
-            footerText="DulceControl Superadmin ©2025"
-            headerStyle={{ borderBottom: `2px solid ${themeToken.colorPrimary}` }}
-            innerLayoutStyle={{ borderLeft: `2px solid ${themeToken.colorBorderSecondary}` }}
-            contentCardStyle={{ boxShadow: '0 25px 80px rgba(134, 84, 84, 0.08)' }}
-        />
+        <>
+            <MainLayout
+                basePath={BASE_PATH}
+                menuItems={menuItems}
+                headerTitle="Panel Corporativo"
+                brandLabel="DulceControl"
+                profileMenu={{ items: profileMenuItems, onClick: handleProfileClick }}
+                profileName={profileName}
+                profileInitials={profileInitials}
+                footerText="DulceControl Superadmin ©2025"
+                headerStyle={{ borderBottom: `2px solid ${themeToken.colorPrimary}` }}
+                innerLayoutStyle={{ borderLeft: `2px solid ${themeToken.colorBorderSecondary}` }}
+                contentCardStyle={{ boxShadow: '0 25px 80px rgba(134, 84, 84, 0.08)' }}
+            />
+            
+            <PerfilModal
+                open={perfilModalOpen}
+                onClose={() => setPerfilModalOpen(false)}
+                perfil={perfilQuery.data}
+                onSubmit={(values) => actualizarPerfilMutation.mutate(values)}
+                loading={actualizarPerfilMutation.isPending}
+                isAdmin={false}
+            />
+        </>
     );
 };
 

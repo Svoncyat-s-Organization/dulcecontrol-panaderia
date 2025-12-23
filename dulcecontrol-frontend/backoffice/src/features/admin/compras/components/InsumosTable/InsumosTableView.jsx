@@ -1,4 +1,4 @@
-import { Button, Card, Result, Space, Table, Tag, Typography, Popconfirm, Switch } from 'antd';
+import { Button, Card, Result, Space, Table, Tag, Typography, Switch, App } from 'antd';
 import { IconPlus, IconEdit, IconTrash, IconAlertTriangle } from '@tabler/icons-react';
 import { formatCurrency, formatQuantity } from '../../utils/formatters.js';
 
@@ -15,6 +15,7 @@ const InsumosTableView = ({
   filters,
   onFilterChange,
 }) => {
+  const { modal } = App.useApp();
   if (isError) {
     return (
       <Result
@@ -110,15 +111,22 @@ const InsumosTableView = ({
             icon={<IconEdit size={16} />}
             onClick={() => onEdit(record)}
           />
-          <Popconfirm
-            title="¿Desactivar insumo?"
-            description="Esta acción desactivará el insumo"
-            onConfirm={() => onDelete(record.id)}
-            okText="Sí"
-            cancelText="No"
-          >
-            <Button type="link" size="small" danger icon={<IconTrash size={16} />} />
-          </Popconfirm>
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<IconTrash size={16} />}
+            onClick={() => {
+              modal.confirm({
+                title: '¿Eliminar insumo?',
+                content: 'Se eliminará el insumo del catálogo. Solo se permite si no tiene recetas, órdenes de compra o movimientos asociados.',
+                okText: 'Eliminar',
+                okType: 'danger',
+                cancelText: 'Cancelar',
+                onOk: () => onDelete(record.id),
+              });
+            }}
+          />
         </Space>
       ),
     },

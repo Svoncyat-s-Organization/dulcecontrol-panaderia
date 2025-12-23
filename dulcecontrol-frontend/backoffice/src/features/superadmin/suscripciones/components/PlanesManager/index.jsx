@@ -66,10 +66,15 @@ const PlanesManager = () => {
     const handleSave = async (values) => {
         try {
             const limitesEntries = Array.isArray(values.limitesEntries) ? values.limitesEntries : [];
+            const allowedLimites = new Set(['usuarios', 'sedes']);
             const limitesPayload = limitesEntries.reduce((acc, entry) => {
                 const clave = entry?.clave?.trim();
                 const hasValue = entry?.valor !== undefined && entry?.valor !== null && `${entry?.valor}`.trim() !== '';
                 if (!clave || !hasValue) {
+                    return acc;
+                }
+
+                if (!allowedLimites.has(clave)) {
                     return acc;
                 }
 

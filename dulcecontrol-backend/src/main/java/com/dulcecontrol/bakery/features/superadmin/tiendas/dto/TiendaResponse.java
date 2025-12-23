@@ -19,6 +19,8 @@ public class TiendaResponse {
     private final String nombreComercial;
     private final String correoContacto;
     private final String telefonoContacto;
+    private final String direccionFiscal;
+    private final String ubigeoFiscal;
     private final EstadoTienda estado;
     private final LocalDateTime creadoEn;
     private final LocalDateTime actualizadoEn;

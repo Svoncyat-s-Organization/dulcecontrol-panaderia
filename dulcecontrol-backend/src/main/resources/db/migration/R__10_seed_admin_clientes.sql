@@ -3,6 +3,29 @@
 -- ============================================================================
 
 -- =================================
+-- CLIENTE GENÉRICO (para todas las tiendas)
+-- =================================
+-- Cliente genérico para ventas rápidas sin documento
+INSERT IGNORE INTO clientes (tienda_id, tipo_doc, numero_doc, nombre_doc, email, telefono, es_usuario_virtual, hash_contrasena, notas, activo)
+SELECT 
+    t.id as tienda_id,
+    NULL as tipo_doc,
+    '00000000' as numero_doc,
+    'CLIENTE GENÉRICO' as nombre_doc,
+    NULL as email,
+    NULL as telefono,
+    FALSE as es_usuario_virtual,
+    NULL as hash_contrasena,
+    'Cliente genérico para ventas sin identificación. Creado automáticamente por el sistema.' as notas,
+    TRUE as activo
+FROM tiendas t
+WHERE NOT EXISTS (
+    SELECT 1 FROM clientes c 
+    WHERE c.tienda_id = t.id 
+    AND c.numero_doc = '00000000'
+);
+
+-- =================================
 -- CLIENTES
 -- =================================
 
@@ -81,18 +104,6 @@ VALUES
     'Siempre pide tortas personalizadas para cumpleaños',
     TRUE
   ),
-  (
-    (SELECT id FROM tiendas WHERE numero_doc = '20601234567'),
-    NULL,
-    NULL,
-    'Cliente Genérico',
-    NULL,
-    NULL,
-    FALSE,
-    NULL,
-    'Cliente sin documento - ventas mostrador',
-    TRUE
-  ),
   -- Clientes Panadería El Sol (RUC 20601234568)
   (
     (SELECT id FROM tiendas WHERE numero_doc = '20601234568'),
@@ -118,18 +129,6 @@ VALUES
     'Compra pan integral todas las mañanas',
     TRUE
   ),
-  (
-    (SELECT id FROM tiendas WHERE numero_doc = '20601234568'),
-    NULL,
-    NULL,
-    'Cliente Genérico',
-    NULL,
-    NULL,
-    FALSE,
-    NULL,
-    'Cliente sin documento',
-    TRUE
-  ),
   -- Clientes Tortas & Delicias (RUC 20601234569)
   (
     (SELECT id FROM tiendas WHERE numero_doc = '20601234569'),
@@ -153,18 +152,6 @@ VALUES
     FALSE,
     NULL,
     'Cliente corporativo - pedidos semanales',
-    TRUE
-  ),
-  (
-    (SELECT id FROM tiendas WHERE numero_doc = '20601234569'),
-    NULL,
-    NULL,
-    'Cliente Genérico',
-    NULL,
-    NULL,
-    FALSE,
-    NULL,
-    'Cliente sin documento',
     TRUE
   )
 ON DUPLICATE KEY UPDATE

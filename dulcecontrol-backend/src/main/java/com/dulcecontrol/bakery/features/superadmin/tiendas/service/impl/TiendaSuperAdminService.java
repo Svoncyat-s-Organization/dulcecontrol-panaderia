@@ -1,12 +1,19 @@
 package com.dulcecontrol.bakery.features.superadmin.tiendas.service.impl;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dulcecontrol.bakery.features.admin.clientes.entity.Cliente;
+import com.dulcecontrol.bakery.features.admin.clientes.repository.ClienteRepository;
+import com.dulcecontrol.bakery.features.admin.configuracion.entity.ConfiguracionTienda;
+import com.dulcecontrol.bakery.features.admin.configuracion.repository.ConfiguracionTiendaRepository;
 import com.dulcecontrol.bakery.features.admin.seguridad.service.RolSistemaBootstrapService;
+import com.dulcecontrol.bakery.features.shared.ubigeo.repository.UbigeoDistritoRepository;
 import com.dulcecontrol.bakery.features.superadmin.tiendas.dto.TiendaCreateRequest;
 import com.dulcecontrol.bakery.features.superadmin.tiendas.dto.TiendaResponse;
 import com.dulcecontrol.bakery.features.superadmin.tiendas.dto.TiendaUpdateRequest;
@@ -18,29 +25,48 @@ import com.dulcecontrol.bakery.shared.exception.BadRequestException;
 import com.dulcecontrol.bakery.shared.exception.ResourceNotFoundException;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TiendaSuperAdminService implements ITiendaSuperAdminService {
 
     private final TiendaRepository tiendaRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final RolSistemaBootstrapService rolSistemaBootstrapService;
+    private final ClienteRepository clienteRepository;
+    private final ConfiguracionTiendaRepository configuracionTiendaRepository;
+    private final UbigeoDistritoRepository ubigeoDistritoRepository;
 
     @Override
     @Transactional(readOnly = true)
     public List<TiendaResponse> listar() {
-        return tiendaRepository.findAll()
-                .stream()
-                .map(this::toResponse)
-                .toList();
+        List<Tienda> tiendas = tiendaRepository.findAll();
+        if (tiendas.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> tiendaIds = tiendas.stream()
+            .map(Tienda::getId)
+            .toList();
+
+        Map<Long, ConfiguracionTienda> configuraciones = configuracionTiendaRepository.findAllById(tiendaIds)
+            .stream()
+            .collect(Collectors.toMap(ConfiguracionTienda::getTiendaId, config -> config));
+
+        return tiendas.stream()
+            .map(tienda -> toResponse(tienda, configuraciones.get(tienda.getId())))
+            .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public TiendaResponse obtenerPorId(Long tiendaId) {
         Tienda tienda = obtenerEntidad(tiendaId);
-        return toResponse(tienda);
+        ConfiguracionTienda configuracion = configuracionTiendaRepository.findByTiendaId(tiendaId)
+            .orElse(null);
+        return toResponse(tienda, configuracion);
     }
 
     @Override
@@ -62,8 +88,43 @@ public class TiendaSuperAdminService implements ITiendaSuperAdminService {
                 .build();
 
         Tienda guardada = tiendaRepository.save(tienda);
+        ConfiguracionTienda configuracion = sincronizarDatosEmpresa(
+            guardada.getId(),
+            request.getNumeroDoc().trim(),
+            request.getNombreDoc().trim(),
+            request.getDireccionFiscal().trim(),
+            request.getUbigeoFiscal().trim()
+        );
         rolSistemaBootstrapService.ensureDefaultRoles(guardada.getId());
-        return toResponse(guardada);
+        crearClienteGenerico(guardada.getId());
+        return toResponse(guardada, configuracion);
+    }
+
+    /**
+     * Crea un cliente genérico para la tienda.
+     * Este cliente se usa para ventas rápidas sin documento del cliente.
+     */
+    private void crearClienteGenerico(Long tiendaId) {
+        // Verificar si ya existe cliente genérico
+        if (clienteRepository.existsByTiendaIdAndNumeroDoc(tiendaId, "00000000")) {
+            log.info("Cliente genérico ya existe para tienda {}", tiendaId);
+            return;
+        }
+
+        Cliente clienteGenerico = new Cliente();
+        clienteGenerico.setTiendaId(tiendaId);
+        clienteGenerico.setTipoDoc(null);
+        clienteGenerico.setNumeroDoc("00000000");
+        clienteGenerico.setNombreDoc("CLIENTE GENÉRICO");
+        clienteGenerico.setEmail(null);
+        clienteGenerico.setTelefono(null);
+        clienteGenerico.setEsUsuarioVirtual(false);
+        clienteGenerico.setHashContrasena(null);
+        clienteGenerico.setNotas("Cliente genérico para ventas sin identificación. Creado automáticamente por el sistema.");
+        clienteGenerico.setActivo(true);
+
+        clienteRepository.save(clienteGenerico);
+        log.info("Cliente genérico creado automáticamente para tienda {}", tiendaId);
     }
 
     @Override
@@ -88,7 +149,14 @@ public class TiendaSuperAdminService implements ITiendaSuperAdminService {
         }
 
         Tienda actualizada = tiendaRepository.save(tienda);
-        return toResponse(actualizada);
+        ConfiguracionTienda configuracion = sincronizarDatosEmpresa(
+            actualizada.getId(),
+            request.getNumeroDoc().trim(),
+            request.getNombreDoc().trim(),
+            request.getDireccionFiscal().trim(),
+            request.getUbigeoFiscal().trim()
+        );
+        return toResponse(actualizada, configuracion);
     }
 
     @Override
@@ -127,7 +195,7 @@ public class TiendaSuperAdminService implements ITiendaSuperAdminService {
         }
     }
 
-    private TiendaResponse toResponse(Tienda tienda) {
+    private TiendaResponse toResponse(Tienda tienda, ConfiguracionTienda configuracion) {
         return TiendaResponse.builder()
                 .id(tienda.getId())
                 .slug(tienda.getSlug())
@@ -137,10 +205,36 @@ public class TiendaSuperAdminService implements ITiendaSuperAdminService {
                 .nombreComercial(tienda.getNombreComercial())
                 .correoContacto(tienda.getCorreoContacto())
                 .telefonoContacto(tienda.getTelefonoContacto())
+                .direccionFiscal(configuracion != null ? configuracion.getDireccionFiscal() : null)
+                .ubigeoFiscal(configuracion != null ? configuracion.getUbigeoFiscal() : null)
                 .estado(tienda.getEstado())
                 .creadoEn(tienda.getCreadoEn())
                 .actualizadoEn(tienda.getActualizadoEn())
                 .build();
+    }
+
+    private ConfiguracionTienda sincronizarDatosEmpresa(Long tiendaId, String numeroDoc, String nombreDoc,
+            String direccionFiscal, String ubigeoFiscal) {
+        validarUbigeoFiscal(ubigeoFiscal);
+        ConfiguracionTienda configuracion = configuracionTiendaRepository.findByTiendaId(tiendaId)
+                .orElseGet(() -> {
+                    ConfiguracionTienda nueva = new ConfiguracionTienda();
+                    nueva.setTiendaId(tiendaId);
+                    return nueva;
+                });
+
+        configuracion.setRuc(numeroDoc);
+        configuracion.setRazonSocial(nombreDoc);
+        configuracion.setDireccionFiscal(direccionFiscal);
+        configuracion.setUbigeoFiscal(ubigeoFiscal);
+
+        return configuracionTiendaRepository.save(configuracion);
+    }
+
+    private void validarUbigeoFiscal(String ubigeoFiscal) {
+        if (!ubigeoDistritoRepository.existsByCodigoUbigeo(ubigeoFiscal)) {
+            throw new BadRequestException("El ubigeo fiscal ingresado no existe en el padrón oficial. Verifica el código (6 dígitos).");
+        }
     }
 
     private String normalizarSlug(String slug) {

@@ -115,7 +115,7 @@ const CajaControl = ({ children }) => {
             queryClient.invalidateQueries(CAJA_KEYS.sesionActive(tiendaId, selectedSedeId, usuarioId));
             queryClient.invalidateQueries(CAJA_KEYS.sesiones(tiendaId, selectedSedeId));
             if (session?.id) {
-                queryClient.invalidateQueries(CAJA_KEYS.movimientos(tiendaId, session.id));
+                queryClient.invalidateQueries(CAJA_KEYS.movimientos(tiendaId, selectedSedeId, session.id));
             }
             broadcastCajaSessionChange({ tiendaId, sedeId: selectedSedeId, usuarioId, type: 'close' });
         },
@@ -123,7 +123,7 @@ const CajaControl = ({ children }) => {
     });
 
     const movimientosQuery = useQuery({
-        queryKey: CAJA_KEYS.movimientos(tiendaId, session?.id),
+        queryKey: CAJA_KEYS.movimientos(tiendaId, selectedSedeId, session?.id),
         queryFn: () => getMovimientosCaja(tiendaId, session.id),
         enabled: !!tiendaId && !!session?.id,
         select: (response) => Array.isArray(response) ? response : [],
@@ -150,7 +150,7 @@ const CajaControl = ({ children }) => {
             setIsModalOpen(false);
             setActionType(null);
             movimientosQuery.refetch();
-            queryClient.invalidateQueries(CAJA_KEYS.movimientos(tiendaId, session?.id));
+            queryClient.invalidateQueries(CAJA_KEYS.movimientos(tiendaId, selectedSedeId, session?.id));
         },
         onError: (err) => message.error(err?.response?.data?.message || err.message || 'No se pudo registrar el retiro'),
     });

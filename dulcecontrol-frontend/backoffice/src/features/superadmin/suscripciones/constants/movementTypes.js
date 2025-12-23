@@ -8,10 +8,10 @@ export const MOVEMENT_TYPES = {
 };
 
 export const MOVEMENT_TYPE_LABELS = {
-    [MOVEMENT_TYPES.ALTA]: 'Alta',
+    [MOVEMENT_TYPES.ALTA]: 'Nueva suscripción',
     [MOVEMENT_TYPES.RENOVACION]: 'Renovación',
-    [MOVEMENT_TYPES.UPGRADE]: 'Upgrade',
-    [MOVEMENT_TYPES.DOWNGRADE]: 'Downgrade',
+    [MOVEMENT_TYPES.UPGRADE]: 'Mejora de plan',
+    [MOVEMENT_TYPES.DOWNGRADE]: 'Cambio a plan inferior',
     [MOVEMENT_TYPES.CANCELACION]: 'Cancelación',
     [MOVEMENT_TYPES.REACTIVACION]: 'Reactivación',
 };

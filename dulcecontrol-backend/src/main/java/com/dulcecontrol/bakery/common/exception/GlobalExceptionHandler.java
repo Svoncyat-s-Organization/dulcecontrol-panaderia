@@ -1,5 +1,6 @@
 package com.dulcecontrol.bakery.common.exception;
 
+import com.dulcecontrol.bakery.shared.integration.decolecta.DecolectaException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -46,6 +47,28 @@ public class GlobalExceptionHandler {
         response.put("timestamp", LocalDateTime.now());
         
         return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalStateException(IllegalStateException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.CONFLICT.value());
+        response.put("error", "Conflict");
+        response.put("message", ex.getMessage());
+        response.put("timestamp", LocalDateTime.now());
+        
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    @ExceptionHandler(DecolectaException.class)
+    public ResponseEntity<Map<String, Object>> handleDecolectaException(DecolectaException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.BAD_GATEWAY.value());
+        response.put("error", "External Service Error");
+        response.put("message", ex.getMessage());
+        response.put("timestamp", LocalDateTime.now());
+        
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(response);
     }
 
     @ExceptionHandler(Exception.class)

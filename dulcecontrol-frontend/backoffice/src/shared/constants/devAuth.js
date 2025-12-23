@@ -50,6 +50,7 @@ const PERMISSIONS_SEED = [
   { slug: 'inventario.view', nombreVisible: 'Ver Inventario', modulo: 'inventario' },
   { slug: 'inventario.adjust', nombreVisible: 'Ajustar Inventario', modulo: 'inventario' },
   { slug: 'inventario.transfer', nombreVisible: 'Transferir entre Sedes', modulo: 'inventario' },
+  { slug: 'reportes.view', nombreVisible: 'Ver Reportes Ejecutivos', modulo: 'reportes' },
   { slug: 'reportes.ventas', nombreVisible: 'Ver Reportes de Ventas', modulo: 'reportes' },
   { slug: 'reportes.produccion', nombreVisible: 'Ver Reportes de Produccion', modulo: 'reportes' },
   { slug: 'reportes.inventario', nombreVisible: 'Ver Reportes de Inventario', modulo: 'reportes' },

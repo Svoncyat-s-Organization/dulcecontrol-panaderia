@@ -11,6 +11,7 @@ import {
   IconReport,
   IconShieldLock,
   IconSettings,
+  IconHeartHandshake,
 } from '@tabler/icons-react';
 import { createPermissionSet, hasAnyPermission, normalizePermission } from '../utils/permissionUtils.js';
 
@@ -124,6 +125,15 @@ export const ADMIN_PERMISSION_GROUPS = [
     slugPrefixes: ['cms'],
     menuPath: `${BASE_PATH}/cms`,
     order: 12,
+  },
+  {
+    key: 'soporte',
+    label: 'Soporte',
+    description: 'Comunicación directa con el equipo de DulceControl.',
+    modules: ['soporte'],
+    slugPrefixes: ['soporte'],
+    menuPath: `${BASE_PATH}/soporte`,
+    order: 13,
   },
 ];
 
@@ -322,6 +332,18 @@ export const ADMIN_MENU_BLUEPRINT = [
     label: 'Reportes',
     icon: IconReport,
     permissionPrefixes: ['reportes'],
+    children: [
+      {
+        key: `${BASE_PATH}/reportes/ventas`,
+        label: 'Ventas y cobranzas',
+        permissionPrefixes: ['reportes.view', 'reportes'],
+      },
+      {
+        key: `${BASE_PATH}/reportes/pedidos`,
+        label: 'Pedidos y canales',
+        permissionPrefixes: ['reportes.view', 'reportes'],
+      },
+    ],
   },
   {
     key: `${BASE_PATH}/seguridad`,
@@ -363,6 +385,12 @@ export const ADMIN_MENU_BLUEPRINT = [
         permissionPrefixes: ['config'],
       },
     ],
+  },
+  {
+    key: `${BASE_PATH}/soporte`,
+    label: 'Soporte',
+    icon: IconHeartHandshake,
+    permissionPrefixes: [],
   },
 ];
 
@@ -416,7 +444,9 @@ export const ADMIN_ROUTE_PERMISSIONS = {
   'facturacion': ['facturacion.view'],
   'facturacion/series-correlativos': ['facturacion.view'],
   'facturacion/comprobantes': ['facturacion.view'],
-  'reportes': ['reportes.ventas', 'reportes.produccion', 'reportes.inventario', 'reportes.financiero'],
+  'reportes': ['reportes.view', 'reportes'],
+  'reportes/ventas': ['reportes.view', 'reportes.ventas', 'reportes'],
+  'reportes/pedidos': ['reportes.view', 'reportes.ventas', 'reportes'],
   'configuracion': ['config.view'],
   'configuracion/datos-empresa': ['config.view'],
   'configuracion/preferencias': ['config.view'],
@@ -425,6 +455,7 @@ export const ADMIN_ROUTE_PERMISSIONS = {
   'seguridad': ['usuarios.view', 'usuarios.roles'],
   'seguridad/usuarios': ['usuarios.view'],
   'seguridad/roles': ['usuarios.roles'],
+  'soporte': [],
 };
 
 const ADMIN_ACCESS_PERMISSION_SLUGS = new Set();

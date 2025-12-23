@@ -50,13 +50,36 @@ public class DatosEmpresaService implements IDatosEmpresaService {
         Tienda tienda = tiendaRepository.findById(tiendaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tienda no encontrada"));
 
-        tienda.setNumeroDoc(request.getNumeroDoc());
-        tienda.setNombreDoc(request.getNombreDoc());
-        tienda.setNombreComercial(request.getNombreComercial());
-        tienda.setCorreoContacto(request.getCorreoContacto());
-        tienda.setTelefonoContacto(request.getTelefonoContacto());
+        // Solo actualizar si hay cambios (para evitar constraint de hash_contrasena)
+        boolean tiendaCambio = false;
+        
+        if (!request.getNumeroDoc().equals(tienda.getNumeroDoc())) {
+            tienda.setNumeroDoc(request.getNumeroDoc());
+            tiendaCambio = true;
+        }
+        if (!request.getNombreDoc().equals(tienda.getNombreDoc())) {
+            tienda.setNombreDoc(request.getNombreDoc());
+            tiendaCambio = true;
+        }
+        if (!request.getNombreComercial().equals(tienda.getNombreComercial())) {
+            tienda.setNombreComercial(request.getNombreComercial());
+            tiendaCambio = true;
+        }
+        if (!request.getCorreoContacto().equals(tienda.getCorreoContacto())) {
+            tienda.setCorreoContacto(request.getCorreoContacto());
+            tiendaCambio = true;
+        }
+        
+        String telefonoRequest = request.getTelefonoContacto();
+        String telefonoActual = tienda.getTelefonoContacto();
+        boolean telefonosDiferentes = (telefonoRequest == null && telefonoActual != null) ||
+                                       (telefonoRequest != null && !telefonoRequest.equals(telefonoActual));
+        if (telefonosDiferentes) {
+            tienda.setTelefonoContacto(telefonoRequest);
+            tiendaCambio = true;
+        }
 
-        Tienda tiendaActualizada = tiendaRepository.save(tienda);
+        Tienda tiendaActualizada = tiendaCambio ? tiendaRepository.save(tienda) : tienda;
 
         // Actualizar o crear ConfiguracionTienda
         ConfiguracionTienda configuracion = configuracionTiendaRepository.findByTiendaId(tiendaId)
@@ -79,7 +102,8 @@ public class DatosEmpresaService implements IDatosEmpresaService {
         }
 
         configuracion.setCertificadoDigitalUrl(request.getCertificadoDigitalUrl());
-        configuracion.setModoSunat(request.getModoSunat());
+        // Normalizar modoSunat a mayúsculas para tolerar minúsculas de BD legacy
+        configuracion.setModoSunat(request.getModoSunat().toUpperCase());
         configuracion.setTasaIgv(request.getTasaIgv());
 
         ConfiguracionTienda configuracionActualizada = configuracionTiendaRepository.save(configuracion);

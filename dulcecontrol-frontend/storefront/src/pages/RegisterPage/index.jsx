@@ -4,9 +4,10 @@ import { useMutation } from '@tanstack/react-query';
 import { IconMail, IconLock, IconUser, IconAlertCircle, IconPhone } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { registerStorefront } from '../../api/auth.api';
-import { useAuthStore } from '../../stores/authStore';
-import { getTiendaIdentifier } from '../../config/tenant.config';
+import { registerStorefront, verificarEmail } from '@/api/auth.api';
+import { useAuthStore } from '@/stores/authStore';
+import { getTiendaIdentifier } from '@/config/tenant.config';
+import ActivarCuentaModal from '@/components/ActivarCuentaModal';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -21,11 +22,29 @@ const RegisterPage = () => {
     confirmPassword: ''
   });
 
+  const [showActivacionModal, setShowActivacionModal] = useState(false);
+  const [emailActivacion, setEmailActivacion] = useState('');
+
   const { mutate, isLoading, isError, error } = useMutation({
     mutationFn: registerStorefront,
     onSuccess: (data) => {
       setAuth(data);
       navigate('/');
+    },
+    onError: async (err) => {
+      // Si el error es 409 (conflicto), verificar si es cliente físico
+      if (err.message.includes('409') || err.message.toLowerCase().includes('ya existe')) {
+        try {
+          const verificacion = await verificarEmail(tiendaId, formData.email);
+          
+          if (verificacion.esClienteFisico) {
+            setEmailActivacion(formData.email);
+            setShowActivacionModal(true);
+          }
+        } catch (verifyErr) {
+          console.error('Error verificando email:', verifyErr);
+        }
+      }
     },
   });
 
@@ -58,8 +77,26 @@ const RegisterPage = () => {
     });
   };
 
+  const handleActivacionSuccess = (data) => {
+    setShowActivacionModal(false);
+    setAuth(data);
+    navigate('/');
+  };
+
+  const handleCloseModal = () => {
+    setShowActivacionModal(false);
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4">
+      <ActivarCuentaModal
+        isOpen={showActivacionModal}
+        onClose={handleCloseModal}
+        email={emailActivacion}
+        tiendaId={tiendaId}
+        onSuccess={handleActivacionSuccess}
+      />
+      
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">

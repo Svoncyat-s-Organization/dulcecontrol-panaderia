@@ -68,6 +68,8 @@ const PagoModal = ({ open, onClose, ordenCompra }) => {
         ordenCompraId: ordenCompra.id,
         fechaPago: values.fechaPago,
         montoPagadoCentimos: Math.round(values.montoPagadoCentimos * 100), // Convertir a centimos
+        metodoPago: values.metodoPago,
+        referenciaPago: values.referenciaPago,
         urlFotoComprobante: urlFotoComprobante,
         observaciones: values.observaciones,
       };

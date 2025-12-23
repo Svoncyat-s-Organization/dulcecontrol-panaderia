@@ -5,8 +5,14 @@ const { TextArea } = Input;
 const DatosEmpresaFormView = ({ datosEmpresa, isLoading, isError, error, isSubmitting, onSubmit }) => {
   const [form] = Form.useForm();
 
-  // Cuando los datos cargan, setear valores iniciales
-  if (datosEmpresa && !form.isFieldsTouched()) {
+  // Cuando los datos cargan, setear valores iniciales (evita setState en render)
+  useEffect(() => {
+    if (!datosEmpresa) return;
+    if (form.isFieldsTouched(true)) return;
+
+    const tasaIgvRaw = datosEmpresa.tasaIgv ?? 18.0;
+    const tasaIgvNum = Number(tasaIgvRaw);
+
     form.setFieldsValue({
       numeroDoc: datosEmpresa.numeroDoc,
       nombreDoc: datosEmpresa.nombreDoc,
@@ -16,7 +22,7 @@ const DatosEmpresaFormView = ({ datosEmpresa, isLoading, isError, error, isSubmi
       direccionFiscal: datosEmpresa.direccionFiscal,
       ubigeoFiscal: datosEmpresa.ubigeoFiscal,
     });
-  }
+  }, [datosEmpresa, form]);
 
   const handleSave = () => {
     form.validateFields().then((values) => {

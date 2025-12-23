@@ -28,6 +28,8 @@ export const createTienda = async (data) => {
         nombreComercial: data.nombreComercial,
         correoContacto: data.correoContacto,
         telefonoContacto: data.telefonoContacto,
+        direccionFiscal: data.direccionFiscal,
+        ubigeoFiscal: data.ubigeoFiscal,
         contrasena: data.contrasena,
         estado: data.estado,
     });
@@ -44,6 +46,8 @@ export const updateTienda = async (id, data) => {
         nombreComercial: data.nombreComercial,
         correoContacto: data.correoContacto,
         telefonoContacto: data.telefonoContacto,
+        direccionFiscal: data.direccionFiscal,
+        ubigeoFiscal: data.ubigeoFiscal,
         nuevaContrasena: data.nuevaContrasena,
         estado: data.estado,
     });

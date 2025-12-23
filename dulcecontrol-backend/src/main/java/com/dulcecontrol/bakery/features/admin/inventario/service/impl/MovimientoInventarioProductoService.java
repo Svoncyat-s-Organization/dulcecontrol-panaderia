@@ -338,16 +338,17 @@ public class MovimientoInventarioProductoService implements IMovimientoInventari
                         cantidadProducidaAnterior, stockActual, inventario.getCantidadActual());
             }
             
-            // Actualizar cantidades
-            detalle.setCantidadSugerida(detalle.getCantidadSugerida() + cantidadAPlanificar);
-            detalle.setCantidadPlanificada(detalle.getCantidadPlanificada() + cantidadAPlanificar);
+            // Actualizar cantidades: REEMPLAZAR con lo necesario para llegar al ideal, NO sumar
+            detalle.setCantidadSugerida(cantidadAPlanificar);
+            detalle.setCantidadPlanificada(cantidadAPlanificar);
             detalle.setCantidadProducida(0);
             detalle.setCantidadMerma(0);
             detalle.setEstado(EstadoItemProduccion.PENDIENTE);
             detalle.setObservaciones(String.format("Reposición automática (actualizado). Stock actual: %d, Stock ideal: %d, Punto reposición: %d",
                     cantidadNueva, stockIdeal.getCantidadIdeal(), stockIdeal.getPuntoReposicion()));
             
-            log.info("✏️ Planificado actualizado: {} -> {}", cantidadPlanificadaAnterior, detalle.getCantidadPlanificada());
+            log.info("✏️ Planificado actualizado: {} -> {} (debe llegar a ideal {})", 
+                    cantidadPlanificadaAnterior, detalle.getCantidadPlanificada(), stockIdeal.getCantidadIdeal());
         } else {
             // No existe, crear uno nuevo
             log.info("➕ Creando nuevo detalle de planificación para producto {}", inventario.getProductoId());
