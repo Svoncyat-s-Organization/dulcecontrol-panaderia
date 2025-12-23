@@ -4,7 +4,6 @@ import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
@@ -48,12 +47,9 @@ public class DatosEmpresaUpdateRequest {
 
     private String certificadoDigitalUrl;
 
-    @NotBlank(message = "El modo SUNAT es obligatorio")
-    @Pattern(regexp = "^(?i)(PRUEBAS|PRODUCCION)$", message = "El modo debe ser PRUEBAS o PRODUCCION")
     private String modoSunat;
 
     // Parámetros Globales
-    @NotNull(message = "La tasa IGV es obligatoria")
     @DecimalMin(value = "0.00", message = "La tasa IGV debe ser mayor o igual a 0")
     @DecimalMax(value = "100.00", message = "La tasa IGV debe ser menor o igual a 100")
     private BigDecimal tasaIgv;

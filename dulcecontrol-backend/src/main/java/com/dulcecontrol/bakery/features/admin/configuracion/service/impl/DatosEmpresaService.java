@@ -52,7 +52,7 @@ public class DatosEmpresaService implements IDatosEmpresaService {
 
         // Solo actualizar si hay cambios (para evitar constraint de hash_contrasena)
         boolean tiendaCambio = false;
-        
+
         if (!request.getNumeroDoc().equals(tienda.getNumeroDoc())) {
             tienda.setNumeroDoc(request.getNumeroDoc());
             tiendaCambio = true;
@@ -69,11 +69,11 @@ public class DatosEmpresaService implements IDatosEmpresaService {
             tienda.setCorreoContacto(request.getCorreoContacto());
             tiendaCambio = true;
         }
-        
+
         String telefonoRequest = request.getTelefonoContacto();
         String telefonoActual = tienda.getTelefonoContacto();
         boolean telefonosDiferentes = (telefonoRequest == null && telefonoActual != null) ||
-                                       (telefonoRequest != null && !telefonoRequest.equals(telefonoActual));
+                (telefonoRequest != null && !telefonoRequest.equals(telefonoActual));
         if (telefonosDiferentes) {
             tienda.setTelefonoContacto(telefonoRequest);
             tiendaCambio = true;
@@ -102,8 +102,9 @@ public class DatosEmpresaService implements IDatosEmpresaService {
         }
 
         configuracion.setCertificadoDigitalUrl(request.getCertificadoDigitalUrl());
-        // Normalizar modoSunat a mayúsculas para tolerar minúsculas de BD legacy
-        configuracion.setModoSunat(request.getModoSunat().toUpperCase());
+        if (request.getModoSunat() != null) {
+            configuracion.setModoSunat(request.getModoSunat().toUpperCase());
+        }
         configuracion.setTasaIgv(request.getTasaIgv());
 
         ConfiguracionTienda configuracionActualizada = configuracionTiendaRepository.save(configuracion);
