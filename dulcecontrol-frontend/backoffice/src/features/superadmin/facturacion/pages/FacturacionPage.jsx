@@ -27,7 +27,9 @@ const FacturacionPage = () => {
             if (filters.tiendaId) apiFilters.tiendaId = filters.tiendaId;
 
             const data = await facturacionApi.listarComprobantes(apiFilters);
-            setComprobantes(data);
+            // Ordenar por fecha de emisión descendente (más recientes primero)
+            const sortedData = [...data].sort((a, b) => new Date(b.fechaEmision) - new Date(a.fechaEmision));
+            setComprobantes(sortedData);
         } catch (error) {
             console.error('Error listando comprobantes:', error);
             message.error('Error al cargar los comprobantes');
@@ -90,24 +92,27 @@ const FacturacionPage = () => {
         {
             title: 'Comprobante',
             key: 'comprobante',
-            render: (_, record) => (
-                <Space direction="vertical" size={0}>
-                    <Tag color={record.tipoComprobante === 'FACTURA' ? 'blue' : (record.tipoComprobante === 'BOLETA' ? 'green' : 'orange')}>
-                        {record.tipoComprobante}
-                    </Tag>
-                    <span style={{ fontWeight: 'bold' }}>
-                        {getSerieCode(record.serieId)}-{String(record.correlativo).padStart(8, '0')}
-                    </span>
-                </Space>
-            )
+            render: (_, record) => {
+                const tipo = record.tiposComprobante;
+                return (
+                    <Space direction="vertical" size={0}>
+                        <Tag color={tipo === 'FACTURA' ? 'blue' : (tipo === 'BOLETA' ? 'green' : 'orange')}>
+                            {tipo}
+                        </Tag>
+                        <span style={{ fontWeight: 'bold' }}>
+                            {getSerieCode(record.serieId)}-{String(record.correlativo).padStart(8, '0')}
+                        </span>
+                    </Space>
+                );
+            }
         },
         {
             title: 'Tienda / Cliente',
             key: 'cliente',
             render: (_, record) => (
                 <Space direction="vertical" size={0}>
-                    <span style={{ fontWeight: 500 }}>{record.clienteNombre}</span>
-                    <span style={{ fontSize: '12px', color: '#888' }}>{record.clienteTipoDoc}: {record.clienteNumeroDoc}</span>
+                    <span style={{ fontWeight: 500 }}>{record.clienteNombreDoc}</span>
+                    <span style={{ fontSize: '12px', color: '#888' }}>{record.clienteTipoDoc}: {record.clienteNumDoc}</span>
                 </Space>
             )
         },
