@@ -67,8 +67,8 @@ export const ADMIN_PERMISSION_GROUPS = [
     key: 'catalogo',
     label: 'Catálogo',
     description: 'Configuración de productos, combos y categorías.',
-    modules: ['productos', 'categorias'],
-    slugPrefixes: ['productos', 'categorias'],
+    modules: ['categorias', 'productos'],
+    slugPrefixes: ['categorias', 'productos'],
     menuPath: `${BASE_PATH}/catalogo`,
     order: 6,
   },
@@ -270,14 +270,14 @@ export const ADMIN_MENU_BLUEPRINT = [
     permissionPrefixes: ['productos', 'categorias'],
     children: [
       {
-        key: `${BASE_PATH}/catalogo/productos`,
-        label: 'Productos',
-        permissionPrefixes: ['productos'],
-      },
-      {
         key: `${BASE_PATH}/catalogo/categorias`,
         label: 'Categorías',
         permissionPrefixes: ['categorias'],
+      },
+      {
+        key: `${BASE_PATH}/catalogo/productos`,
+        label: 'Productos',
+        permissionPrefixes: ['productos'],
       },
     ],
   },
