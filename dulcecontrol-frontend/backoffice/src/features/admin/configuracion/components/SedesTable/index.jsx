@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { message, Modal } from 'antd';
-import { getSedes, createSede, updateSede, deleteSede, desactivarSede } from '../../api/sedes.api';
+import { getSedes, createSede, updateSede, deleteSede } from '../../api/sedes.api';
 import { SEDES_KEYS } from '../../constants/queryKeys';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 import SedesTableView from './SedesTableView';
@@ -11,6 +11,7 @@ import SedesTableView from './SedesTableView';
  */
 export default function SedesTable() {
   const queryClient = useQueryClient();
+  const [modal, contextHolder] = Modal.useModal();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingSede, setEditingSede] = useState(null);
   const tiendaId = useTokenStore((state) => state.tiendaId);
@@ -85,14 +86,26 @@ export default function SedesTable() {
 
   const handleSubmit = (values) => {
     if (editingSede) {
-      updateMutation.mutate({ sedeId: editingSede.id, payload: values });
+      modal.confirm({
+        title: '¿Estas seguro de aplicar estos cambios?',
+        content: 'Esta acción actualizará la información de la sede.',
+        okText: 'Sí',
+        cancelText: 'No',
+        onOk: () => updateMutation.mutate({ sedeId: editingSede.id, payload: values }),
+      });
     } else {
-      createMutation.mutate(values);
+      modal.confirm({
+        title: '¿Estas seguro de crear esta sede?',
+        content: 'Esta acción creará una nueva sede en el sistema.',
+        okText: 'Sí',
+        cancelText: 'No',
+        onOk: () => createMutation.mutate(values),
+      });
     }
   };
 
   const handleDesactivar = (sede) => {
-    Modal.confirm({
+    modal.confirm({
       title: '¿Desactivar sede?',
       content: `¿Está seguro que desea desactivar la sede "${sede.nombre}"?`,
       okText: 'Desactivar',
@@ -103,7 +116,7 @@ export default function SedesTable() {
   };
 
   const handleDelete = (sede) => {
-    Modal.confirm({
+    modal.confirm({
       title: '¿Eliminar sede?',
       content: `¿Está seguro que desea eliminar permanentemente la sede "${sede.nombre}"? Esta acción no se puede deshacer.`,
       okText: 'Eliminar',
@@ -114,17 +127,20 @@ export default function SedesTable() {
   };
 
   return (
-    <SedesTableView
-      sedes={sedes}
-      isLoading={isLoading}
-      isModalVisible={isModalVisible}
-      editingSede={editingSede}
-      isSaving={createMutation.isPending || updateMutation.isPending}
-      onOpenModal={handleOpenModal}
-      onCloseModal={handleCloseModal}
-      onSubmit={handleSubmit}
-      onDesactivar={handleDesactivar}
-      onDelete={handleDelete}
-    />
+    <>
+      {contextHolder}
+      <SedesTableView
+        sedes={sedes}
+        isLoading={isLoading}
+        isModalVisible={isModalVisible}
+        editingSede={editingSede}
+        isSaving={createMutation.isPending || updateMutation.isPending}
+        onOpenModal={handleOpenModal}
+        onCloseModal={handleCloseModal}
+        onSubmit={handleSubmit}
+        onDesactivar={handleDesactivar}
+        onDelete={handleDelete}
+      />
+    </>
   );
 }

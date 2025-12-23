@@ -13,6 +13,8 @@ export const UBIGEO_KEYS = {
   departamentos: ['ubigeo', 'departamentos'],
   provincias: (departamentoId) => ['ubigeo', 'provincias', departamentoId],
   distritos: (provinciaId) => ['ubigeo', 'distritos', provinciaId],
+  distrito: (id) => ['ubigeo', 'distrito', id],
+  provincia: (id) => ['ubigeo', 'provincia', id],
 };
 
 export const CONFIGURACION_KEYS = {
