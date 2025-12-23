@@ -119,33 +119,6 @@ const ProductoFormView = ({
           </Space.Compact>
         </Form.Item>
 
-        <Form.Item
-          label="Precio oferta (opcional)"
-          name="precioOferta"
-          rules={[
-            ({ getFieldValue }) => ({
-              validator(_, value) {
-                if (value === undefined || value === null) return Promise.resolve();
-                const precioBase = getFieldValue('precioBase');
-                if (precioBase === undefined || precioBase === null) return Promise.resolve();
-                if (value < precioBase) return Promise.resolve();
-                return Promise.reject(new Error('El precio oferta debe ser menor al precio base'));
-              },
-            }),
-          ]}
-          tooltip="Precio promocional. Debe ser menor al precio base"
-        >
-          <Space.Compact block>
-            <Input value="S/." disabled style={{ width: 72 }} />
-            <InputNumber
-              min={0}
-              step={0.1}
-              style={{ width: '100%' }}
-              placeholder="0.00"
-            />
-          </Space.Compact>
-        </Form.Item>
-
         <Form.Item label="URL Imagen principal" name="urlImagenPrincipal">
           <Input placeholder="https://" allowClear />
         </Form.Item>

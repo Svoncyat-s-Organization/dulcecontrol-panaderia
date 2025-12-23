@@ -1,17 +1,28 @@
-import { Alert, Button, Card, Col, Divider, Form, Input, message, Modal, Row, Select, Spin } from 'antd';
+import { useEffect, useState } from 'react';
+import { Alert, App, Button, Card, Col, Divider, Form, Input, Row, Select, Spin } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
 const { TextArea } = Input;
 
-const DatosEmpresaFormView = ({ datosEmpresa, isLoading, isError, error, isSubmitting, onSubmit }) => {
+const DatosEmpresaFormView = ({
+  datosEmpresa,
+  isLoading,
+  isError,
+  error,
+  isSubmitting,
+  onSubmit,
+  saveFeedback,
+  onDirty,
+}) => {
+  const { modal } = App.useApp();
   const [form] = Form.useForm();
+  const [showValidationError, setShowValidationError] = useState(false);
 
   // Cuando los datos cargan, setear valores iniciales (evita setState en render)
   useEffect(() => {
     if (!datosEmpresa) return;
     if (form.isFieldsTouched(true)) return;
 
-    const tasaIgvRaw = datosEmpresa.tasaIgv ?? 18.0;
-    const tasaIgvNum = Number(tasaIgvRaw);
+    // Nota: tasaIgv se maneja en backend / otras pantallas (si aplica)
 
     form.setFieldsValue({
       numeroDoc: datosEmpresa.numeroDoc,
@@ -24,18 +35,18 @@ const DatosEmpresaFormView = ({ datosEmpresa, isLoading, isError, error, isSubmi
     });
   }, [datosEmpresa, form]);
 
-  const handleSave = () => {
-    form.validateFields().then((values) => {
-      Modal.confirm({
-        title: '¿Estas seguro de aplicar estos cambios?',
-        content: 'Los cambios afectarán a los futuros comprobantes de pago. Los históricos quedan intactos.',
-        okText: 'Sí',
-        cancelText: 'No',
-        onOk: () => {
-          onSubmit(values);
-        },
-      });
-    }).catch(() => {});
+  const handleFinish = (values) => {
+    modal.confirm({
+      title: '¿Estas seguro de aplicar estos cambios?',
+      content: 'Los cambios afectarán a los futuros comprobantes de pago. Los históricos quedan intactos.',
+      okText: 'Sí',
+      cancelText: 'No',
+      onOk: () => onSubmit(values),
+    });
+  };
+
+  const handleFinishFailed = () => {
+    setShowValidationError(true);
   };
 
   if (isLoading) {
@@ -58,7 +69,35 @@ const DatosEmpresaFormView = ({ datosEmpresa, isLoading, isError, error, isSubmi
   }
 
   return (
-    <Form form={form} layout="vertical">
+    <Form
+      form={form}
+      layout="vertical"
+      onFinish={handleFinish}
+      onFinishFailed={handleFinishFailed}
+      onValuesChange={() => {
+        if (showValidationError) setShowValidationError(false);
+        onDirty?.();
+      }}
+    >
+      {saveFeedback && (
+        <Alert
+          style={{ marginBottom: 12 }}
+          showIcon
+          type={saveFeedback.type}
+          message={saveFeedback.message}
+          description={saveFeedback.description}
+        />
+      )}
+
+      {showValidationError && (
+        <Alert
+          style={{ marginBottom: 12 }}
+          showIcon
+          type="error"
+          message="Revisa el formulario"
+          description="Hay campos con errores o faltan datos obligatorios. Corrige lo indicado e intenta guardar nuevamente."
+        />
+      )}
       {/* SECCIÓN 1: IDENTIDAD LEGAL */}
       <Card title="📋 Identidad Legal" style={{ marginBottom: 16 }}>
         <Row gutter={16}>
@@ -153,10 +192,10 @@ const DatosEmpresaFormView = ({ datosEmpresa, isLoading, isError, error, isSubmi
 
       <Divider />
 
-      {/* BOTÓN SUBMIT */}
+      {/* BOTÓN SUBMIT (único) */}
       <Form.Item>
         <Button type="primary" htmlType="submit" icon={<SaveOutlined />} size="large" loading={isSubmitting} block>
-          Guardar Cambios
+          Guardar cambios
         </Button>
       </Form.Item>
 

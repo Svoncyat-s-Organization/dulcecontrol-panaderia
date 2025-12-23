@@ -93,10 +93,8 @@ export const buildProductoPayload = (values, productoBase = {}) => {
     tipo: values.tipo ?? 'PRODUCTO_TERMINADO',
     esPersonalizable: values.esPersonalizable ?? safeProductoBase.esPersonalizable ?? false,
     precioBaseCentimos: toCentimos(values.precioBase),
-    precioOfertaCentimos:
-      values.precioOferta !== undefined && values.precioOferta !== null
-        ? toCentimos(values.precioOferta)
-        : safeProductoBase.precioOfertaCentimos ?? null,
+    // En frontend se elimina "precio oferta"; forzamos null para no depender del campo.
+    precioOfertaCentimos: null,
     visibleEnPos: values.visibleEnPos ?? safeProductoBase.visibleEnPos ?? true,
     visibleEnStorefront:
       values.visibleEnStorefront ?? safeProductoBase.visibleEnStorefront ?? true,

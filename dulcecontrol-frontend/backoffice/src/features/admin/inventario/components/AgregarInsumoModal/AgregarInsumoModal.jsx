@@ -1,5 +1,4 @@
-import { useMemo } from 'react';
-import { Alert, Form, Input, InputNumber, Modal, Select, Space, Divider, Typography } from 'antd';
+import { Alert, Form, Input, InputNumber, Modal, Select, Space, Divider } from 'antd';
 
 const UNIDADES_MEDIDA = [
   { label: 'Unidad', value: 'UNIDAD' },
@@ -16,22 +15,6 @@ const AgregarInsumoModal = ({ open, onClose, onSubmit, loading }) => {
   const [form] = Form.useForm();
 
   const unidadBase = Form.useWatch('unidadBase', form);
-  const unidadCompraHabitual = Form.useWatch('unidadCompraHabitual', form);
-  const factorConversionRaw = Form.useWatch('factorConversion', form);
-
-  const factorConversion = useMemo(() => {
-    const n = Number(factorConversionRaw);
-    return Number.isFinite(n) ? n : null;
-  }, [factorConversionRaw]);
-
-  const conversionText = useMemo(() => {
-    if (!unidadBase || !unidadCompraHabitual || !factorConversion || factorConversion <= 0) {
-      return null;
-    }
-    return `1 ${unidadCompraHabitual} = ${factorConversion} ${unidadBase}`;
-  }, [unidadBase, unidadCompraHabitual, factorConversion]);
-
-  const shouldSuggestFactorOne = Boolean(unidadBase && unidadCompraHabitual && unidadBase === unidadCompraHabitual);
 
   const handleOk = async () => {
     try {
@@ -69,23 +52,21 @@ const AgregarInsumoModal = ({ open, onClose, onSubmit, loading }) => {
             <div>
               Aquí creas el insumo y lo agregas al inventario de la sede con una cantidad inicial.
             </div>
-            {conversionText ? (
-              <div style={{ marginTop: 8 }}>
-                <Typography.Text type="secondary">Vista previa conversión: </Typography.Text>
-                <Typography.Text strong>{conversionText}</Typography.Text>
-              </div>
-            ) : (
-              <div style={{ marginTop: 8 }}>
-                <Typography.Text type="secondary">
-                  Selecciona unidades y factor para ver la equivalencia.
-                </Typography.Text>
-              </div>
-            )}
+            <div style={{ marginTop: 8 }}>
+              Nota: el factor de conversión se asigna automáticamente.
+            </div>
           </div>
         )}
       />
 
       <Form form={form} layout="vertical" preserve={false}>
+        {/*
+          El backend espera "factorConversion". En Inventario lo ocultamos y enviamos un valor seguro por defecto.
+          No se valida porque no es editable.
+        */}
+        <Form.Item name="factorConversion" initialValue={1} hidden>
+          <Input />
+        </Form.Item>
             <Form.Item
               label="Nombre del insumo"
               name="nombre"
@@ -124,31 +105,6 @@ const AgregarInsumoModal = ({ open, onClose, onSubmit, loading }) => {
                 <Select placeholder="Seleccionar" options={UNIDADES_MEDIDA} />
               </Form.Item>
             </Space>
-
-            <Form.Item
-              label="Factor de conversión"
-              name="factorConversion"
-              initialValue={1}
-              rules={[
-                { required: true, message: 'Ingresa el factor de conversión' },
-                { type: 'number', min: 0.0001, message: 'Debe ser mayor a 0' },
-              ]}
-              tooltip="Cuántas unidades base equivalen a 1 unidad de compra. Ej: si compras en sacos de 50kg, factor = 50"
-              extra={
-                conversionText
-                  ? conversionText
-                  : shouldSuggestFactorOne
-                    ? 'Si ambas unidades son iguales, usa factor 1.'
-                    : 'Completa unidades para ver la equivalencia.'
-              }
-            >
-              <InputNumber
-                style={{ width: '100%' }}
-                min={0.0001}
-                precision={4}
-                placeholder="1.0000"
-              />
-            </Form.Item>
 
             <Form.Item
               label="Stock mínimo"

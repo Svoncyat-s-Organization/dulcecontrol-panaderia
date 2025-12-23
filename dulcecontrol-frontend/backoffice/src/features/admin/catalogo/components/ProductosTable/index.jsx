@@ -81,10 +81,17 @@ const ProductosTable = () => {
   const productos = useMemo(() => {
     // Enriquecer productos con el nombre de la categoría
     return data.map((producto) => {
+      if (producto.categoriaId === null || producto.categoriaId === undefined) {
+        return {
+          ...producto,
+          categoriaNombre: 'Sin categoría',
+        };
+      }
+
       const categoria = categorias.find((cat) => cat.id === producto.categoriaId);
       return {
         ...producto,
-        categoriaNombre: categoria?.nombre || null,
+        categoriaNombre: categoria?.nombre || 'Sin categoría',
       };
     });
   }, [data, categorias]);

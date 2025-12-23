@@ -135,9 +135,9 @@ const CategoriasTableView = ({
             danger
             icon={<IconTrash size={16} />}
             onClick={() => onDelete(record)}
-            loading={deletingId === record.id}
-            disabled={record.productosCount > 0}
-            title={record.productosCount > 0 ? 'No se puede eliminar una categoría con productos' : ''}
+            loading={deletingId === (record.id ?? record.categoriaId ?? record.idCategoria ?? record.categoria_id)}
+            disabled={deletingId === (record.id ?? record.categoriaId ?? record.idCategoria ?? record.categoria_id)}
+            title={(record.productosCount ?? 0) > 0 ? 'Se reasignarán productos a “Sin categoría” y luego se eliminará.' : ''}
           >
             Eliminar
           </Button>

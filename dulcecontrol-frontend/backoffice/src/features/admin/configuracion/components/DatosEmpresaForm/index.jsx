@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { message } from 'antd';
+import { App } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 import { getDatosEmpresa, updateDatosEmpresa } from '../../api/datos-empresa.api.js';
@@ -11,6 +11,7 @@ const DatosEmpresaForm = () => {
   const tiendaId = useTokenStore((state) => state.tiendaId);
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState(null);
 
   // Fetch datos empresa
   const {
@@ -28,6 +29,11 @@ const DatosEmpresaForm = () => {
   const updateMutation = useMutation({
     mutationFn: (payload) => updateDatosEmpresa(tiendaId, payload),
     onSuccess: () => {
+      setSaveFeedback({
+        type: 'success',
+        message: 'Cambios guardados',
+        description: 'Los datos de empresa se actualizaron correctamente.',
+      });
       notification.success({
         message: 'Cambios guardados',
         description: 'Los datos de empresa se actualizaron correctamente',
@@ -39,6 +45,11 @@ const DatosEmpresaForm = () => {
     },
     onError: (error) => {
       const detail = error?.response?.data?.message ?? error?.message ?? 'Error al actualizar datos de empresa';
+      setSaveFeedback({
+        type: 'error',
+        message: 'Error al guardar',
+        description: detail,
+      });
       notification.error({
         message: 'Error al guardar',
         description: detail,
@@ -51,7 +62,12 @@ const DatosEmpresaForm = () => {
 
   const handleSubmit = (values) => {
     setIsSubmitting(true);
+    setSaveFeedback(null);
     updateMutation.mutate(values);
+  };
+
+  const handleDirty = () => {
+    if (saveFeedback) setSaveFeedback(null);
   };
 
   return (
@@ -62,6 +78,8 @@ const DatosEmpresaForm = () => {
       error={error}
       isSubmitting={isSubmitting}
       onSubmit={handleSubmit}
+      saveFeedback={saveFeedback}
+      onDirty={handleDirty}
     />
   );
 };
