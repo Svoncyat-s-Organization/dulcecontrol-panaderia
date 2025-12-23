@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { message } from 'antd';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import PedidosTableView from './PedidosTableView.jsx';
@@ -21,8 +22,6 @@ import { getUsuariosAdmin } from '../../api/usuarios.api.js';
 import { getProductos } from '../../../catalogo/api/productos.api.js';
 import { PEDIDO_KEYS } from '../../constants/queryKeys.js';
 import { mapPedidoToTable } from '../../utils/ventaMappers.js';
-import { getInventarioProductosPorSede } from '../../../inventario/api/existencias.api.js';
-import { crearMovimientoInventarioProducto } from '../../../inventario/api/movimientos.api.js';
 import { INVENTARIO_PRODUCTO_KEYS, INVENTARIO_MOVIMIENTO_KEYS } from '../../../inventario/constants/queryKeys.js';
 import { getConfiguracionTienda } from '../../api/configuracion.api.js';
 import { createComprobante, incrementarCorrelativoSerie } from '../../api/facturacion.api.js';
@@ -178,61 +177,9 @@ const PedidosTable = () => {
         return filtered;
     }, [pedidos, clientesMap, filters, selectedSedeId]);
 
-    const syncInventarioTrasEntrega = async (pedidoId, sedeId, vendedorId) => {
-        console.log('📦 [VENTA] Iniciando sincronización de inventario tras entrega');
-        console.log('📦 [VENTA] Pedido ID:', pedidoId, '| Sede ID:', sedeId, '| Tienda ID:', tiendaId);
-        
-        if (!sedeId || !tiendaId) {
-            throw new Error('Falta información de sede o tienda para actualizar inventario');
-        }
-
-        const responsableId = usuarioId || vendedorId;
-        console.log('👤 [VENTA] Responsable ID:', responsableId);
-        
-        const detalles = await getDetallesPedido(tiendaId, pedidoId);
-        console.log('📋 [VENTA] Detalles del pedido obtenidos:', detalles.length, 'productos');
-        console.table(detalles.map(d => ({ ProductoID: d.productoId, Cantidad: d.cantidad })));
-        
-        const inventarios = await getInventarioProductosPorSede(tiendaId, sedeId);
-        console.log('📦 [VENTA] Inventarios de la sede obtenidos:', inventarios?.length || 0);
-        const inventarioPorProducto = new Map(
-            (Array.isArray(inventarios) ? inventarios : []).map((registro) => [String(registro.productoId), registro])
-        );
-
-        const faltantes = [];
-
-        for (const detalle of detalles) {
-            const registro = inventarioPorProducto.get(String(detalle.productoId));
-            if (!registro) {
-                console.error('❌ [VENTA] No hay inventario configurado para Producto ID:', detalle.productoId);
-                faltantes.push(`Producto ID ${detalle.productoId}`);
-                continue;
-            }
-
-            console.log(`🔄 [VENTA] Descontando producto ${detalle.productoId}: ${detalle.cantidad} unidades`);
-            console.log('   Stock antes:', registro.cantidadActual, '→ Stock después:', registro.cantidadActual - detalle.cantidad);
-            
-            await crearMovimientoInventarioProducto(tiendaId, {
-                sedeId: registro.sedeId,
-                productoId: registro.productoId,
-                tipoMovimiento: 'salida',
-                cantidad: detalle.cantidad,
-                pedidoId,
-                motivo: 'venta',
-                responsableId: responsableId,
-            });
-            
-            console.log('✅ [VENTA] Movimiento de inventario creado para producto', detalle.productoId);
-        }
-
-        if (faltantes.length) {
-            console.error('❌ [VENTA] Error:', `Inventario no configurado para: ${faltantes.join(', ')}`);
-            throw new Error(`Inventario no configurado para: ${faltantes.join(', ')}`);
-        }
-        
-        console.log('✅ [VENTA] ¡Inventario sincronizado correctamente!');
-        console.log('🔔 [VENTA] IMPORTANTE: El backend debería verificar ahora si algún producto llegó al punto de reposición');
-    };
+    // Importante: el descuento de inventario al marcar ENTREGADO debe ejecutarse una sola vez.
+    // Para evitar duplicados, el frontend NO crea movimientos de inventario en este punto;
+    // se asume que el backend se encarga del descuento al cambiar el estado a ENTREGADO.
 
     const paymentMutation = useMutation({
         mutationFn: async ({ pedido, paymentData }) => {
@@ -303,8 +250,10 @@ const PedidosTable = () => {
         onSuccess: () => {
             queryClient.invalidateQueries(PEDIDO_KEYS.all);
         },
-        onError: () => {
-            // Silent error handling
+        onError: (err) => {
+            const errMsg = err?.response?.data?.message || err?.message || 'No se pudo registrar el pago';
+            console.error(errMsg);
+            message.error(errMsg);
         },
     });
 
@@ -321,7 +270,9 @@ const PedidosTable = () => {
                 clienteId: pedido.raw.clienteId,
                 origen: pedido.raw.origen,
                 sesionCajaId: pedido.raw.sesionCajaId,
-                vendedorId: pedido.raw.vendedorId,
+                // Nota: al marcar ENTREGADO queremos que el responsable quede asociado.
+                // Algunos flujos/reportes usan vendedorId como referencia del responsable.
+                vendedorId: nuevoEstado === 'entregado' ? (usuarioId || pedido.raw.vendedorId) : pedido.raw.vendedorId,
                 estadoPedido: nuevoEstado,
                 estadoPago: pedido.raw.estadoPago,
                 tipoEntrega: pedido.raw.tipoEntrega,
@@ -344,12 +295,6 @@ const PedidosTable = () => {
             console.log('📤 [ESTADO PEDIDO] Enviando actualización al backend...');
             const updated = await updatePedido(tiendaId, pedido.id, payload);
             console.log('✅ [ESTADO PEDIDO] Pedido actualizado en el backend');
-
-            if (nuevoEstado === 'entregado' && pedido.raw.estadoPedido !== 'entregado') {
-                console.log('🚚 [ENTREGA] Pedido marcado como ENTREGADO - Iniciando descuento de inventario...');
-                await syncInventarioTrasEntrega(pedido.id, pedido.raw.sedeOrigenId, pedido.raw.vendedorId);
-                console.log('🎉 [ENTREGA] ¡Proceso de entrega completado!');
-            }
 
             return updated;
         },
@@ -394,7 +339,7 @@ const PedidosTable = () => {
     };
 
     const handleConfirmPayment = (pedido, paymentData) => {
-        paymentMutation.mutate({ pedido, paymentData });
+        return paymentMutation.mutateAsync({ pedido, paymentData });
     };
 
     const handleConfirmStatus = (pedido, nuevoEstado) => {
@@ -412,11 +357,6 @@ const PedidosTable = () => {
 
             const pedidoId = pedido.raw.id;
             const pedidoDetail = await getPedidoById(tiendaId, pedidoId);
-
-            const facturacionReady = !!(facturacionConfig?.ruc && facturacionConfig?.razonSocial && facturacionConfig?.direccionFiscal);
-            if (!facturacionReady) {
-                throw new Error('Configuración de facturación incompleta. Completa tus datos fiscales antes de emitir comprobantes.');
-            }
 
             // No confiar solo en estadoPago (puede estar desfasado mientras el modal sigue abierto).
             // Validamos por montos en centimos.
@@ -437,9 +377,9 @@ const PedidosTable = () => {
                 tiendaId,
                 pedidoId,
                 serieId: data.serieId,
-                emisorRazonSocial: facturacionConfig.razonSocial,
-                emisorRuc: facturacionConfig.ruc,
-                emisorDireccion: facturacionConfig.direccionFiscal,
+                emisorRazonSocial: facturacionConfig?.razonSocial || '',
+                emisorRuc: facturacionConfig?.ruc || '',
+                emisorDireccion: facturacionConfig?.direccionFiscal || '',
                 clienteTipoDoc: data.clienteDocTipo,
                 clienteNumeroDoc: data.clienteDocNumero,
                 clienteNombre: data.clienteNombre,
@@ -455,43 +395,64 @@ const PedidosTable = () => {
                 totalImporteCentimos: totalCentimos,
             });
 
-            await incrementarCorrelativoSerie(tiendaId, data.serieId);
+            // A partir de aquí el comprobante ya fue creado. Si algo falla (incremento correlativo,
+            // actualización del pedido o carga de detalle/pagos), igual mostramos el comprobante
+            // para que el usuario pueda imprimirlo.
 
-            const updatePayload = {
-                codigoPedido: pedidoDetail?.codigoPedido,
-                sedeOrigenId: pedidoDetail?.sedeOrigenId,
-                clienteId: data?.clienteId || pedidoDetail?.clienteId,
-                origen: pedidoDetail?.origen,
-                sesionCajaId: pedidoDetail?.sesionCajaId,
-                vendedorId: pedidoDetail?.vendedorId,
-                estadoPedido: pedidoDetail?.estadoPedido,
-                estadoPago: pedidoDetail?.estadoPago,
-                tipoEntrega: pedidoDetail?.tipoEntrega,
-                fechaEntregaPactada: pedidoDetail?.fechaEntregaPactada,
-                direccionEntrega: pedidoDetail?.direccionEntrega,
-                costoDeliveryCentimos: pedidoDetail?.costoDeliveryCentimos,
-                moneda: pedidoDetail?.moneda,
-                subtotalItemsCentimos: pedidoDetail?.subtotalItemsCentimos,
-                descuentoTotalCentimos: pedidoDetail?.descuentoTotalCentimos,
-                impuestosTotalesCentimos: pedidoDetail?.impuestosTotalesCentimos,
-                totalFinalCentimos: pedidoDetail?.totalFinalCentimos,
-                montoPagadoCentimos: pedidoDetail?.montoPagadoCentimos,
-                requiereComprobante: true,
-                tipoComprobante: data.tipoComprobante,
-                serieComprobante: data.serieCodigo,
-                numeroComprobante: data.correlativo,
-                notasPedido: pedidoDetail?.notasPedido,
-            };
+            try {
+                await incrementarCorrelativoSerie(tiendaId, data.serieId);
+            } catch (err) {
+                console.error('No se pudo incrementar correlativo de serie', err);
+            }
 
-            const pedidoActualizado = await updatePedido(tiendaId, pedidoId, updatePayload);
+            let pedidoBase = pedidoDetail;
+            try {
+                const updatePayload = {
+                    codigoPedido: pedidoDetail?.codigoPedido,
+                    sedeOrigenId: pedidoDetail?.sedeOrigenId,
+                    clienteId: data?.clienteId || pedidoDetail?.clienteId,
+                    origen: pedidoDetail?.origen,
+                    sesionCajaId: pedidoDetail?.sesionCajaId,
+                    vendedorId: pedidoDetail?.vendedorId,
+                    estadoPedido: pedidoDetail?.estadoPedido,
+                    estadoPago: pedidoDetail?.estadoPago,
+                    tipoEntrega: pedidoDetail?.tipoEntrega,
+                    fechaEntregaPactada: pedidoDetail?.fechaEntregaPactada,
+                    direccionEntrega: pedidoDetail?.direccionEntrega,
+                    costoDeliveryCentimos: pedidoDetail?.costoDeliveryCentimos,
+                    moneda: pedidoDetail?.moneda,
+                    subtotalItemsCentimos: pedidoDetail?.subtotalItemsCentimos,
+                    descuentoTotalCentimos: pedidoDetail?.descuentoTotalCentimos,
+                    impuestosTotalesCentimos: pedidoDetail?.impuestosTotalesCentimos,
+                    totalFinalCentimos: pedidoDetail?.totalFinalCentimos,
+                    montoPagadoCentimos: pedidoDetail?.montoPagadoCentimos,
+                    requiereComprobante: true,
+                    tipoComprobante: data.tipoComprobante,
+                    serieComprobante: data.serieCodigo,
+                    // En backend el campo es String; enviar siempre string para evitar fallas de coerción.
+                    numeroComprobante: String(data.correlativo ?? ''),
+                    notasPedido: pedidoDetail?.notasPedido,
+                };
 
-            const [detalles, pagos] = await Promise.all([
-                getDetallesPedido(tiendaId, pedidoId),
-                getPagosPedido(tiendaId, pedidoId),
-            ]);
+                const pedidoActualizado = await updatePedido(tiendaId, pedidoId, updatePayload);
+                pedidoBase = pedidoActualizado || pedidoDetail;
+            } catch (err) {
+                console.error('No se pudo actualizar el pedido con datos de comprobante', err);
+            }
+
+            let detalles = [];
+            let pagos = [];
+            try {
+                [detalles, pagos] = await Promise.all([
+                    getDetallesPedido(tiendaId, pedidoId),
+                    getPagosPedido(tiendaId, pedidoId),
+                ]);
+            } catch (err) {
+                console.error('No se pudieron cargar detalles/pagos para el recibo', err);
+            }
 
             const receiptPayload = buildReceiptPayload({
-                ...pedidoActualizado,
+                ...pedidoBase,
                 comprobante: { ...comprobanteRegistrado, serieCodigo: data.serieCodigo },
             }, detalles, pagos);
 
@@ -506,12 +467,14 @@ const PedidosTable = () => {
             handleCloseStatusModal();
         },
         onError: (err) => {
-            console.error(err?.response?.data?.message || err.message || 'No se pudo emitir el comprobante');
+            const errMsg = err?.response?.data?.message || err?.message || 'No se pudo emitir el comprobante';
+            console.error(errMsg);
+            message.error(errMsg);
         },
     });
 
     const handleEmitirComprobante = (pedido, data) => {
-        emitirComprobanteMutation.mutate({ pedido, data });
+        return emitirComprobanteMutation.mutateAsync({ pedido, data });
     };
 
     const buildReceiptPayload = (pedido, detalles = [], pagos = []) => {
