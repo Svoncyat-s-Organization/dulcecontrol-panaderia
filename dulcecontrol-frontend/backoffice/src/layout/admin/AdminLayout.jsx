@@ -15,6 +15,11 @@ import { perfilApi } from '../../api/admin/perfil.js';
 import { SEGURIDAD_KEYS } from '../../features/admin/seguridad/constants/queryKeys.js';
 import { createPermissionSet } from '../../shared/utils/permissionUtils.js';
 import { DEV_AUTH_TOKEN, DEV_PERMISSION_SLUGS } from '../../shared/constants/devAuth.js';
+import {
+  ADMIN_ALLOWED_PATHS_BY_PROFILE,
+  getPresentationProfile,
+} from '../../shared/config/presentationProfiles.js';
+import { filterMenuItemsByAllowedPaths } from '../../shared/utils/menuFilter.js';
 
 const BASE_PATH = '/admin';
 
@@ -159,6 +164,13 @@ const AdminLayout = () => {
     }
   };
 
+  const dynamicMenuItems = useMemo(() => {
+    const items = buildAdminMenuItems(permissions);
+    const profile = getPresentationProfile();
+    const allowedPaths = ADMIN_ALLOWED_PATHS_BY_PROFILE[profile];
+    return filterMenuItemsByAllowedPaths(items, allowedPaths);
+  }, [permissions]);
+
   if (!isDevToken && (!tiendaId || !userId)) {
     return (
       <Result
@@ -189,8 +201,6 @@ const AdminLayout = () => {
       />
     );
   }
-
-  const dynamicMenuItems = useMemo(() => buildAdminMenuItems(permissions), [permissions]);
 
   const fullName = user?.nombre_completo || user?.nombre || user?.name || '';
   const profileName = buildPreferredName(fullName) || user?.sub || 'Administrador';

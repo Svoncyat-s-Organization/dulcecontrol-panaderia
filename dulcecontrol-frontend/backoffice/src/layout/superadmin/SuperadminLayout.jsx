@@ -15,6 +15,11 @@ import PerfilModal from '../../shared/components/PerfilModal.jsx';
 import MainLayout from '../shared/MainLayout.jsx';
 import { buildInitials, buildPreferredName } from '../../shared/utils/nameUtils.js';
 import { perfilSuperadminApi } from '../../api/superadmin/perfil.js';
+import {
+    SUPERADMIN_ALLOWED_PATHS_BY_PROFILE,
+    getPresentationProfile,
+} from '../../shared/config/presentationProfiles.js';
+import { filterMenuItemsByAllowedPaths } from '../../shared/utils/menuFilter.js';
 
 const BASE_PATH = '/superadmin';
 
@@ -88,11 +93,17 @@ const SuperadminLayout = () => {
     const profileName = buildPreferredName(fullName) || user?.sub || 'Superadmin';
     const profileInitials = buildInitials(profileName, user?.sub || 'Superadmin');
 
+    const filteredMenuItems = useMemo(() => {
+        const profile = getPresentationProfile();
+        const allowedPaths = SUPERADMIN_ALLOWED_PATHS_BY_PROFILE[profile];
+        return filterMenuItemsByAllowedPaths(menuItems, allowedPaths);
+    }, []);
+
     return (
         <>
             <MainLayout
                 basePath={BASE_PATH}
-                menuItems={menuItems}
+                menuItems={filteredMenuItems}
                 headerTitle="Panel Corporativo"
                 brandLabel="DulceControl"
                 profileMenu={{ items: profileMenuItems, onClick: handleProfileClick }}
