@@ -118,7 +118,7 @@ const CajasCatalog = () => {
     const handleFilterChange = (_, allValues) => {
         setFilters({
             nombre: allValues.nombre || '',
-            sedeId: selectedSedeId || allValues.sedeId || null,
+            sedeId: selectedSedeId || null,
             activa: typeof allValues.activa === 'boolean' ? allValues.activa : null,
         });
     };
@@ -226,8 +226,6 @@ const CajasCatalog = () => {
         value: sede.id,
     }));
 
-    const sedeFilterDisabled = !!selectedSedeId;
-
     return (
         <Card
             style={{
@@ -272,14 +270,6 @@ const CajasCatalog = () => {
                 <Space style={{ width: '100%' }} wrap>
                     <Form.Item name="nombre" label="Nombre" style={{ minWidth: 260 }}>
                         <Input allowClear placeholder="Buscar por nombre" />
-                    </Form.Item>
-                    <Form.Item name="sedeId" label="Sede" style={{ minWidth: 260 }}>
-                        <Select
-                            disabled
-                            placeholder="Sede actual"
-                            options={sedeOptions}
-                            loading={sedesQuery.isLoading}
-                        />
                     </Form.Item>
                     <Form.Item name="activa" label="Estado" style={{ minWidth: 150 }}>
                         <Select allowClear placeholder="Todos" options={estadoOptions} />

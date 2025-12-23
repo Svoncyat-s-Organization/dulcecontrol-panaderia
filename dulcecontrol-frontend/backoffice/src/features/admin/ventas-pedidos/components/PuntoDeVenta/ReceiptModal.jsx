@@ -1,4 +1,4 @@
-import { Modal, Typography, Divider, Empty, Button, Spin } from 'antd';
+import { Modal, Typography, Divider, Empty, Button } from 'antd';
 import { PrinterOutlined, CloseOutlined } from '@ant-design/icons';
 import { useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -133,7 +133,6 @@ const ReceiptModal = ({ open, onClose, pedido }) => {
 		if (pedido?.emisorRazonSocial) return pedido.emisorRazonSocial;
 		return 'Tienda';
 	}, [tienda, pedido, config, comprobante]);
-	const razonSocial = config?.razonSocial || comprobante?.emisorRazonSocial || pedido?.emisorRazonSocial || '';
 	const sedeNombre = currentSede?.nombre || '';
 	const sedeDireccion = currentSede?.direccion || comprobante?.emisorDireccion || pedido?.emisorDireccion || '';
 	const ruc = config?.ruc || comprobante?.emisorRuc || pedido?.emisorRuc || '';
@@ -161,6 +160,21 @@ const ReceiptModal = ({ open, onClose, pedido }) => {
 
 	const mostrarCliente = clienteNombre || clienteDocNumero || pedido?.cliente;
 
+	const fechaTexto = useMemo(() => {
+		const rawFecha =
+			pedido?.creadoEn
+			|| pedido?.creado_en
+			|| comprobante?.fechaEmision
+			|| comprobante?.fecha_emision
+			|| pedido?.fechaEmision
+			|| pedido?.fecha_emision
+			|| null;
+
+		const date = rawFecha ? new Date(rawFecha) : new Date();
+		if (Number.isNaN(date.getTime())) return '';
+		return date.toLocaleString('es-PE');
+	}, [pedido, comprobante]);
+
 	const handlePrint = () => {
 		if (!printAreaRef.current) {
 			return;
@@ -181,90 +195,93 @@ const ReceiptModal = ({ open, onClose, pedido }) => {
 						<Button type="text" icon={<CloseOutlined />} onClick={onClose} aria-label="Cerrar" />
 					</div>
 
-					{loadingData ? (
-						<div style={{ textAlign: 'center', padding: 40 }}>
-							<Spin tip="Cargando datos del comprobante..." />
-						</div>
-					) : (
-						<>
-							<div
-								ref={printAreaRef}
-								id="ticket-print-area"
-								style={{
-									border: '1px solid #e2e8f0',
-									borderRadius: 12,
-									padding: 24,
-									fontFamily: 'Fira Mono, SFMono-Regular, Consolas, monospace',
-									background: '#fff',
-								}}
-							>
-								<div className="text-center header-info" style={{ textAlign: 'center', marginBottom: 16 }}>
-									<Title level={4} style={{ margin: 0, marginBottom: 4 }}>{tiendaNombre}</Title>
-									{sedeNombre && <Text style={{ display: 'block', fontSize: 12 }}>{sedeNombre}</Text>}
-									{sedeDireccion && <Text style={{ display: 'block', fontSize: 12 }}>{sedeDireccion}</Text>}
-									{!isAdelantoTicket && ruc && <Text style={{ display: 'block', fontWeight: 600, marginTop: 4 }}>RUC: {ruc}</Text>}
+					{loadingData && (
+						<Text type="secondary" style={{ fontSize: 12 }}>
+							Cargando datos del emisor... si no están disponibles, se imprimirá con campos vacíos.
+						</Text>
+					)}
 
-									{!isAdelantoTicket && tipoComprobante && (
-										<div
-											style={{
-												marginTop: 12,
-												display: 'inline-block',
-												border: '1px solid #0f172a',
-												padding: '4px 12px',
-												fontWeight: 600,
-											}}
-										>
-											{tipoComprobante === 'pedido' ? 'NOTA DE PEDIDO' : `${tipoComprobante.toUpperCase()} ELECTRÓNICA`}
-											<br />
-											{serieCodigo && correlativoTexto && (
-												<span style={{ fontSize: 12, fontWeight: 500 }}>
-													Serie {serieCodigo} · Nº {correlativoTexto}
-												</span>
-											)}
-										</div>
-									)}
+					{!!pedido?.comprobanteErrorMessage && (
+						<Text type="danger" style={{ fontSize: 12 }}>
+							No se pudo generar el comprobante electrónico: {pedido.comprobanteErrorMessage}
+						</Text>
+					)}
 
-									{isAdelantoTicket && (
-										<div
-											style={{
-												marginTop: 12,
-												display: 'inline-block',
-												border: '1px dashed #0f172a',
-												padding: '4px 12px',
-												fontWeight: 700,
-											}}
-										>
-											TICKET DE ADELANTO
-										</div>
-									)}
-								</div>
+					<div
+						ref={printAreaRef}
+						id="ticket-print-area"
+						style={{
+							border: '1px solid #e2e8f0',
+							borderRadius: 12,
+							padding: 24,
+							fontFamily: 'Fira Mono, SFMono-Regular, Consolas, monospace',
+							background: '#fff',
+						}}
+					>
+						<div className="text-center header-info" style={{ textAlign: 'center', marginBottom: 16 }}>
+							<Title level={4} style={{ margin: 0, marginBottom: 4 }}>{tiendaNombre}</Title>
+							{sedeNombre && <Text style={{ display: 'block', fontSize: 12 }}>{sedeNombre}</Text>}
+							{sedeDireccion && <Text style={{ display: 'block', fontSize: 12 }}>{sedeDireccion}</Text>}
+							{!isAdelantoTicket && ruc && <Text style={{ display: 'block', fontWeight: 600, marginTop: 4 }}>RUC: {ruc}</Text>}
 
-								<div style={{ borderBottom: '1px dashed #cbd5f5', paddingBottom: 8, marginBottom: 8 }}>
-									<div style={{ display: 'flex', justifyContent: 'space-between' }}>
-										<span>Ticket:</span>
-										<span>{pedido.codigoPedido ?? pedido.codigo_pedido ?? 'POS'}</span>
-									</div>
-									<div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-										<span>Fecha:</span>
-										<span>
-											{new Date(pedido.fechaCreacion || pedido.fecha_creacion || Date.now()).toLocaleDateString()}{' '}
-											{new Date(pedido.fechaCreacion || pedido.fecha_creacion || Date.now()).toLocaleTimeString()}
+							{!isAdelantoTicket && tipoComprobante && (
+								<div
+									style={{
+										marginTop: 12,
+										display: 'inline-block',
+										border: '1px solid #0f172a',
+										padding: '4px 12px',
+										fontWeight: 600,
+									}}
+								>
+									{tipoComprobante === 'pedido' ? 'NOTA DE PEDIDO' : `${tipoComprobante.toUpperCase()} ELECTRÓNICA`}
+									<br />
+									{serieCodigo && correlativoTexto && (
+										<span style={{ fontSize: 12, fontWeight: 500 }}>
+											Serie {serieCodigo} · Nº {correlativoTexto}
 										</span>
-									</div>
+									)}
 								</div>
+							)}
 
-								{mostrarCliente && (
-									<div style={{ borderBottom: '1px dashed #cbd5f5', paddingBottom: 8, marginBottom: 8 }}>
-										<Text strong style={{ display: 'block', marginBottom: 4 }}>Cliente</Text>
-										<div>{clienteNombre || pedido?.cliente?.nombreDoc || pedido?.cliente?.nombre_doc || 'Consumidor final'}</div>
-										{(clienteDocTipo || clienteDocNumero) && (
-											<div>
-												{(clienteDocTipo || 'DOC').toUpperCase()}: {clienteDocNumero || '---'}
-											</div>
-										)}
-										{clienteDireccion && <div>Dir: {clienteDireccion}</div>}
+							{isAdelantoTicket && (
+								<div
+									style={{
+										marginTop: 12,
+										display: 'inline-block',
+										border: '1px dashed #0f172a',
+										padding: '4px 12px',
+										fontWeight: 700,
+									}}
+								>
+									TICKET DE ADELANTO
+								</div>
+							)}
+						</div>
+
+						<div style={{ borderBottom: '1px dashed #cbd5f5', paddingBottom: 8, marginBottom: 8 }}>
+							<div style={{ display: 'flex', justifyContent: 'space-between' }}>
+								<span>Ticket:</span>
+								<span>{pedido.codigoPedido ?? pedido.codigo_pedido ?? 'POS'}</span>
+							</div>
+							<div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+								<span>Fecha:</span>
+								<span>{fechaTexto || '-'}</span>
+							</div>
+						</div>
+
+						{mostrarCliente && (
+							<div style={{ borderBottom: '1px dashed #cbd5f5', paddingBottom: 8, marginBottom: 8 }}>
+								<Text strong style={{ display: 'block', marginBottom: 4 }}>Cliente</Text>
+								<div>{clienteNombre || pedido?.cliente?.nombreDoc || pedido?.cliente?.nombre_doc || 'Consumidor final'}</div>
+								{(clienteDocTipo || clienteDocNumero) && (
+									<div>
+										{(clienteDocTipo || 'DOC').toUpperCase()}: {clienteDocNumero || '---'}
 									</div>
 								)}
+								{clienteDireccion && <div>Dir: {clienteDireccion}</div>}
+							</div>
+						)}
 
 								<table style={{ width: '100%', marginBottom: 12 }}>
 									<thead>
@@ -315,14 +332,14 @@ const ReceiptModal = ({ open, onClose, pedido }) => {
 									{isAdelantoTicket && (
 										<>
 											<div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontWeight: 600 }}>
-											<span>Adelanto</span>
-											<span>{formatMoney(totalPagado)}</span>
-										</div>
-										<div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontWeight: 600 }}>
-											<span>Faltante</span>
-											<span>{formatMoney(Math.max(0, totalCentimos - totalPagado))}</span>
-										</div>
-									</>
+												<span>Adelanto</span>
+												<span>{formatMoney(totalPagado)}</span>
+											</div>
+											<div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontWeight: 600 }}>
+												<span>Faltante</span>
+												<span>{formatMoney(Math.max(0, totalCentimos - totalPagado))}</span>
+											</div>
+										</>
 									)}
 									<Divider style={{ margin: '12px 0' }} />
 									<div>
@@ -349,13 +366,12 @@ const ReceiptModal = ({ open, onClose, pedido }) => {
 									{!isAdelantoTicket && <div>Representación impresa del comprobante electrónico.</div>}
 									<div>¡Gracias por su preferencia!</div>
 								</div>
-							</div>
+					</div>
 
-							<Button type="primary" icon={<PrinterOutlined />} block size="large" onClick={handlePrint}>
-								Imprimir ticket
-							</Button>
-						</>
-					)}
+					<div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+						<Button onClick={onClose} icon={<CloseOutlined />}>Cerrar</Button>
+						<Button type="primary" onClick={handlePrint} icon={<PrinterOutlined />}>Imprimir</Button>
+					</div>
 				</div>
 			)}
 		</Modal>

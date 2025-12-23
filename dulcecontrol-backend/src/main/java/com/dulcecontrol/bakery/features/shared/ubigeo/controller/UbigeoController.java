@@ -36,4 +36,16 @@ public class UbigeoController {
             @PathVariable Long provinciaId) {
         return ResponseEntity.ok(ubigeoService.obtenerDistritosPorProvincia(provinciaId));
     }
+
+    @GetMapping("/distritos/{distritoId}")
+    public ResponseEntity<DistritoResponse> obtenerDistrito(
+            @PathVariable Long distritoId) {
+        return ResponseEntity.ok(ubigeoService.obtenerDistritoPorId(distritoId));
+    }
+
+    @GetMapping("/provincias/{provinciaId}")
+    public ResponseEntity<ProvinciaResponse> obtenerProvincia(
+            @PathVariable Long provinciaId) {
+        return ResponseEntity.ok(ubigeoService.obtenerProvinciaPorId(provinciaId));
+    }
 }

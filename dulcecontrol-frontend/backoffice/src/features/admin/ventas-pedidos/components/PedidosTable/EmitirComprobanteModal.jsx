@@ -1,12 +1,33 @@
 import { Alert, Button, Form, Input, Modal, Radio, Select, Typography } from 'antd';
 import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getSeriesPorSede } from '../../api/facturacion.api.js';
+import { getSeriesPorTienda } from '../../api/facturacion.api.js';
+import { getDireccionesPedido } from '../../api/pedidos.api.js';
 
 const { Text } = Typography;
 const { Option } = Select;
 
 const DEFAULT_DOC_TIPO = 'DNI';
+
+const normalizeDocTipo = (value) => {
+    const upper = (value || '').toString().trim().toUpperCase();
+    if (upper === 'DNI' || upper === 'RUC') {
+        return upper;
+    }
+    return DEFAULT_DOC_TIPO;
+};
+
+const normalizeDireccion = (value) => {
+    const raw = (value || '').toString().trim();
+    if (!raw) {
+        return '';
+    }
+    const upper = raw.toUpperCase();
+    if (upper === 'SIN DIRECCION' || upper === 'SIN DIRECCIÓN') {
+        return '';
+    }
+    return raw;
+};
 
 const isClienteGenerico = (cliente) => {
     if (!cliente) {
@@ -33,11 +54,32 @@ const EmitirComprobanteModal = ({
     pedido,
     cliente,
     clientes,
-    facturacionConfig,
     facturacionConfigLoading,
     isCajaOpen,
 }) => {
     const [form] = Form.useForm();
+
+    const pedidoId = pedido?.raw?.id || pedido?.id || null;
+
+    const {
+        data: direccionesPedidoRaw = [],
+        isLoading: direccionesPedidoLoading,
+        error: direccionesPedidoError,
+    } = useQuery({
+        queryKey: ['pedido-direcciones', tiendaId, pedidoId],
+        queryFn: () => getDireccionesPedido(tiendaId, pedidoId),
+        enabled: open && !!tiendaId && !!pedidoId,
+        retry: 1,
+        select: (data) => (Array.isArray(data) ? data : []),
+    });
+
+    const direccionFacturacionPedido = useMemo(() => {
+        const list = Array.isArray(direccionesPedidoRaw) ? direccionesPedidoRaw : [];
+        return list.find((d) => {
+            const tipo = (d?.tipoDireccion || d?.tipo_direccion || '').toString().toLowerCase();
+            return tipo === 'facturacion' || tipo === 'facturación';
+        }) || null;
+    }, [direccionesPedidoRaw]);
 
     const clienteIdValue = Form.useWatch('clienteId', form);
     const selectedCliente = useMemo(() => {
@@ -52,16 +94,14 @@ const EmitirComprobanteModal = ({
         isClienteGenerico(selectedCliente || cliente)
     ), [selectedCliente, cliente]);
 
-    const puedeEditarCliente = Boolean(clienteSeleccionadoEsGenerico || !(selectedCliente?.id || cliente?.id));
+    // Solo bloqueamos edición si el usuario seleccionó explícitamente un cliente existente NO genérico.
+    // Si el cliente viene del pedido, igual permitimos editar para emitir comprobantes con datos distintos.
+    const puedeEditarCliente = Boolean(clienteSeleccionadoEsGenerico || !selectedCliente);
 
     const clienteDocTipo = Form.useWatch('clienteDocTipo', form) || DEFAULT_DOC_TIPO;
     const isRuc = String(clienteDocTipo).toUpperCase() === 'RUC';
     const tipoComprobanteValue = Form.useWatch('tipoComprobante', form) || (isRuc ? 'factura' : 'boleta');
     const serieIdValue = Form.useWatch('serieId', form);
-
-    const facturacionReady = useMemo(() => (
-        !!(facturacionConfig?.ruc && facturacionConfig?.razonSocial && facturacionConfig?.direccionFiscal)
-    ), [facturacionConfig]);
 
     const {
         data: seriesRaw = [],
@@ -70,8 +110,8 @@ const EmitirComprobanteModal = ({
         error: seriesError,
     } = useQuery({
         queryKey: ['facturacion-series', tiendaId, sedeId],
-        queryFn: () => getSeriesPorSede(tiendaId, sedeId),
-        enabled: open && !!tiendaId && !!sedeId,
+        queryFn: () => getSeriesPorTienda(tiendaId, sedeId || null),
+        enabled: open && !!tiendaId,
         retry: 1,
         select: (data) => (Array.isArray(data) ? data.filter((serie) => serie.activa) : []),
     });
@@ -111,10 +151,31 @@ const EmitirComprobanteModal = ({
         }
 
         const baseClienteId = cliente?.id || undefined;
-        const baseDocTipo = (cliente?.tipoDoc || cliente?.tipo_doc || DEFAULT_DOC_TIPO).toString().toUpperCase();
-        const baseDocNumero = isClienteGenerico(cliente) ? '' : (cliente?.numeroDoc || cliente?.numero_doc || '').toString();
-        const baseNombre = (cliente?.nombreDoc || cliente?.nombre_doc || cliente?.nombre || '').toString();
-        const baseDireccion = (cliente?.direccion || '').toString();
+
+        const facturacionDocTipo = normalizeDocTipo(
+            direccionFacturacionPedido?.tipoDocContacto || direccionFacturacionPedido?.tipo_doc_contacto
+        );
+        const facturacionDocNumero = (direccionFacturacionPedido?.numeroDocContacto || direccionFacturacionPedido?.numero_doc_contacto || '')
+            .toString()
+            .replace(/[^0-9]/g, '');
+        const facturacionNombre = (direccionFacturacionPedido?.nombreContacto || direccionFacturacionPedido?.nombre_contacto || '')
+            .toString()
+            .trim();
+        const facturacionDireccion = normalizeDireccion(
+            direccionFacturacionPedido?.direccionCompleta || direccionFacturacionPedido?.direccion_completa
+        );
+
+        const clienteDocTipoFallback = normalizeDocTipo(cliente?.tipoDoc || cliente?.tipo_doc);
+        const clienteDocNumeroFallback = isClienteGenerico(cliente)
+            ? ''
+            : (cliente?.numeroDoc || cliente?.numero_doc || '').toString().replace(/[^0-9]/g, '');
+        const clienteNombreFallback = (cliente?.nombreDoc || cliente?.nombre_doc || cliente?.nombre || '').toString().trim();
+        const clienteDireccionFallback = normalizeDireccion(cliente?.direccion);
+
+        const baseDocTipo = facturacionDocTipo || clienteDocTipoFallback;
+        const baseDocNumero = facturacionDocNumero || clienteDocNumeroFallback;
+        const baseNombre = facturacionNombre || clienteNombreFallback;
+        const baseDireccion = facturacionDireccion || clienteDireccionFallback;
         const baseTipoComprobante = baseDocTipo === 'RUC' ? 'factura' : 'boleta';
 
         form.setFieldsValue({
@@ -127,7 +188,7 @@ const EmitirComprobanteModal = ({
             serieId: undefined,
             comprobanteCorrelativo: undefined,
         });
-    }, [open, cliente, form]);
+    }, [open, cliente, direccionFacturacionPedido, form]);
 
     useEffect(() => {
         if (!open) {
@@ -181,11 +242,7 @@ const EmitirComprobanteModal = ({
     }, [open, selectedSerie, correlativoFormatted, form]);
 
     const canEmitirComprobante = Boolean(
-        isCajaOpen
-        && sedeId
-        && facturacionReady
-        && !facturacionConfigLoading
-        && !seriesLoading
+        !seriesLoading
         && !isSeriesFetching
         && selectedSerie
         && correlativoPreview
@@ -199,13 +256,13 @@ const EmitirComprobanteModal = ({
             return 'Cargando series disponibles...';
         }
         if (seriesError) {
-            return 'No se pudieron cargar las series para esta sede.';
+            return 'No se pudieron cargar las series para esta tienda.';
         }
         if (!tipoComprobanteValue) {
             return null;
         }
         if (!seriesDisponibles.length) {
-            return `No hay series activas para ${tipoComprobanteValue.toUpperCase()} en esta sede.`;
+            return `No hay series activas para ${tipoComprobanteValue.toUpperCase()} en esta tienda.`;
         }
         return null;
     }, [open, seriesLoading, isSeriesFetching, seriesError, tipoComprobanteValue, seriesDisponibles.length]);
@@ -214,20 +271,17 @@ const EmitirComprobanteModal = ({
         if (!open) {
             return null;
         }
-        if (!isCajaOpen) {
-            return 'Debes abrir una caja en el Punto de Venta para emitir comprobantes.';
-        }
-        if (!sedeId) {
-            return 'No se pudo determinar la sede del pedido para emitir comprobantes.';
-        }
         if (facturacionConfigLoading) {
             return 'Cargando configuración fiscal...';
         }
-        if (!facturacionReady) {
-            return 'Configuración fiscal incompleta: registra RUC, razón social y dirección fiscal.';
+        if (direccionesPedidoLoading) {
+            return 'Cargando datos del cliente del pedido...';
+        }
+        if (direccionesPedidoError) {
+            return null;
         }
         return null;
-    }, [open, isCajaOpen, sedeId, facturacionConfigLoading, facturacionReady]);
+    }, [open, facturacionConfigLoading, direccionesPedidoLoading, direccionesPedidoError]);
 
     const handleOk = async () => {
         try {

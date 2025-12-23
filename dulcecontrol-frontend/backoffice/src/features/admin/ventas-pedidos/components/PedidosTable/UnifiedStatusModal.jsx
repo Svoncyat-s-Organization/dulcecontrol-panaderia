@@ -1,4 +1,4 @@
-import { Modal, Form, Select, Alert, Divider, Row, Col, Radio, Typography, Button } from 'antd';
+import { Modal, Form, Select, Alert, Divider, Row, Col, Radio, Typography, Button, Spin } from 'antd';
 import { CheckCircleOutlined, WarningOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
 import MoneyInput from '../../../../../shared/components/MoneyInput.jsx';
@@ -7,6 +7,9 @@ import EmitirComprobanteModal from './EmitirComprobanteModal.jsx';
 
 const { Option } = Select;
 const { Title, Text } = Typography;
+
+const normalizeEstadoPago = (value) => (value || '').toString().trim().toLowerCase();
+const normalizeEstadoPedido = (value) => (value || '').toString().trim().toLowerCase();
 
 const UnifiedStatusModal = ({
     open,
@@ -33,16 +36,23 @@ const UnifiedStatusModal = ({
 
     const { isOpen: isCajaOpen, session: cajaSession } = useCajaSession();
 
-    const isOrderDelivered = pedido?.estado?.toLowerCase() === 'entregado';
+    const isOrderDelivered = normalizeEstadoPedido(pedido?.raw?.estadoPedido || pedido?.estado) === 'entregado';
 
     useEffect(() => {
         if (open && pedido) {
-            const saldoInicial = pedido.raw?.saldoPendienteCentimos
-                ? pedido.raw.saldoPendienteCentimos / 100
-                : (pedido.total || 0);
+            const saldoPendienteCentimos = pedido?.raw?.saldoPendienteCentimos;
+            const totalFallback = Number(pedido?.total || 0);
+            const saldoInicial = (saldoPendienteCentimos !== null && saldoPendienteCentimos !== undefined)
+                ? Number(saldoPendienteCentimos) / 100
+                : totalFallback;
 
             setLocalSaldoPendiente(saldoInicial);
-            setLocalIsPaymentComplete(pedido.estadoPago?.toLowerCase() === 'pagado_total');
+
+            const estadoPagoNormalized = normalizeEstadoPago(pedido?.raw?.estadoPago || pedido?.estadoPago);
+            const pagoCompletoPorEstado = estadoPagoNormalized === 'pagado_total';
+            const pagoCompletoPorSaldo = saldoInicial <= 0.01;
+
+            setLocalIsPaymentComplete(Boolean(pagoCompletoPorEstado || pagoCompletoPorSaldo));
             setMontoPagar(0);
 
             form.setFieldsValue({
@@ -78,7 +88,7 @@ const UnifiedStatusModal = ({
 
 
 
-    const handlePayment = () => {
+    const handlePayment = async () => {
         if (!isCajaOpen || !cajaSession) {
             return;
         }
@@ -98,22 +108,31 @@ const UnifiedStatusModal = ({
         const nuevoSaldo = localSaldoPendiente - montoPagado;
         const esPagoCompleto = nuevoSaldo <= 0.01; // Tolerance for floating point
 
-        // Call payment mutation
-        onConfirmPayment(pedido, {
-            metodoPago: metodoPago,
-            montoPagado: montoPagado,
-            sesionCajaId: cajaSession.id,
-        });
+        try {
+            // Esperar a que el backend registre el pago y actualice el pedido
+            const updatedPedido = await onConfirmPayment?.(pedido, {
+                metodoPago: metodoPago,
+                montoPagado: montoPagado,
+                sesionCajaId: cajaSession.id,
+            });
 
-        // Update local state
-        setLocalSaldoPendiente(nuevoSaldo);
-        setLocalIsPaymentComplete(esPagoCompleto);
+            // Preferir el estado real del backend para decidir si está pagado
+            const backendTotal = Number(updatedPedido?.totalFinalCentimos ?? pedido?.raw?.totalFinalCentimos ?? 0);
+            const backendPagado = Number(updatedPedido?.montoPagadoCentimos ?? 0);
+            const backendSaldo = backendTotal > 0 ? Math.max(0, (backendTotal - backendPagado) / 100) : nuevoSaldo;
+            const backendPagoCompleto = normalizeEstadoPago(updatedPedido?.estadoPago) === 'pagado_total'
+                || backendSaldo <= 0.01;
 
-        // Reset inputs
-        setMontoPagar(0);
-        form.setFieldsValue({
-            metodoPago: 'efectivo',
-        });
+            setLocalSaldoPendiente(backendSaldo);
+            setLocalIsPaymentComplete(Boolean(backendPagoCompleto));
+
+            // Reset inputs
+            setMontoPagar(0);
+            form.setFieldsValue({ metodoPago: 'efectivo' });
+        } catch {
+            // El padre ya muestra el error (message.error). No tocar el estado local.
+        }
+
     };
 
     const showStockWarning = selectedOrderStatus === 'entregado' && !isOrderDelivered;
@@ -148,6 +167,20 @@ const UnifiedStatusModal = ({
             <div style={{ marginBottom: 16 }}>
                 <Text strong>Pedido:</Text> {pedido?.codigo} | <Text strong>Total:</Text> S/ {pedido?.total?.toFixed(2)}
             </div>
+
+            {loadingEmitirComprobante && (
+                <Alert
+                    type="info"
+                    showIcon
+                    message={
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                            <Spin size="small" />
+                            Emitiendo comprobante...
+                        </span>
+                    }
+                    style={{ marginBottom: 12 }}
+                />
+            )}
 
             <Form form={form} layout="vertical" onFinish={handleFinish}>
                 {/* Sección de Pago - Solo si no está entregado ni pagado completamente */}
@@ -347,7 +380,16 @@ const UnifiedStatusModal = ({
                 facturacionConfig={facturacionConfig}
                 facturacionConfigLoading={facturacionConfigLoading}
                 isCajaOpen={isCajaOpen}
-                onConfirm={(data) => onEmitirComprobante?.(pedido, data)}
+                onConfirm={async (data) => {
+                    try {
+                        // Cerrar inmediatamente el modal de emisión; el estado de carga se muestra
+                        // en el modal principal mientras se procesa.
+                        setEmitirComprobanteOpen(false);
+                        await onEmitirComprobante?.(pedido, data);
+                    } catch {
+                        // Parent handles errors; keep modal open so user can retry.
+                    }
+                }}
             />
         </Modal>
     );

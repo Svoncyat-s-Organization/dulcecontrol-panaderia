@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { message } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import PosView from './PosView.jsx';
 import CheckoutModal from './CheckoutModal.jsx';
@@ -212,11 +213,6 @@ const PuntoDeVenta = () => {
                 : 'completo';
             const requiereComprobante = !isPedido || tipoPagoPedido === 'completo';
 
-            const facturacionReady = !!(facturacionConfig?.ruc && facturacionConfig?.razonSocial && facturacionConfig?.direccionFiscal);
-            if (requiereComprobante && !facturacionReady) {
-                throw new Error('Configuración de facturación incompleta. Completa tus datos fiscales antes de emitir comprobantes.');
-            }
-
             const isDelivery = checkoutData.tipoEntrega === TIPOS_ENTREGA.DELIVERY;
             const rawMontoPagado = typeof checkoutData.montoPagado === 'number'
                 ? checkoutData.montoPagado
@@ -300,6 +296,38 @@ const PuntoDeVenta = () => {
             const pedidoCreado = await createPedido(tiendaId, pedidoPayload);
             const pedidoId = pedidoCreado.id;
 
+            // Guardar datos de facturación usados en POS (para emitir luego en Gestión de Pedidos)
+            // Solo aplica en modo pedido, ya que en venta inmediata normalmente se emite en el momento.
+            if (isPedido) {
+                const facturacionDoc = String(clienteDocNumero || '').replace(/\D/g, '').trim();
+                const facturacionNombre = String(clienteNombre || '').trim();
+                const facturacionDireccion = String(clienteDireccion || '').trim();
+                const hasFacturacionData = Boolean(facturacionDoc || facturacionNombre || facturacionDireccion);
+
+                if (hasFacturacionData) {
+                    try {
+                        await addDireccionPedido(tiendaId, pedidoId, {
+                            tipoDireccion: 'facturacion',
+                            nombreContacto: facturacionNombre || (cliente?.nombreDoc || 'Cliente POS'),
+                            tipoDocContacto: (clienteDocTipo || 'DNI').toUpperCase(),
+                            numeroDocContacto: facturacionDoc || null,
+                            telefonoContacto: (cliente?.telefono || '000000000').toString(),
+                            emailContacto: (cliente?.correo || cliente?.email || null),
+                            // En backend es requerido; mantenemos placeholder pero en UI lo tratamos como vacío.
+                            direccionCompleta: facturacionDireccion || direccionEntrega || 'SIN DIRECCIÓN',
+                            referencia: null,
+                            distrito: null,
+                            provincia: null,
+                            departamento: null,
+                            codigoUbigeo: null,
+                            codigoPostal: null,
+                        });
+                    } catch (error) {
+                        console.error('No se pudo registrar la dirección de facturación del pedido', error);
+                    }
+                }
+            }
+
             let direccionEnvioRegistrada = null;
             if (isDelivery && shippingDireccion) {
                 const direccionPayload = {
@@ -370,15 +398,16 @@ const PuntoDeVenta = () => {
             }
 
             let comprobanteRegistrado = null;
+            let comprobanteErrorMessage = null;
             if (requiereComprobante) {
                 try {
                     comprobanteRegistrado = await createComprobante(tiendaId, {
                         tiendaId,
                         pedidoId,
                         serieId: serieIdSeleccionada,
-                        emisorRazonSocial: facturacionConfig.razonSocial,
-                        emisorRuc: facturacionConfig.ruc,
-                        emisorDireccion: facturacionConfig.direccionFiscal,
+                        emisorRazonSocial: facturacionConfig?.razonSocial || '',
+                        emisorRuc: facturacionConfig?.ruc || '',
+                        emisorDireccion: facturacionConfig?.direccionFiscal || '',
                         clienteTipoDoc: clienteDocTipo,
                         clienteNumeroDoc: clienteDocNumero,
                         clienteNombre,
@@ -396,7 +425,9 @@ const PuntoDeVenta = () => {
                     await incrementarCorrelativoSerie(tiendaId, serieIdSeleccionada);
                 } catch (error) {
                     console.error('No se pudo registrar el comprobante electrónico', error);
-                    throw new Error(error?.response?.data?.message || 'No se pudo registrar el comprobante electrónico');
+                    // No bloqueamos el flujo de POS si la venta ya se registró.
+                    // Mostramos el ticket para imprimir y dejamos el error visible.
+                    comprobanteErrorMessage = error?.response?.data?.message || error?.message || 'No se pudo registrar el comprobante electrónico';
                 }
             }
 
@@ -415,6 +446,7 @@ const PuntoDeVenta = () => {
             return {
                 ...pedidoCreado,
                 receiptKind: isPedido && !requiereComprobante ? 'adelanto' : 'comprobante',
+                comprobanteErrorMessage,
                 tipoPagoPedido: tipoPagoPedido,
                 requiereComprobante,
                 items: itemsSnapshot.map(item => ({
@@ -461,7 +493,11 @@ const PuntoDeVenta = () => {
                 queryClient.invalidateQueries(CAJA_KEYS.movimientos(tiendaId, session.id));
             }
         },
-        onError: (err) => console.error(err?.response?.data?.message || err.message || 'Error al procesar venta')
+        onError: (err) => {
+            const errMsg = err?.response?.data?.message || err?.message || 'Error al procesar venta';
+            console.error(errMsg);
+            message.error(errMsg);
+        }
     });
 
     const handleCheckout = () => {

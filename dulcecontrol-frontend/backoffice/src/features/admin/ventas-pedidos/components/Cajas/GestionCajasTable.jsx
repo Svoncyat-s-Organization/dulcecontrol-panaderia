@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Card, Table, DatePicker, Space, Form, Select, Button, Typography, theme } from 'antd';
+import { Card, Table, DatePicker, Space, Form, Select, Button, Typography, Modal, theme } from 'antd';
 import { ClearOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -34,6 +34,8 @@ const GestionCajasTable = () => {
         usuarioId: null,
         estaAbierta: null,
     });
+
+    const [detalleMovimientos, setDetalleMovimientos] = useState({ open: false, sesionId: null });
 
     const sesionesQuery = useQuery({
         queryKey: CAJA_KEYS.sesiones(tiendaId, selectedSedeId),
@@ -173,6 +175,37 @@ const GestionCajasTable = () => {
 
     const movimientosLoading = movimientosQueries.some((query) => query.isLoading || query.isFetching);
 
+    const movimientosPorSesionId = useMemo(() => {
+        const map = new Map();
+        filteredSesiones.forEach((sesion, index) => {
+            map.set(sesion.id, movimientosQueries[index]?.data ?? []);
+        });
+        return map;
+    }, [filteredSesiones, movimientosQueries]);
+
+    const getMovimientosQueryBySesionId = (sesionId) => {
+        const index = filteredSesiones.findIndex((s) => String(s?.id) === String(sesionId));
+        return index >= 0 ? movimientosQueries[index] : null;
+    };
+
+    const movimientosFiltradosRetirosYGastos = useMemo(() => {
+        if (!detalleMovimientos?.open || !detalleMovimientos?.sesionId) {
+            return [];
+        }
+
+        const movimientos = movimientosPorSesionId.get(detalleMovimientos.sesionId) ?? [];
+        const permitidos = new Set(['retiro_efectivo', 'gasto_operativo']);
+
+        return (Array.isArray(movimientos) ? movimientos : [])
+            .filter((mov) => permitidos.has(String(mov?.tipoMovimiento ?? '').toLowerCase()))
+            .slice()
+            .sort((a, b) => {
+                const aTime = parseApiDateTime(a?.creadoEn)?.valueOf?.() ?? 0;
+                const bTime = parseApiDateTime(b?.creadoEn)?.valueOf?.() ?? 0;
+                return bTime - aTime;
+            });
+    }, [detalleMovimientos, movimientosPorSesionId]);
+
     const tableData = filteredSesiones.map((sesion, index) => {
         const movimientos = movimientosQueries[index]?.data;
         const hasMovimientos = Array.isArray(movimientos);
@@ -195,6 +228,14 @@ const GestionCajasTable = () => {
             return '-';
         }
         return `S/ ${(centimos / 100).toFixed(2)}`;
+    };
+
+    const openDetalleMovimientos = (sesionId) => {
+        setDetalleMovimientos({ open: true, sesionId });
+    };
+
+    const closeDetalleMovimientos = () => {
+        setDetalleMovimientos({ open: false, sesionId: null });
     };
 
     const handleFilterChange = (_, allValues) => {
@@ -283,6 +324,16 @@ const GestionCajasTable = () => {
                 return <Text style={{ color }}>{formatCurrency(value)}</Text>;
             },
         },
+        {
+            title: 'Acciones',
+            key: 'acciones',
+            fixed: 'right',
+            render: (_, record) => (
+                <Button type="link" onClick={() => openDetalleMovimientos(record.id)}>
+                    Ver detalle
+                </Button>
+            ),
+        },
     ];
 
     return (
@@ -356,6 +407,7 @@ const GestionCajasTable = () => {
                 dataSource={tableData}
                 columns={columns}
                 loading={sesionesQuery.isLoading || movimientosLoading}
+                scroll={{ x: 1100 }}
                 pagination={{
                     pageSizeOptions: ['10', '20', '50', '100'],
                     showSizeChanger: true,
@@ -363,6 +415,47 @@ const GestionCajasTable = () => {
                     showTotal: (total, range) => `${range[0]}-${range[1]} de ${total} sesiones`,
                 }}
             />
+
+            <Modal
+                title="Detalle de retiros/gastos"
+                open={detalleMovimientos.open}
+                onCancel={closeDetalleMovimientos}
+                footer={null}
+                width={720}
+                destroyOnClose
+            >
+                <Table
+                    rowKey={(row) => row.id ?? `${row?.creadoEn}-${row?.concepto}-${row?.montoCentimos}`}
+                    size="small"
+                    dataSource={movimientosFiltradosRetirosYGastos}
+                    loading={Boolean(getMovimientosQueryBySesionId(detalleMovimientos.sesionId)?.isLoading || getMovimientosQueryBySesionId(detalleMovimientos.sesionId)?.isFetching)}
+                    pagination={{ pageSize: 8, showSizeChanger: false }}
+                    locale={{ emptyText: 'Sin retiros/gastos en esta sesión' }}
+                    columns={[
+                        {
+                            title: 'Fecha',
+                            dataIndex: 'creadoEn',
+                            key: 'fecha',
+                            width: 180,
+                            render: (value) => formatApiDateTime(value),
+                        },
+                        {
+                            title: 'Concepto',
+                            dataIndex: 'concepto',
+                            key: 'concepto',
+                            render: (value) => value || '-',
+                        },
+                        {
+                            title: 'Monto',
+                            dataIndex: 'montoCentimos',
+                            key: 'monto',
+                            width: 140,
+                            align: 'right',
+                            render: (value) => <Text>{formatCurrency(value)}</Text>,
+                        },
+                    ]}
+                />
+            </Modal>
         </Card>
     );
 };

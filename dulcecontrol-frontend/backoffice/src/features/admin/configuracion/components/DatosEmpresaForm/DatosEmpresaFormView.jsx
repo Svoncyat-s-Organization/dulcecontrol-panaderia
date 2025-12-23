@@ -1,9 +1,6 @@
-import { useEffect } from 'react';
-import { Alert, Button, Card, Col, Divider, Form, Input, InputNumber, Row, Select, Spin, Upload, message } from 'antd';
-import { SaveOutlined, UploadOutlined } from '@ant-design/icons';
-
+import { Alert, Button, Card, Col, Divider, Form, Input, message, Modal, Row, Select, Spin } from 'antd';
+import { SaveOutlined } from '@ant-design/icons';
 const { TextArea } = Input;
-const { Option } = Select;
 
 const DatosEmpresaFormView = ({ datosEmpresa, isLoading, isError, error, isSubmitting, onSubmit }) => {
   const [form] = Form.useForm();
@@ -24,22 +21,21 @@ const DatosEmpresaFormView = ({ datosEmpresa, isLoading, isError, error, isSubmi
       telefonoContacto: datosEmpresa.telefonoContacto,
       direccionFiscal: datosEmpresa.direccionFiscal,
       ubigeoFiscal: datosEmpresa.ubigeoFiscal,
-      usuarioSunatSol: datosEmpresa.usuarioSunatSol,
-      claveSunatSol: '', // Nunca se muestra la clave actual
-      certificadoDigitalUrl: datosEmpresa.certificadoDigitalUrl,
-      modoSunat: datosEmpresa.modoSunat || 'PRUEBAS',
-      tasaIgv: Number.isFinite(tasaIgvNum) ? tasaIgvNum : 18.0,
-      logoUrl: datosEmpresa.logoUrl,
     });
   }, [datosEmpresa, form]);
 
-  const handleFinish = (values) => {
-    // Solo enviar claveSunatSol si el usuario escribió algo
-    const payload = { ...values };
-    if (!payload.claveSunatSol || payload.claveSunatSol.trim() === '') {
-      delete payload.claveSunatSol;
-    }
-    onSubmit(payload);
+  const handleSave = () => {
+    form.validateFields().then((values) => {
+      Modal.confirm({
+        title: '¿Estas seguro de aplicar estos cambios?',
+        content: 'Los cambios afectarán a los futuros comprobantes de pago. Los históricos quedan intactos.',
+        okText: 'Sí',
+        cancelText: 'No',
+        onOk: () => {
+          onSubmit(values);
+        },
+      });
+    }).catch(() => {});
   };
 
   if (isLoading) {
@@ -62,19 +58,7 @@ const DatosEmpresaFormView = ({ datosEmpresa, isLoading, isError, error, isSubmi
   }
 
   return (
-    <Form
-      form={form}
-      layout="vertical"
-      onFinish={handleFinish}
-      onFinishFailed={({ errorFields }) => {
-        message.error('Revisa los campos requeridos antes de guardar');
-        const first = errorFields?.[0];
-        if (first?.name) {
-          form.scrollToField(first.name, { block: 'center' });
-        }
-      }}
-      scrollToFirstError
-    >
+    <Form form={form} layout="vertical">
       {/* SECCIÓN 1: IDENTIDAD LEGAL */}
       <Card title="📋 Identidad Legal" style={{ marginBottom: 16 }}>
         <Row gutter={16}>
@@ -82,10 +66,6 @@ const DatosEmpresaFormView = ({ datosEmpresa, isLoading, isError, error, isSubmi
             <Form.Item
               label="RUC"
               name="numeroDoc"
-              rules={[
-                { required: true, message: 'El RUC es obligatorio' },
-                { pattern: /^\d{11}$/, message: 'El RUC debe tener exactamente 11 dígitos' },
-              ]}
               tooltip="El RUC de la empresa (11 dígitos numéricos)"
             >
               <Input placeholder="20123456789" maxLength={11} />
