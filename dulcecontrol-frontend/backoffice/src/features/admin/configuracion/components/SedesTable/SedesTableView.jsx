@@ -4,7 +4,6 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  StopOutlined,
   PhoneOutlined,
   EnvironmentOutlined,
   CrownOutlined,
@@ -107,16 +106,6 @@ export default function SedesTableView({
               onClick={() => onOpenModal(record)}
             />
           </Tooltip>
-          {record.activo && !record.esPrincipal && (
-            <Tooltip title="Desactivar">
-              <Button
-                type="text"
-                danger
-                icon={<StopOutlined />}
-                onClick={() => onDesactivar(record)}
-              />
-            </Tooltip>
-          )}
           {!record.esPrincipal && (
             <Tooltip title="Eliminar">
               <Button
@@ -240,7 +229,7 @@ export default function SedesTableView({
               <Switch />
             </Form.Item>
 
-            {editingSede && (
+            {editingSede && !editingSede.esPrincipal && (
               <Form.Item
                 label="Activo"
                 name="activo"

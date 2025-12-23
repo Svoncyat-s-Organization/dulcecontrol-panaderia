@@ -48,6 +48,22 @@ public class UbigeoService implements IUbigeoService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public DistritoResponse obtenerDistritoPorId(Long id) {
+        return distritoRepository.findById(id)
+                .map(this::mapToDistritoResponse)
+                .orElse(null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProvinciaResponse obtenerProvinciaPorId(Long id) {
+        return provinciaRepository.findById(id)
+                .map(this::mapToProvinciaResponse)
+                .orElse(null);
+    }
+
     private DepartamentoResponse mapToDepartamentoResponse(UbigeoDepartamento departamento) {
         return DepartamentoResponse.builder()
                 .id(departamento.getId())

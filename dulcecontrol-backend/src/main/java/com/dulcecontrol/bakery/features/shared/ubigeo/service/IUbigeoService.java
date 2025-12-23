@@ -13,4 +13,8 @@ public interface IUbigeoService {
     List<ProvinciaResponse> obtenerProvinciasPorDepartamento(Long departamentoId);
 
     List<DistritoResponse> obtenerDistritosPorProvincia(Long provinciaId);
+
+    DistritoResponse obtenerDistritoPorId(Long id);
+
+    ProvinciaResponse obtenerProvinciaPorId(Long id);
 }

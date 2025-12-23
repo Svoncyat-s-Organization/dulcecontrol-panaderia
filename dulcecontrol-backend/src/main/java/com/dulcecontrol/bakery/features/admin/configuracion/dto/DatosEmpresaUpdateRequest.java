@@ -48,14 +48,9 @@ public class DatosEmpresaUpdateRequest {
 
     private String certificadoDigitalUrl;
 
-    @NotBlank(message = "El modo SUNAT es obligatorio")
-    @Pattern(regexp = "^(PRUEBAS|PRODUCCION)$", message = "El modo debe ser PRUEBAS o PRODUCCION")
     private String modoSunat;
 
     // Parámetros Globales
-    @NotNull(message = "La tasa IGV es obligatoria")
-    @DecimalMin(value = "0.00", message = "La tasa IGV debe ser mayor o igual a 0")
-    @DecimalMax(value = "100.00", message = "La tasa IGV debe ser menor o igual a 100")
     private BigDecimal tasaIgv;
 
     private String logoUrl;

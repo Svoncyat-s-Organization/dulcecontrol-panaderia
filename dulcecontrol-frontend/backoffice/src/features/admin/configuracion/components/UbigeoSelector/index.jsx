@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Select } from 'antd';
-import { getDepartamentos, getProvinciasByDepartamento, getDistritosByProvincia } from '../../api/ubigeo.api';
+import { getDepartamentos, getProvinciasByDepartamento, getDistritosByProvincia, getDistrito, getProvincia } from '../../api/ubigeo.api';
 import { UBIGEO_KEYS } from '../../constants/queryKeys';
 
 /**
@@ -34,6 +34,54 @@ export default function UbigeoSelector({ value, onChange, disabled = false }) {
     queryFn: () => getDistritosByProvincia(selectedProvincia),
     enabled: !!selectedProvincia,
   });
+
+  // 1. Obtener distrito inicial para saber su provincia
+  const { data: distritoInicial } = useQuery({
+    queryKey: UBIGEO_KEYS.distrito ? UBIGEO_KEYS.distrito(value) : ['ubigeo', 'distrito', value],
+    queryFn: () => getDistrito(value),
+    enabled: !!value && !selectedProvincia,
+    retry: false, // Don't retry if not found
+  });
+
+  // 2. Si el distrito no tiene departamentoId (solo tiene provinciaId), necesitamos buscar la provincia
+  // para obtener el departamentoId.
+  const provinciaIdToFetch = distritoInicial?.provinciaId &&
+    !distritoInicial?.departamentoId &&
+    !distritoInicial?.provincia?.departamentoId
+    ? distritoInicial.provinciaId
+    : null;
+
+  const { data: provinciaInicial } = useQuery({
+    queryKey: UBIGEO_KEYS.provincia ? UBIGEO_KEYS.provincia(provinciaIdToFetch) : ['ubigeo', 'provincia', provinciaIdToFetch],
+    queryFn: () => getProvincia(provinciaIdToFetch),
+    enabled: !!provinciaIdToFetch,
+  });
+
+  // Lógica principal de inicialización
+  useEffect(() => {
+    if (!value) return;
+
+    // Caso A: El API de distrito ya nos da todo (Ej. anidado o flat completo)
+    if (distritoInicial) {
+      const depId = distritoInicial.departamentoId || distritoInicial.provincia?.departamentoId;
+      const provId = distritoInicial.provinciaId;
+
+      if (depId && provId) {
+        setSelectedDepartamento(depId);
+        setSelectedProvincia(provId);
+        return;
+      }
+    }
+
+    // Caso B: Necesitamos la provincia para saber el departamento
+    if (provinciaInicial && distritoInicial) {
+      if (provinciaInicial.departamentoId) {
+        setSelectedDepartamento(provinciaInicial.departamentoId);
+        setSelectedProvincia(distritoInicial.provinciaId);
+      }
+    }
+
+  }, [distritoInicial, provinciaInicial, value]);
 
   const handleDepartamentoChange = (departamentoId) => {
     setSelectedDepartamento(departamentoId);

@@ -1,8 +1,6 @@
-import { Alert, Button, Card, Col, Divider, Form, Input, InputNumber, Row, Select, Spin, Upload } from 'antd';
-import { SaveOutlined, UploadOutlined } from '@ant-design/icons';
-
+import { Alert, Button, Card, Col, Divider, Form, Input, message, Modal, Row, Select, Spin } from 'antd';
+import { SaveOutlined } from '@ant-design/icons';
 const { TextArea } = Input;
-const { Option } = Select;
 
 const DatosEmpresaFormView = ({ datosEmpresa, isLoading, isError, error, isSubmitting, onSubmit }) => {
   const [form] = Form.useForm();
@@ -17,22 +15,21 @@ const DatosEmpresaFormView = ({ datosEmpresa, isLoading, isError, error, isSubmi
       telefonoContacto: datosEmpresa.telefonoContacto,
       direccionFiscal: datosEmpresa.direccionFiscal,
       ubigeoFiscal: datosEmpresa.ubigeoFiscal,
-      usuarioSunatSol: datosEmpresa.usuarioSunatSol,
-      claveSunatSol: '', // Nunca se muestra la clave actual
-      certificadoDigitalUrl: datosEmpresa.certificadoDigitalUrl,
-      modoSunat: datosEmpresa.modoSunat || 'PRUEBAS',
-      tasaIgv: datosEmpresa.tasaIgv || 18.0,
-      logoUrl: datosEmpresa.logoUrl,
     });
   }
 
-  const handleFinish = (values) => {
-    // Solo enviar claveSunatSol si el usuario escribió algo
-    const payload = { ...values };
-    if (!payload.claveSunatSol || payload.claveSunatSol.trim() === '') {
-      delete payload.claveSunatSol;
-    }
-    onSubmit(payload);
+  const handleSave = () => {
+    form.validateFields().then((values) => {
+      Modal.confirm({
+        title: '¿Estas seguro de aplicar estos cambios?',
+        content: 'Los cambios afectarán a los futuros comprobantes de pago. Los históricos quedan intactos.',
+        okText: 'Sí',
+        cancelText: 'No',
+        onOk: () => {
+          onSubmit(values);
+        },
+      });
+    }).catch(() => {});
   };
 
   if (isLoading) {
@@ -55,7 +52,7 @@ const DatosEmpresaFormView = ({ datosEmpresa, isLoading, isError, error, isSubmi
   }
 
   return (
-    <Form form={form} layout="vertical" onFinish={handleFinish}>
+    <Form form={form} layout="vertical">
       {/* SECCIÓN 1: IDENTIDAD LEGAL */}
       <Card title="📋 Identidad Legal" style={{ marginBottom: 16 }}>
         <Row gutter={16}>
@@ -63,10 +60,6 @@ const DatosEmpresaFormView = ({ datosEmpresa, isLoading, isError, error, isSubmi
             <Form.Item
               label="RUC"
               name="numeroDoc"
-              rules={[
-                { required: true, message: 'El RUC es obligatorio' },
-                { pattern: /^\d{11}$/, message: 'El RUC debe tener exactamente 11 dígitos' },
-              ]}
               tooltip="El RUC de la empresa (11 dígitos numéricos)"
             >
               <Input placeholder="20123456789" maxLength={11} />
@@ -145,119 +138,6 @@ const DatosEmpresaFormView = ({ datosEmpresa, isLoading, isError, error, isSubmi
               tooltip="Código de 6 dígitos del distrito fiscal (ej: 150101 para Lima - Lima - Lima)"
             >
               <Input placeholder="150101" maxLength={6} />
-            </Form.Item>
-          </Col>
-        </Row>
-      </Card>
-
-      {/* SECCIÓN 3: CONFIGURACIÓN SUNAT */}
-      <Card title="🔐 Configuración SUNAT (Facturación Electrónica)" style={{ marginBottom: 16 }}>
-        <Alert
-          message="Importante"
-          description="Las credenciales SOL son necesarias para emitir comprobantes electrónicos (facturas y boletas)."
-          type="info"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-
-        <Row gutter={16}>
-          <Col xs={24} md={12}>
-            <Form.Item
-              label="Usuario SOL"
-              name="usuarioSunatSol"
-              tooltip="Usuario secundario creado en el portal SOL de SUNAT"
-            >
-              <Input placeholder="MODDATOS" />
-            </Form.Item>
-          </Col>
-
-          <Col xs={24} md={12}>
-            <Form.Item
-              label="Clave SOL"
-              name="claveSunatSol"
-              tooltip="Solo completa este campo si deseas cambiar la contraseña. Por seguridad, no se muestra la actual."
-            >
-              <Input.Password placeholder="********" autoComplete="new-password" />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Row gutter={16}>
-          <Col xs={24} md={12}>
-            <Form.Item
-              label="Certificado Digital"
-              name="certificadoDigitalUrl"
-              tooltip="URL del certificado .p12 o .pfx para firmar facturas"
-            >
-              <Input
-                placeholder="URL del certificado"
-                addonAfter={
-                  <Upload showUploadList={false}>
-                    <Button icon={<UploadOutlined />} size="small">
-                      Subir
-                    </Button>
-                  </Upload>
-                }
-              />
-            </Form.Item>
-          </Col>
-
-          <Col xs={24} md={12}>
-            <Form.Item
-              label="Modo SUNAT"
-              name="modoSunat"
-              rules={[{ required: true, message: 'Seleccione el modo SUNAT' }]}
-              tooltip="PRUEBAS: Para desarrollo. PRODUCCION: Para operación real."
-            >
-              <Select>
-                <Option value="PRUEBAS">🧪 PRUEBAS</Option>
-                <Option value="PRODUCCION">✅ PRODUCCION</Option>
-              </Select>
-            </Form.Item>
-          </Col>
-        </Row>
-      </Card>
-
-      {/* SECCIÓN 4: PARÁMETROS GLOBALES */}
-      <Card title="⚙️ Parámetros Globales" style={{ marginBottom: 16 }}>
-        <Row gutter={16}>
-          <Col xs={24} md={8}>
-            <Form.Item
-              label="Tasa IGV (%)"
-              name="tasaIgv"
-              rules={[
-                { required: true, message: 'La tasa IGV es obligatoria' },
-                { type: 'number', min: 0, max: 100, message: 'Debe estar entre 0 y 100' },
-              ]}
-              tooltip="Porcentaje de IGV aplicado (Perú: 18%)"
-            >
-              <InputNumber
-                style={{ width: '100%' }}
-                min={0}
-                max={100}
-                precision={2}
-                step={0.01}
-                addonAfter="%"
-              />
-            </Form.Item>
-          </Col>
-
-          <Col xs={24} md={16}>
-            <Form.Item
-              label="Logo de la Empresa (URL)"
-              name="logoUrl"
-              tooltip="URL del logo que aparecerá en los comprobantes"
-            >
-              <Input
-                placeholder="https://..."
-                addonAfter={
-                  <Upload showUploadList={false}>
-                    <Button icon={<UploadOutlined />} size="small">
-                      Subir
-                    </Button>
-                  </Upload>
-                }
-              />
             </Form.Item>
           </Col>
         </Row>
