@@ -56,6 +56,9 @@ const UsuarioForm = ({
     const nombreRequiredMessage = esRuc
         ? 'Ingresa la razón social'
         : 'Ingresa el nombre completo';
+    const numeroDocLabel = esRuc ? 'RUC' : 'Número de documento';
+    const numeroDocPlaceholder = esRuc ? '20123456789' : 'Ingresa el número de documento';
+    const numeroDocRequiredMessage = esRuc ? 'Ingresa el RUC' : 'Ingresa el número de documento';
 
     return (
         <Modal
@@ -135,10 +138,10 @@ const UsuarioForm = ({
                     <Col span={8}>
                         <Form.Item
                             name="numeroDoc"
-                            label="Número de documento"
+                            label={numeroDocLabel}
                             dependencies={['tipoDoc']}
                             rules={[
-                                { required: true, message: 'Ingresa el número de documento' },
+                                { required: true, message: numeroDocRequiredMessage },
                                 ({ getFieldValue }) => ({
                                     validator(_, value) {
                                         if (!value) {
@@ -169,6 +172,7 @@ const UsuarioForm = ({
                                 maxLength={numeroDocMaxLength}
                                 inputMode="numeric"
                                 pattern="[0-9]*"
+                                placeholder={numeroDocPlaceholder}
                             />
                         </Form.Item>
                     </Col>

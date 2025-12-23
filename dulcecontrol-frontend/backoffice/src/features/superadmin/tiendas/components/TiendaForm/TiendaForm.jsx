@@ -72,6 +72,33 @@ const TiendaForm = ({ visible, onCancel, onSubmit, initialValues, form, loading 
                 <Row gutter={16}>
                     <Col span={12}>
                         <Form.Item
+                            name="numeroDoc"
+                            label="RUC"
+                            rules={[
+                                { required: true, message: 'Ingresa el RUC' },
+                                { pattern: /^\d{11}$/, message: 'El RUC debe tener 11 dígitos numéricos' },
+                            ]}
+                        >
+                            <Input placeholder="20123456789" autoComplete="off" maxLength={11} />
+                        </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                        <Form.Item
+                            name="nombreDoc"
+                            label="Razón social"
+                            rules={[
+                                { required: true, message: 'Ingresa la razón social' },
+                                { max: 255, message: 'Máximo 255 caracteres' },
+                            ]}
+                        >
+                            <Input placeholder="Inversiones Dulce Manjar S.A.C." autoComplete="off" />
+                        </Form.Item>
+                    </Col>
+                </Row>
+
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <Form.Item
                             name="correoContacto"
                             label="Correo de contacto"
                             rules={[
