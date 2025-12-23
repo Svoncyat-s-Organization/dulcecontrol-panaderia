@@ -1,10 +1,11 @@
-import { Drawer, Form, Select, Input, Radio, Typography, Row, Col, Button, Space, DatePicker, Alert, Modal } from 'antd';
+import { Drawer, Form, Select, Input, Radio, Typography, Row, Col, Button, Space, DatePicker, Alert, Modal, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import dayjs from 'dayjs';
 import { useQuery } from '@tanstack/react-query';
 import { createDireccionCliente, getClientes, getDireccionesCliente } from '../../api/clientes.api.js';
-import { getSeriesPorSede } from '../../api/facturacion.api.js';
+import { getSeriesPorTienda } from '../../api/facturacion.api.js';
+import { consultarReniecPorDni, consultarSunatPorRuc } from '../../api/decolecta.api.js';
 import { getUbigeoDepartamentos, getUbigeoDistritos, getUbigeoProvincias, getUbigeoRutaPorDistrito } from '../../api/ubigeo.api.js';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 import { POS_MODES, useCartStore } from '../../hooks/useCartStore.js';
@@ -28,7 +29,6 @@ const CheckoutModal = ({
     total,
     loading,
     sedeId,
-    facturacionConfig,
     facturacionConfigLoading,
     facturacionConfigError,
 }) => {
@@ -63,13 +63,10 @@ const CheckoutModal = ({
 
     const isGenericAndSmallAmount = clienteEsGenerico && total <= 700;
 
-    const facturacionReady = useMemo(() => (
-        !!(facturacionConfig?.ruc && facturacionConfig?.razonSocial && facturacionConfig?.direccionFiscal)
-    ), [facturacionConfig]);
-
     const isPedido = posMode === POS_MODES.PEDIDO;
     const tipoPagoPedidoValue = Form.useWatch('tipoPagoPedido', form) || 'adelanto';
     const requiereComprobante = !isPedido || tipoPagoPedidoValue === 'completo';
+    const requiereDatosClienteParaComprobante = isPedido && requiereComprobante;
     const tipoComprobanteValue = Form.useWatch('tipoComprobante', form) || (isRuc ? 'factura' : 'boleta');
     const serieIdValue = Form.useWatch('serieId', form);
     const tipoEntregaValue = Form.useWatch('tipoEntrega', form) || (isPedido ? TIPOS_ENTREGA.RECOJO_TIENDA : TIPOS_ENTREGA.CONSUMO_LOCAL);
@@ -99,9 +96,11 @@ const CheckoutModal = ({
         isLoading: seriesLoading,
         isFetching: isSeriesFetching,
     } = useQuery({
+        // Mantener sedeId en la key evita cache stale si el backend aún responde por sede.
+        // La UI igual muestra series "por tienda".
         queryKey: FACTURACION_KEYS.series(tiendaId, sedeId || null),
-        queryFn: () => getSeriesPorSede(tiendaId, sedeId),
-        enabled: open && !!tiendaId && !!sedeId,
+        queryFn: () => getSeriesPorTienda(tiendaId, sedeId || null),
+        enabled: open && !!tiendaId && requiereComprobante,
         select: (data) => (Array.isArray(data) ? data.filter((serie) => serie.activa) : []),
     });
 
@@ -164,7 +163,7 @@ const CheckoutModal = ({
 
     const seriesPorTipo = useMemo(() => (
         series.reduce((acc, serie) => {
-            const tipo = (serie?.tipoComprobante || '').toLowerCase();
+            const tipo = (serie?.tipoComprobante || serie?.tipo_comprobante || '').toLowerCase();
             if (!tipo) {
                 return acc;
             }
@@ -190,12 +189,63 @@ const CheckoutModal = ({
     const canEmitirComprobante = Boolean(
         selectedSerie
         && correlativoPreview
-        && facturacionReady
-        && !facturacionConfigLoading
         && !seriesLoading
         && !isSeriesFetching
-        && !!sedeId
     );
+
+    const [isLookupLoading, setIsLookupLoading] = useState(false);
+
+    const handleLookupCliente = async () => {
+        try {
+            const docTipo = (form.getFieldValue('clienteDocTipo') || 'DNI').toString().toUpperCase();
+            const rawDoc = (form.getFieldValue('clienteDocNumero') || '').toString();
+            const doc = rawDoc.replace(/\D/g, '');
+
+            if (!doc) {
+                message.warning('Ingresa un número de documento para buscar');
+                return;
+            }
+
+            setIsLookupLoading(true);
+
+            if (docTipo === 'RUC') {
+                if (!/^\d{11}$/.test(doc)) {
+                    message.warning('El RUC debe tener 11 dígitos');
+                    return;
+                }
+                const data = await consultarSunatPorRuc(doc, { full: false });
+                const razon = data?.razon_social || data?.razonSocial || '';
+                const direccion = data?.direccion || '';
+
+                form.setFieldsValue({
+                    clienteNombre: razon || form.getFieldValue('clienteNombre') || '',
+                    clienteDireccion: direccion || form.getFieldValue('clienteDireccion') || '',
+                });
+                if (razon) {
+                    message.success('Razón social cargada');
+                }
+                return;
+            }
+
+            if (!/^\d{8}$/.test(doc)) {
+                message.warning('El DNI debe tener 8 dígitos');
+                return;
+            }
+            const data = await consultarReniecPorDni(doc);
+            const fullName = data?.full_name || data?.fullName || '';
+            form.setFieldsValue({
+                clienteNombre: fullName || form.getFieldValue('clienteNombre') || '',
+            });
+            if (fullName) {
+                message.success('Nombre cargado');
+            }
+        } catch (err) {
+            const msg = err?.response?.data?.message || err?.message || 'No se pudo consultar el documento';
+            message.error(msg);
+        } finally {
+            setIsLookupLoading(false);
+        }
+    };
     const docTipoLocked = false; // Allow changing doc type for generic clients
     const docTipoOptions = ['DNI', 'RUC'];
     const facturacionBlockingMessage = useMemo(() => {
@@ -205,14 +255,8 @@ const CheckoutModal = ({
         if (!sedeId) {
             return 'No se pudo determinar la sede activa de la caja. Selecciona una caja vinculada a una sede para emitir comprobantes.';
         }
-        if (facturacionConfigError) {
-            return 'No se pudo cargar la configuración fiscal. Revisa Configuración > Facturación e inténtalo nuevamente.';
-        }
-        if (!facturacionReady) {
-            return 'Completa la configuración fiscal de la tienda antes de emitir comprobantes.';
-        }
         return null;
-    }, [sedeId, facturacionConfigError, facturacionReady]);
+    }, [sedeId, requiereComprobante]);
     const seriesWarningMessage = useMemo(() => {
         if (!tipoComprobanteValue || seriesLoading || isSeriesFetching) {
             return null;
@@ -432,16 +476,6 @@ const CheckoutModal = ({
                     form.setFields([
                         { name: 'serieId', errors: ['Selecciona una serie válida'] },
                     ]);
-                    return;
-                }
-                if (facturacionConfigLoading) {
-                    return;
-                }
-                if (!facturacionReady) {
-                    Modal.error({
-                        title: 'Configuración fiscal incompleta',
-                        content: 'Debes registrar el RUC, razón social y dirección fiscal en Configuración > Facturación antes de emitir comprobantes.',
-                    });
                     return;
                 }
             }
@@ -880,7 +914,7 @@ const CheckoutModal = ({
                                 name="clienteDocNumero"
                                 label="Número"
                                 rules={[
-                                    { required: !isGenericAndSmallAmount, message: 'Ingresa el documento del cliente' },
+                                    { required: (isPedido || requiereDatosClienteParaComprobante || !isGenericAndSmallAmount), message: 'Ingresa el documento del cliente' },
                                     () => ({
                                         validator(_, value) {
                                             // If empty, we will default to 00000000 for DNI later, so it is valid if it's DNI.
@@ -889,11 +923,13 @@ const CheckoutModal = ({
                                             const sanitized = (value || '').replace(/\D/g, '');
 
                                             if (!sanitized) {
-                                                // If empty:
-                                                // For DNI: Valid (will be 00000000)
-                                                // For RUC: Required if Factura (handled by other rules? or just let it be empty?)
-                                                // User only mentioned DNI behavior for empty.
-                                                // Let's assume RUC needs to be typed if selected.
+                                                if (isPedido) {
+                                                    return Promise.reject(new Error('Ingresa el documento del cliente'));
+                                                }
+                                                if (requiereDatosClienteParaComprobante) {
+                                                    return Promise.reject(new Error('Ingresa el documento del cliente'));
+                                                }
+                                                // Si no es obligatorio (venta menor + genérico), para DNI permitimos vacío (luego se manda 00000000).
                                                 if (tipo === 'DNI') return Promise.resolve();
                                                 return isGenericAndSmallAmount ? Promise.resolve() : Promise.reject(new Error('Ingresa el documento del cliente'));
                                             }
@@ -922,6 +958,33 @@ const CheckoutModal = ({
                                     maxLength={form.getFieldValue('clienteDocTipo') === 'RUC' ? 20 : 8}
                                     disabled={!puedeEditarCliente}
                                     placeholder={form.getFieldValue('clienteDocTipo') === 'RUC' ? "RUC del cliente" : "00000000"}
+                                    onPressEnter={(e) => {
+                                        e.preventDefault();
+                                        handleLookupCliente();
+                                    }}
+                                    onBlur={() => {
+                                        // Auto lookup: si ya tiene longitud válida y aún no hay nombre, intentamos.
+                                        const docTipo = (form.getFieldValue('clienteDocTipo') || 'DNI').toString().toUpperCase();
+                                        const doc = (form.getFieldValue('clienteDocNumero') || '').toString().replace(/\D/g, '');
+                                        const nombre = (form.getFieldValue('clienteNombre') || '').toString().trim();
+                                        const isValid = docTipo === 'RUC' ? /^\d{11}$/.test(doc) : /^\d{8}$/.test(doc);
+                                        if (isValid && !nombre) {
+                                            handleLookupCliente();
+                                        }
+                                    }}
+                                    addonAfter={
+                                        <Button
+                                            size="small"
+                                            type="primary"
+                                            loading={isLookupLoading}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                handleLookupCliente();
+                                            }}
+                                        >
+                                            Buscar
+                                        </Button>
+                                    }
                                 />
                             </Form.Item>
                         </Col>
@@ -929,7 +992,7 @@ const CheckoutModal = ({
                     <Form.Item
                         name="clienteNombre"
                         label="Nombre o razón social"
-                        rules={[{ required: !isGenericAndSmallAmount, message: 'Ingresa el nombre del cliente' }]}
+                        rules={[{ required: (isPedido || requiereDatosClienteParaComprobante || !isGenericAndSmallAmount), message: 'Ingresa el nombre del cliente' }]}
                     >
                         <Input disabled={!puedeEditarCliente} placeholder="Nombre del cliente" />
                     </Form.Item>

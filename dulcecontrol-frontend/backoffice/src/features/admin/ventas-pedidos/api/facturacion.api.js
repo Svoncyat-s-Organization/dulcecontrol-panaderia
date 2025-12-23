@@ -22,6 +22,18 @@ export const getSeriesPorSede = async (tiendaId, sedeId) => {
     return data;
 };
 
+export const getSeriesPorTienda = async (tiendaId, sedeIdFallback = null) => {
+    try {
+        const { data } = await apiClient.get(buildSeriesUrl(tiendaId));
+        return data;
+    } catch (error) {
+        if (sedeIdFallback) {
+            return getSeriesPorSede(tiendaId, sedeIdFallback);
+        }
+        throw error;
+    }
+};
+
 export const createComprobante = async (tiendaId, payload) => {
     const { data } = await apiClient.post(buildComprobantesUrl(tiendaId), payload);
     return data;

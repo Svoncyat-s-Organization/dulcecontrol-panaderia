@@ -47,6 +47,11 @@ export const addDireccionPedido = async (tiendaId, pedidoId, payload) => {
     return data;
 };
 
+export const getDireccionesPedido = async (tiendaId, pedidoId) => {
+    const { data } = await apiClient.get(buildPedidosUrl(tiendaId, `/${pedidoId}/direcciones`));
+    return data;
+};
+
 export const getPagosPedido = async (tiendaId, pedidoId) => {
     const { data } = await apiClient.get(buildPedidosUrl(tiendaId, `/${pedidoId}/pagos`));
     return data;
