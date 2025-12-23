@@ -1,11 +1,32 @@
-import { Modal, Form, Input, InputNumber, Select, Switch, Row, Col } from 'antd';
+import { useMemo } from 'react';
+import { Alert, Col, Form, Input, InputNumber, Modal, Row, Select, Switch, Typography } from 'antd';
 import { UNIDADES_MEDIDA } from '../../constants/enums.js';
+
+const { Text } = Typography;
 
 const InsumoModalView = ({ open, onClose, onSubmit, form, loading, isEditing }) => {
   const unidadesOptions = Object.entries(UNIDADES_MEDIDA).map(([key, label]) => ({
     value: key,
     label: label,
   }));
+
+  const unidadBase = Form.useWatch('unidadBase', form);
+  const unidadCompraHabitual = Form.useWatch('unidadCompraHabitual', form);
+  const factorConversionRaw = Form.useWatch('factorConversion', form);
+
+  const factorConversion = useMemo(() => {
+    const n = Number(factorConversionRaw);
+    return Number.isFinite(n) ? n : null;
+  }, [factorConversionRaw]);
+
+  const conversionText = useMemo(() => {
+    if (!unidadBase || !unidadCompraHabitual || !factorConversion || factorConversion <= 0) {
+      return null;
+    }
+    return `1 ${unidadCompraHabitual} = ${factorConversion} ${unidadBase}`;
+  }, [unidadBase, unidadCompraHabitual, factorConversion]);
+
+  const shouldSuggestFactorOne = Boolean(unidadBase && unidadCompraHabitual && unidadBase === unidadCompraHabitual);
 
   return (
     <Modal
@@ -19,6 +40,30 @@ const InsumoModalView = ({ open, onClose, onSubmit, form, loading, isEditing }) 
       cancelText="Cancelar"
     >
       <Form form={form} layout="vertical" style={{ marginTop: 24 }}>
+        <Alert
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+          message="Unidades y conversión"
+          description={(
+            <div>
+              <div>
+                El <Text strong>factor de conversión</Text> indica cuántas <Text strong>unidades base</Text> equivalen a 1
+                <Text strong> unidad de compra</Text>.
+              </div>
+              <div style={{ marginTop: 4 }}>
+                Ejemplo: si compras en <Text strong>SACO</Text> de 50 <Text strong>KG</Text>, entonces factor = 50.
+              </div>
+              {conversionText && (
+                <div style={{ marginTop: 8 }}>
+                  <Text type="secondary">Vista previa: </Text>
+                  <Text strong>{conversionText}</Text>
+                </div>
+              )}
+            </div>
+          )}
+        />
+
         <Row gutter={16}>
           <Col span={16}>
             <Form.Item
@@ -70,8 +115,20 @@ const InsumoModalView = ({ open, onClose, onSubmit, form, loading, isEditing }) 
             <Form.Item
               name="factorConversion"
               label="Factor de Conversión"
-              rules={[{ required: true, message: 'El factor de conversión es requerido' }]}
+              rules={[
+                { required: true, message: 'El factor de conversión es requerido' },
+                { type: 'number', min: 0.0001, message: 'Debe ser mayor a 0' },
+              ]}
               tooltip="Cuántas unidades base equivalen a 1 unidad de compra"
+              extra={
+                conversionText ? (
+                  <Text type="secondary">{conversionText}</Text>
+                ) : shouldSuggestFactorOne ? (
+                  <Text type="secondary">Si ambas unidades son iguales, usa factor 1.</Text>
+                ) : (
+                  <Text type="secondary">Completa unidades para ver la equivalencia.</Text>
+                )
+              }
             >
               <InputNumber
                 style={{ width: '100%' }}
@@ -87,6 +144,7 @@ const InsumoModalView = ({ open, onClose, onSubmit, form, loading, isEditing }) 
               name="stockMinimoGlobal"
               label="Stock Mínimo Global"
               rules={[{ required: true, message: 'El stock mínimo es requerido' }]}
+              extra={unidadBase ? `Se interpreta en ${unidadBase}.` : 'Se interpreta en unidad base.'}
             >
               <InputNumber
                 style={{ width: '100%' }}

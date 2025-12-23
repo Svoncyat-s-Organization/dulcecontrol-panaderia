@@ -100,7 +100,21 @@ const AjusteInventarioModal = ({ open, onClose, tiendaId, sedeId, registro }) =>
   };
 
   const handleFinish = (values) => {
-    mutation.mutate(values);
+    const actual = registro?.cantidadActual ?? 0;
+    const cantidadSolicitada = Number(values?.cantidad);
+    const tipo = String(values?.tipoMovimiento ?? '').toUpperCase();
+
+    if (!Number.isFinite(cantidadSolicitada) || cantidadSolicitada <= 0) {
+      message.error('Cantidad inválida');
+      return;
+    }
+
+    if (tipo === 'SALIDA' && cantidadSolicitada > actual) {
+      message.error('Stock insuficiente para registrar esta salida');
+      return;
+    }
+
+    mutation.mutate({ ...values, cantidad: cantidadSolicitada, tipoMovimiento: tipo });
   };
 
   const nuevaCantidad = calcularNuevaCantidad();

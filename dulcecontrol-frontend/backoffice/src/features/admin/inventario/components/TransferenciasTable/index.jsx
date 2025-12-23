@@ -93,6 +93,16 @@ const TransferenciasTable = ({ tiendaId, sedeOrigenId }) => {
     [allowedSedes, activeSedeId]
   );
 
+  const createDisabledReason = useMemo(() => {
+    if (!Array.isArray(sedes) || sedes.length <= 1) {
+      return 'Necesitas al menos 2 sedes para realizar transferencias.';
+    }
+    if (!sedesDestino.length) {
+      return 'No hay sedes destino disponibles.';
+    }
+    return null;
+  }, [sedes, sedesDestino]);
+
   const { data: productos = [] } = useQuery({
     queryKey: ['catalogo', 'productos', tiendaId],
     queryFn: () => getProductos(tiendaId),
@@ -210,6 +220,8 @@ const TransferenciasTable = ({ tiendaId, sedeOrigenId }) => {
         productos={productos}
         insumos={insumos}
         onCreate={handleCreate}
+        createDisabled={Boolean(createDisabledReason)}
+        createDisabledReason={createDisabledReason}
         onChangeEstado={handleChangeEstado}
         onOpenRecepcion={handleOpenRecepcion}
         onOpenItems={handleOpenItems}

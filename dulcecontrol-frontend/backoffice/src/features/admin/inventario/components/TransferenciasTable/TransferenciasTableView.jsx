@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import {
+  Alert,
   Badge,
   Button,
   Card,
@@ -45,12 +46,19 @@ const TransferenciasTableView = ({
   productos,
   insumos,
   onCreate,
+  createDisabled,
+  createDisabledReason,
   onChangeEstado,
   onOpenRecepcion,
   onOpenItems,
   changingId,
 }) => {
   const [estadoFiltro, setEstadoFiltro] = useState(null);
+
+  const isSingleSede = useMemo(() => {
+    const total = Array.isArray(sedes) ? sedes.length : 0;
+    return total <= 1;
+  }, [sedes]);
 
   const sedesById = useMemo(() => {
     const map = new Map();
@@ -282,10 +290,26 @@ const TransferenciasTableView = ({
           </Title>
           <Text type="secondary">La sede activa ({sedeOrigenId}) se usa como origen.</Text>
         </div>
-        <Button type="primary" icon={<IconPlus size={16} />} onClick={onCreate}>
+        <Button
+          type="primary"
+          icon={<IconPlus size={16} />}
+          onClick={onCreate}
+          disabled={createDisabled}
+          title={createDisabled ? createDisabledReason ?? '' : ''}
+        >
           Nueva transferencia
         </Button>
       </Space>
+
+      {isSingleSede && (
+        <Alert
+          style={{ marginTop: 16 }}
+          type="info"
+          showIcon
+          message="Transferencias deshabilitadas"
+          description="No se pueden realizar transferencias porque la tienda tiene una sola sede."
+        />
+      )}
 
       <Space wrap style={{ marginTop: 16 }}>
         <Select
