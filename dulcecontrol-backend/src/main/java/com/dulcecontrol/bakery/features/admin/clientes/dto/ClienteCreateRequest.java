@@ -31,7 +31,6 @@ public class ClienteCreateRequest {
     // Campos de dirección
     private String direccionEtiqueta;
 
-    @NotBlank(message = "La dirección completa es obligatoria")
     private String direccionCompleta;
 
     private String direccionReferencia;
