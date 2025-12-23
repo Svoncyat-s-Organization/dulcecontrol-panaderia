@@ -184,8 +184,9 @@ public class PlanProduccionAdminService {
 
         planRepository.save(plan);
         
-        // Cuando el plan cambia a FINALIZADO, solo actualizar estado de pedidos (NO sumar inventario)
+        // Cuando el plan cambia a FINALIZADO, registrar movimientos de inventario y actualizar pedidos
         if (request.getEstado() == EstadoPlanProduccion.FINALIZADO && estadoAnterior != EstadoPlanProduccion.FINALIZADO) {
+            registrarMovimientosInventarioAlFinalizar(tiendaId, plan);
             actualizarEstadoPedidosAsociados(plan);
         }
         
@@ -358,6 +359,58 @@ public class PlanProduccionAdminService {
                             .build();
                 })
                 .collect(Collectors.toList());
+    }
+    
+    /**
+     * Registra movimientos de inventario para todos los detalles TERMINADOS al finalizar el plan
+     */
+    private void registrarMovimientosInventarioAlFinalizar(Long tiendaId, PlanProduccion plan) {
+        log.info("📦 Plan {} finalizado. Registrando movimientos de inventario...", plan.getId());
+        
+        List<DetallePlanProduccion> detalles = detalleRepository.findByPlanId(plan.getId());
+        
+        for (DetallePlanProduccion detalle : detalles) {
+            if (detalle.getEstado() == EstadoItemProduccion.TERMINADO && detalle.getCantidadProducida() != null && detalle.getCantidadProducida() > 0) {
+                sumarProductosInventario(tiendaId, plan.getSedeId(), detalle);
+            }
+            
+            if (detalle.getCantidadMerma() != null && detalle.getCantidadMerma() > 0) {
+                registrarMovimientoMerma(tiendaId, plan.getSedeId(), detalle);
+            }
+        }
+        
+        log.info("✅ Movimientos de inventario registrados para plan {}", plan.getId());
+    }
+    
+    /**
+     * Registra movimiento de inventario por merma
+     */
+    private void registrarMovimientoMerma(Long tiendaId, Long sedeId, DetallePlanProduccion detalle) {
+        log.info("⚠️ Registrando merma de {} unidades del producto {}", detalle.getCantidadMerma(), detalle.getProductoId());
+        
+        MovimientoInventarioProducto movimiento = new MovimientoInventarioProducto();
+        movimiento.setTiendaId(tiendaId);
+        movimiento.setSedeId(sedeId);
+        movimiento.setProductoId(detalle.getProductoId());
+        movimiento.setTipoMovimiento(TipoMovimientoInsumo.SALIDA);
+        movimiento.setCantidad(detalle.getCantidadMerma());
+        movimiento.setPlanProduccionId(detalle.getPlanId());
+        movimiento.setMotivo(MotivoMovimientoProducto.MERMA);
+        
+        Optional<InventarioProducto> inventarioOpt = inventarioProductoRepository
+                .findBySedeIdAndProductoId(sedeId, detalle.getProductoId());
+        
+        if (inventarioOpt.isPresent()) {
+            InventarioProducto inventario = inventarioOpt.get();
+            movimiento.setCantidadAnterior(inventario.getCantidadActual());
+            movimiento.setCantidadPosterior(inventario.getCantidadActual());
+        } else {
+            movimiento.setCantidadAnterior(0);
+            movimiento.setCantidadPosterior(0);
+        }
+        
+        movimientoProductoRepository.save(movimiento);
+        log.info("✅ Movimiento de merma registrado");
     }
     
     /**

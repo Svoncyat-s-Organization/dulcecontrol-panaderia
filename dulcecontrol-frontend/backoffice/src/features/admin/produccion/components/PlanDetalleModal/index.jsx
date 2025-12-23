@@ -66,13 +66,18 @@ const PlanDetalleModal = ({ open, onClose, plan, tiendaId, sedeId }) => {
   };
 
   const handleMarcarTerminado = (detalle) => {
+    const payload = {
+      estado: 'TERMINADO',
+    };
+    
+    if (!detalle.cantidadProducida && !detalle.cantidadMerma) {
+      payload.cantidadProducida = detalle.cantidadPlanificada;
+      payload.cantidadMerma = 0;
+    }
+    
     updateDetalleMutation.mutate({
       detalleId: detalle.id,
-      payload: {
-        cantidadProducida: detalle.cantidadPlanificada,
-        cantidadMerma: 0,
-        estado: 'TERMINADO',
-      },
+      payload,
     });
   };
 
