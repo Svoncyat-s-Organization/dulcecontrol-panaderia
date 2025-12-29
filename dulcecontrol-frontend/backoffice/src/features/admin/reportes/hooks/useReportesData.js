@@ -7,6 +7,7 @@ import { getPedidos } from '../../ventas-pedidos/api/pedidos.api.js';
 import { getProductos } from '../../catalogo/api/productos.api.js';
 import { getCategorias } from '../../catalogo/api/categorias.api.js';
 import { getClientes } from '../../ventas-pedidos/api/clientes.api.js';
+import { getSesionesCaja, getCajas, getMovimientosCaja } from '../../ventas-pedidos/api/cajas.api.js';
 import { mapProductosResponse } from '../../catalogo/utils/productoMappers.js';
 
 dayjs.extend(weekOfYear);
@@ -165,6 +166,7 @@ export const useReportesData = ({ tiendaId, filters }) => {
   const endDate = filters?.endDate ? dayjs(filters.endDate) : null;
   const targetSede = filters?.sedeId && filters.sedeId !== 'all' ? String(filters.sedeId) : null;
   const targetChannel = filters?.canal && filters.canal !== 'all' ? filters.canal.toString().toLowerCase() : null;
+  const targetCaja = filters?.cajaId && filters.cajaId !== 'all' ? filters.cajaId : null;
   const grouping = filters?.grouping || 'day';
 
   const productosData = productosQuery.data ?? [];
@@ -179,7 +181,50 @@ export const useReportesData = ({ tiendaId, filters }) => {
     return map;
   }, [clientesData]);
 
-  const pedidos = useMemo(() => {
+  const sesionesQuery = useQuery({
+    queryKey: REPORTES_KEYS.sesionesCaja(tiendaId),
+    queryFn: () => getSesionesCaja(tiendaId),
+    enabled: Boolean(tiendaId),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const cajasQuery = useQuery({
+    queryKey: REPORTES_KEYS.cajas(tiendaId),
+    queryFn: () => getCajas(tiendaId),
+    enabled: Boolean(tiendaId),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const sesionesData = sesionesQuery.data ?? [];
+  const cajasData = cajasQuery.data ?? [];
+
+  const sesionCajaMap = useMemo(() => {
+    const map = new Map();
+    sesionesData.forEach((sesion) => {
+      if (!sesion?.id) {
+        return;
+      }
+      map.set(String(sesion.id), sesion.cajaId ?? null);
+    });
+    return map;
+  }, [sesionesData]);
+
+  const { nombreMap: cajaNombreMap, sedeMap: cajaSedeMap } = useMemo(() => {
+    const nombreMap = new Map();
+    const sedeMap = new Map();
+    cajasData.forEach((caja) => {
+      if (!caja?.id) {
+        return;
+      }
+      const key = String(caja.id);
+      const label = caja.nombre?.trim() || `Caja ${caja.id}`;
+      nombreMap.set(key, label);
+      sedeMap.set(key, caja.sedeId != null ? String(caja.sedeId) : null);
+    });
+    return { nombreMap, sedeMap };
+  }, [cajasData]);
+
+  const pedidosSinFiltroCaja = useMemo(() => {
     const collection = pedidosQuery.data || [];
     return collection
       .filter((pedido) => {
@@ -211,6 +256,11 @@ export const useReportesData = ({ tiendaId, filters }) => {
         const pagadoCentimos = toNumber(pedido.montoPagadoCentimos);
         const pendienteCentimos = Math.max(totalCentimos - pagadoCentimos, 0);
         const fechaCreacion = dayjs(pedido.creadoEn || pedido.fechaRegistro || null);
+        const sesionId = pedido.sesionCajaId ? String(pedido.sesionCajaId) : null;
+        const cajaId = sesionId ? sesionCajaMap.get(sesionId) : null;
+        const cajaNombre = cajaId != null
+          ? cajaNombreMap.get(String(cajaId)) || `Caja ${cajaId}`
+          : 'Sin caja';
 
         return {
           id: pedido.id,
@@ -229,12 +279,241 @@ export const useReportesData = ({ tiendaId, filters }) => {
           origen: pedido.origen || 'SIN_ORIGEN',
           sedeId: pedido.sedeOrigenId || pedido.sedeId || null,
           tipoEntrega: pedido.tipoEntrega || 'sin_tipo',
+          sesionCajaId: sesionId,
+          cajaId: cajaId != null ? String(cajaId) : null,
+          cajaNombre,
           creadoEn: pedido.creadoEn || pedido.fechaRegistro || null,
           creadoEnLabel: fechaCreacion.isValid() ? fechaCreacion.format('DD/MM/YYYY HH:mm') : 'Sin fecha',
           raw: pedido,
         };
       });
-  }, [pedidosQuery.data, clientesMap, startDate, endDate, targetSede, targetChannel]);
+  }, [pedidosQuery.data, clientesMap, startDate, endDate, targetSede, targetChannel, sesionCajaMap, cajaNombreMap]);
+
+  const pedidos = useMemo(() => {
+    if (!targetCaja) {
+      return pedidosSinFiltroCaja;
+    }
+    return pedidosSinFiltroCaja.filter((pedido) => {
+      if (targetCaja === 'none') {
+        return !pedido.cajaId;
+      }
+      return pedido.cajaId === targetCaja;
+    });
+  }, [pedidosSinFiltroCaja, targetCaja]);
+
+  const sesionesFiltroMovimientos = useMemo(() => {
+    if (!Array.isArray(sesionesData) || sesionesData.length === 0) {
+      return [];
+    }
+    if (targetCaja === 'none') {
+      return [];
+    }
+
+    const ids = sesionesData
+      .filter((sesion) => {
+        if (!sesion?.id) {
+          return false;
+        }
+
+        const sesionCajaId = sesion.cajaId != null ? String(sesion.cajaId) : null;
+        if (targetCaja && targetCaja !== 'none' && sesionCajaId !== targetCaja) {
+          return false;
+        }
+
+        if (targetSede) {
+          if (!sesionCajaId) {
+            return false;
+          }
+          const sedeId = cajaSedeMap.get(sesionCajaId) || null;
+          if (sedeId !== targetSede) {
+            return false;
+          }
+        }
+
+        if (!startDate && !endDate) {
+          return true;
+        }
+
+        const apertura = sesion.fechaApertura ? dayjs(sesion.fechaApertura) : null;
+        const cierre = sesion.fechaCierre ? dayjs(sesion.fechaCierre) : null;
+        const sesionStart = apertura && apertura.isValid() ? apertura : null;
+        const sesionEnd = cierre && cierre.isValid() ? cierre : (sesionStart || dayjs());
+
+        if (startDate && sesionEnd && sesionEnd.isBefore(startDate)) {
+          return false;
+        }
+        if (endDate && sesionStart && sesionStart.isAfter(endDate)) {
+          return false;
+        }
+
+        return true;
+      })
+      .map((sesion) => String(sesion.id));
+
+    ids.sort((a, b) => a.localeCompare(b));
+    return ids;
+  }, [sesionesData, targetCaja, targetSede, startDate, endDate, cajaSedeMap]);
+
+  const movimientosQuery = useQuery({
+    queryKey: REPORTES_KEYS.movimientos(tiendaId, sesionesFiltroMovimientos),
+    enabled: Boolean(tiendaId) && sesionesFiltroMovimientos.length > 0,
+    staleTime: 60 * 1000,
+    queryFn: async () => {
+      const results = await Promise.all(
+        sesionesFiltroMovimientos.map(async (sesionId) => {
+          const movimientos = await getMovimientosCaja(tiendaId, sesionId);
+          const collection = Array.isArray(movimientos) ? movimientos : [];
+          return collection.map((movimiento) => ({
+            ...movimiento,
+            sesionCajaId: movimiento.sesionCajaId ?? Number(sesionId),
+          }));
+        })
+      );
+      return results.flat();
+    },
+  });
+
+  const retiros = useMemo(() => {
+    const collection = movimientosQuery.data || [];
+    if (!collection.length) {
+      return [];
+    }
+
+    return collection
+      .filter((movimiento) => {
+        const tipo = movimiento?.tipoMovimiento ? movimiento.tipoMovimiento.toString().toLowerCase() : '';
+        if (tipo !== 'retiro_efectivo') {
+          return false;
+        }
+
+        const sesionId = movimiento?.sesionCajaId ? String(movimiento.sesionCajaId) : null;
+        const cajaIdRaw = sesionId ? sesionCajaMap.get(sesionId) : null;
+        const cajaId = cajaIdRaw != null ? String(cajaIdRaw) : null;
+
+        if (targetCaja) {
+          if (targetCaja === 'none') {
+            return false;
+          }
+          if (targetCaja !== 'all' && cajaId !== targetCaja) {
+            return false;
+          }
+        }
+
+        if (targetSede) {
+          const sedeId = cajaId ? cajaSedeMap.get(cajaId) || null : null;
+          if (sedeId !== targetSede) {
+            return false;
+          }
+        }
+
+        const fecha = movimiento.creadoEn ? dayjs(movimiento.creadoEn) : null;
+        if (fecha && fecha.isValid()) {
+          if (startDate && fecha.isBefore(startDate)) {
+            return false;
+          }
+          if (endDate && fecha.isAfter(endDate)) {
+            return false;
+          }
+        }
+
+        return true;
+      })
+      .map((movimiento) => {
+        const sesionId = movimiento?.sesionCajaId ? String(movimiento.sesionCajaId) : null;
+        const cajaIdRaw = sesionId ? sesionCajaMap.get(sesionId) : null;
+        const cajaId = cajaIdRaw != null ? String(cajaIdRaw) : null;
+        const cajaNombre = cajaId ? cajaNombreMap.get(cajaId) || `Caja ${cajaId}` : 'Sin caja';
+        const sedeId = cajaId ? cajaSedeMap.get(cajaId) || null : null;
+        const montoCentimos = toNumber(movimiento.montoCentimos);
+        const fecha = movimiento.creadoEn ? dayjs(movimiento.creadoEn) : null;
+
+        return {
+          id: movimiento.id,
+          sesionCajaId: sesionId,
+          cajaId,
+          cajaNombre,
+          sedeId,
+          montoCentimos,
+          monto: centimosToSoles(montoCentimos),
+          metodoPago: movimiento.metodoPago || 'EFECTIVO',
+          concepto: movimiento.concepto || '',
+          comprobante: movimiento.comprobanteAsociado || '',
+          creadoEn: movimiento.creadoEn || null,
+          creadoEnLabel: fecha && fecha.isValid() ? fecha.format('DD/MM/YYYY HH:mm') : 'Sin fecha',
+          raw: movimiento,
+        };
+      })
+      .sort((a, b) => {
+        const fechaA = a.creadoEn ? dayjs(a.creadoEn) : null;
+        const fechaB = b.creadoEn ? dayjs(b.creadoEn) : null;
+        const valorA = fechaA && fechaA.isValid() ? fechaA.valueOf() : 0;
+        const valorB = fechaB && fechaB.isValid() ? fechaB.valueOf() : 0;
+        return valorB - valorA;
+      });
+  }, [movimientosQuery.data, targetCaja, targetSede, startDate, endDate, sesionCajaMap, cajaNombreMap, cajaSedeMap]);
+
+  const retirosTotalesCentimos = useMemo(
+    () => retiros.reduce((acc, retiro) => acc + toNumber(retiro.montoCentimos), 0),
+    [retiros]
+  );
+
+  const retirosTotales = useMemo(
+    () => Number(centimosToSoles(retirosTotalesCentimos).toFixed(2)),
+    [retirosTotalesCentimos]
+  );
+
+  const retirosPorCaja = useMemo(() => {
+    const map = new Map();
+    retiros.forEach((retiro) => {
+      if (!retiro.cajaId) {
+        return;
+      }
+      const entry = map.get(retiro.cajaId) ?? {
+        cajaId: retiro.cajaId,
+        cajaNombre: retiro.cajaNombre,
+        cantidad: 0,
+        monto: 0,
+      };
+      entry.cantidad += 1;
+      entry.monto += retiro.monto;
+      map.set(retiro.cajaId, entry);
+    });
+    return Array.from(map.values()).sort((a, b) => b.monto - a.monto);
+  }, [retiros]);
+
+  const cajaOptions = useMemo(() => {
+    const options = new Map();
+
+    const registrarCaja = (cajaId) => {
+      if (!cajaId) {
+        return;
+      }
+      if (options.has(cajaId)) {
+        return;
+      }
+      const label = cajaNombreMap.get(cajaId) || `Caja ${cajaId}`;
+      options.set(cajaId, { value: cajaId, label });
+    };
+
+    pedidosSinFiltroCaja.forEach((pedido) => {
+      if (pedido.cajaId) {
+        registrarCaja(pedido.cajaId);
+      }
+    });
+
+    retiros.forEach((retiro) => {
+      if (retiro.cajaId) {
+        registrarCaja(retiro.cajaId);
+      }
+    });
+
+    if (pedidosSinFiltroCaja.some((pedido) => pedido.cajaId == null)) {
+      options.set('none', { value: 'none', label: 'Sin caja asignada' });
+    }
+
+    const sorted = Array.from(options.values()).sort((a, b) => a.label.localeCompare(b.label, 'es', { sensitivity: 'base' }));
+    return [{ value: 'all', label: 'Todas las cajas' }, ...sorted];
+  }, [pedidosSinFiltroCaja, retiros, cajaNombreMap]);
 
   const categoriaMap = useMemo(() => {
     const map = new Map();
@@ -312,17 +591,22 @@ export const useReportesData = ({ tiendaId, filters }) => {
       tendenciaMap.set(periodMeta.key, trendEntry);
     });
 
+    const saldoNeto = Number((resumen.totalPagado - retirosTotales).toFixed(2));
+
     return {
       resumen: {
         ...resumen,
         ticketPromedio: resumen.pedidosPagados > 0 ? resumen.totalPagado / resumen.pedidosPagados : 0,
+        retirosTotales,
+        saldoNeto,
+        cantidadRetiros: retiros.length,
       },
       porEstado: Array.from(porEstadoMap.values()).sort((a, b) => b.ventas - a.ventas),
       porPago: Array.from(porPagoMap.values()).sort((a, b) => b.ventas - a.ventas),
       porCanal: Array.from(porCanalMap.values()).sort((a, b) => b.ventas - a.ventas),
       tendencia: Array.from(tendenciaMap.values()).sort((a, b) => a.order - b.order),
     };
-  }, [pedidos, grouping]);
+  }, [pedidos, grouping, retiros, retirosTotales]);
 
   const refetchAll = useCallback(async () => {
     await Promise.all([
@@ -330,10 +614,20 @@ export const useReportesData = ({ tiendaId, filters }) => {
       productosQuery.refetch(),
       categoriasQuery.refetch(),
       clientesQuery.refetch(),
+      sesionesQuery.refetch(),
+      cajasQuery.refetch(),
+      movimientosQuery.refetch(),
     ]);
-  }, [pedidosQuery, productosQuery, categoriasQuery, clientesQuery]);
+  }, [pedidosQuery, productosQuery, categoriasQuery, clientesQuery, sesionesQuery, cajasQuery, movimientosQuery]);
 
-  const isLoading = pedidosQuery.isLoading || productosQuery.isLoading || categoriasQuery.isLoading || clientesQuery.isLoading;
+  const isLoading =
+    pedidosQuery.isLoading
+    || productosQuery.isLoading
+    || categoriasQuery.isLoading
+    || clientesQuery.isLoading
+    || sesionesQuery.isLoading
+    || cajasQuery.isLoading
+    || movimientosQuery.isLoading;
   const isError = pedidosQuery.isError;
   const error = pedidosQuery.error || null;
 
@@ -345,8 +639,21 @@ export const useReportesData = ({ tiendaId, filters }) => {
     if (productosQuery.isError || categoriasQuery.isError) {
       list.push('Catálogo parcial: productos o categorías no disponibles por permisos o conexión.');
     }
+    if (sesionesQuery.isError || cajasQuery.isError) {
+      list.push('No se pudo resolver el nombre de algunas cajas. Se mostrará el identificador interno.');
+    }
+    if (movimientosQuery.isError) {
+      list.push('No se pudieron cargar los retiros de caja. Los montos netos podrían no cuadrar.');
+    }
     return list;
-  }, [clientesQuery.isError, productosQuery.isError, categoriasQuery.isError]);
+  }, [
+    clientesQuery.isError,
+    productosQuery.isError,
+    categoriasQuery.isError,
+    sesionesQuery.isError,
+    cajasQuery.isError,
+    movimientosQuery.isError,
+  ]);
 
   return {
     pedidos,
@@ -361,6 +668,13 @@ export const useReportesData = ({ tiendaId, filters }) => {
     error,
     refetch: refetchAll,
     warnings,
+    sesionCajaMap,
+    cajaNombreMap,
+    cajaOptions,
+    cajaSedeMap,
+    retiros,
+    retirosTotales,
+    retirosPorCaja,
   };
 };
 
