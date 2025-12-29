@@ -41,6 +41,7 @@ const buildDefaultFilters = () => {
     endDate: end.toISOString(),
     sedeId: 'all',
     canal: 'all',
+    cajaId: 'all',
     grouping: 'day',
   };
 };
@@ -99,6 +100,8 @@ const useReportesSharedState = () => {
     [reportesQuery.pedidos]
   );
 
+  const cajaOptions = reportesQuery.cajaOptions || [{ value: 'all', label: 'Todas las cajas' }];
+
   useEffect(() => {
     if (filters.canal === 'all') {
       return;
@@ -116,6 +119,15 @@ const useReportesSharedState = () => {
       setFilters((prev) => ({ ...prev, sedeId: 'all' }));
     }
   }, [sedeOptions, filters.sedeId]);
+
+  useEffect(() => {
+    if (filters.cajaId === 'all') {
+      return;
+    }
+    if (!cajaOptions.some((option) => option.value === filters.cajaId)) {
+      setFilters((prev) => ({ ...prev, cajaId: 'all' }));
+    }
+  }, [cajaOptions, filters.cajaId]);
 
   const rangeValue = useMemo(() => {
     if (!filters.startDate || !filters.endDate) {
@@ -169,6 +181,10 @@ const useReportesSharedState = () => {
     setFilters((prev) => ({ ...prev, canal: value }));
   };
 
+  const handleCajaChange = (value) => {
+    setFilters((prev) => ({ ...prev, cajaId: value }));
+  };
+
   const handleGroupingChange = (value) => {
     setFilters((prev) => ({ ...prev, grouping: value }));
   };
@@ -188,10 +204,12 @@ const useReportesSharedState = () => {
     scopeLabel,
     sedeOptions,
     channelOptions,
+    cajaOptions,
     groupingOptions,
     handleRangeChange,
     handleSedeChange,
     handleChannelChange,
+    handleCajaChange,
     handleGroupingChange,
     handleReset,
     handleRefresh,
@@ -208,15 +226,20 @@ const FiltersBar = ({
   rangeValue,
   sedeOptions,
   channelOptions,
+  cajaOptions,
   groupingOptions,
   handleRangeChange,
   handleSedeChange,
   handleChannelChange,
+  handleCajaChange,
   handleGroupingChange,
   handleReset,
   handleRefresh,
   exportConfig,
   sedesLoading,
+  showCajaFilter = false,
+  showChannelFilter = true,
+  showGroupingFilter = true,
 }) => (
   <Card>
     <Row gutter={[16, 16]} align="middle" justify="space-between">
@@ -246,18 +269,30 @@ const FiltersBar = ({
             loading={sedesLoading}
             onChange={handleSedeChange}
           />
-          <Select
-            style={{ width: 200 }}
-            value={filters.canal}
-            options={channelOptions}
-            onChange={handleChannelChange}
-          />
-          <Select
-            style={{ width: 160 }}
-            value={filters.grouping}
-            options={groupingOptions}
-            onChange={handleGroupingChange}
-          />
+          {showCajaFilter && Array.isArray(cajaOptions) && cajaOptions.length > 0 && (
+            <Select
+              style={{ width: 200 }}
+              value={filters.cajaId ?? 'all'}
+              options={cajaOptions}
+              onChange={handleCajaChange}
+            />
+          )}
+          {showChannelFilter && (
+            <Select
+              style={{ width: 200 }}
+              value={filters.canal}
+              options={channelOptions}
+              onChange={handleChannelChange}
+            />
+          )}
+          {showGroupingFilter && (
+            <Select
+              style={{ width: 160 }}
+              value={filters.grouping}
+              options={groupingOptions}
+              onChange={handleGroupingChange}
+            />
+          )}
           <Button onClick={handleReset} icon={<IconRefresh size={16} />}>Limpiar</Button>
           <Button onClick={handleRefresh}>Actualizar</Button>
           <Button type="primary" icon={<IconDownload size={16} />} onClick={exportConfig.onExport}>
@@ -271,28 +306,40 @@ const FiltersBar = ({
 
 const SummaryCards = ({ resumen }) => (
   <Row gutter={[16, 16]}>
-    <Col xs={24} md={12} xl={6}>
+    <Col xs={24} md={12} xl={8}>
       <Card>
         <Statistic title="Ventas cobradas" value={resumen.totalPagado} precision={2} prefix="S/" />
         <Text type="secondary">Total vendido: {formatCurrency(resumen.totalVentas)}</Text>
       </Card>
     </Col>
-    <Col xs={24} md={12} xl={6}>
+    <Col xs={24} md={12} xl={8}>
       <Card>
         <Statistic title="Ticket promedio" value={resumen.ticketPromedio} precision={2} prefix="S/" />
         <Text type="secondary">Pedidos pagados: {resumen.pedidosPagados}</Text>
       </Card>
     </Col>
-    <Col xs={24} md={12} xl={6}>
+    <Col xs={24} md={12} xl={8}>
       <Card>
         <Statistic title="Pedidos totales" value={resumen.pedidosTotales} />
         <Text type="secondary">Periodo seleccionado</Text>
       </Card>
     </Col>
-    <Col xs={24} md={12} xl={6}>
+    <Col xs={24} md={12} xl={8}>
       <Card>
         <Statistic title="Pendiente de cobro" value={resumen.totalPendiente} precision={2} prefix="S/" />
         <Text type="secondary">Saldo por cobrar del período</Text>
+      </Card>
+    </Col>
+    <Col xs={24} md={12} xl={8}>
+      <Card>
+        <Statistic title="Retiros registrados" value={resumen.retirosTotales ?? 0} precision={2} prefix="S/" />
+        <Text type="secondary">Retiros contabilizados: {resumen.cantidadRetiros ?? 0}</Text>
+      </Card>
+    </Col>
+    <Col xs={24} md={12} xl={8}>
+      <Card>
+        <Statistic title="Saldo neto caja" value={resumen.saldoNeto ?? 0} precision={2} prefix="S/" />
+        <Text type="secondary">Ventas cobradas menos retiros</Text>
       </Card>
     </Col>
   </Row>
@@ -386,6 +433,7 @@ const usePedidosExport = ({ pedidos }) => {
         pagado: toDecimal(pedido.pagado),
         pendiente: toDecimal(pedido.pendiente),
         canal: prettify(pedido.origen),
+        caja: pedido.cajaNombre,
         sede: pedido.sedeId ? String(pedido.sedeId) : 'Sin sede',
       }));
 
@@ -404,10 +452,11 @@ const usePedidosExport = ({ pedidos }) => {
               { label: 'Pagado (S/)', dataIndex: 'pagado' },
               { label: 'Pendiente (S/)', dataIndex: 'pendiente' },
               { label: 'Canal', dataIndex: 'canal' },
+              { label: 'Caja', dataIndex: 'caja' },
               { label: 'Sede', dataIndex: 'sede' },
             ],
             data: sheetData,
-            columnWidths: [16, 28, 24, 20, 20, 16, 16, 18, 18, 16],
+            columnWidths: [16, 28, 24, 20, 20, 16, 16, 18, 18, 18, 16],
           },
         ],
       });
@@ -458,9 +507,81 @@ const usePedidosTable = ({ pedidos }) => {
         pagado: toDecimal(pedido.pagado),
         pendiente: toDecimal(pedido.pendiente),
         canal: prettify(pedido.origen),
+        caja: pedido.cajaNombre,
         sede: pedido.sedeId ? String(pedido.sedeId) : 'Sin sede',
       })),
     [pedidos]
+  );
+};
+
+const useRetirosExport = ({ retiros }) => {
+  return useCallback(() => {
+    if (!retiros.length) {
+      message.warning('No hay retiros registrados para exportar');
+      return;
+    }
+
+    try {
+      const sheetData = retiros.map((retiro) => ({
+        fecha: retiro.creadoEnLabel,
+        caja: retiro.cajaNombre,
+        monto: toDecimal(retiro.monto),
+        metodoPago: prettify(retiro.metodoPago),
+        concepto: retiro.concepto || 'Sin detalle',
+        comprobante: retiro.comprobante || 'Sin comprobante',
+      }));
+
+      exportToXlsx({
+        fileName: `retiros-${dayjs().format('YYYYMMDD-HHmm')}`,
+        sheets: [
+          {
+            name: 'Retiros',
+            columns: [
+              { label: 'Fecha', dataIndex: 'fecha' },
+              { label: 'Caja', dataIndex: 'caja' },
+              { label: 'Monto (S/)', dataIndex: 'monto' },
+              { label: 'Método de pago', dataIndex: 'metodoPago' },
+              { label: 'Concepto', dataIndex: 'concepto' },
+              { label: 'Comprobante', dataIndex: 'comprobante' },
+            ],
+            data: sheetData,
+            columnWidths: [24, 24, 18, 22, 40, 26],
+          },
+        ],
+      });
+      message.success('Reporte de retiros exportado');
+    } catch (err) {
+      message.error('No se pudo exportar el reporte de retiros');
+    }
+  }, [retiros]);
+};
+
+const useRetirosTable = ({ retiros }) => {
+  return useMemo(
+    () =>
+      retiros.map((retiro) => ({
+        key: retiro.id,
+        fecha: retiro.creadoEnLabel,
+        caja: retiro.cajaNombre,
+        monto: toDecimal(retiro.monto),
+        metodoPago: prettify(retiro.metodoPago),
+        concepto: retiro.concepto || 'Sin detalle',
+        comprobante: retiro.comprobante || 'Sin comprobante',
+      })),
+    [retiros]
+  );
+};
+
+const useRetirosPorCajaTable = ({ retirosPorCaja }) => {
+  return useMemo(
+    () =>
+      (retirosPorCaja || []).map((entry) => ({
+        key: entry.cajaId,
+        caja: entry.cajaNombre,
+        cantidad: entry.cantidad,
+        monto: toDecimal(entry.monto),
+      })),
+    [retirosPorCaja]
   );
 };
 
@@ -527,15 +648,18 @@ const ReportesVentasPage = () => {
           rangeValue={state.rangeValue}
           sedeOptions={state.sedeOptions}
           channelOptions={state.channelOptions}
+          cajaOptions={state.cajaOptions}
           groupingOptions={state.groupingOptions}
           handleRangeChange={state.handleRangeChange}
           handleSedeChange={state.handleSedeChange}
           handleChannelChange={state.handleChannelChange}
+          handleCajaChange={state.handleCajaChange}
           handleGroupingChange={state.handleGroupingChange}
           handleReset={state.handleReset}
           handleRefresh={state.handleRefresh}
           exportConfig={{ label: 'Exportar ventas', onExport: exportVentas }}
           sedesLoading={state.sedesLoading}
+          showCajaFilter={false}
         />
 
         <SummaryCards resumen={state.resumen} />
@@ -641,15 +765,18 @@ const ReportesPedidosPage = () => {
           rangeValue={state.rangeValue}
           sedeOptions={state.sedeOptions}
           channelOptions={state.channelOptions}
+          cajaOptions={state.cajaOptions}
           groupingOptions={state.groupingOptions}
           handleRangeChange={state.handleRangeChange}
           handleSedeChange={state.handleSedeChange}
           handleChannelChange={state.handleChannelChange}
+          handleCajaChange={state.handleCajaChange}
           handleGroupingChange={state.handleGroupingChange}
           handleReset={state.handleReset}
           handleRefresh={state.handleRefresh}
           exportConfig={{ label: 'Exportar pedidos', onExport: exportPedidos }}
           sedesLoading={state.sedesLoading}
+          showCajaFilter
         />
 
         <SummaryCards resumen={state.resumen} />
@@ -684,6 +811,7 @@ const ReportesPedidosPage = () => {
                   render: (value) => formatCurrency(value),
                 },
                 { title: 'Canal', dataIndex: 'canal' },
+                { title: 'Caja', dataIndex: 'caja' },
                 { title: 'Sede', dataIndex: 'sede' },
               ]}
             />
@@ -696,6 +824,129 @@ const ReportesPedidosPage = () => {
   );
 };
 
-export { ReportesVentasPage, ReportesPedidosPage };
+const ReportesRetirosPage = () => {
+  const state = useReportesSharedState();
+  const exportRetiros = useRetirosExport({ retiros: state.retiros });
+  const retirosRows = useRetirosTable({ retiros: state.retiros });
+  const retirosPorCajaRows = useRetirosPorCajaTable({ retirosPorCaja: state.retirosPorCaja });
+  const isBusy = state.isLoading || state.sedesLoading;
+
+  if (!state.tiendaId) {
+    return (
+      <Result
+        status="warning"
+        title="No se pudo identificar la tienda"
+        subTitle="Inicia sesión nuevamente o selecciona una tienda para continuar"
+      />
+    );
+  }
+
+  if (state.isError) {
+    const detail = state.error?.response?.data?.message || state.error?.message || 'No se pudieron cargar los reportes';
+    return (
+      <Result
+        status="error"
+        title="No se pudieron cargar los reportes"
+        subTitle={detail}
+        extra={(
+          <Button icon={<IconRefresh size={16} />} onClick={state.refetch}>
+            Reintentar
+          </Button>
+        )}
+      />
+    );
+  }
+
+  return (
+    <Spin spinning={isBusy} tip="Cargando reportes...">
+      <Space direction="vertical" size={24} style={{ width: '100%' }}>
+        {state.warnings.length > 0 && (
+          <Alert
+            type="warning"
+            showIcon
+            message="Algunos datos no pudieron cargarse"
+            description={state.warnings.map((warning) => (
+              <div key={warning}>{warning}</div>
+            ))}
+          />
+        )}
+
+        <FiltersBar
+          title="Reporte de retiros"
+          subtitle="Movimientos de efectivo extraído de caja"
+          scopeLabel={state.scopeLabel}
+          filters={state.filters}
+          rangeValue={state.rangeValue}
+          sedeOptions={state.sedeOptions}
+          channelOptions={state.channelOptions}
+          cajaOptions={state.cajaOptions}
+          groupingOptions={state.groupingOptions}
+          handleRangeChange={state.handleRangeChange}
+          handleSedeChange={state.handleSedeChange}
+          handleChannelChange={state.handleChannelChange}
+          handleCajaChange={state.handleCajaChange}
+          handleGroupingChange={state.handleGroupingChange}
+          handleReset={state.handleReset}
+          handleRefresh={state.handleRefresh}
+          exportConfig={{ label: 'Exportar retiros', onExport: exportRetiros }}
+          sedesLoading={state.sedesLoading}
+          showCajaFilter
+          showChannelFilter={false}
+          showGroupingFilter={false}
+        />
+
+        <SummaryCards resumen={state.resumen} />
+
+        <Card title="Retiros registrados">
+          {retirosRows.length ? (
+            <Table
+              dataSource={retirosRows}
+              pagination={{ pageSize: 10, showSizeChanger: false }}
+              columns={[
+                { title: 'Fecha', dataIndex: 'fecha' },
+                { title: 'Caja', dataIndex: 'caja' },
+                {
+                  title: 'Monto (S/)',
+                  dataIndex: 'monto',
+                  align: 'right',
+                  render: (value) => formatCurrency(value),
+                },
+                { title: 'Método de pago', dataIndex: 'metodoPago' },
+                { title: 'Concepto', dataIndex: 'concepto' },
+                { title: 'Comprobante', dataIndex: 'comprobante' },
+              ]}
+            />
+          ) : (
+            <Empty description="No encontramos retiros con los filtros actuales." />
+          )}
+        </Card>
+
+        <Card title="Retiros por caja">
+          {retirosPorCajaRows.length ? (
+            <Table
+              dataSource={retirosPorCajaRows}
+              pagination={false}
+              size="small"
+              columns={[
+                { title: 'Caja', dataIndex: 'caja' },
+                { title: 'Retiros', dataIndex: 'cantidad', align: 'right' },
+                {
+                  title: 'Monto total (S/)',
+                  dataIndex: 'monto',
+                  align: 'right',
+                  render: (value) => formatCurrency(value),
+                },
+              ]}
+            />
+          ) : (
+            <Empty description="Sin retiros agrupados." />
+          )}
+        </Card>
+      </Space>
+    </Spin>
+  );
+};
+
+export { ReportesVentasPage, ReportesPedidosPage, ReportesRetirosPage };
 
 export default ReportesVentasPage;
