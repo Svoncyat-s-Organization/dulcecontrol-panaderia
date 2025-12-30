@@ -1,5 +1,6 @@
-import { useEffect, useMemo } from 'react';
-import { Button, Form, Input, InputNumber, Modal, Select, Space, Typography, message } from 'antd';
+import { useEffect, useMemo, useState } from 'react';
+import { Button, Form, Input, InputNumber, Modal, Select, Space, Typography, message, Alert, Card, Tag, Tooltip } from 'antd';
+import { InfoCircleOutlined, WarningOutlined, CheckCircleOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
 
@@ -23,11 +24,45 @@ const TransferenciaModal = ({
   userId,
   productos = [],
   insumos = [],
+  inventarioProductos = [],
+  inventarioInsumos = [],
 }) => {
   const [form] = Form.useForm();
+  const [stockWarnings, setStockWarnings] = useState([]);
+
+  const inventarioProductosMap = useMemo(() => {
+    const map = new Map();
+    (inventarioProductos ?? []).forEach((inv) => {
+      if (Number(inv.sedeId) === Number(sedeOrigenId)) {
+        map.set(Number(inv.productoId), inv);
+      }
+    });
+    return map;
+  }, [inventarioProductos, sedeOrigenId]);
+
+  const inventarioInsumosMap = useMemo(() => {
+    const map = new Map();
+    (inventarioInsumos ?? []).forEach((inv) => {
+      if (Number(inv.sedeId) === Number(sedeOrigenId)) {
+        map.set(Number(inv.insumoId), inv);
+      }
+    });
+    return map;
+  }, [inventarioInsumos, sedeOrigenId]);
+
+  const getStockDisponible = (refId, tipo) => {
+    if (tipo === 'producto') {
+      const inv = inventarioProductosMap.get(Number(refId));
+      return inv ? Number(inv.cantidadActual) || 0 : 0;
+    } else {
+      const inv = inventarioInsumosMap.get(Number(refId));
+      return inv ? Number(inv.cantidadActual) || 0 : 0;
+    }
+  };
 
   const validateCantidad = (index) => async (_, value) => {
     const tipo = form.getFieldValue(['items', index, 'tipo']);
+    const refId = form.getFieldValue(['items', index, 'refId']);
     const isProducto = tipo === 'producto';
 
     if (value === undefined || value === null || value === '') {
@@ -41,6 +76,14 @@ const TransferenciaModal = ({
 
     if (isProducto && !Number.isInteger(numero)) {
       throw new Error('Para productos, la cantidad debe ser un entero');
+    }
+
+    // Validar stock disponible
+    if (refId) {
+      const stock = getStockDisponible(refId, tipo);
+      if (numero > stock) {
+        throw new Error(`Stock insuficiente. Disponible: ${stock}`);
+      }
     }
   };
 
@@ -82,6 +125,35 @@ const TransferenciaModal = ({
       return;
     }
 
+    // Validar stock antes de enviar
+    const stockErrors = [];
+    rawItems.forEach((row, idx) => {
+      if (row?.refId && row?.cantidadEnviada) {
+        const stock = getStockDisponible(row.refId, row.tipo);
+        if (Number(row.cantidadEnviada) > stock) {
+          const label = row.tipo === 'producto' 
+            ? productos.find(p => p.id === row.refId)?.nombre 
+            : insumos.find(i => i.id === row.refId)?.nombre;
+          stockErrors.push(`${label || 'Item ' + (idx + 1)}: solicitado ${row.cantidadEnviada}, disponible ${stock}`);
+        }
+      }
+    });
+
+    if (stockErrors.length > 0) {
+      message.error({
+        content: (
+          <div>
+            <div style={{ fontWeight: 'bold', marginBottom: 8 }}>Stock insuficiente:</div>
+            {stockErrors.map((err, i) => (
+              <div key={i} style={{ fontSize: 12 }}>• {err}</div>
+            ))}
+          </div>
+        ),
+        duration: 6,
+      });
+      return;
+    }
+
     onSubmit({
       sedeOrigenId: values.sedeOrigenId,
       sedeDestinoId: values.sedeDestinoId,
@@ -90,6 +162,24 @@ const TransferenciaModal = ({
       items,
     });
   };
+
+  // Detectar items con stock bajo
+  const lowStockWarnings = useMemo(() => {
+    const warnings = [];
+    const items = form.getFieldValue('items') || [];
+    items.forEach((item, idx) => {
+      if (item?.refId) {
+        const stock = getStockDisponible(item.refId, item.tipo);
+        if (stock < 5) {
+          const label = item.tipo === 'producto'
+            ? productos.find(p => p.id === item.refId)?.nombre
+            : insumos.find(i => i.id === item.refId)?.nombre;
+          warnings.push({ label: label || `Item ${idx + 1}`, stock });
+        }
+      }
+    });
+    return warnings;
+  }, [form, getStockDisponible, productos, insumos]);
 
   return (
     <Modal
@@ -100,6 +190,27 @@ const TransferenciaModal = ({
       width={720}
     >
       <Form form={form} layout="vertical" onFinish={handleFinish} disabled={loading}>
+        {lowStockWarnings.length > 0 && (
+          <Alert
+            type="warning"
+            message="Stock bajo detectado"
+            description={
+              <div>
+                Los siguientes items tienen stock limitado en la sede origen:
+                <ul style={{ marginTop: 8, marginBottom: 0, paddingLeft: 20 }}>
+                  {lowStockWarnings.map((w, i) => (
+                    <li key={i}>
+                      {w.label}: {w.stock === 0 ? 'Sin stock' : `${w.stock} unidades`}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            }
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+        )}
+
         <Space style={{ width: '100%' }} size={12} wrap>
           <Form.Item label="Sede origen" name="sedeOrigenId" style={{ flex: 1, minWidth: 240 }}>
             <Select
@@ -129,10 +240,34 @@ const TransferenciaModal = ({
         <Form.List name="items">
           {(fields, { add, remove }) => (
             <>
-              <Text type="secondary">Items</Text>
+              <div style={{ marginBottom: 12 }}>
+                <Text strong>Items a transferir</Text>
+                <Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 4 }}>
+                  Agrega los productos o insumos que deseas transferir con sus cantidades
+                </Text>
+              </div>
+              
               {fields.map(({ key, name, ...restField }) => (
-                <Space key={key} align="start" style={{ display: 'flex', marginTop: 12 }} wrap>
-                  <Form.Item {...restField} name={[name, 'tipo']} initialValue="producto" style={{ width: 140 }}>
+                <div 
+                  key={key} 
+                  style={{ 
+                    display: 'flex', 
+                    gap: 12, 
+                    marginBottom: 16,
+                    padding: 12,
+                    background: '#fafafa',
+                    borderRadius: 8,
+                    alignItems: 'flex-end',
+                    flexWrap: 'wrap'
+                  }}
+                >
+                  <Form.Item 
+                    {...restField} 
+                    name={[name, 'tipo']} 
+                    initialValue="producto" 
+                    label="Tipo"
+                    style={{ width: 130, marginBottom: 0 }}
+                  >
                     <Select
                       options={[
                         { label: 'Producto', value: 'producto' },
@@ -142,67 +277,86 @@ const TransferenciaModal = ({
                   </Form.Item>
 
                   <Form.Item
-                    shouldUpdate={(prev, curr) => prev?.items?.[name]?.tipo !== curr?.items?.[name]?.tipo}
+                    shouldUpdate={(prev, curr) => 
+                      prev?.items?.[name]?.tipo !== curr?.items?.[name]?.tipo ||
+                      prev?.items?.[name]?.refId !== curr?.items?.[name]?.refId
+                    }
                     noStyle
                   >
                     {({ getFieldValue }) => {
                       const tipo = getFieldValue(['items', name, 'tipo']);
+                      const refId = getFieldValue(['items', name, 'refId']);
                       const options = tipo === 'insumo' ? insumoOptions : productoOptions;
+                      const stock = refId ? getStockDisponible(refId, tipo) : null;
+                      
                       return (
-                        <Form.Item
-                          {...restField}
-                          name={[name, 'refId']}
-                          rules={[{ required: true, message: 'Selecciona un item' }]}
-                          style={{ width: 360 }}
-                        >
-                          <Select
-                            placeholder={tipo === 'insumo' ? 'Selecciona insumo' : 'Selecciona producto'}
-                            options={options}
-                            showSearch
-                            optionFilterProp="label"
-                          />
-                        </Form.Item>
+                        <div style={{ flex: 1, minWidth: 280 }}>
+                          <Form.Item
+                            {...restField}
+                            name={[name, 'refId']}
+                            label={tipo === 'insumo' ? 'Insumo' : 'Producto'}
+                            rules={[{ required: true, message: 'Selecciona un item' }]}
+                            style={{ marginBottom: 0 }}
+                          >
+                            <Select
+                              placeholder={tipo === 'insumo' ? 'Selecciona insumo' : 'Selecciona producto'}
+                              options={options}
+                              showSearch
+                              optionFilterProp="label"
+                            />
+                          </Form.Item>
+                          {refId && stock !== null && (
+                            <div style={{ marginTop: 4, fontSize: 12 }}>
+                              <Tag 
+                                color={stock === 0 ? 'red' : stock < 5 ? 'orange' : stock < 20 ? 'gold' : 'green'}
+                                icon={stock === 0 ? <WarningOutlined /> : stock < 5 ? <WarningOutlined /> : <CheckCircleOutlined />}
+                              >
+                                Stock: {stock}
+                              </Tag>
+                              {stock === 0 && (
+                                <Text type="danger" style={{ fontSize: 11 }}>Sin existencias</Text>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       );
                     }}
                   </Form.Item>
 
                   <Form.Item
                     {...restField}
-                    label={null}
+                    label="Cantidad"
                     name={[name, 'cantidadEnviada']}
                     rules={[{ validator: validateCantidad(name) }]}
-                    style={{ width: 160 }}
+                    style={{ width: 140, marginBottom: 0 }}
                   >
-                    <Form.Item
-                      shouldUpdate={(prev, curr) => prev?.items?.[name]?.tipo !== curr?.items?.[name]?.tipo}
-                      noStyle
-                    >
-                      {({ getFieldValue }) => {
-                        const tipo = getFieldValue(['items', name, 'tipo']);
-                        const isProducto = tipo !== 'insumo';
-
-                        return (
-                          <InputNumber
-                            min={isProducto ? 1 : 0.01}
-                            step={isProducto ? 1 : 0.01}
-                            precision={isProducto ? 0 : 2}
-                            style={{ width: '100%' }}
-                            placeholder="Cantidad"
-                          />
-                        );
-                      }}
-                    </Form.Item>
+                    <InputNumber
+                      min={0.01}
+                      step={0.01}
+                      precision={2}
+                      style={{ width: '100%' }}
+                      placeholder="0.00"
+                    />
                   </Form.Item>
 
-                  <Button danger onClick={() => remove(name)} disabled={fields.length === 1}>
+                  <Button 
+                    danger 
+                    onClick={() => remove(name)} 
+                    disabled={fields.length === 1}
+                    style={{ marginBottom: 0 }}
+                  >
                     Quitar
                   </Button>
-                </Space>
+                </div>
               ))}
 
-              <div style={{ marginTop: 16 }}>
-                <Button onClick={() => add({ tipo: 'producto', refId: null, cantidadEnviada: 1 })}>
-                  Agregar item
+              <div style={{ marginTop: 8 }}>
+                <Button 
+                  onClick={() => add({ tipo: 'producto', refId: null, cantidadEnviada: 1 })}
+                  type="dashed"
+                  block
+                >
+                  + Agregar item
                 </Button>
               </div>
             </>

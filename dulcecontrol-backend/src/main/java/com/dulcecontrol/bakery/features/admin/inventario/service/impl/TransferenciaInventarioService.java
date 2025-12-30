@@ -313,6 +313,66 @@ public class TransferenciaInventarioService implements ITransferenciaInventarioS
         }
     }
 
+    /**
+     * Aplica una entrada incremental de inventario en el destino (para recepciones parciales).
+     * @param tiendaId ID de la tienda
+     * @param transferencia Transferencia en proceso
+     * @param item Item que se está recibiendo parcialmente
+     * @param cantidadRecibidaAhora Cantidad que se recibe en esta operación específica
+     */
+    private void aplicarEntradaDestinoIncremental(Long tiendaId, TransferenciaInventario transferencia, 
+                                                   ItemTransferencia item, BigDecimal cantidadRecibidaAhora) {
+        if (cantidadRecibidaAhora == null || cantidadRecibidaAhora.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+
+        Long sedeDestinoId = transferencia.getSedeDestinoId();
+
+        if (item.getProductoId() != null) {
+            Integer cantidad = convertirCantidadProducto(cantidadRecibidaAhora);
+            InventarioProducto inventario = inventarioProductoRepository
+                    .findBySedeIdAndProductoId(sedeDestinoId, item.getProductoId())
+                    .orElseGet(() -> {
+                        InventarioProducto nuevo = new InventarioProducto();
+                        nuevo.setTiendaId(tiendaId);
+                        nuevo.setSedeId(sedeDestinoId);
+                        nuevo.setProductoId(item.getProductoId());
+                        nuevo.setCantidadActual(0);
+                        return inventarioProductoRepository.save(nuevo);
+                    });
+
+            Integer anterior = inventario.getCantidadActual();
+            Integer posterior = anterior + cantidad;
+            inventario.setCantidadActual(posterior);
+            inventarioProductoRepository.save(inventario);
+
+            registrarMovimientoProducto(tiendaId, sedeDestinoId, item.getProductoId(), TipoMovimientoInsumo.ENTRADA,
+                    cantidad, anterior, posterior);
+        }
+
+        if (item.getInsumoId() != null) {
+            InventarioInsumoSede inventario = inventarioInsumoSedeRepository
+                    .findBySedeIdAndInsumoId(sedeDestinoId, item.getInsumoId())
+                    .orElseGet(() -> {
+                        InventarioInsumoSede nuevo = new InventarioInsumoSede();
+                        nuevo.setTiendaId(tiendaId);
+                        nuevo.setSedeId(sedeDestinoId);
+                        nuevo.setInsumoId(item.getInsumoId());
+                        nuevo.setCantidadActual(BigDecimal.ZERO);
+                        return inventarioInsumoSedeRepository.save(nuevo);
+                    });
+
+            BigDecimal anterior = inventario.getCantidadActual();
+            BigDecimal posterior = anterior.add(cantidadRecibidaAhora);
+            inventario.setCantidadActual(posterior);
+            inventarioInsumoSedeRepository.save(inventario);
+
+            registrarMovimientoInsumo(tiendaId, sedeDestinoId, item.getInsumoId(), TipoMovimientoInsumo.ENTRADA,
+                    cantidadRecibidaAhora, anterior, posterior, transferencia.getId(), 
+                    "Transferencia #" + transferencia.getId() + " (entrada parcial)");
+        }
+    }
+
     private void revertirSalidaOrigen(Long tiendaId, TransferenciaInventario transferencia, List<ItemTransferencia> items) {
         if (items == null || items.isEmpty()) {
             return;
@@ -453,39 +513,66 @@ public class TransferenciaInventarioService implements ITransferenciaInventarioS
             }
         }
 
+        // Procesar recepción parcial/completa
         for (ItemTransferenciaRecepcionRequest itemReq : request.getItems()) {
             ItemTransferencia item = itemsById.get(itemReq.getItemId());
             if (item == null) {
                 throw new BadRequestException("El itemId " + itemReq.getItemId() + " no pertenece a la transferencia");
             }
 
-            BigDecimal recibida = itemReq.getCantidadRecibida();
-            if (recibida == null || recibida.compareTo(BigDecimal.ZERO) <= 0) {
+            BigDecimal recibidaAhora = itemReq.getCantidadRecibida();
+            if (recibidaAhora == null || recibidaAhora.compareTo(BigDecimal.ZERO) <= 0) {
                 throw new BadRequestException("La cantidad recibida debe ser mayor a 0");
             }
 
-            if (item.getCantidadEnviada() != null && recibida.compareTo(item.getCantidadEnviada()) > 0) {
-                throw new BadRequestException("La cantidad recibida no puede superar la enviada");
+            // Obtener cantidad previamente recibida (acumulada)
+            BigDecimal recibidaAnterior = item.getCantidadRecibida() != null ? item.getCantidadRecibida() : BigDecimal.ZERO;
+            BigDecimal totalRecibido = recibidaAnterior.add(recibidaAhora);
+
+            // Validar que no exceda lo enviado
+            if (item.getCantidadEnviada() != null && totalRecibido.compareTo(item.getCantidadEnviada()) > 0) {
+                throw new BadRequestException(
+                    String.format("La cantidad total recibida (%.2f) no puede superar la enviada (%.2f)", 
+                        totalRecibido, item.getCantidadEnviada())
+                );
             }
 
             // Para productos, la cantidad debe ser entera
             if (item.getProductoId() != null) {
-                BigDecimal normalized = recibida.stripTrailingZeros();
+                BigDecimal normalized = recibidaAhora.stripTrailingZeros();
                 if (normalized.scale() > 0) {
                     throw new BadRequestException("Para productos, la cantidad recibida debe ser un entero");
                 }
             }
 
-            item.setCantidadRecibida(recibida);
+            // Actualizar inventario destino con la cantidad recibida AHORA (no acumulada)
+            aplicarEntradaDestinoIncremental(tiendaId, transferencia, item, recibidaAhora);
+
+            // Actualizar cantidad recibida acumulada en el item
+            item.setCantidadRecibida(totalRecibido);
             itemRepository.save(item);
         }
 
+        // Actualizar responsable de recepción
         if (request.getRecibidoPor() != null) {
             transferencia.setRecibidoPor(request.getRecibidoPor());
-            repository.save(transferencia);
         }
+        
+        // Verificar si TODA la transferencia está completa
+        boolean todosCompletados = items.stream().allMatch(item -> {
+            BigDecimal recibida = item.getCantidadRecibida();
+            BigDecimal enviada = item.getCantidadEnviada();
+            return recibida != null && enviada != null && recibida.compareTo(enviada) >= 0;
+        });
 
-        return cambiarEstado(tiendaId, id, EstadoTransferencia.RECIBIDO);
+        if (todosCompletados) {
+            // Cambiar estado a RECIBIDO solo si todo está completo
+            transferencia.setEstado(EstadoTransferencia.RECIBIDO);
+            transferencia.setFechaRecepcion(LocalDateTime.now());
+        }
+        
+        TransferenciaInventario actualizado = repository.save(transferencia);
+        return toResponse(actualizado);
     }
 
     private void validarTransicionEstado(EstadoTransferencia estadoActual, EstadoTransferencia nuevoEstado) {

@@ -191,7 +191,7 @@ const TransferenciasTableView = ({
       width: 260,
       render: (_, record) => {
         const estado = normalizeEstado(record.estado);
-        const disabled = Boolean(changingId && changingId === record.id);
+        const isChanging = changingId === record.id;
 
         const activeSedeId = Number(sedeOrigenId);
         const canEnviarFromActiveSede = Number(record.sedeOrigenId) === activeSedeId;
@@ -211,13 +211,13 @@ const TransferenciasTableView = ({
                   okText="Confirmar"
                   cancelText="Cancelar"
                   onConfirm={() => onChangeEstado(record, 'EN_TRANSITO')}
-                  disabled={disabled}
+                  disabled={isChanging || !canEnviarFromActiveSede}
                 >
                   <Button
                     size="small"
                     icon={<IconTruckDelivery size={16} />}
-                    loading={disabled}
-                    disabled={!canEnviarFromActiveSede || disabled}
+                    loading={isChanging}
+                    disabled={!canEnviarFromActiveSede}
                   >
                     Enviar
                   </Button>
@@ -229,14 +229,14 @@ const TransferenciasTableView = ({
                   okText="Confirmar"
                   cancelText="Volver"
                   onConfirm={() => onChangeEstado(record, 'CANCELADO')}
-                  disabled={disabled}
+                  disabled={isChanging}
                 >
                   <Button
                     size="small"
                     danger
                     icon={<IconX size={16} />}
-                    loading={disabled}
-                    disabled={disabled}
+                    loading={isChanging}
+                    disabled={isChanging}
                   >
                     Cancelar
                   </Button>
@@ -249,8 +249,8 @@ const TransferenciasTableView = ({
                   size="small"
                   type="primary"
                   onClick={() => onOpenRecepcion?.(record)}
-                  loading={disabled}
-                  disabled={!canRecibirFromActiveSede || disabled}
+                  loading={isChanging}
+                  disabled={!canRecibirFromActiveSede || isChanging}
                 >
                   Recibir
                 </Button>
@@ -261,14 +261,14 @@ const TransferenciasTableView = ({
                   okText="Confirmar"
                   cancelText="Volver"
                   onConfirm={() => onChangeEstado(record, 'CANCELADO')}
-                  disabled={disabled}
+                  disabled={isChanging}
                 >
                   <Button
                     size="small"
                     danger
                     icon={<IconX size={16} />}
-                    loading={disabled}
-                    disabled={disabled}
+                    loading={isChanging}
+                    disabled={isChanging}
                   >
                     Cancelar
                   </Button>

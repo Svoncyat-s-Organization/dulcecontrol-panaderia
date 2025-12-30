@@ -50,10 +50,10 @@ const AgregarInsumoModal = ({ open, onClose, onSubmit, loading }) => {
         description={(
           <div>
             <div>
-              Aquí creas el insumo y lo agregas al inventario de la sede con una cantidad inicial.
+              El insumo se creará en el catálogo y se agregará al inventario con cantidad 0.
             </div>
             <div style={{ marginTop: 8 }}>
-              Nota: el factor de conversión se asigna automáticamente.
+              Usa el botón "Ajustar" después para agregar stock inicial.
             </div>
           </div>
         )}
@@ -119,41 +119,11 @@ const AgregarInsumoModal = ({ open, onClose, onSubmit, loading }) => {
               <InputNumber
                 style={{ width: '100%' }}
                 min={0}
-                precision={3}
-                placeholder="0.000"
+                precision={2}
+                placeholder="0.00"
                 addonAfter={unidadBase || undefined}
               />
             </Form.Item>
-
-        <Divider style={{ margin: '16px 0' }} />
-
-        <Form.Item
-          label="Cantidad inicial"
-          name="cantidadActual"
-          rules={[
-            { required: true, message: 'Ingresa la cantidad inicial' },
-            { type: 'number', min: 0, message: 'La cantidad debe ser mayor o igual a 0' },
-          ]}
-          tooltip="Este será el stock inicial en la sede seleccionada"
-          extra={unidadBase ? `Se registra en ${unidadBase}. Puedes iniciar en 0.` : 'Se registra en unidad base. Puedes iniciar en 0.'}
-        >
-          <InputNumber
-            style={{ width: '100%' }}
-            min={0}
-            precision={2}
-            placeholder="0.0"
-            addonAfter={unidadBase || undefined}
-          />
-        </Form.Item>
-
-        <Form.Item
-          label="Ubicación física"
-          name="ubicacionFisica"
-          tooltip="Opcional: ayuda al equipo a ubicar el insumo (estante, cámara fría, depósito)"
-          rules={[{ max: 100, message: 'Máximo 100 caracteres' }]}
-        >
-          <Input placeholder="Ej: Estante A, Nivel 2" />
-        </Form.Item>
       </Form>
     </Modal>
   );
