@@ -301,7 +301,7 @@ export const useReportesData = ({ tiendaId, filters }) => {
     });
   }, [pedidosSinFiltroCaja, targetCaja]);
 
-  const sesionesFiltroMovimientos = useMemo(() => {
+  const sesionesSeleccionadas = useMemo(() => {
     if (!Array.isArray(sesionesData) || sesionesData.length === 0) {
       return [];
     }
@@ -309,58 +309,62 @@ export const useReportesData = ({ tiendaId, filters }) => {
       return [];
     }
 
-    const ids = sesionesData
-      .filter((sesion) => {
-        if (!sesion?.id) {
+    return sesionesData.filter((sesion) => {
+      if (!sesion?.id) {
+        return false;
+      }
+
+      const sesionCajaId = sesion.cajaId != null ? String(sesion.cajaId) : null;
+      if (targetCaja && sesionCajaId !== targetCaja) {
+        return false;
+      }
+
+      if (targetSede) {
+        if (!sesionCajaId) {
           return false;
         }
-
-        const sesionCajaId = sesion.cajaId != null ? String(sesion.cajaId) : null;
-        if (targetCaja && targetCaja !== 'none' && sesionCajaId !== targetCaja) {
+        const sedeId = cajaSedeMap.get(sesionCajaId) || null;
+        if (sedeId !== targetSede) {
           return false;
         }
+      }
 
-        if (targetSede) {
-          if (!sesionCajaId) {
-            return false;
-          }
-          const sedeId = cajaSedeMap.get(sesionCajaId) || null;
-          if (sedeId !== targetSede) {
-            return false;
-          }
-        }
-
-        if (!startDate && !endDate) {
-          return true;
-        }
-
-        const apertura = sesion.fechaApertura ? dayjs(sesion.fechaApertura) : null;
-        const cierre = sesion.fechaCierre ? dayjs(sesion.fechaCierre) : null;
-        const sesionStart = apertura && apertura.isValid() ? apertura : null;
-        const sesionEnd = cierre && cierre.isValid() ? cierre : (sesionStart || dayjs());
-
-        if (startDate && sesionEnd && sesionEnd.isBefore(startDate)) {
-          return false;
-        }
-        if (endDate && sesionStart && sesionStart.isAfter(endDate)) {
-          return false;
-        }
-
+      if (!startDate && !endDate) {
         return true;
-      })
-      .map((sesion) => String(sesion.id));
+      }
 
-    ids.sort((a, b) => a.localeCompare(b));
-    return ids;
+      const apertura = sesion.fechaApertura ? dayjs(sesion.fechaApertura) : null;
+      const cierre = sesion.fechaCierre ? dayjs(sesion.fechaCierre) : null;
+      const sesionStart = apertura && apertura.isValid() ? apertura : null;
+      const sesionEnd = cierre && cierre.isValid() ? cierre : (sesionStart || dayjs());
+
+      if (startDate && sesionEnd && sesionEnd.isBefore(startDate)) {
+        return false;
+      }
+      if (endDate && sesionStart && sesionStart.isAfter(endDate)) {
+        return false;
+      }
+
+      return true;
+    });
   }, [sesionesData, targetCaja, targetSede, startDate, endDate, cajaSedeMap]);
 
+  const sesionesSeleccionadasIds = useMemo(() => {
+    if (!sesionesSeleccionadas.length) {
+      return [];
+    }
+    return sesionesSeleccionadas
+      .map((sesion) => String(sesion.id))
+      .sort((a, b) => a.localeCompare(b));
+  }, [sesionesSeleccionadas]);
+
   const movimientosQuery = useQuery({
-    queryKey: REPORTES_KEYS.movimientos(tiendaId, sesionesFiltroMovimientos),
-    enabled: Boolean(tiendaId) && sesionesFiltroMovimientos.length > 0,
+    queryKey: REPORTES_KEYS.movimientos(tiendaId, sesionesSeleccionadasIds),
+    enabled: Boolean(tiendaId) && sesionesSeleccionadasIds.length > 0,
     staleTime: 60 * 1000,
     queryFn: async () => {
       const results = await Promise.all(
-        sesionesFiltroMovimientos.map(async (sesionId) => {
+        sesionesSeleccionadasIds.map(async (sesionId) => {
           const movimientos = await getMovimientosCaja(tiendaId, sesionId);
           const collection = Array.isArray(movimientos) ? movimientos : [];
           return collection.map((movimiento) => ({
@@ -461,6 +465,17 @@ export const useReportesData = ({ tiendaId, filters }) => {
     () => Number(centimosToSoles(retirosTotalesCentimos).toFixed(2)),
     [retirosTotalesCentimos]
   );
+
+  const montoInicialTotal = useMemo(() => {
+    if (!sesionesSeleccionadas.length) {
+      return 0;
+    }
+    const totalCentimos = sesionesSeleccionadas.reduce(
+      (acc, sesion) => acc + toNumber(sesion.montoInicialCentimos),
+      0
+    );
+    return Number(centimosToSoles(totalCentimos).toFixed(2));
+  }, [sesionesSeleccionadas]);
 
   const retirosPorCaja = useMemo(() => {
     const map = new Map();
@@ -591,7 +606,7 @@ export const useReportesData = ({ tiendaId, filters }) => {
       tendenciaMap.set(periodMeta.key, trendEntry);
     });
 
-    const saldoNeto = Number((resumen.totalPagado - retirosTotales).toFixed(2));
+    const saldoNeto = Number((resumen.totalPagado + montoInicialTotal - retirosTotales).toFixed(2));
 
     return {
       resumen: {
@@ -600,13 +615,14 @@ export const useReportesData = ({ tiendaId, filters }) => {
         retirosTotales,
         saldoNeto,
         cantidadRetiros: retiros.length,
+        montoInicial: montoInicialTotal,
       },
       porEstado: Array.from(porEstadoMap.values()).sort((a, b) => b.ventas - a.ventas),
       porPago: Array.from(porPagoMap.values()).sort((a, b) => b.ventas - a.ventas),
       porCanal: Array.from(porCanalMap.values()).sort((a, b) => b.ventas - a.ventas),
       tendencia: Array.from(tendenciaMap.values()).sort((a, b) => a.order - b.order),
     };
-  }, [pedidos, grouping, retiros, retirosTotales]);
+  }, [pedidos, grouping, retiros, retirosTotales, montoInicialTotal]);
 
   const refetchAll = useCallback(async () => {
     await Promise.all([
