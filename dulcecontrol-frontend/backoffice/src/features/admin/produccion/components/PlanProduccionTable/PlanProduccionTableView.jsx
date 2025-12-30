@@ -201,11 +201,6 @@ const PlanProduccionTableView = ({
             <Text style={{ fontSize: 12 }}>
               Producido: <Text strong type="success">{totales.producido}</Text>
             </Text>
-            {totales.merma > 0 && (
-              <Text style={{ fontSize: 12 }}>
-                Merma: <Text strong type="danger">{totales.merma}</Text>
-              </Text>
-            )}
           </Space>
         );
       },

@@ -34,22 +34,10 @@ const PlanDetalleModalView = ({
   const handleStartEdit = (detalle) => {
     form.setFieldsValue({
       cantidadProducida: detalle.cantidadProducida || 0,
-      cantidadMerma: detalle.cantidadMerma || 0,
       estado: detalle.estado,
       observaciones: detalle.observaciones || '',
     });
     onEditDetalle(detalle);
-  };
-
-  // Calcular máximo dinámico basado en planificado
-  const getMaxProducido = (record) => {
-    const mermaActual = form.getFieldValue('cantidadMerma') || 0;
-    return record.cantidadPlanificada - mermaActual;
-  };
-
-  const getMaxMerma = (record) => {
-    const producidoActual = form.getFieldValue('cantidadProducida') || 0;
-    return record.cantidadPlanificada - producidoActual;
   };
 
   const handleSubmitEdit = async () => {
@@ -98,9 +86,8 @@ const PlanDetalleModalView = ({
                 { required: true, message: 'Requerido' },
                 {
                   validator: (_, value) => {
-                    const merma = form.getFieldValue('cantidadMerma') || 0;
-                    if (value + merma > record.cantidadPlanificada) {
-                      return Promise.reject(`Máximo ${record.cantidadPlanificada - merma}`);
+                    if (value > record.cantidadPlanificada) {
+                      return Promise.reject(`Máximo ${record.cantidadPlanificada}`);
                     }
                     return Promise.resolve();
                   }
@@ -111,49 +98,11 @@ const PlanDetalleModalView = ({
                 min={0} 
                 max={record.cantidadPlanificada}
                 style={{ width: 80 }}
-                onChange={() => form.validateFields(['cantidadMerma'])}
               />
             </Form.Item>
           );
         }
         return <Text type={cant === record.cantidadPlanificada ? 'success' : undefined}>{cant}</Text>;
-      },
-    },
-    {
-      title: 'Merma',
-      dataIndex: 'cantidadMerma',
-      key: 'cantidadMerma',
-      width: 90,
-      align: 'center',
-      render: (cant, record) => {
-        if (editingDetalle?.id === record.id) {
-          return (
-            <Form.Item 
-              name="cantidadMerma" 
-              noStyle 
-              rules={[
-                { required: true, message: 'Requerido' },
-                {
-                  validator: (_, value) => {
-                    const producido = form.getFieldValue('cantidadProducida') || 0;
-                    if (value + producido > record.cantidadPlanificada) {
-                      return Promise.reject(`Máximo ${record.cantidadPlanificada - producido}`);
-                    }
-                    return Promise.resolve();
-                  }
-                }
-              ]}
-            >
-              <InputNumber 
-                min={0} 
-                max={record.cantidadPlanificada}
-                style={{ width: 70 }}
-                onChange={() => form.validateFields(['cantidadProducida'])}
-              />
-            </Form.Item>
-          );
-        }
-        return cant > 0 ? <Text type="danger">{cant}</Text> : <Text type="secondary">0</Text>;
       },
     },
     {
@@ -169,7 +118,6 @@ const PlanDetalleModalView = ({
                 <Select.Option value="PENDIENTE">Pendiente</Select.Option>
                 <Select.Option value="EN_HORNO">En Horno</Select.Option>
                 <Select.Option value="TERMINADO">Terminado</Select.Option>
-                <Select.Option value="MERMA">Merma</Select.Option>
               </Select>
             </Form.Item>
           );
@@ -304,14 +252,6 @@ const PlanDetalleModalView = ({
                 value={totales.producido}
                 suffix="und"
                 valueStyle={{ color: '#3f8600' }}
-              />
-            </Col>
-            <Col span={6}>
-              <Statistic
-                title="Merma"
-                value={totales.merma}
-                suffix="und"
-                valueStyle={{ color: totales.merma > 0 ? '#cf1322' : undefined }}
               />
             </Col>
           </Row>

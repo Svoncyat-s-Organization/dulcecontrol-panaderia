@@ -58,7 +58,7 @@ const PlanDetalleModal = ({ open, onClose, plan, tiendaId, sedeId }) => {
       detalleId,
       payload: {
         cantidadProducida: parseInt(values.cantidadProducida, 10) || 0,
-        cantidadMerma: parseInt(values.cantidadMerma, 10) || 0,
+        cantidadMerma: 0,
         estado: values.estado,
         observaciones: values.observaciones || '',
       },

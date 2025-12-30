@@ -389,9 +389,10 @@ public class OrdenCompraService implements IOrdenCompraService {
         OrdenCompra orden = ordenCompraRepository.findByIdAndTiendaId(request.getOrdenCompraId(), tiendaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Orden de compra no encontrada"));
 
-        // Validar que la orden esté en estado ENVIADA
-        if (orden.getEstado() != EstadoOrdenCompra.ENVIADA) {
-            throw new BadRequestException("Solo se pueden recibir órdenes en estado ENVIADA");
+        // Validar que la orden esté en estado ENVIADA o RECIBIDA_PARCIAL
+        if (orden.getEstado() != EstadoOrdenCompra.ENVIADA && 
+            orden.getEstado() != EstadoOrdenCompra.RECIBIDA_PARCIAL) {
+            throw new BadRequestException("Solo se pueden recibir órdenes en estado ENVIADA o RECIBIDA_PARCIAL");
         }
 
         // Procesar cada item recibido
