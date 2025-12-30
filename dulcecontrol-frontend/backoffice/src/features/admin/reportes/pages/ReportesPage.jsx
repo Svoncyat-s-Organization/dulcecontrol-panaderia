@@ -286,6 +286,12 @@ const SummaryCards = ({ resumen }) => (
     </Col>
     <Col xs={24} md={12} xl={8}>
       <Card>
+        <Statistic title="Monto inicial caja" value={resumen.montoInicial ?? 0} precision={2} prefix="S/" />
+        <Text type="secondary">Suma de aperturas según los filtros</Text>
+      </Card>
+    </Col>
+    <Col xs={24} md={12} xl={8}>
+      <Card>
         <Statistic title="Pendiente de cobro" value={resumen.totalPendiente} precision={2} prefix="S/" />
         <Text type="secondary">Saldo por cobrar del período</Text>
       </Card>
@@ -299,7 +305,7 @@ const SummaryCards = ({ resumen }) => (
     <Col xs={24} md={12} xl={8}>
       <Card>
         <Statistic title="Saldo neto caja" value={resumen.saldoNeto ?? 0} precision={2} prefix="S/" />
-        <Text type="secondary">Ventas cobradas menos retiros</Text>
+        <Text type="secondary">Inicial + cobradas − retiros</Text>
       </Card>
     </Col>
   </Row>
@@ -316,6 +322,9 @@ const useVentasExport = ({ resumen, tendencia, porCanal }) => {
     try {
       const resumenRows = [
         { metrica: 'Ventas cobradas (S/)', valor: toDecimal(resumen.totalPagado) },
+        { metrica: 'Monto inicial caja (S/)', valor: toDecimal(resumen.montoInicial ?? 0) },
+        { metrica: 'Retiros registrados (S/)', valor: toDecimal(resumen.retirosTotales ?? 0) },
+        { metrica: 'Saldo neto caja (S/)', valor: toDecimal(resumen.saldoNeto ?? 0) },
         { metrica: 'Pedidos pagados', valor: resumen.pedidosPagados },
         { metrica: 'Pedidos totales', valor: resumen.pedidosTotales },
         { metrica: 'Ticket promedio (S/)', valor: toDecimal(resumen.ticketPromedio) },
