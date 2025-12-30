@@ -177,5 +177,5 @@ echo -e "  5. ✓ Backend iniciado"
 echo ""
 echo -e "${BLUE}Endpoints disponibles:${NC}"
 echo -e "  • API Base: https://${REMOTE_HOST}:2250"
-echo -e "  • Muchos más <3
+echo -e "  • Muchos más <3"
 echo ""
