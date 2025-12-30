@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Descriptions, Tag, Button, Divider, message, Spin, Space, Row, Col, Tooltip, Alert, Typography } from 'antd';
+import { Card, Descriptions, Tag, Button, Divider, message, Spin, Space, Row, Col, Tooltip, Alert, Typography, Table } from 'antd';
 import { ArrowLeftOutlined, FilePdfOutlined, FileTextOutlined, CheckCircleOutlined, FileZipOutlined, Html5Outlined, CloseCircleOutlined, SyncOutlined } from '@ant-design/icons';
 import { facturacionApi } from '../api/facturacion.api';
 import { useTokenStore } from '../../../../shared/store/tokenStore';
@@ -25,10 +25,20 @@ const FacturacionDetallePage = () => {
         if (!tiendaId || !id) return;
         setLoading(true);
         try {
-            const data = await facturacionApi.obtenerComprobante(tiendaId, id);
+            const [data, seriesList] = await Promise.all([
+                facturacionApi.obtenerComprobante(tiendaId, id),
+                facturacionApi.listarSeries(tiendaId)
+            ]);
 
-            // Si el comprobante no tiene detalles pero tiene un pedidoId, buscamos los detalles del pedido
-            if ((!data.detalles || data.detalles.length === 0) && data.pedidoId) {
+            if (data.serieId) {
+                const foundSerie = seriesList.find(s => s.id === data.serieId);
+                if (foundSerie) {
+                    data.serie = foundSerie.serie;
+                }
+            }
+
+            // Siempre intentar obtener los detalles originales del pedido para tener la info completa (cantidad, producto)
+            if (data.pedidoId) {
                 try {
                     const detallesPedido = await getDetallesPedido(tiendaId, data.pedidoId);
 
@@ -128,17 +138,9 @@ const FacturacionDetallePage = () => {
         // --- Header ---
         // Title (Top Left)
         doc.setFontSize(40);
-        doc.setFont('courier', 'bold');
-        doc.setFont(undefined, 'bold');
-        doc.text(comprobante.tipoComprobante || 'COMPROBANTE', 14, 25);
+        doc.setFont('times', 'normal');
+        doc.text((comprobante.tipoComprobante || 'COMPROBANTE').toLowerCase(), 14, 25);
 
-        // Logo (Top Right) - Placeholder Circle
-        doc.setFillColor(150, 150, 150);
-        doc.circle(pageWidth - 25, 20, 12, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(10);
-        doc.text('LOGO', pageWidth - 25, 21, { align: 'center' });
-        doc.setTextColor(0, 0, 0);
 
         // --- Info Section ---
         const startY = 45;
@@ -161,8 +163,15 @@ const FacturacionDetallePage = () => {
 
         // Invoice Details (Right Side)
         const rightColX = 130; // Moved further right to avoid overlap
-        doc.setFont(undefined, 'bold');
-        doc.text(`N° DE ${comprobante.tipoComprobante}`, rightColX, startY, { align: 'right' });
+        const labelX = rightColX;
+        const valueX = pageWidth - 14;
+
+        doc.setFont('courier', 'bold'); // Switch back to courier for data if desired, or keep times. Image looks mixed but let's stick to clean sans/serif mix or just courier for alignment.
+        // Actually image uses Typewriter/Courier for data potentially. Let's use Courier for the "data" part to match the "clean" look.
+        doc.setFont('courier', 'bold');
+
+        doc.text(`N° DE ${(comprobante.tipoComprobante || 'COMPROBANTE').toLowerCase()}`, labelX, startY, { align: 'right' });
+
         doc.setFont(undefined, 'normal');
         doc.text(`${comprobante.serie}-${String(comprobante.correlativo).padStart(8, '0')}`, pageWidth - 14, startY, { align: 'right' });
 
@@ -245,13 +254,8 @@ const FacturacionDetallePage = () => {
         doc.setFontSize(10);
         doc.setFont(undefined, 'normal');
 
-        // Subtotal
-        doc.text('Subtotal', rightX - 50, finalY, { align: 'right' });
-        doc.text((comprobante.totalGravadoCentimos / 100).toFixed(2), rightX, finalY, { align: 'right' });
+        // Subtotal and IGV removed as requested
 
-        // IGV
-        doc.text('IGV 18%', rightX - 50, finalY + 6, { align: 'right' });
-        doc.text((comprobante.totalIgvCentimos / 100).toFixed(2), rightX, finalY + 6, { align: 'right' });
 
         // TOTAL BOX
         const totalBoxY = finalY + 15;
@@ -325,21 +329,21 @@ const FacturacionDetallePage = () => {
         </cac:Party>
     </cac:AccountingCustomerParty>
     <cac:TaxTotal>
-        <cbc:TaxAmount currencyID="${comprobante.moneda}">${(comprobante.totalIgvCentimos / 100).toFixed(2)}</cbc:TaxAmount>
+        <cbc:TaxAmount currencyID="${comprobante.moneda}">0.00</cbc:TaxAmount>
         <cac:TaxSubtotal>
-            <cbc:TaxableAmount currencyID="${comprobante.moneda}">${(comprobante.totalGravadoCentimos / 100).toFixed(2)}</cbc:TaxableAmount>
-            <cbc:TaxAmount currencyID="${comprobante.moneda}">${(comprobante.totalIgvCentimos / 100).toFixed(2)}</cbc:TaxAmount>
+            <cbc:TaxableAmount currencyID="${comprobante.moneda}">${(comprobante.totalImporteCentimos / 100).toFixed(2)}</cbc:TaxableAmount>
+            <cbc:TaxAmount currencyID="${comprobante.moneda}">0.00</cbc:TaxAmount>
             <cac:TaxCategory>
                 <cac:TaxScheme>
-                    <cbc:ID>1000</cbc:ID>
-                    <cbc:Name>IGV</cbc:Name>
+                    <cbc:ID>9997</cbc:ID>
+                    <cbc:Name>EXO</cbc:Name>
                     <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
                 </cac:TaxScheme>
             </cac:TaxCategory>
         </cac:TaxSubtotal>
     </cac:TaxTotal>
     <cac:LegalMonetaryTotal>
-        <cbc:LineExtensionAmount currencyID="${comprobante.moneda}">${(comprobante.totalGravadoCentimos / 100).toFixed(2)}</cbc:LineExtensionAmount>
+        <cbc:LineExtensionAmount currencyID="${comprobante.moneda}">${(comprobante.totalImporteCentimos / 100).toFixed(2)}</cbc:LineExtensionAmount>
         <cbc:TaxInclusiveAmount currencyID="${comprobante.moneda}">${(comprobante.totalImporteCentimos / 100).toFixed(2)}</cbc:TaxInclusiveAmount>
         <cbc:PayableAmount currencyID="${comprobante.moneda}">${(comprobante.totalImporteCentimos / 100).toFixed(2)}</cbc:PayableAmount>
     </cac:LegalMonetaryTotal>
@@ -360,16 +364,16 @@ const FacturacionDetallePage = () => {
             </cac:AlternativeConditionPrice>
         </cac:PricingReference>
         <cac:TaxTotal>
-            <cbc:TaxAmount currencyID="${comprobante.moneda}">${((subtotal * 0.18) / 100).toFixed(2)}</cbc:TaxAmount>
+            <cbc:TaxAmount currencyID="${comprobante.moneda}">0.00</cbc:TaxAmount>
             <cac:TaxSubtotal>
                 <cbc:TaxableAmount currencyID="${comprobante.moneda}">${(subtotal / 100).toFixed(2)}</cbc:TaxableAmount>
-                <cbc:TaxAmount currencyID="${comprobante.moneda}">${((subtotal * 0.18) / 100).toFixed(2)}</cbc:TaxAmount>
+                <cbc:TaxAmount currencyID="${comprobante.moneda}">0.00</cbc:TaxAmount>
                 <cac:TaxCategory>
-                    <cbc:Percent>18.00</cbc:Percent>
-                    <cbc:TaxExemptionReasonCode>10</cbc:TaxExemptionReasonCode>
+                    <cbc:Percent>0.00</cbc:Percent>
+                    <cbc:TaxExemptionReasonCode>20</cbc:TaxExemptionReasonCode>
                     <cac:TaxScheme>
-                        <cbc:ID>1000</cbc:ID>
-                        <cbc:Name>IGV</cbc:Name>
+                        <cbc:ID>9997</cbc:ID>
+                        <cbc:Name>EXO</cbc:Name>
                         <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
                     </cac:TaxScheme>
                 </cac:TaxCategory>
@@ -379,7 +383,7 @@ const FacturacionDetallePage = () => {
             <cbc:Description><![CDATA[${descripcion}]]></cbc:Description>
         </cac:Item>
         <cac:Price>
-            <cbc:PriceAmount currencyID="${comprobante.moneda}">${(precioUnitario / 1.18 / 100).toFixed(2)}</cbc:PriceAmount>
+            <cbc:PriceAmount currencyID="${comprobante.moneda}">${(precioUnitario / 100).toFixed(2)}</cbc:PriceAmount>
         </cac:Price>
     </cac:InvoiceLine>`;
             }).join('') : ''}
@@ -619,8 +623,9 @@ const FacturacionDetallePage = () => {
             {/* Print Template */}
             <div id="invoice-print-template" style={{ display: 'none' }}>
                 <div className="print-header">
-                    <div className="print-title">{comprobante.tipoComprobante || 'COMPROBANTE'}</div>
-                    <div className="print-logo">LOGO</div>
+                    <div className="print-title" style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'normal', fontSize: '50px' }}>
+                        {(comprobante.tipoComprobante || 'COMPROBANTE').toLowerCase()}
+                    </div>
                 </div>
 
                 <div className="print-info-row">
@@ -632,7 +637,7 @@ const FacturacionDetallePage = () => {
                     </div>
                     <div className="print-invoice-data">
                         <div className="data-row">
-                            <span className="data-label">N° DE {comprobante.tipoComprobante}</span>
+                            <span className="data-label">N° DE {(comprobante.tipoComprobante || 'COMPROBANTE').toLowerCase()}</span>
                             <span>{comprobante.serie}-{String(comprobante.correlativo).padStart(8, '0')}</span>
                         </div>
                         <div className="data-row">
@@ -678,14 +683,7 @@ const FacturacionDetallePage = () => {
                 </table>
 
                 <div className="print-totals">
-                    <div className="total-row">
-                        <span style={{ marginRight: 20 }}>Subtotal</span>
-                        <span>{(comprobante.totalGravadoCentimos / 100).toFixed(2)}</span>
-                    </div>
-                    <div className="total-row">
-                        <span style={{ marginRight: 20 }}>IGV 18%</span>
-                        <span>{(comprobante.totalIgvCentimos / 100).toFixed(2)}</span>
-                    </div>
+                    {/* Subtotal and IGV rows removed */}
                     <div className="total-box">
                         <span>TOTAL</span>
                         <span>{comprobante.moneda === 'PEN' ? 'S/' : '$'} {(comprobante.totalImporteCentimos / 100).toFixed(2)}</span>
@@ -728,7 +726,7 @@ const FacturacionDetallePage = () => {
                                 <Button
                                     icon={<FileZipOutlined style={{ color: '#52c41a' }} />}
                                     onClick={handleExportarCDR}
-                                    disabled={comprobante.estadoSunat !== 'ACEPTADO'}
+                                    disabled={comprobante.estadoSunat?.toUpperCase() !== 'ACEPTADO'}
                                 >
                                     CDR
                                 </Button>
@@ -743,7 +741,7 @@ const FacturacionDetallePage = () => {
                             </Tag>
                         </Descriptions.Item>
                         <Descriptions.Item label="Estado SUNAT">
-                            <Tag color={comprobante.estadoSunat === 'ACEPTADO' ? 'success' : (comprobante.estadoSunat === 'PENDIENTE' ? 'warning' : 'error')}>
+                            <Tag color={comprobante.estadoSunat?.toUpperCase() === 'ACEPTADO' ? 'success' : (comprobante.estadoSunat?.toUpperCase() === 'PENDIENTE' ? 'warning' : 'error')}>
                                 {comprobante.estadoSunat || 'PENDIENTE'}
                             </Tag>
                         </Descriptions.Item>
@@ -781,18 +779,49 @@ const FacturacionDetallePage = () => {
                         </Descriptions.Item>
                     </Descriptions>
 
+
+
+                    <Divider orientation="left">Detalle de Productos</Divider>
+                    <Table
+                        dataSource={comprobante.detalles || []}
+                        pagination={false}
+                        rowKey={(record, index) => index}
+                        columns={[
+                            { title: 'Cant.', dataIndex: 'cantidad', width: 80, align: 'center' },
+                            {
+                                title: 'Descripción',
+                                key: 'descripcion',
+                                render: (_, record) => record.descripcion || record.productoNombre || record.nombre || 'Producto'
+                            },
+                            {
+                                title: 'P. Unitario',
+                                key: 'precioUnitario',
+                                align: 'right',
+                                width: 120,
+                                render: (_, record) => {
+                                    const val = record.precioUnitario ?? record.precioUnitarioCentimos ?? 0;
+                                    return (val / 100).toFixed(2);
+                                }
+                            },
+                            {
+                                title: 'Importe',
+                                key: 'subtotal',
+                                align: 'right',
+                                width: 120,
+                                render: (_, record) => {
+                                    const val = record.subtotal ?? record.totalItemCentimos ?? record.subtotalLineaCentimos ?? 0;
+                                    return (val / 100).toFixed(2);
+                                }
+                            }
+                        ]}
+                        style={{ marginBottom: 24 }}
+                    />
+
                     <Divider orientation="left">Totales</Divider>
                     <Row justify="end">
                         <Col xs={24} sm={12} md={8}>
                             <Descriptions bordered column={1} size="small">
-                                <Descriptions.Item label="Op. Gravada">
-                                    {comprobante.moneda === 'PEN' ? 'S/ ' : '$ '}
-                                    {(comprobante.totalGravadoCentimos / 100).toFixed(2)}
-                                </Descriptions.Item>
-                                <Descriptions.Item label="IGV (18%)">
-                                    {comprobante.moneda === 'PEN' ? 'S/ ' : '$ '}
-                                    {(comprobante.totalIgvCentimos / 100).toFixed(2)}
-                                </Descriptions.Item>
+
                                 <Descriptions.Item label="Importe Total" contentStyle={{ fontWeight: 'bold', fontSize: '16px' }}>
                                     {comprobante.moneda === 'PEN' ? 'S/ ' : '$ '}
                                     {(comprobante.totalImporteCentimos / 100).toFixed(2)}
@@ -803,7 +832,7 @@ const FacturacionDetallePage = () => {
 
                     <Divider orientation="left" className="no-print">Facturación Electrónica SUNAT</Divider>
                     <div style={{ marginBottom: 24 }} className="no-print">
-                        {comprobante.estadoSunat === 'ACEPTADO' && (
+                        {comprobante.estadoSunat?.toUpperCase() === 'ACEPTADO' && (
                             <Alert
                                 message={<span style={{ fontWeight: 'bold' }}>Comprobante Aceptado</span>}
                                 description={
@@ -834,7 +863,7 @@ const FacturacionDetallePage = () => {
                             />
                         )}
 
-                        {comprobante.estadoSunat === 'RECHAZADO' && (
+                        {comprobante.estadoSunat?.toUpperCase() === 'RECHAZADO' && (
                             <Alert
                                 message={<span style={{ fontWeight: 'bold' }}>Rechazado por SUNAT</span>}
                                 description={
@@ -860,7 +889,7 @@ const FacturacionDetallePage = () => {
                             />
                         )}
 
-                        {comprobante.estadoSunat === 'ANULADO' && (
+                        {comprobante.estadoSunat?.toUpperCase() === 'ANULADO' && (
                             <Alert
                                 message={<span style={{ fontWeight: 'bold' }}>Comprobante Anulado</span>}
                                 description="Este comprobante ha sido dado de baja y no tiene valor tributario."
@@ -872,7 +901,7 @@ const FacturacionDetallePage = () => {
                         )}
 
                         {/* Default to PENDIENTE for any other status (null, undefined, PENDIENTE, or unknown) */}
-                        {!['ACEPTADO', 'RECHAZADO', 'ANULADO'].includes(comprobante.estadoSunat) && (
+                        {!['ACEPTADO', 'RECHAZADO', 'ANULADO'].includes(comprobante.estadoSunat?.toUpperCase()) && (
                             <Alert
                                 message={<span style={{ fontWeight: 'bold' }}>{validating ? 'Procesando envío a SUNAT...' : 'Pendiente de Envío'}</span>}
                                 description={
@@ -904,7 +933,7 @@ const FacturacionDetallePage = () => {
                                                 loading={validating}
                                                 disabled={validating}
                                             >
-                                                Forzar Envío
+                                                Enviar a SUNAT
                                             </Button>
                                         </Space>
                                     </div>
@@ -924,7 +953,7 @@ const FacturacionDetallePage = () => {
                     )}
                 </Card>
             </div>
-        </div>
+        </div >
     );
 };
 

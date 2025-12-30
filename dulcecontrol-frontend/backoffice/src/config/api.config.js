@@ -40,4 +40,3 @@ export const ENDPOINTS = {
     // Tiendas - Sedes
     API_ADMIN_SEDE: '/api/superadmin/tiendas/{tiendaId}/sedes',
 };
- 
