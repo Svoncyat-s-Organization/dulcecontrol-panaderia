@@ -61,12 +61,13 @@ fi
 echo ""
 
 # Paso 3: Subir el JAR al servidor
+# Paso 3: Subir el JAR al servidor
 echo -e "${YELLOW}[3/7]${NC} Subiendo JAR al servidor remoto..."
-./mvnw wagon:upload-single -Dwagon.fromFile=target/${JAR_NAME} \
-                            -Dwagon.url=scp://${REMOTE_HOST}${REMOTE_PATH} \
-                            -Dwagon.serverId=cpanel-vps \
-                            -Dwagon.toFile=${JAR_NAME} \
-                            -s .m2/settings.xml
+echo -e "${BLUE}→${NC} El archivo es grande (~60-80 MB), puede tardar 1-3 minutos..."
+
+# Usar SCP directo en lugar de wagon-maven-plugin para mejor control
+scp -C target/${JAR_NAME} ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/${JAR_NAME}
+
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓${NC} Archivo subido correctamente"
 else

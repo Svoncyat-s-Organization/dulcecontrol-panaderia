@@ -1,9 +1,10 @@
 -- ============================================================================
--- R_03: SEED AUXILIAR - TIENDA DE DEMOSTRACIÓN
+-- R__04: SEED AUXILIAR - TIENDA DE DEMOSTRACIÓN
 -- ============================================================================
 -- Este archivo crea una tienda completa con sedes, usuarios, productos
 -- y categorías para fines de desarrollo y pruebas.
 -- Al ser repeteable (R__), se ejecuta cada vez que cambia.
+-- Usa INSERT...ON DUPLICATE KEY UPDATE para ser idempotente.
 -- ============================================================================
 
 -- =================================
@@ -11,7 +12,6 @@
 -- =================================
 
 INSERT INTO planes (
-    id,
     codigo,
     nombre,
     descripcion,
@@ -23,9 +23,8 @@ INSERT INTO planes (
     creado_en
 )
 VALUES (
-    9991,
-    'PLAN_DEMO',
-    'Plan Demo',
+    'DEMO_GRATIS',
+    'Plan Demo Gratis',
     'Plan completo para demostración con todas las características habilitadas',
     0, -- Gratis
     0, -- Gratis
@@ -37,7 +36,7 @@ VALUES (
         'max_transacciones_mes', 999999
     ),
     TRUE,
-    '2025-01-01 08:00:00'
+    CURRENT_TIMESTAMP
 )
 ON DUPLICATE KEY UPDATE
     nombre = VALUES(nombre),
@@ -50,7 +49,6 @@ ON DUPLICATE KEY UPDATE
 -- =================================
 
 INSERT INTO tiendas (
-    id,
     slug,
     tipo_doc,
     numero_doc,
@@ -63,17 +61,16 @@ INSERT INTO tiendas (
     creado_en
 )
 VALUES (
-    999,
-    'panaderia-demo',
+    'demo-panaderia',
     'RUC',
-    '20601234567',
+    '10000000001', -- RUC claramente inválido para demo
     'PANADERIA Y PASTELERIA DEMO S.A.C.',
     'Panadería Demo',
-    'contacto@panaderiademo.pe',
+    'demo.tienda@example.local',
     '987654321',
     '$2a$12$Oq8FdZHwWJNEi0LleTdJNeKr/yFTTD42IzFoOIfkrvPN1Sq/ICxlm', -- contraseña: clave123
     'ACTIVA',
-    '2025-01-01 08:00:00'
+    CURRENT_TIMESTAMP
 )
 ON DUPLICATE KEY UPDATE
     nombre_doc = VALUES(nombre_doc),
@@ -82,12 +79,15 @@ ON DUPLICATE KEY UPDATE
     telefono_contacto = VALUES(telefono_contacto),
     estado = VALUES(estado);
 
+-- Obtener IDs creados
+SET @demo_tienda_id = (SELECT id FROM tiendas WHERE slug = 'demo-panaderia' LIMIT 1);
+SET @demo_plan_id = (SELECT id FROM planes WHERE codigo = 'DEMO_GRATIS' LIMIT 1);
+
 -- =================================
 -- SUSCRIPCIÓN DE LA TIENDA
 -- =================================
 
 INSERT INTO suscripciones (
-    id,
     tienda_id,
     plan_id,
     ciclo,
@@ -98,26 +98,27 @@ INSERT INTO suscripciones (
     autorenovar,
     creado_en
 )
-VALUES (
-    9991,
-    999,
-    9991,
+SELECT
+    @demo_tienda_id,
+    @demo_plan_id,
     'ANUAL',
     0,
-    '2025-01-01 08:00:00',
-    '2026-01-01 08:00:00',
+    CURRENT_TIMESTAMP,
+    DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 1 YEAR),
     'ACTIVA',
     TRUE,
-    '2025-01-01 08:00:00'
-)
-ON DUPLICATE KEY UPDATE
-    estado = VALUES(estado),
-    fecha_fin = VALUES(fecha_fin),
-    autorenovar = VALUES(autorenovar);
+    CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM suscripciones 
+    WHERE tienda_id = @demo_tienda_id 
+    AND plan_id = @demo_plan_id
+);
 
--- Registrar historial de alta de suscripción
+-- Obtener ID de suscripción
+SET @demo_suscripcion_id = (SELECT id FROM suscripciones WHERE tienda_id = @demo_tienda_id AND plan_id = @demo_plan_id LIMIT 1);
+
+-- Registrar historial de alta de suscripción (solo si no existe)
 INSERT INTO historial_suscripciones (
-    id,
     suscripcion_id,
     plan_anterior_id,
     plan_nuevo_id,
@@ -126,25 +127,26 @@ INSERT INTO historial_suscripciones (
     precio_nuevo_centimos,
     fecha_movimiento
 )
-VALUES (
-    9991,
-    9991,
+SELECT
+    @demo_suscripcion_id,
     NULL,
-    9991,
+    @demo_plan_id,
     'ALTA',
     NULL,
     0,
-    '2025-01-01 08:00:00'
-)
-ON DUPLICATE KEY UPDATE
-    tipo_movimiento = VALUES(tipo_movimiento);
+    CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM historial_suscripciones 
+    WHERE suscripcion_id = @demo_suscripcion_id 
+    AND tipo_movimiento = 'ALTA'
+);
 
 -- =================================
 -- SEDES
 -- =================================
 
+-- Sede Principal
 INSERT INTO sedes (
-    id,
     tienda_id,
     codigo_interno,
     nombre,
@@ -155,31 +157,21 @@ INSERT INTO sedes (
     activo,
     creado_en
 )
-VALUES
-    (
-        9991,
-        999,
-        'SEDE-PRINCIPAL',
-        'Sede Principal Centro',
-        'Av. Lima 123, Centro de Lima',
-        '987654321',
-        (SELECT id FROM ubigeo_distritos WHERE nombre = 'LIMA' LIMIT 1),
-        TRUE,
-        TRUE,
-        '2025-01-01 08:00:00'
-    ),
-    (
-        9992,
-        999,
-        'SEDE-NORTE',
-        'Sede Norte San Martin',
-        'Av. Alfredo Mendiola 456, San Martin de Porres',
-        '987654322',
-        (SELECT id FROM ubigeo_distritos WHERE nombre = 'SAN MARTIN DE PORRES' LIMIT 1),
-        FALSE,
-        TRUE,
-        '2025-01-01 09:00:00'
-    )
+SELECT
+    @demo_tienda_id,
+    'DEMO-PRINCIPAL',
+    'Sede Principal Centro',
+    'Av. Lima 123, Centro de Lima',
+    '987654321',
+    (SELECT id FROM ubigeo_distritos WHERE nombre = 'LIMA' LIMIT 1),
+    TRUE,
+    TRUE,
+    CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM sedes 
+    WHERE tienda_id = @demo_tienda_id 
+    AND codigo_interno = 'DEMO-PRINCIPAL'
+)
 ON DUPLICATE KEY UPDATE
     nombre = VALUES(nombre),
     direccion = VALUES(direccion),
@@ -187,40 +179,80 @@ ON DUPLICATE KEY UPDATE
     es_principal = VALUES(es_principal),
     activo = VALUES(activo);
 
+-- Sede Norte
+INSERT INTO sedes (
+    tienda_id,
+    codigo_interno,
+    nombre,
+    direccion,
+    telefono,
+    distrito_id,
+    es_principal,
+    activo,
+    creado_en
+)
+SELECT
+    @demo_tienda_id,
+    'DEMO-NORTE',
+    'Sede Norte San Martin',
+    'Av. Alfredo Mendiola 456, San Martin de Porres',
+    '987654322',
+    (SELECT id FROM ubigeo_distritos WHERE nombre = 'SAN MARTIN DE PORRES' LIMIT 1),
+    FALSE,
+    TRUE,
+    CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM sedes 
+    WHERE tienda_id = @demo_tienda_id 
+    AND codigo_interno = 'DEMO-NORTE'
+)
+ON DUPLICATE KEY UPDATE
+    nombre = VALUES(nombre),
+    direccion = VALUES(direccion),
+    telefono = VALUES(telefono),
+    activo = VALUES(activo);
+
+-- Obtener IDs de sedes
+SET @demo_sede_principal_id = (SELECT id FROM sedes WHERE tienda_id = @demo_tienda_id AND codigo_interno = 'DEMO-PRINCIPAL' LIMIT 1);
+SET @demo_sede_norte_id = (SELECT id FROM sedes WHERE tienda_id = @demo_tienda_id AND codigo_interno = 'DEMO-NORTE' LIMIT 1);
+
 -- =================================
 -- ROL ADMINISTRADOR
 -- =================================
 
 INSERT INTO roles (
-    id,
     tienda_id,
     nombre,
     descripcion,
     es_sistema,
     creado_en
 )
-VALUES (
-    9991,
-    999,
+SELECT
+    @demo_tienda_id,
     'Administrador',
     'Rol con todos los permisos del sistema',
     TRUE,
-    '2025-01-01 08:00:00'
+    CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM roles 
+    WHERE tienda_id = @demo_tienda_id 
+    AND nombre = 'Administrador'
 )
 ON DUPLICATE KEY UPDATE
     descripcion = VALUES(descripcion);
 
+-- Obtener ID del rol
+SET @demo_rol_admin_id = (SELECT id FROM roles WHERE tienda_id = @demo_tienda_id AND nombre = 'Administrador' LIMIT 1);
+
 -- Asignar todos los permisos al rol Administrador
-INSERT INTO roles_permisos (rol_id, permiso_id)
-SELECT 9991, id FROM permisos
-ON DUPLICATE KEY UPDATE rol_id = VALUES(rol_id);
+INSERT IGNORE INTO roles_permisos (rol_id, permiso_id)
+SELECT @demo_rol_admin_id, id FROM permisos;
 
 -- =================================
 -- USUARIO ADMINISTRADOR
 -- =================================
 
 INSERT INTO usuarios_tienda (
-    id,
     tienda_id,
     rol_id,
     correo,
@@ -232,30 +264,35 @@ INSERT INTO usuarios_tienda (
     activo,
     creado_en
 )
-VALUES (
-    9991,
-    999,
-    9991,
-    'admin@panaderiademo.pe',
+SELECT
+    @demo_tienda_id,
+    @demo_rol_admin_id,
+    'demo.admin@example.local',
     '$2a$12$Oq8FdZHwWJNEi0LleTdJNeKr/yFTTD42IzFoOIfkrvPN1Sq/ICxlm', -- contraseña: clave123
     'DNI',
-    '12345678',
+    '00000001',
     'Administrador Demo',
     '987654321',
     TRUE,
-    '2025-01-01 08:00:00'
+    CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM usuarios_tienda 
+    WHERE tienda_id = @demo_tienda_id 
+    AND correo = 'demo.admin@example.local'
 )
 ON DUPLICATE KEY UPDATE
-    correo = VALUES(correo),
     nombres_doc = VALUES(nombres_doc),
     telefono = VALUES(telefono),
     activo = VALUES(activo);
 
+-- Obtener ID del usuario
+SET @demo_usuario_id = (SELECT id FROM usuarios_tienda WHERE tienda_id = @demo_tienda_id AND correo = 'demo.admin@example.local' LIMIT 1);
+
 -- Asignar sedes al usuario
 INSERT INTO usuario_sedes (usuario_id, sede_id, es_sede_principal)
 VALUES
-    (9991, 9991, TRUE),
-    (9991, 9992, FALSE)
+    (@demo_usuario_id, @demo_sede_principal_id, TRUE),
+    (@demo_usuario_id, @demo_sede_norte_id, FALSE)
 ON DUPLICATE KEY UPDATE
     es_sede_principal = VALUES(es_sede_principal);
 
@@ -282,8 +319,8 @@ INSERT INTO configuracion_tienda (
     actualizado_en
 )
 VALUES (
-    999,
-    '20601234567',
+    @demo_tienda_id,
+    '10000000001',
     'PANADERIA Y PASTELERIA DEMO S.A.C.',
     'Av. Lima 123, Centro de Lima',
     (SELECT codigo_ubigeo FROM ubigeo_distritos WHERE nombre = 'LIMA' LIMIT 1),
@@ -308,8 +345,8 @@ VALUES (
     ),
     'Realizamos envíos a domicilio en Lima Metropolitana. Tiempo estimado: 24-48 horas. Envío gratuito en compras mayores a S/. 50.00',
     'Aceptamos devoluciones dentro de las primeras 24 horas si el producto presenta algún defecto de fabricación.',
-    'contacto@panaderiademo.pe',
-    '2025-01-01 08:00:00'
+    'demo.tienda@example.local',
+    CURRENT_TIMESTAMP
 )
 ON DUPLICATE KEY UPDATE
     razon_social = VALUES(razon_social),
@@ -326,52 +363,84 @@ ON DUPLICATE KEY UPDATE
 -- CATEGORÍAS
 -- =================================
 
+-- Categoría Panes
 INSERT INTO categorias (
-    id,
     tienda_id,
     nombre,
     slug,
     descripcion,
+    url_imagen,
     icono,
     activa,
     orden_visual,
     creado_en
 )
-VALUES
-    (
-        9991,
-        999,
-        'Panes',
-        'panes',
-        'Variedad de panes artesanales y tradicionales',
-        'bread',
-        TRUE,
-        1,
-        '2025-01-01 08:00:00'
-    ),
-    (
-        9992,
-        999,
-        'Pasteles',
-        'pasteles',
-        'Pasteles y tortas para toda ocasión',
-        'cake',
-        TRUE,
-        2,
-        '2025-01-01 08:00:00'
-    )
+SELECT
+    @demo_tienda_id,
+    'Panes',
+    'panes',
+    'Variedad de panes artesanales y tradicionales',
+    'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&q=80',
+    'bread',
+    TRUE,
+    1,
+    CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM categorias 
+    WHERE tienda_id = @demo_tienda_id 
+    AND slug = 'panes'
+)
 ON DUPLICATE KEY UPDATE
     nombre = VALUES(nombre),
     descripcion = VALUES(descripcion),
+    url_imagen = VALUES(url_imagen),
     activa = VALUES(activa),
     orden_visual = VALUES(orden_visual);
+
+-- Categoría Pasteles
+INSERT INTO categorias (
+    tienda_id,
+    nombre,
+    slug,
+    descripcion,
+    url_imagen,
+    icono,
+    activa,
+    orden_visual,
+    creado_en
+)
+SELECT
+    @demo_tienda_id,
+    'Pasteles',
+    'pasteles',
+    'Pasteles y tortas para toda ocasión',
+    'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800&q=80',
+    'cake',
+    TRUE,
+    2,
+    CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM categorias 
+    WHERE tienda_id = @demo_tienda_id 
+    AND slug = 'pasteles'
+)
+ON DUPLICATE KEY UPDATE
+    nombre = VALUES(nombre),
+    descripcion = VALUES(descripcion),
+    url_imagen = VALUES(url_imagen),
+    activa = VALUES(activa),
+    orden_visual = VALUES(orden_visual);
+
+-- Obtener IDs de categorías
+SET @demo_cat_panes_id = (SELECT id FROM categorias WHERE tienda_id = @demo_tienda_id AND slug = 'panes' LIMIT 1);
+SET @demo_cat_pasteles_id = (SELECT id FROM categorias WHERE tienda_id = @demo_tienda_id AND slug = 'pasteles' LIMIT 1);
 
 -- =================================
 -- PRODUCTOS
 -- =================================
 
+-- Pan Francés
 INSERT INTO productos (
-    id,
     tienda_id,
     categoria_id,
     nombre,
@@ -382,138 +451,254 @@ INSERT INTO productos (
     es_personalizable,
     precio_base_centimos,
     precio_oferta_centimos,
+    url_imagen_principal,
+    imagenes_galeria,
     visible_en_pos,
     visible_en_storefront,
     destacado_storefront,
     activo,
     creado_en
 )
-VALUES
-    (
-        9991,
-        999,
-        9991,
-        'Pan Francés',
-        'pan-frances',
-        'PROD-PAN-001',
-        'Pan francés tradicional, crujiente por fuera y suave por dentro',
-        'PRODUCTO_TERMINADO',
-        FALSE,
-        50, -- S/. 0.50
-        NULL,
-        TRUE,
-        TRUE,
-        TRUE,
-        TRUE,
-        '2025-01-01 08:00:00'
+SELECT
+    @demo_tienda_id,
+    @demo_cat_panes_id,
+    'Pan Francés',
+    'pan-frances',
+    'DEMO-PAN-001',
+    'Pan francés tradicional, crujiente por fuera y suave por dentro',
+    'PRODUCTO_TERMINADO',
+    FALSE,
+    50,
+    NULL,
+    'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=800&q=80',
+    JSON_ARRAY(
+        'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=800&q=80',
+        'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?w=800&q=80'
     ),
-    (
-        9992,
-        999,
-        9991,
-        'Pan Ciabatta',
-        'pan-ciabatta',
-        'PROD-PAN-002',
-        'Pan italiano con corteza crujiente y miga esponjosa',
-        'PRODUCTO_TERMINADO',
-        FALSE,
-        800, -- S/. 8.00
-        NULL,
-        TRUE,
-        TRUE,
-        FALSE,
-        TRUE,
-        '2025-01-01 08:00:00'
-    ),
-    (
-        9993,
-        999,
-        9992,
-        'Torta de Chocolate',
-        'torta-chocolate',
-        'PROD-PAST-001',
-        'Deliciosa torta de chocolate con cobertura de ganache',
-        'PRODUCTO_TERMINADO',
-        TRUE,
-        4500, -- S/. 45.00
-        4000, -- S/. 40.00 (oferta)
-        TRUE,
-        TRUE,
-        TRUE,
-        TRUE,
-        '2025-01-01 08:00:00'
-    ),
-    (
-        9994,
-        999,
-        9992,
-        'Pie de Limón',
-        'pie-limon',
-        'PROD-PAST-002',
-        'Refrescante pie de limón con merengue italiano',
-        'PRODUCTO_TERMINADO',
-        FALSE,
-        3200, -- S/. 32.00
-        NULL,
-        TRUE,
-        TRUE,
-        TRUE,
-        TRUE,
-        '2025-01-01 08:00:00'
-    )
+    TRUE,
+    TRUE,
+    TRUE,
+    TRUE,
+    CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM productos 
+    WHERE tienda_id = @demo_tienda_id 
+    AND sku = 'DEMO-PAN-001'
+)
 ON DUPLICATE KEY UPDATE
     nombre = VALUES(nombre),
     descripcion = VALUES(descripcion),
     precio_base_centimos = VALUES(precio_base_centimos),
     precio_oferta_centimos = VALUES(precio_oferta_centimos),
+    url_imagen_principal = VALUES(url_imagen_principal),
+    imagenes_galeria = VALUES(imagenes_galeria),
     visible_en_pos = VALUES(visible_en_pos),
     visible_en_storefront = VALUES(visible_en_storefront),
     destacado_storefront = VALUES(destacado_storefront),
     activo = VALUES(activo);
+
+-- Pan Ciabatta
+INSERT INTO productos (
+    tienda_id,
+    categoria_id,
+    nombre,
+    slug,
+    sku,
+    descripcion,
+    tipo,
+    es_personalizable,
+    precio_base_centimos,
+    precio_oferta_centimos,
+    url_imagen_principal,
+    imagenes_galeria,
+    visible_en_pos,
+    visible_en_storefront,
+    destacado_storefront,
+    activo,
+    creado_en
+)
+SELECT
+    @demo_tienda_id,
+    @demo_cat_panes_id,
+    'Pan Ciabatta',
+    'pan-ciabatta',
+    'DEMO-PAN-002',
+    'Pan italiano con corteza crujiente y miga esponjosa',
+    'PRODUCTO_TERMINADO',
+    FALSE,
+    800,
+    NULL,
+    'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?w=800&q=80',
+    JSON_ARRAY(
+        'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?w=800&q=80',
+        'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&q=80'
+    ),
+    TRUE,
+    TRUE,
+    FALSE,
+    TRUE,
+    CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM productos 
+    WHERE tienda_id = @demo_tienda_id 
+    AND sku = 'DEMO-PAN-002'
+)
+ON DUPLICATE KEY UPDATE
+    nombre = VALUES(nombre),
+    descripcion = VALUES(descripcion),
+    precio_base_centimos = VALUES(precio_base_centimos),
+    url_imagen_principal = VALUES(url_imagen_principal),
+    imagenes_galeria = VALUES(imagenes_galeria),
+    activo = VALUES(activo);
+
+-- Torta de Chocolate
+INSERT INTO productos (
+    tienda_id,
+    categoria_id,
+    nombre,
+    slug,
+    sku,
+    descripcion,
+    tipo,
+    es_personalizable,
+    precio_base_centimos,
+    precio_oferta_centimos,
+    url_imagen_principal,
+    imagenes_galeria,
+    visible_en_pos,
+    visible_en_storefront,
+    destacado_storefront,
+    activo,
+    creado_en
+)
+SELECT
+    @demo_tienda_id,
+    @demo_cat_pasteles_id,
+    'Torta de Chocolate',
+    'torta-chocolate',
+    'DEMO-PAST-001',
+    'Deliciosa torta de chocolate con cobertura de ganache',
+    'PRODUCTO_TERMINADO',
+    TRUE,
+    4500,
+    4000,
+    'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800&q=80',
+    JSON_ARRAY(
+        'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800&q=80',
+        'https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?w=800&q=80',
+        'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=800&q=80'
+    ),
+    TRUE,
+    TRUE,
+    TRUE,
+    TRUE,
+    CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM productos 
+    WHERE tienda_id = @demo_tienda_id 
+    AND sku = 'DEMO-PAST-001'
+)
+ON DUPLICATE KEY UPDATE
+    nombre = VALUES(nombre),
+    descripcion = VALUES(descripcion),
+    precio_base_centimos = VALUES(precio_base_centimos),
+    precio_oferta_centimos = VALUES(precio_oferta_centimos),
+    url_imagen_principal = VALUES(url_imagen_principal),
+    imagenes_galeria = VALUES(imagenes_galeria),
+    activo = VALUES(activo);
+
+-- Pie de Limón
+INSERT INTO productos (
+    tienda_id,
+    categoria_id,
+    nombre,
+    slug,
+    sku,
+    descripcion,
+    tipo,
+    es_personalizable,
+    precio_base_centimos,
+    precio_oferta_centimos,
+    url_imagen_principal,
+    imagenes_galeria,
+    visible_en_pos,
+    visible_en_storefront,
+    destacado_storefront,
+    activo,
+    creado_en
+)
+SELECT
+    @demo_tienda_id,
+    @demo_cat_pasteles_id,
+    'Pie de Limón',
+    'pie-limon',
+    'DEMO-PAST-002',
+    'Refrescante pie de limón con merengue italiano',
+    'PRODUCTO_TERMINADO',
+    FALSE,
+    3200,
+    NULL,
+    'https://images.unsplash.com/photo-1519915028121-7d3463d20b13?w=800&q=80',
+    JSON_ARRAY(
+        'https://images.unsplash.com/photo-1519915028121-7d3463d20b13?w=800&q=80',
+        'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=800&q=80'
+    ),
+    TRUE,
+    TRUE,
+    TRUE,
+    TRUE,
+    CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM productos 
+    WHERE tienda_id = @demo_tienda_id 
+    AND sku = 'DEMO-PAST-002'
+)
+ON DUPLICATE KEY UPDATE
+    nombre = VALUES(nombre),
+    descripcion = VALUES(descripcion),
+    precio_base_centimos = VALUES(precio_base_centimos),
+    url_imagen_principal = VALUES(url_imagen_principal),
+    imagenes_galeria = VALUES(imagenes_galeria),
+    activo = VALUES(activo);
+
+-- Obtener IDs de productos
+SET @demo_prod_pan_frances_id = (SELECT id FROM productos WHERE tienda_id = @demo_tienda_id AND sku = 'DEMO-PAN-001' LIMIT 1);
+SET @demo_prod_ciabatta_id = (SELECT id FROM productos WHERE tienda_id = @demo_tienda_id AND sku = 'DEMO-PAN-002' LIMIT 1);
+SET @demo_prod_torta_id = (SELECT id FROM productos WHERE tienda_id = @demo_tienda_id AND sku = 'DEMO-PAST-001' LIMIT 1);
+SET @demo_prod_pie_id = (SELECT id FROM productos WHERE tienda_id = @demo_tienda_id AND sku = 'DEMO-PAST-002' LIMIT 1);
 
 -- =================================
 -- INVENTARIO INICIAL DE PRODUCTOS
 -- =================================
 
 -- Inventario Sede Principal
-INSERT INTO inventario_productos (
-    tienda_id,
-    sede_id,
-    producto_id,
-    cantidad_actual
-)
+INSERT INTO inventario_productos (tienda_id, sede_id, producto_id, cantidad_actual)
 VALUES
-    (999, 9991, 9991, 100), -- Pan Francés: 100 unidades
-    (999, 9991, 9992, 20),  -- Pan Ciabatta: 20 unidades
-    (999, 9991, 9993, 5),   -- Torta de Chocolate: 5 unidades
-    (999, 9991, 9994, 8)    -- Pie de Limón: 8 unidades
+    (@demo_tienda_id, @demo_sede_principal_id, @demo_prod_pan_frances_id, 100),
+    (@demo_tienda_id, @demo_sede_principal_id, @demo_prod_ciabatta_id, 20),
+    (@demo_tienda_id, @demo_sede_principal_id, @demo_prod_torta_id, 5),
+    (@demo_tienda_id, @demo_sede_principal_id, @demo_prod_pie_id, 8)
 ON DUPLICATE KEY UPDATE
     cantidad_actual = VALUES(cantidad_actual);
 
 -- Inventario Sede Norte
-INSERT INTO inventario_productos (
-    tienda_id,
-    sede_id,
-    producto_id,
-    cantidad_actual
-)
+INSERT INTO inventario_productos (tienda_id, sede_id, producto_id, cantidad_actual)
 VALUES
-    (999, 9992, 9991, 80),  -- Pan Francés: 80 unidades
-    (999, 9992, 9992, 15),  -- Pan Ciabatta: 15 unidades
-    (999, 9992, 9993, 3),   -- Torta de Chocolate: 3 unidades
-    (999, 9992, 9994, 6)    -- Pie de Limón: 6 unidades
+    (@demo_tienda_id, @demo_sede_norte_id, @demo_prod_pan_frances_id, 80),
+    (@demo_tienda_id, @demo_sede_norte_id, @demo_prod_ciabatta_id, 15),
+    (@demo_tienda_id, @demo_sede_norte_id, @demo_prod_torta_id, 3),
+    (@demo_tienda_id, @demo_sede_norte_id, @demo_prod_pie_id, 6)
 ON DUPLICATE KEY UPDATE
     cantidad_actual = VALUES(cantidad_actual);
 
 -- =================================
 -- MOVIMIENTOS DE INVENTARIO INICIAL
 -- =================================
--- NOTA: Se usa INSERT IGNORE porque los movimientos no deben actualizarse,
--- solo insertarse la primera vez. Esto evita duplicados en ejecuciones repetibles.
+-- NOTA: Los movimientos se crean solo una vez usando WHERE NOT EXISTS
+-- para evitar duplicados en ejecuciones repetibles.
 
 -- Movimientos Sede Principal
-INSERT IGNORE INTO movimientos_inventario_productos (
-    id,
+INSERT INTO movimientos_inventario_productos (
     tienda_id,
     sede_id,
     producto_id,
@@ -525,28 +710,131 @@ INSERT IGNORE INTO movimientos_inventario_productos (
     responsable_id,
     creado_en
 )
-VALUES
-    (99910001, 999, 9991, 9991, 'ENTRADA', 100, 0, 100, 'AJUSTE', 9991, '2025-01-01 08:30:00'), -- Pan Francés
-    (99910002, 999, 9991, 9992, 'ENTRADA', 20, 0, 20, 'AJUSTE', 9991, '2025-01-01 08:30:00'),   -- Pan Ciabatta
-    (99910003, 999, 9991, 9993, 'ENTRADA', 5, 0, 5, 'AJUSTE', 9991, '2025-01-01 08:30:00'),     -- Torta de Chocolate
-    (99910004, 999, 9991, 9994, 'ENTRADA', 8, 0, 8, 'AJUSTE', 9991, '2025-01-01 08:30:00');     -- Pie de Limón
+SELECT
+    @demo_tienda_id,
+    @demo_sede_principal_id,
+    @demo_prod_pan_frances_id,
+    'ENTRADA',
+    100,
+    0,
+    100,
+    'AJUSTE',
+    @demo_usuario_id,
+    CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM movimientos_inventario_productos
+    WHERE tienda_id = @demo_tienda_id
+    AND sede_id = @demo_sede_principal_id
+    AND producto_id = @demo_prod_pan_frances_id
+    AND tipo_movimiento = 'ENTRADA'
+    AND motivo = 'AJUSTE'
+    AND cantidad = 100
+);
+
+INSERT INTO movimientos_inventario_productos (
+    tienda_id, sede_id, producto_id, tipo_movimiento, cantidad,
+    cantidad_anterior, cantidad_posterior, motivo, responsable_id, creado_en
+)
+SELECT @demo_tienda_id, @demo_sede_principal_id, @demo_prod_ciabatta_id, 'ENTRADA', 20, 0, 20, 'AJUSTE', @demo_usuario_id, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM movimientos_inventario_productos
+    WHERE tienda_id = @demo_tienda_id AND sede_id = @demo_sede_principal_id
+    AND producto_id = @demo_prod_ciabatta_id AND tipo_movimiento = 'ENTRADA'
+    AND motivo = 'AJUSTE' AND cantidad = 20
+);
+
+INSERT INTO movimientos_inventario_productos (
+    tienda_id, sede_id, producto_id, tipo_movimiento, cantidad,
+    cantidad_anterior, cantidad_posterior, motivo, responsable_id, creado_en
+)
+SELECT @demo_tienda_id, @demo_sede_principal_id, @demo_prod_torta_id, 'ENTRADA', 5, 0, 5, 'AJUSTE', @demo_usuario_id, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM movimientos_inventario_productos
+    WHERE tienda_id = @demo_tienda_id AND sede_id = @demo_sede_principal_id
+    AND producto_id = @demo_prod_torta_id AND tipo_movimiento = 'ENTRADA'
+    AND motivo = 'AJUSTE' AND cantidad = 5
+);
+
+INSERT INTO movimientos_inventario_productos (
+    tienda_id, sede_id, producto_id, tipo_movimiento, cantidad,
+    cantidad_anterior, cantidad_posterior, motivo, responsable_id, creado_en
+)
+SELECT @demo_tienda_id, @demo_sede_principal_id, @demo_prod_pie_id, 'ENTRADA', 8, 0, 8, 'AJUSTE', @demo_usuario_id, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM movimientos_inventario_productos
+    WHERE tienda_id = @demo_tienda_id AND sede_id = @demo_sede_principal_id
+    AND producto_id = @demo_prod_pie_id AND tipo_movimiento = 'ENTRADA'
+    AND motivo = 'AJUSTE' AND cantidad = 8
+);
 
 -- Movimientos Sede Norte
-INSERT IGNORE INTO movimientos_inventario_productos (
-    id,
-    tienda_id,
-    sede_id,
-    producto_id,
-    tipo_movimiento,
-    cantidad,
-    cantidad_anterior,
-    cantidad_posterior,
-    motivo,
-    responsable_id,
-    creado_en
+INSERT INTO movimientos_inventario_productos (
+    tienda_id, sede_id, producto_id, tipo_movimiento, cantidad,
+    cantidad_anterior, cantidad_posterior, motivo, responsable_id, creado_en
 )
-VALUES
-    (99920001, 999, 9992, 9991, 'ENTRADA', 80, 0, 80, 'AJUSTE', 9991, '2025-01-01 09:30:00'),   -- Pan Francés
-    (99920002, 999, 9992, 9992, 'ENTRADA', 15, 0, 15, 'AJUSTE', 9991, '2025-01-01 09:30:00'),   -- Pan Ciabatta
-    (99920003, 999, 9992, 9993, 'ENTRADA', 3, 0, 3, 'AJUSTE', 9991, '2025-01-01 09:30:00'),     -- Torta de Chocolate
-    (99920004, 999, 9992, 9994, 'ENTRADA', 6, 0, 6, 'AJUSTE', 9991, '2025-01-01 09:30:00');     -- Pie de Limón
+SELECT @demo_tienda_id, @demo_sede_norte_id, @demo_prod_pan_frances_id, 'ENTRADA', 80, 0, 80, 'AJUSTE', @demo_usuario_id, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM movimientos_inventario_productos
+    WHERE tienda_id = @demo_tienda_id AND sede_id = @demo_sede_norte_id
+    AND producto_id = @demo_prod_pan_frances_id AND tipo_movimiento = 'ENTRADA'
+    AND motivo = 'AJUSTE' AND cantidad = 80
+);
+
+INSERT INTO movimientos_inventario_productos (
+    tienda_id, sede_id, producto_id, tipo_movimiento, cantidad,
+    cantidad_anterior, cantidad_posterior, motivo, responsable_id, creado_en
+)
+SELECT @demo_tienda_id, @demo_sede_norte_id, @demo_prod_ciabatta_id, 'ENTRADA', 15, 0, 15, 'AJUSTE', @demo_usuario_id, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM movimientos_inventario_productos
+    WHERE tienda_id = @demo_tienda_id AND sede_id = @demo_sede_norte_id
+    AND producto_id = @demo_prod_ciabatta_id AND tipo_movimiento = 'ENTRADA'
+    AND motivo = 'AJUSTE' AND cantidad = 15
+);
+
+INSERT INTO movimientos_inventario_productos (
+    tienda_id, sede_id, producto_id, tipo_movimiento, cantidad,
+    cantidad_anterior, cantidad_posterior, motivo, responsable_id, creado_en
+)
+SELECT @demo_tienda_id, @demo_sede_norte_id, @demo_prod_torta_id, 'ENTRADA', 3, 0, 3, 'AJUSTE', @demo_usuario_id, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM movimientos_inventario_productos
+    WHERE tienda_id = @demo_tienda_id AND sede_id = @demo_sede_norte_id
+    AND producto_id = @demo_prod_torta_id AND tipo_movimiento = 'ENTRADA'
+    AND motivo = 'AJUSTE' AND cantidad = 3
+);
+
+INSERT INTO movimientos_inventario_productos (
+    tienda_id, sede_id, producto_id, tipo_movimiento, cantidad,
+    cantidad_anterior, cantidad_posterior, motivo, responsable_id, creado_en
+)
+SELECT @demo_tienda_id, @demo_sede_norte_id, @demo_prod_pie_id, 'ENTRADA', 6, 0, 6, 'AJUSTE', @demo_usuario_id, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM movimientos_inventario_productos
+    WHERE tienda_id = @demo_tienda_id AND sede_id = @demo_sede_norte_id
+    AND producto_id = @demo_prod_pie_id AND tipo_movimiento = 'ENTRADA'
+    AND motivo = 'AJUSTE' AND cantidad = 6
+);
+
+-- =========================================
+-- CLIENTE GENÉRICO (para todas las tiendas)
+-- =========================================
+-- Cliente genérico para ventas rápidas sin documento
+INSERT IGNORE INTO clientes (tienda_id, tipo_doc, numero_doc, nombre_doc, email, telefono, es_usuario_virtual, hash_contrasena, notas, activo)
+SELECT 
+    t.id as tienda_id,
+    NULL as tipo_doc,
+    '00000000' as numero_doc,
+    'CLIENTE GENÉRICO' as nombre_doc,
+    NULL as email,
+    NULL as telefono,
+    FALSE as es_usuario_virtual,
+    NULL as hash_contrasena,
+    'Cliente genérico para ventas sin identificación. Creado automáticamente por el sistema.' as notas,
+    TRUE as activo
+FROM tiendas t
+WHERE NOT EXISTS (
+    SELECT 1 FROM clientes c 
+    WHERE c.tienda_id = t.id 
+    AND c.numero_doc = '00000000'
+);
