@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Dropdown, Progress, Result, Space, Table, Tag, Typography } from 'antd';
+import { Alert, Button, Card, Col, DatePicker, Dropdown, Input, Progress, Result, Row, Select, Space, Table, Tag, Typography } from 'antd';
 import {
   IconRefresh,
   IconEye,
@@ -8,7 +8,11 @@ import {
   IconX,
   IconDotsVertical,
   IconAlertTriangle,
+  IconSearch,
+  IconFilter,
+  IconFilterOff,
 } from '@tabler/icons-react';
+import dayjs from 'dayjs';
 import {
   ESTADO_PLAN_CONFIG,
   ORIGEN_ITEM_CONFIG,
@@ -33,7 +37,16 @@ const PlanProduccionTableView = ({
   onCancelar,
   sedeId,
   updating,
+  filtroEstado,
+  setFiltroEstado,
+  filtroFecha,
+  setFiltroFecha,
+  filtroBusqueda,
+  setFiltroBusqueda,
+  onLimpiarFiltros,
+  totalPlanes,
 }) => {
+  const hayFiltrosActivos = filtroEstado || filtroFecha || filtroBusqueda.trim();
   if (!sedeId) {
     return (
       <Alert
@@ -229,6 +242,60 @@ const PlanProduccionTableView = ({
           description="Gestiona los planes diarios. Los planes en BORRADOR requieren confirmación. Solo los planes CONFIRMADOS pueden iniciarse."
           showIcon
         />
+
+        {/* Filtros de búsqueda */}
+        <Card size="small" title={<Space><IconFilter size={16} /> Filtros de Búsqueda</Space>}>
+          <Row gutter={[16, 16]} align="middle">
+            <Col xs={24} sm={12} md={6}>
+              <Input
+                placeholder="Buscar por producto..."
+                prefix={<IconSearch size={16} />}
+                value={filtroBusqueda}
+                onChange={(e) => setFiltroBusqueda(e.target.value)}
+                allowClear
+              />
+            </Col>
+            <Col xs={24} sm={12} md={5}>
+              <Select
+                placeholder="Estado"
+                value={filtroEstado}
+                onChange={setFiltroEstado}
+                allowClear
+                style={{ width: '100%' }}
+              >
+                {Object.entries(ESTADO_PLAN_CONFIG).map(([key, config]) => (
+                  <Select.Option key={key} value={key}>
+                    <Tag color={config.color} style={{ margin: 0 }}>{config.label}</Tag>
+                  </Select.Option>
+                ))}
+              </Select>
+            </Col>
+            <Col xs={24} sm={12} md={5}>
+              <DatePicker
+                placeholder="Fecha de producción"
+                value={filtroFecha ? dayjs(filtroFecha) : null}
+                onChange={(date) => setFiltroFecha(date ? date.format('YYYY-MM-DD') : null)}
+                style={{ width: '100%' }}
+                format="DD/MM/YYYY"
+              />
+            </Col>
+            <Col xs={24} sm={12} md={4}>
+              {hayFiltrosActivos && (
+                <Button
+                  icon={<IconFilterOff size={16} />}
+                  onClick={onLimpiarFiltros}
+                >
+                  Limpiar
+                </Button>
+              )}
+            </Col>
+            <Col xs={24} sm={12} md={4}>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                Mostrando {planes.length} de {totalPlanes} planes
+              </Text>
+            </Col>
+          </Row>
+        </Card>
 
         <Table
           dataSource={planes}

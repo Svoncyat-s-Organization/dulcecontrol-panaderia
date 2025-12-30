@@ -13,7 +13,7 @@ import { ExistenciasPage, InsumosPage, MovimientosPage, TransferenciasPage } fro
 import { StockIdealPage, RecetasPage, PlanificacionPage } from '../../features/admin/produccion/index.js';
 import { ProductosPage, CategoriasPage } from '../../features/admin/catalogo/index.js';
 import { FacturacionPage, FacturacionDetallePage, SeriesPage } from '../../features/admin/facturacion/index.js';
-import { ReportesVentasPage, ReportesPedidosPage } from '../../features/admin/reportes/index.js';
+import { ReportesVentasPage, ReportesPedidosPage, ReportesRetirosPage } from '../../features/admin/reportes/index.js';
 import DatosEmpresaPage from '../../features/admin/configuracion/pages/DatosEmpresaPage.jsx';
 import SedesPage from '../../features/admin/configuracion/pages/SedesPage.jsx';
 import TiendaVirtualPage from '../../features/admin/configuracion/pages/TiendaVirtualPage.jsx';
@@ -71,6 +71,7 @@ const adminRoutes = (
     <Route path="reportes" element={<Navigate to="ventas" replace />} />
     <Route path="reportes/ventas" element={guard('reportes/ventas', <ReportesVentasPage />)} />
     <Route path="reportes/pedidos" element={guard('reportes/pedidos', <ReportesPedidosPage />)} />
+    <Route path="reportes/retiros" element={guard('reportes/retiros', <ReportesRetirosPage />)} />
 
     <Route path="seguridad" element={<Navigate to="seguridad/usuarios" replace />} />
     <Route path="seguridad/usuarios" element={guard('seguridad/usuarios', <SeguridadUsuariosPage />)} />

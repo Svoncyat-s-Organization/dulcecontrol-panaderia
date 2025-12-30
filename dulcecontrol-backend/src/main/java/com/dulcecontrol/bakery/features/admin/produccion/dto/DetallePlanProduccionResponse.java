@@ -30,4 +30,5 @@ public class DetallePlanProduccionResponse {
     private EstadoItemProduccion estado;
     private LocalDateTime horaTermino;
     private String observaciones;
+    private String notasCliente;
 }

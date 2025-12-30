@@ -343,6 +343,11 @@ export const ADMIN_MENU_BLUEPRINT = [
         label: 'Pedidos y canales',
         permissionPrefixes: ['reportes.view', 'reportes'],
       },
+      {
+        key: `${BASE_PATH}/reportes/retiros`,
+        label: 'Retiros de caja',
+        permissionPrefixes: ['reportes.view', 'reportes'],
+      },
     ],
   },
   {
@@ -447,6 +452,7 @@ export const ADMIN_ROUTE_PERMISSIONS = {
   'reportes': ['reportes.view', 'reportes'],
   'reportes/ventas': ['reportes.view', 'reportes.ventas', 'reportes'],
   'reportes/pedidos': ['reportes.view', 'reportes.ventas', 'reportes'],
+  'reportes/retiros': ['reportes.view', 'reportes.ventas', 'reportes'],
   'configuracion': ['config.view'],
   'configuracion/datos-empresa': ['config.view'],
   'configuracion/preferencias': ['config.view'],
