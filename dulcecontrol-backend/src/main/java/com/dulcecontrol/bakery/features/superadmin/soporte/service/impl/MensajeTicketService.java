@@ -22,14 +22,26 @@ public class MensajeTicketService implements IMensajeTicketService {
     @Override
     @Transactional(readOnly = true)
     public List<MensajeResponse> listarPorTicket(Long ticketId) {
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isSuperadmin = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERADMIN"));
+
         return mensajeRepository.findByTicketIdOrderByCreadoEnAsc(ticketId)
-                .stream().map(this::toResponse).toList();
+                .stream()
+                .filter(m -> isSuperadmin || !Boolean.TRUE.equals(m.getEsNotaInterna()))
+                .map(this::toResponse).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<MensajeResponse> listarTodos() {
-        return mensajeRepository.findAll().stream().map(this::toResponse).toList();
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isSuperadmin = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERADMIN"));
+
+        return mensajeRepository.findAll().stream()
+                .filter(m -> isSuperadmin || !Boolean.TRUE.equals(m.getEsNotaInterna()))
+                .map(this::toResponse).toList();
     }
 
     @Override
@@ -48,8 +60,16 @@ public class MensajeTicketService implements IMensajeTicketService {
     @Override
     @Transactional(readOnly = true)
     public MensajeResponse obtener(Long id) {
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isSuperadmin = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERADMIN"));
+
         MensajeTicket m = mensajeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Mensaje no encontrado"));
+
+        if (!isSuperadmin && Boolean.TRUE.equals(m.getEsNotaInterna())) {
+            throw new ResourceNotFoundException("Mensaje no encontrado");
+        }
         return toResponse(m);
     }
 
@@ -58,8 +78,10 @@ public class MensajeTicketService implements IMensajeTicketService {
     public MensajeResponse actualizar(Long id, MensajeUpdateRequest request) {
         MensajeTicket m = mensajeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Mensaje no encontrado"));
-        if (request.getMensaje() != null) m.setMensaje(request.getMensaje());
-        if (request.getEsNotaInterna() != null) m.setEsNotaInterna(request.getEsNotaInterna());
+        if (request.getMensaje() != null)
+            m.setMensaje(request.getMensaje());
+        if (request.getEsNotaInterna() != null)
+            m.setEsNotaInterna(request.getEsNotaInterna());
         MensajeTicket updated = mensajeRepository.save(m);
         return toResponse(updated);
     }
