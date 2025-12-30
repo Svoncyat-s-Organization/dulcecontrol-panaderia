@@ -39,3 +39,7 @@ src/main/resources/ssl/
 *.crt
 *.pem
 *.p12
+
+### Maven Settings (Credenciales) ###
+.m2/settings.xml
+!.m2/README.md
