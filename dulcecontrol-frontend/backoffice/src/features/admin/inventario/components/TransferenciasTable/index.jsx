@@ -8,6 +8,8 @@ import { getSedesAsignadas } from '../../../configuracion/api/sedes.api.js';
 import { getUsuarioSedes } from '../../../seguridad/api/seguridad.api.js';
 import { getProductos } from '../../../catalogo/api/productos.api.js';
 import { getInsumos } from '../../../compras/api/insumos.api.js';
+import { getInventarioProductosPorSede } from '../../api/existencias.api.js';
+import { getInventarioInsumos } from '../../api/insumos-inventario.api.js';
 import { useTokenStore } from '../../../../../shared/store/tokenStore.js';
 import { useAuthorizationStore } from '../../../../../shared/store/authorizationStore.js';
 import TransferenciaRecepcionModal from '../TransferenciaRecepcionModal/TransferenciaRecepcionModal.jsx';
@@ -119,11 +121,32 @@ const TransferenciasTable = ({ tiendaId, sedeOrigenId }) => {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Inventario de productos de la sede origen
+  const { data: inventarioProductos = [] } = useQuery({
+    queryKey: ['inventario', 'productos', 'sede', tiendaId, activeSedeId],
+    queryFn: () => getInventarioProductosPorSede(tiendaId, activeSedeId),
+    enabled: Boolean(tiendaId && activeSedeId),
+    select: (data) => data ?? [],
+    staleTime: 2 * 60 * 1000, // 2 minutos - el stock cambia frecuentemente
+  });
+
+  // Inventario de insumos de la sede origen
+  const { data: inventarioInsumos = [] } = useQuery({
+    queryKey: ['inventario', 'insumos', 'sede', tiendaId, activeSedeId],
+    queryFn: () => getInventarioInsumos(tiendaId, activeSedeId),
+    enabled: Boolean(tiendaId && activeSedeId),
+    select: (data) => data ?? [],
+    staleTime: 2 * 60 * 1000, // 2 minutos
+  });
+
   const createMutation = useMutation({
     mutationFn: (payload) => createTransferencia(tiendaId, payload),
     onSuccess: () => {
       message.success('Transferencia creada');
       queryClient.invalidateQueries({ queryKey: TRANSFERENCIA_KEYS.lists(tiendaId) });
+      // Invalidar inventario porque el stock cambió
+      queryClient.invalidateQueries({ queryKey: ['inventario', 'productos', 'sede', tiendaId, activeSedeId] });
+      queryClient.invalidateQueries({ queryKey: ['inventario', 'insumos', 'sede', tiendaId, activeSedeId] });
       setModalOpen(false);
     },
     onError: (error) => {
@@ -239,6 +262,8 @@ const TransferenciasTable = ({ tiendaId, sedeOrigenId }) => {
         userId={resolvedUserId}
         productos={productos}
         insumos={insumos}
+        inventarioProductos={inventarioProductos}
+        inventarioInsumos={inventarioInsumos}
       />
 
       <TransferenciaRecepcionModal

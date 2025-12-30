@@ -508,9 +508,12 @@ ON DUPLICATE KEY UPDATE
 -- =================================
 -- MOVIMIENTOS DE INVENTARIO INICIAL
 -- =================================
+-- NOTA: Se usa INSERT IGNORE porque los movimientos no deben actualizarse,
+-- solo insertarse la primera vez. Esto evita duplicados en ejecuciones repetibles.
 
--- Movimientos Sede Principal (cantidad_anterior=0, cantidad_posterior=cantidad_actual)
-INSERT INTO movimientos_inventario_productos (
+-- Movimientos Sede Principal
+INSERT IGNORE INTO movimientos_inventario_productos (
+    id,
     tienda_id,
     sede_id,
     producto_id,
@@ -523,15 +526,14 @@ INSERT INTO movimientos_inventario_productos (
     creado_en
 )
 VALUES
-    (999, 9991, 9991, 'ENTRADA', 100, 0, 100, 'AJUSTE', 9991, '2025-01-01 08:30:00'), -- Pan Francés
-    (999, 9991, 9992, 'ENTRADA', 20, 0, 20, 'AJUSTE', 9991, '2025-01-01 08:30:00'),   -- Pan Ciabatta
-    (999, 9991, 9993, 'ENTRADA', 5, 0, 5, 'AJUSTE', 9991, '2025-01-01 08:30:00'),     -- Torta de Chocolate
-    (999, 9991, 9994, 'ENTRADA', 8, 0, 8, 'AJUSTE', 9991, '2025-01-01 08:30:00')      -- Pie de Limón
-ON DUPLICATE KEY UPDATE
-    cantidad = VALUES(cantidad);
+    (99910001, 999, 9991, 9991, 'ENTRADA', 100, 0, 100, 'AJUSTE', 9991, '2025-01-01 08:30:00'), -- Pan Francés
+    (99910002, 999, 9991, 9992, 'ENTRADA', 20, 0, 20, 'AJUSTE', 9991, '2025-01-01 08:30:00'),   -- Pan Ciabatta
+    (99910003, 999, 9991, 9993, 'ENTRADA', 5, 0, 5, 'AJUSTE', 9991, '2025-01-01 08:30:00'),     -- Torta de Chocolate
+    (99910004, 999, 9991, 9994, 'ENTRADA', 8, 0, 8, 'AJUSTE', 9991, '2025-01-01 08:30:00');     -- Pie de Limón
 
 -- Movimientos Sede Norte
-INSERT INTO movimientos_inventario_productos (
+INSERT IGNORE INTO movimientos_inventario_productos (
+    id,
     tienda_id,
     sede_id,
     producto_id,
@@ -544,9 +546,7 @@ INSERT INTO movimientos_inventario_productos (
     creado_en
 )
 VALUES
-    (999, 9992, 9991, 'ENTRADA', 80, 0, 80, 'AJUSTE', 9991, '2025-01-01 09:30:00'),   -- Pan Francés
-    (999, 9992, 9992, 'ENTRADA', 15, 0, 15, 'AJUSTE', 9991, '2025-01-01 09:30:00'),   -- Pan Ciabatta
-    (999, 9992, 9993, 'ENTRADA', 3, 0, 3, 'AJUSTE', 9991, '2025-01-01 09:30:00'),     -- Torta de Chocolate
-    (999, 9992, 9994, 'ENTRADA', 6, 0, 6, 'AJUSTE', 9991, '2025-01-01 09:30:00')      -- Pie de Limón
-ON DUPLICATE KEY UPDATE
-    cantidad = VALUES(cantidad);
+    (99920001, 999, 9992, 9991, 'ENTRADA', 80, 0, 80, 'AJUSTE', 9991, '2025-01-01 09:30:00'),   -- Pan Francés
+    (99920002, 999, 9992, 9992, 'ENTRADA', 15, 0, 15, 'AJUSTE', 9991, '2025-01-01 09:30:00'),   -- Pan Ciabatta
+    (99920003, 999, 9992, 9993, 'ENTRADA', 3, 0, 3, 'AJUSTE', 9991, '2025-01-01 09:30:00'),     -- Torta de Chocolate
+    (99920004, 999, 9992, 9994, 'ENTRADA', 6, 0, 6, 'AJUSTE', 9991, '2025-01-01 09:30:00');     -- Pie de Limón
