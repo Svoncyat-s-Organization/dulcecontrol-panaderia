@@ -251,6 +251,19 @@ const PlanDetalleModalView = ({
         </Text>
       ),
     },
+    {
+      title: 'Nota del Cliente',
+      dataIndex: 'notasCliente',
+      key: 'notasCliente',
+      width: 200,
+      render: (nota) => nota ? (
+        <Text style={{ fontSize: 12, fontStyle: 'italic', color: '#1890ff' }}>
+          📝 {nota}
+        </Text>
+      ) : (
+        <Text type="secondary" style={{ fontSize: 12 }}>-</Text>
+      ),
+    },
     ...getColumnsStockDiario().slice(-1),
   ];
 
@@ -351,7 +364,7 @@ const PlanDetalleModalView = ({
                 rowKey="id"
                 pagination={false}
                 size="small"
-                scroll={{ x: 1000 }}
+                scroll={{ x: 1200 }}
               />
             </Card>
           )}

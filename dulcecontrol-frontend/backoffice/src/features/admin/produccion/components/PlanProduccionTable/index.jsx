@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { message } from 'antd';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import dayjs from 'dayjs';
@@ -15,6 +15,11 @@ const PlanProduccionTable = () => {
   const queryClient = useQueryClient();
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Filtros
+  const [filtroEstado, setFiltroEstado] = useState(null);
+  const [filtroFecha, setFiltroFecha] = useState(null);
+  const [filtroBusqueda, setFiltroBusqueda] = useState('');
 
   // Query para obtener planes
   const {
@@ -27,6 +32,39 @@ const PlanProduccionTable = () => {
     queryFn: () => getPlanesProduccion(tiendaId, { sedeId }),
     enabled: Boolean(tiendaId && sedeId),
   });
+
+  // Filtrar planes
+  const planesFiltrados = useMemo(() => {
+    let resultado = planes;
+
+    // Filtro por estado
+    if (filtroEstado) {
+      resultado = resultado.filter(p => p.estado === filtroEstado);
+    }
+
+    // Filtro por fecha
+    if (filtroFecha) {
+      resultado = resultado.filter(p => p.fechaProduccion === filtroFecha);
+    }
+
+    // Filtro por búsqueda (nombre de producto en detalles)
+    if (filtroBusqueda.trim()) {
+      const busqueda = filtroBusqueda.toLowerCase().trim();
+      resultado = resultado.filter(p => 
+        p.detalles?.some(d => 
+          d.productoNombre?.toLowerCase().includes(busqueda)
+        )
+      );
+    }
+
+    return resultado;
+  }, [planes, filtroEstado, filtroFecha, filtroBusqueda]);
+
+  const handleLimpiarFiltros = () => {
+    setFiltroEstado(null);
+    setFiltroFecha(null);
+    setFiltroBusqueda('');
+  };
 
   // Mutation para actualizar estado del plan
   const updatePlanMutation = useMutation({
@@ -88,7 +126,7 @@ const PlanProduccionTable = () => {
   return (
     <>
       <PlanProduccionTableView
-        planes={planes}
+        planes={planesFiltrados}
         loading={isLoading}
         isError={isError}
         onRetry={refetch}
@@ -99,6 +137,14 @@ const PlanProduccionTable = () => {
         onCancelar={handleCancelarPlan}
         sedeId={sedeId}
         updating={updatePlanMutation.isPending}
+        filtroEstado={filtroEstado}
+        setFiltroEstado={setFiltroEstado}
+        filtroFecha={filtroFecha}
+        setFiltroFecha={setFiltroFecha}
+        filtroBusqueda={filtroBusqueda}
+        setFiltroBusqueda={setFiltroBusqueda}
+        onLimpiarFiltros={handleLimpiarFiltros}
+        totalPlanes={planes.length}
       />
 
       <PlanDetalleModal
