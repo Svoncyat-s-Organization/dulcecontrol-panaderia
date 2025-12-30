@@ -26,8 +26,10 @@ import com.dulcecontrol.bakery.features.admin.inventario.repository.InventarioIn
 import com.dulcecontrol.bakery.features.admin.inventario.repository.InventarioProductoRepository;
 import com.dulcecontrol.bakery.features.admin.inventario.repository.MovimientoInventarioInsumoRepository;
 import com.dulcecontrol.bakery.features.admin.inventario.repository.MovimientoInventarioProductoRepository;
+import com.dulcecontrol.bakery.features.admin.ventas.entity.DetallePedido;
 import com.dulcecontrol.bakery.features.admin.ventas.entity.Pedido;
 import com.dulcecontrol.bakery.features.admin.ventas.entity.enums.EstadoPedido;
+import com.dulcecontrol.bakery.features.admin.ventas.repository.DetallePedidoRepository;
 import com.dulcecontrol.bakery.features.admin.ventas.repository.PedidoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -57,6 +59,7 @@ public class PlanProduccionAdminService {
     private final MovimientoInventarioInsumoRepository movimientoInsumoRepository;
     private final MovimientoInventarioProductoRepository movimientoProductoRepository;
     private final PedidoRepository pedidoRepository;
+    private final DetallePedidoRepository detallePedidoRepository;
 
     @Transactional
     public PlanProduccionResponse createPlan(Long tiendaId, PlanProduccionCreateRequest request) {
@@ -116,9 +119,25 @@ public class PlanProduccionAdminService {
         Map<Long, Producto> productosMap = productoRepository.findAllById(productoIds).stream()
                 .collect(Collectors.toMap(Producto::getId, Function.identity()));
 
+        // Obtener las notas de cliente de los detalles de pedido
+        List<Long> detallePedidoIds = detalles.stream()
+                .filter(d -> d.getDetallePedidoId() != null)
+                .map(DetallePlanProduccion::getDetallePedidoId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<Long, String> notasClienteMap = detallePedidoIds.isEmpty()
+                ? Map.of()
+                : detallePedidoRepository.findAllById(detallePedidoIds).stream()
+                        .filter(dp -> dp.getNotasItem() != null && !dp.getNotasItem().isBlank())
+                        .collect(Collectors.toMap(DetallePedido::getId, DetallePedido::getNotasItem));
+
         List<DetallePlanProduccionResponse> detalleResponses = detalles.stream()
                 .map(d -> {
                     Producto producto = productosMap.get(d.getProductoId());
+                    String notasCliente = d.getDetallePedidoId() != null 
+                            ? notasClienteMap.get(d.getDetallePedidoId()) 
+                            : null;
                     return DetallePlanProduccionResponse.builder()
                             .id(d.getId())
                             .planId(d.getPlanId())
@@ -136,6 +155,7 @@ public class PlanProduccionAdminService {
                             .estado(d.getEstado())
                             .horaTermino(d.getHoraTermino())
                             .observaciones(d.getObservaciones())
+                            .notasCliente(notasCliente)
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -244,6 +264,15 @@ public class PlanProduccionAdminService {
         }
 
         Producto producto = productoRepository.findById(saved.getProductoId()).orElse(null);
+        
+        // Obtener nota del cliente si existe
+        String notasCliente = null;
+        if (saved.getDetallePedidoId() != null) {
+            notasCliente = detallePedidoRepository.findById(saved.getDetallePedidoId())
+                    .map(DetallePedido::getNotasItem)
+                    .filter(nota -> nota != null && !nota.isBlank())
+                    .orElse(null);
+        }
 
         return DetallePlanProduccionResponse.builder()
                 .id(saved.getId())
@@ -262,6 +291,7 @@ public class PlanProduccionAdminService {
                 .estado(saved.getEstado())
                 .horaTermino(saved.getHoraTermino())
                 .observaciones(saved.getObservaciones())
+                .notasCliente(notasCliente)
                 .build();
     }
 
@@ -314,6 +344,19 @@ public class PlanProduccionAdminService {
                 : productoRepository.findAllById(productoIds).stream()
                         .collect(Collectors.toMap(Producto::getId, Function.identity()));
 
+        // Obtener las notas de cliente de los detalles de pedido
+        List<Long> detallePedidoIds = todosDetalles.stream()
+                .filter(d -> d.getDetallePedidoId() != null)
+                .map(DetallePlanProduccion::getDetallePedidoId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<Long, String> notasClienteMap = detallePedidoIds.isEmpty()
+                ? Map.of()
+                : detallePedidoRepository.findAllById(detallePedidoIds).stream()
+                        .filter(dp -> dp.getNotasItem() != null && !dp.getNotasItem().isBlank())
+                        .collect(Collectors.toMap(DetallePedido::getId, DetallePedido::getNotasItem));
+
         return planes.stream()
                 .map(plan -> {
                     List<DetallePlanProduccion> detalles = detallesPorPlan.getOrDefault(plan.getId(), List.of());
@@ -321,6 +364,9 @@ public class PlanProduccionAdminService {
                     List<DetallePlanProduccionResponse> detalleResponses = detalles.stream()
                             .map(d -> {
                                 Producto producto = productosMap.get(d.getProductoId());
+                                String notasCliente = d.getDetallePedidoId() != null 
+                                        ? notasClienteMap.get(d.getDetallePedidoId()) 
+                                        : null;
                                 return DetallePlanProduccionResponse.builder()
                                         .id(d.getId())
                                         .planId(d.getPlanId())
@@ -338,6 +384,7 @@ public class PlanProduccionAdminService {
                                         .estado(d.getEstado())
                                         .horaTermino(d.getHoraTermino())
                                         .observaciones(d.getObservaciones())
+                                        .notasCliente(notasCliente)
                                         .build();
                             })
                             .collect(Collectors.toList());
