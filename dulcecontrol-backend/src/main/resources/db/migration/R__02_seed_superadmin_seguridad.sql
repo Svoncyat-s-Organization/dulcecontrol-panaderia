@@ -60,11 +60,11 @@ INSERT INTO usuarios_superadmin (id, correo, hash_contrasena, tipo_doc, numero_d
 VALUES
   (
     1,
-    'sofia.rojas@dulcecontrol.pe',
+    'ubuntu.sanchez@dulcecontrol.pe',
     '$2a$12$Oq8FdZHwWJNEi0LleTdJNeKr/yFTTD42IzFoOIfkrvPN1Sq/ICxlm', -- contraseña: clave123
     'DNI',
     '45879632',
-    'Sofía Andrea Rojas Delgado',
+    'Frank Ubuntu Vasquez Reategui',
     '999888777',
     TRUE,
     '2024-01-05 09:30:00',
@@ -72,11 +72,11 @@ VALUES
   ),
   (
     2,
-    'martin.leon@dulcecontrol.pe',
+    'pepe.guevara@dulcecontrol.pe',
     '$2a$12$Oq8FdZHwWJNEi0LleTdJNeKr/yFTTD42IzFoOIfkrvPN1Sq/ICxlm', -- contraseña: clave123
     'DNI',
     '41236547',
-    'Martín Eduardo León Paredes',
+    'Shenlon Ayachi Llanos',
     '988777666',
     TRUE,
     '2024-01-05 09:45:00',

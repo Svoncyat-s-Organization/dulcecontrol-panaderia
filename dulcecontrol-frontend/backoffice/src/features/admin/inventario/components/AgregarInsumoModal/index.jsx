@@ -52,22 +52,22 @@ const AgregarInsumoModalContainer = ({ open, onClose, tiendaId, sedeId }) => {
 
   const handleSubmit = async (values) => {
     setIsSubmitting(true);
-    const { cantidadActual, ubicacionFisica, ...nuevoInsumoData } = values;
 
     try {
-      // Primero crear el insumo en el catálogo
+      // 1. Crear el insumo en el catálogo
       const insumoCreado = await createInsumoMutation.mutateAsync({
         tiendaId,
-        ...nuevoInsumoData,
+        ...values,
       });
 
-      // Luego agregar el insumo al inventario de la sede
+      // 2. Agregar el insumo al inventario de la sede con cantidad 0
       await createInventarioMutation.mutateAsync({
         sedeId,
         insumoId: insumoCreado.id,
-        cantidadActual,
-        ubicacionFisica: ubicacionFisica || null,
+        cantidadActual: 0,
+        ubicacionFisica: null,
       });
+
     } catch (error) {
       // Los errores ya se manejan en las mutaciones individuales
       setIsSubmitting(false);

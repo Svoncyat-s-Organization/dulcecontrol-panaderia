@@ -129,10 +129,34 @@ const TransferenciaModal = ({
         <Form.List name="items">
           {(fields, { add, remove }) => (
             <>
-              <Text type="secondary">Items</Text>
+              <div style={{ marginBottom: 12 }}>
+                <Text strong>Items a transferir</Text>
+                <Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 4 }}>
+                  Agrega los productos o insumos que deseas transferir con sus cantidades
+                </Text>
+              </div>
+              
               {fields.map(({ key, name, ...restField }) => (
-                <Space key={key} align="start" style={{ display: 'flex', marginTop: 12 }} wrap>
-                  <Form.Item {...restField} name={[name, 'tipo']} initialValue="producto" style={{ width: 140 }}>
+                <div 
+                  key={key} 
+                  style={{ 
+                    display: 'flex', 
+                    gap: 12, 
+                    marginBottom: 16,
+                    padding: 12,
+                    background: '#fafafa',
+                    borderRadius: 8,
+                    alignItems: 'flex-end',
+                    flexWrap: 'wrap'
+                  }}
+                >
+                  <Form.Item 
+                    {...restField} 
+                    name={[name, 'tipo']} 
+                    initialValue="producto" 
+                    label="Tipo"
+                    style={{ width: 130, marginBottom: 0 }}
+                  >
                     <Select
                       options={[
                         { label: 'Producto', value: 'producto' },
@@ -152,8 +176,9 @@ const TransferenciaModal = ({
                         <Form.Item
                           {...restField}
                           name={[name, 'refId']}
+                          label={tipo === 'insumo' ? 'Insumo' : 'Producto'}
                           rules={[{ required: true, message: 'Selecciona un item' }]}
-                          style={{ width: 360 }}
+                          style={{ flex: 1, minWidth: 280, marginBottom: 0 }}
                         >
                           <Select
                             placeholder={tipo === 'insumo' ? 'Selecciona insumo' : 'Selecciona producto'}
@@ -168,41 +193,38 @@ const TransferenciaModal = ({
 
                   <Form.Item
                     {...restField}
-                    label={null}
+                    label="Cantidad"
                     name={[name, 'cantidadEnviada']}
                     rules={[{ validator: validateCantidad(name) }]}
-                    style={{ width: 160 }}
+                    style={{ width: 140, marginBottom: 0 }}
                   >
-                    <Form.Item
-                      shouldUpdate={(prev, curr) => prev?.items?.[name]?.tipo !== curr?.items?.[name]?.tipo}
-                      noStyle
-                    >
-                      {({ getFieldValue }) => {
-                        const tipo = getFieldValue(['items', name, 'tipo']);
-                        const isProducto = tipo !== 'insumo';
-
-                        return (
-                          <InputNumber
-                            min={isProducto ? 1 : 0.01}
-                            step={isProducto ? 1 : 0.01}
-                            precision={isProducto ? 0 : 2}
-                            style={{ width: '100%' }}
-                            placeholder="Cantidad"
-                          />
-                        );
-                      }}
-                    </Form.Item>
+                    <InputNumber
+                      min={0.01}
+                      step={0.01}
+                      precision={2}
+                      style={{ width: '100%' }}
+                      placeholder="0.00"
+                    />
                   </Form.Item>
 
-                  <Button danger onClick={() => remove(name)} disabled={fields.length === 1}>
+                  <Button 
+                    danger 
+                    onClick={() => remove(name)} 
+                    disabled={fields.length === 1}
+                    style={{ marginBottom: 0 }}
+                  >
                     Quitar
                   </Button>
-                </Space>
+                </div>
               ))}
 
-              <div style={{ marginTop: 16 }}>
-                <Button onClick={() => add({ tipo: 'producto', refId: null, cantidadEnviada: 1 })}>
-                  Agregar item
+              <div style={{ marginTop: 8 }}>
+                <Button 
+                  onClick={() => add({ tipo: 'producto', refId: null, cantidadEnviada: 1 })}
+                  type="dashed"
+                  block
+                >
+                  + Agregar item
                 </Button>
               </div>
             </>
