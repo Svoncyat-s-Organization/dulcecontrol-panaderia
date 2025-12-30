@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Alert, Button, Card, Col, DatePicker, Empty, Result, Row, Select, Space, Spin, Statistic, Table, Typography, message } from 'antd';
 import dayjs from 'dayjs';
 import { IconDownload, IconRefresh } from '@tabler/icons-react';
 import { useTokenStore } from '../../../../shared/store/tokenStore.js';
 import { useSedeStore } from '../../../../shared/store/sedeStore.js';
-import { getSedesAsignadas } from '../../configuracion/api/sedes.api.js';
 import useReportesData from '../hooks/useReportesData.js';
 import exportToXlsx from '../../../../shared/utils/exportUtils.js';
 
@@ -33,13 +31,13 @@ const formatCurrency = (amount) => new Intl.NumberFormat('es-PE', {
 
 const toDecimal = (value) => Number(Number(value ?? 0).toFixed(2));
 
-const buildDefaultFilters = () => {
+const buildDefaultFilters = (initialSedeId = 'all') => {
   const end = dayjs().endOf('day');
   const start = end.clone().subtract(13, 'day').startOf('day');
   return {
     startDate: start.toISOString(),
     endDate: end.toISOString(),
-    sedeId: 'all',
+    sedeId: initialSedeId ?? 'all',
     canal: 'all',
     cajaId: 'all',
     grouping: 'day',
@@ -62,36 +60,9 @@ const useReportesSharedState = () => {
   const selectedSedeId = useSedeStore((state) => state.selectedSedeId);
   const selectedSedeNombre = useSedeStore((state) => state.selectedSedeNombre);
 
-  const [filters, setFilters] = useState(buildDefaultFilters);
-
-  const { data: sedes = [], isLoading: sedesLoading } = useQuery({
-    queryKey: ['admin', 'reportes', 'sedes', tiendaId],
-    queryFn: () => getSedesAsignadas(tiendaId),
-    enabled: Boolean(tiendaId),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const sedeOptions = useMemo(() => {
-    const options = (sedes || []).map((sede) => ({
-      label: sede.nombre,
-      value: String(sede.id),
-    }));
-
-    if (
-      selectedSedeId &&
-      !options.some((option) => option.value === String(selectedSedeId))
-    ) {
-      options.unshift({
-        label: selectedSedeNombre || `Sede ${selectedSedeId}`,
-        value: String(selectedSedeId),
-      });
-    }
-
-    return [
-      { label: 'Todas las sedes', value: 'all' },
-      ...options,
-    ];
-  }, [sedes, selectedSedeId, selectedSedeNombre]);
+  const [filters, setFilters] = useState(() =>
+    buildDefaultFilters(selectedSedeId != null ? String(selectedSedeId) : 'all')
+  );
 
   const reportesQuery = useReportesData({ tiendaId, filters });
 
@@ -103,6 +74,19 @@ const useReportesSharedState = () => {
   const cajaOptions = reportesQuery.cajaOptions || [{ value: 'all', label: 'Todas las cajas' }];
 
   useEffect(() => {
+    const resolvedSede = selectedSedeId != null ? String(selectedSedeId) : 'all';
+    setFilters((prev) => {
+      if (prev.sedeId === resolvedSede && prev.cajaId === 'all') {
+        return prev;
+      }
+      if (prev.sedeId === resolvedSede) {
+        return { ...prev, cajaId: 'all' };
+      }
+      return { ...prev, sedeId: resolvedSede, cajaId: 'all' };
+    });
+  }, [selectedSedeId]);
+
+  useEffect(() => {
     if (filters.canal === 'all') {
       return;
     }
@@ -110,15 +94,6 @@ const useReportesSharedState = () => {
       setFilters((prev) => ({ ...prev, canal: 'all' }));
     }
   }, [resolvedChannelValues, filters.canal]);
-
-  useEffect(() => {
-    if (filters.sedeId === 'all') {
-      return;
-    }
-    if (!sedeOptions.some((option) => option.value === filters.sedeId)) {
-      setFilters((prev) => ({ ...prev, sedeId: 'all' }));
-    }
-  }, [sedeOptions, filters.sedeId]);
 
   useEffect(() => {
     if (filters.cajaId === 'all') {
@@ -140,9 +115,11 @@ const useReportesSharedState = () => {
     if (filters.sedeId === 'all') {
       return 'multisede';
     }
-    const match = sedeOptions.find((option) => option.value === filters.sedeId);
-    return match ? `para ${match.label}` : `para sede ${filters.sedeId}`;
-  }, [filters.sedeId, sedeOptions]);
+    if (selectedSedeNombre) {
+      return `para ${selectedSedeNombre}`;
+    }
+    return `para sede ${filters.sedeId}`;
+  }, [filters.sedeId, selectedSedeNombre]);
 
   const channelOptions = useMemo(
     () =>
@@ -173,10 +150,6 @@ const useReportesSharedState = () => {
     }));
   };
 
-  const handleSedeChange = (value) => {
-    setFilters((prev) => ({ ...prev, sedeId: value }));
-  };
-
   const handleChannelChange = (value) => {
     setFilters((prev) => ({ ...prev, canal: value }));
   };
@@ -190,7 +163,7 @@ const useReportesSharedState = () => {
   };
 
   const handleReset = () => {
-    setFilters(buildDefaultFilters());
+    setFilters(buildDefaultFilters(selectedSedeId != null ? String(selectedSedeId) : 'all'));
   };
 
   const handleRefresh = () => {
@@ -202,18 +175,15 @@ const useReportesSharedState = () => {
     filters,
     rangeValue,
     scopeLabel,
-    sedeOptions,
     channelOptions,
     cajaOptions,
     groupingOptions,
     handleRangeChange,
-    handleSedeChange,
     handleChannelChange,
     handleCajaChange,
     handleGroupingChange,
     handleReset,
     handleRefresh,
-    sedesLoading,
     ...reportesQuery,
   };
 };
@@ -224,19 +194,16 @@ const FiltersBar = ({
   scopeLabel,
   filters,
   rangeValue,
-  sedeOptions,
   channelOptions,
   cajaOptions,
   groupingOptions,
   handleRangeChange,
-  handleSedeChange,
   handleChannelChange,
   handleCajaChange,
   handleGroupingChange,
   handleReset,
   handleRefresh,
   exportConfig,
-  sedesLoading,
   showCajaFilter = false,
   showChannelFilter = true,
   showGroupingFilter = true,
@@ -261,13 +228,6 @@ const FiltersBar = ({
             allowClear={false}
             format="DD/MM/YYYY"
             disabledDate={(current) => current && current > dayjs().endOf('day')}
-          />
-          <Select
-            style={{ width: 200 }}
-            value={filters.sedeId}
-            options={sedeOptions}
-            loading={sedesLoading}
-            onChange={handleSedeChange}
           />
           {showCajaFilter && Array.isArray(cajaOptions) && cajaOptions.length > 0 && (
             <Select
@@ -598,7 +558,7 @@ const ReportesVentasPage = () => {
     porCanal: state.porCanal,
   });
 
-  const isBusy = state.isLoading || state.sedesLoading;
+  const isBusy = state.isLoading;
 
   if (!state.tiendaId) {
     return (
@@ -646,19 +606,16 @@ const ReportesVentasPage = () => {
           scopeLabel={state.scopeLabel}
           filters={state.filters}
           rangeValue={state.rangeValue}
-          sedeOptions={state.sedeOptions}
           channelOptions={state.channelOptions}
           cajaOptions={state.cajaOptions}
           groupingOptions={state.groupingOptions}
           handleRangeChange={state.handleRangeChange}
-          handleSedeChange={state.handleSedeChange}
           handleChannelChange={state.handleChannelChange}
           handleCajaChange={state.handleCajaChange}
           handleGroupingChange={state.handleGroupingChange}
           handleReset={state.handleReset}
           handleRefresh={state.handleRefresh}
           exportConfig={{ label: 'Exportar ventas', onExport: exportVentas }}
-          sedesLoading={state.sedesLoading}
           showCajaFilter={false}
         />
 
@@ -715,7 +672,7 @@ const ReportesPedidosPage = () => {
   const state = useReportesSharedState();
   const exportPedidos = usePedidosExport({ pedidos: state.pedidos });
   const pedidosRows = usePedidosTable({ pedidos: state.pedidos });
-  const isBusy = state.isLoading || state.sedesLoading;
+  const isBusy = state.isLoading;
 
   if (!state.tiendaId) {
     return (
@@ -763,19 +720,16 @@ const ReportesPedidosPage = () => {
           scopeLabel={state.scopeLabel}
           filters={state.filters}
           rangeValue={state.rangeValue}
-          sedeOptions={state.sedeOptions}
           channelOptions={state.channelOptions}
           cajaOptions={state.cajaOptions}
           groupingOptions={state.groupingOptions}
           handleRangeChange={state.handleRangeChange}
-          handleSedeChange={state.handleSedeChange}
           handleChannelChange={state.handleChannelChange}
           handleCajaChange={state.handleCajaChange}
           handleGroupingChange={state.handleGroupingChange}
           handleReset={state.handleReset}
           handleRefresh={state.handleRefresh}
           exportConfig={{ label: 'Exportar pedidos', onExport: exportPedidos }}
-          sedesLoading={state.sedesLoading}
           showCajaFilter
         />
 
@@ -829,7 +783,7 @@ const ReportesRetirosPage = () => {
   const exportRetiros = useRetirosExport({ retiros: state.retiros });
   const retirosRows = useRetirosTable({ retiros: state.retiros });
   const retirosPorCajaRows = useRetirosPorCajaTable({ retirosPorCaja: state.retirosPorCaja });
-  const isBusy = state.isLoading || state.sedesLoading;
+  const isBusy = state.isLoading;
 
   if (!state.tiendaId) {
     return (
@@ -877,19 +831,16 @@ const ReportesRetirosPage = () => {
           scopeLabel={state.scopeLabel}
           filters={state.filters}
           rangeValue={state.rangeValue}
-          sedeOptions={state.sedeOptions}
           channelOptions={state.channelOptions}
           cajaOptions={state.cajaOptions}
           groupingOptions={state.groupingOptions}
           handleRangeChange={state.handleRangeChange}
-          handleSedeChange={state.handleSedeChange}
           handleChannelChange={state.handleChannelChange}
           handleCajaChange={state.handleCajaChange}
           handleGroupingChange={state.handleGroupingChange}
           handleReset={state.handleReset}
           handleRefresh={state.handleRefresh}
           exportConfig={{ label: 'Exportar retiros', onExport: exportRetiros }}
-          sedesLoading={state.sedesLoading}
           showCajaFilter
           showChannelFilter={false}
           showGroupingFilter={false}

@@ -10,6 +10,9 @@ import com.dulcecontrol.bakery.features.superadmin.suscripciones.entity.Plan;
 import com.dulcecontrol.bakery.features.superadmin.suscripciones.entity.Suscripcion;
 import com.dulcecontrol.bakery.features.superadmin.suscripciones.entity.enums.EstadoSuscripcion;
 import com.dulcecontrol.bakery.features.superadmin.suscripciones.repository.SuscripcionRepository;
+import com.dulcecontrol.bakery.features.superadmin.tiendas.entity.Tienda;
+import com.dulcecontrol.bakery.features.superadmin.tiendas.entity.enums.EstadoTienda;
+import com.dulcecontrol.bakery.features.superadmin.tiendas.repository.TiendaRepository;
 import com.dulcecontrol.bakery.security.JwtProvider;
 import com.dulcecontrol.bakery.security.TipoUsuario;
 import com.dulcecontrol.bakery.security.auth.dto.AdminLoginRequest;
@@ -45,6 +48,7 @@ public class AuthService {
     private final UsuarioTiendaRepository usuarioTiendaRepository;
     private final ClienteRepository clienteRepository;
     private final SuscripcionRepository suscripcionRepository;
+    private final TiendaRepository tiendaRepository;
     private final JwtProvider jwtProvider;
     private final BCryptPasswordEncoder passwordEncoder;
 
@@ -79,6 +83,8 @@ public class AuthService {
 
         validarPassword(request.getPassword(), usuario.getHashContrasena());
 
+        validarTiendaHabilitada(usuario.getTiendaId());
+
         usuario.setUltimoAccesoEn(LocalDateTime.now());
         usuarioTiendaRepository.save(usuario);
 
@@ -100,6 +106,8 @@ public class AuthService {
         }
 
         validarPassword(request.getPassword(), cliente.getHashContrasena());
+
+        validarTiendaHabilitada(tiendaId);
 
         String token = jwtProvider.generarToken(cliente.getEmail(), "ROLE_CLIENTE", TipoUsuario.CLIENTE, tiendaId,
             construirClaimsNombre(cliente.getNombreDoc()), cliente.getId());
@@ -306,5 +314,14 @@ public class AuthService {
         );
         
         return buildResponse(token, TipoUsuario.CLIENTE, tiendaId, cliente.getId(), null);
+    }
+
+    private void validarTiendaHabilitada(Long tiendaId) {
+        Tienda tienda = tiendaRepository.findById(tiendaId)
+                .orElseThrow(() -> new AuthenticationException("La tienda ya no está disponible"));
+
+        if (tienda.getEstado() == EstadoTienda.CANCELADA) {
+            throw new AuthenticationException("La tienda fue cancelada. Contacta a soporte para más información.");
+        }
     }
 }
