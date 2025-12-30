@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import HistorialManagerView from './HistorialManagerView.jsx';
 import { getSuscripciones, getHistorialBySuscripcion } from '../../api/suscripciones.api.js';
 import { getTiendas } from '../../../tiendas/api/tiendas.api.js';
+import { isTiendaVisible } from '../../utils/tiendaVisibility.js';
 
 const HISTORIAL_QUERY_KEY = ['superadmin', 'historial'];
 const SUSCRIPCIONES_QUERY_KEY = ['superadmin', 'suscripciones'];
@@ -12,10 +13,18 @@ const HistorialManager = () => {
     const [selectedSuscripcionId, setSelectedSuscripcionId] = useState(null);
 
     // Fetch tiendas for mapping names
-    const { data: tiendas = [] } = useQuery({
+    const { data: tiendasRaw = [] } = useQuery({
         queryKey: TIENDAS_QUERY_KEY,
         queryFn: getTiendas,
     });
+
+    const tiendas = useMemo(() => (
+        (tiendasRaw || []).filter(isTiendaVisible)
+    ), [tiendasRaw]);
+
+    const tiendasVisiblesIdSet = useMemo(() => (
+        new Set((tiendas || []).map((t) => t?.id).filter(Boolean))
+    ), [tiendas]);
 
     const tiendasMap = useMemo(() => {
         const map = new Map();
@@ -38,11 +47,15 @@ const HistorialManager = () => {
     });
 
     const suscripcionesConNombre = useMemo(() => (
-        suscripciones.map((suscripcion) => ({
-            ...suscripcion,
-            tiendaNombre: getTiendaLabel(suscripcion.tiendaId),
-        }))
-    ), [suscripciones, getTiendaLabel]);
+        (suscripciones || [])
+            .filter((suscripcion) => (
+                !suscripcion?.tiendaId || tiendasVisiblesIdSet.has(suscripcion.tiendaId)
+            ))
+            .map((suscripcion) => ({
+                ...suscripcion,
+                tiendaNombre: getTiendaLabel(suscripcion.tiendaId),
+            }))
+    ), [suscripciones, getTiendaLabel, tiendasVisiblesIdSet]);
 
     // Fetch history for selected subscription
     const { data: historial = [], isLoading: isLoadingHistorial, isError, refetch } = useQuery({

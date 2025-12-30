@@ -6,6 +6,7 @@ import { getPlanes, getSuscripciones, updateSuscripcion, createSuscripcion } fro
 import { PENToCentimos } from '../../utils/currencyFormatter.js';
 import { getTiendas } from '../../../tiendas/api/tiendas.api.js';
 import { useAuthStore } from '../../../../../shared/hooks/useAuth.js';
+import { isTiendaVisible } from '../../utils/tiendaVisibility.js';
 
 const SUSCRIPCIONES_QUERY_KEY = ['superadmin', 'suscripciones'];
 const PLANES_QUERY_KEY = ['superadmin', 'planes', 'activos'];
@@ -38,10 +39,18 @@ const SuscripcionesManager = () => {
         queryFn: () => getPlanes({ soloActivos: true }),
     });
 
-    const { data: tiendas = [] } = useQuery({
+    const { data: tiendasRaw = [] } = useQuery({
         queryKey: TIENDAS_QUERY_KEY,
         queryFn: getTiendas,
     });
+
+    const tiendas = useMemo(() => (
+        (tiendasRaw || []).filter(isTiendaVisible)
+    ), [tiendasRaw]);
+
+    const tiendasVisiblesIdSet = useMemo(() => (
+        new Set((tiendas || []).map((t) => t?.id).filter(Boolean))
+    ), [tiendas]);
 
     const tiendasMap = useMemo(() => {
         const map = new Map();
@@ -58,11 +67,15 @@ const SuscripcionesManager = () => {
     }, [tiendasMap]);
 
     const suscripcionesConNombre = useMemo(() => (
-        suscripciones.map((suscripcion) => ({
-            ...suscripcion,
-            tiendaNombre: getTiendaLabel(suscripcion.tiendaId),
-        }))
-    ), [suscripciones, getTiendaLabel]);
+        (suscripciones || [])
+            .filter((suscripcion) => (
+                !suscripcion?.tiendaId || tiendasVisiblesIdSet.has(suscripcion.tiendaId)
+            ))
+            .map((suscripcion) => ({
+                ...suscripcion,
+                tiendaNombre: getTiendaLabel(suscripcion.tiendaId),
+            }))
+    ), [suscripciones, getTiendaLabel, tiendasVisiblesIdSet]);
 
     const tiendasConSuscripcion = useMemo(() => {
         const set = new Set();
